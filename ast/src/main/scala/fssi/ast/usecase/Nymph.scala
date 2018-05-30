@@ -36,7 +36,7 @@ trait Nymph[F[_]] extends NymphUseCases[F] {
     // then, save the account as an inactive one
     def saveAccountAsInactive(account: Account): SP[F, Account] =
       for {
-        acc <- accountStore.saveInactiveAccount(account)
+        acc <- accountSnapshot.saveInactiveAccount(account)
       } yield acc
 
     // finally, we disseminate the ACCOUNT-CREATED message to warriors
@@ -80,7 +80,7 @@ trait Nymph[F[_]] extends NymphUseCases[F] {
     } yield ()
 
     for {
-      accOpt <- accountStore.findAccount(id)
+      accOpt <- accountSnapshot.findAccount(id)
       _      <- if (accOpt.isDefined) nothingToDo else disseminateAccountSyncMessage
     } yield accOpt
   }
@@ -96,8 +96,7 @@ trait Nymph[F[_]] extends NymphUseCases[F] {
                                transaction: Transaction): SP[F, Transaction.Status] = {
     // we should validate transaction:
     // 1. transaction should be signed by the account
-    // 2. compute transaction cost
-    // 3. query account, the account should be found, and has enough token to afford the transaction
+
 
     val existedAccount: SP[F, Account] = for {
       accOpt <- queryAccount(id)
@@ -114,6 +113,7 @@ trait Nymph[F[_]] extends NymphUseCases[F] {
         )
       } yield trans
 
+    /*
     def affordableTransaction(transaction: Transaction, account: Account): SP[F, Transaction] =
       for {
         cost <- transactionService.instrumentCost(transaction)
@@ -124,6 +124,7 @@ trait Nymph[F[_]] extends NymphUseCases[F] {
             UnAffordableTransaction(account.id, transaction.id)
           ))
       } yield trans
+    */
 
     def disseminateTransaction(account: Account, transaction: Transaction): SP[F, Unit] =
       for {
@@ -137,7 +138,7 @@ trait Nymph[F[_]] extends NymphUseCases[F] {
     for {
       acc   <- existedAccount
       trans <- transactionWithRightSignature(acc)
-      _     <- affordableTransaction(trans, acc)
+      //_     <- affordableTransaction(trans, acc) // unnecessary to instrument costs here.
       _     <- disseminateTransaction(acc, trans)
     } yield Transaction.Status.Pending(trans.id)
   }

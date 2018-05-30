@@ -58,5 +58,6 @@ object Transaction {
   object Status {
     case class Rejected(id: ID) extends Status
     case class Pending(id: ID)  extends Status
+    case class Failed(id: ID) extends Status
   }
 }

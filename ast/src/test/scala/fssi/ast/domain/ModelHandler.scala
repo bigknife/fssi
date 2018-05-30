@@ -6,9 +6,12 @@ trait ModelHandler
     with LogServiceHandler.Implicits
     with MonitorServiceHandler.Implicits
     with NetworkServiceHandler.Implicits
-    with AccountStoreHandler.Implicits
+    with AccountSnapshotHandler.Implicits
     with TransactionServiceHandler.Implicits
     with TransactionStoreHandler.Implicits
+    with ConsensusEngineHandler.Implicits
+    with ContractServiceHandler.Implicits
+    with ContractStoreHandler.Implicits
     with bigknife.sop.effect.error.ErrorMInstance
 
 object ModelHandler extends ModelHandler

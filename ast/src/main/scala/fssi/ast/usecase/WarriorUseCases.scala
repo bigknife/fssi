@@ -6,7 +6,7 @@ import fssi.ast.domain.types._
 
 trait WarriorUseCases[F[_]] {
   /**
-    * uc1. handle Account-Created message from Nymph
+    * uc1. handle message from Nymph
     */
-  def validateProposal(proposal: Proposal): P[F, Boolean]
+  def processTransaction(transaction: Transaction): SP[F, Transaction.Status]
 }
