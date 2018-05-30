@@ -50,11 +50,6 @@ object Transaction {
   // transaction id
   case class ID(value: String)
 
-  /**create transfer transaction*/
-  def transfer(): Transaction        = ???
-  def publishContract(): Transaction = ???
-  def invokeContract(): Transaction  = ???
-
   // transaction status
   trait Status {
     def id: ID
