@@ -1,0 +1,25 @@
+*
+!/**/
+!*.scala
+!*.sbt
+!*.txt
+!*.md
+!*.xml
+!*.properties
+!*.sh
+!.travis.yml
+!.gitignore
+/target/
+/project/**
+!/project/*.scala
+!/project/*.properties
+!/project/*.sbt
+
+/.idea/
+
+# for docs
+/docs/**
+!/docs/*.md
+
+# ast
+/ast/target/
