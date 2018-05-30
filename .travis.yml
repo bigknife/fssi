@@ -1,0 +1,22 @@
+sudo: false
+
+cache:
+  directories:
+    - $HOME/.m2/repository
+    - $HOME/.sbt
+    - $HOME/.ivy2
+
+language: scala
+
+scala:
+  - 2.12.4
+
+jdk:
+  - oraclejdk8
+
+script:
+  - sbt ++$TRAVIS_SCALA_VERSION "project ast" clean coverage test coverageReport
+
+after_success:
+  - export CODECOV_TOKEN="6498d3cf-c13e-4321-bda9-03ed07514cf6"
+  - bash <(curl -s https://codecov.io/bash)
