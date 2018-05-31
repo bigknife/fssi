@@ -6,7 +6,7 @@ From message-sender's point of view:
 2. correspond to p2p messages
 
 That's to say, there is two kinds of service, one is to
-serve for the outter and the other one serves for the inner.
+serve for the outer and the other one serves for the inner.
 
 So, I call the firs kind of service entity `???`， maybe
  `nymph`, and the second kind of service entity `???`
@@ -25,8 +25,10 @@ In my mind, it's more clear that there should be three type of nodes:
 1. **Nymph Node**, which is the edge of the system, receive user's requests,
 and disseminate them to `Warrior Node`.
 2. **Warrior Node**, which is the core node, only interact with each other
-and `Nymph Node`, validate tranactions by running consencus, and record
+and `Nymph Node`, validate transactions by running consensus, and record
 transactions.
-3. **Mirror Node**, which is a high performance for quering node, just sync data
+3. **Mirror Node**, which is a high performance for querying node, just sync data
 from `Warrior Node`, and provide a responsible web page to show system status,
-and recive query request and show the result.
+and receive query request and show the result.
+
+**Mirror Node** is not so urgent.
