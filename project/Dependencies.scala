@@ -23,7 +23,27 @@ object Dependencies {
       val sop        = "1.0.0"
       val catsNormal = "1.0.1"
       val catsEffect = "1.0.0-RC"
+      val http4s     = "0.18.12"
+      val circe      = "0.9.3"
+
+      // log
+      object log {
+        val slf4j = "1.8.0-beta1"
+        val logback = "1.3.0-alpha4"
+        val logbackColorizer = "1.0.1"
+      }
     }
+
+    lazy val log = {
+      Seq(
+        Dpd("org.slf4j", "slf4j-api", versions.log.slf4j, autoScalaVersion = false),
+        //Dpd("org.slf4j", "slf4j-simple", version.log.slf4j, autoScalaVersion = false, configuration = "test"),
+        Dpd("ch.qos.logback", "logback-classic", versions.log.logback, autoScalaVersion = false),
+        Dpd("ch.qos.logback", "logback-core", versions.log.logback, autoScalaVersion = false),
+        Dpd("org.tuxdude.logback.extensions", "logback-colorizer", versions.log.logbackColorizer, autoScalaVersion = false)
+      ).map(_.libraryDependencies)
+    }
+
     lazy val cats = {
       Seq("cats-core", "cats-free")
         .map({
@@ -49,6 +69,14 @@ object Dependencies {
       Dpd("bigknife.sop", "core", versions.sop),
       Dpd("bigknife.sop", "effect", versions.sop)
     ).map(_.libraryDependencies)
+
+    lazy val http4s = Seq("dsl", "blaze-server", "circe")
+      .map(x => Dpd("org.http4s", s"http4s-$x", versions.http4s))
+      .map(_.libraryDependencies)
+
+    lazy val circe = Seq("core", "generic", "parser")
+      .map(x => Dpd("io.circe", s"circe-$x", versions.circe))
+      .map(_.libraryDependencies)
   }
 
   // resolvers

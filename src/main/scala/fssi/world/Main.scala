@@ -1,7 +1,7 @@
 package fssi.world
 
 import bigknife.cli.{CommandLineProgram, Program}
-import fssi.ast.domain.Model
+import fssi.ast.domain.components.Model
 import fssi.ast.usecase.Nymph
 import fssi.world.handler.ArgsHandler
 

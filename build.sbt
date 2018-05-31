@@ -3,11 +3,15 @@ import sbtassembly.AssemblyPlugin.defaultShellScript
 
 coverageExcludedFiles in ThisBuild := ".*macro.*"
 // ast prj
-lazy val pAst = ast("ast")
+lazy val pAst = ast()
+
+// jsonrpc prj
+lazy val pJsonRpc = jsonrpc()
 
 // fssi
 lazy val pFssi = fssi("fssi", ".")
   .dependsOn(pAst)
+  .dependsOn(pJsonRpc)
   .settings(
     mainClass in assembly := Some("fssi.world.Main"),
     assemblyMergeStrategy in assembly := {

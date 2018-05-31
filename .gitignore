@@ -23,3 +23,7 @@
 
 # ast
 /ast/target/
+
+# jsonrpc
+!/jsonrpc/
+
