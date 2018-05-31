@@ -22,7 +22,7 @@ trait Nymph[F[_]] extends NymphUseCases[F] {
     * @param rand random string to encrypt the private key of the account being created.
     * @return account
     */
-  override def enroll(rand: String): SP[F, Account] = {
+  override def register(rand: String): SP[F, Account] = {
     // first we create an account
     val createAccount: SP[F, Account] = for {
       kp      <- cryptoService.generateKeyPair()

@@ -71,7 +71,8 @@ object Common {
     addCompilerPlugin("org.scalameta"  % "paradise"        % "3.0.0-M10" cross CrossVersion.full),
     licenses += ("Apache-2.0", url("https://opensource.org/licenses/Apache-2.0")),
     bintrayRepository := "maven",
-    libraryDependencies ++= all.scalatest
+    libraryDependencies ++= all.scalatest,
+    libraryDependencies ++= all.log
   )
 
   object prj {
@@ -95,6 +96,21 @@ object Common {
           )
 
       def apply(id: String): Project = apply(id, id)
+      def apply(): Project = apply("ast")
+    }
+
+    object jsonrpc {
+      def apply(id: String, dir: String): Project =
+        Project(id, file(dir))
+        .settings(settings)
+        .settings(
+          libraryDependencies ++= all.cats,
+          libraryDependencies ++= all.http4s,
+          libraryDependencies ++= all.circe
+        )
+
+      def apply(id: String): Project = apply(id, id)
+      def apply(): Project = apply("jsonrpc")
     }
   }
 }

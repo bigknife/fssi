@@ -11,7 +11,7 @@ trait NymphUseCases[F[_]] {
     * @param rand random string to encrypt the private key of the account being created.
     * @return account
     */
-  def enroll(rand: String): SP[F, Account]
+  def register(rand: String): SP[F, Account]
 
   /**
     * uc2. query account detail.
