@@ -27,3 +27,7 @@
 # jsonrpc
 !/jsonrpc/
 /jsonrpc/target/
+
+# interpreter
+!/interpreter/
+/interpreter/target/

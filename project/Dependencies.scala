@@ -22,7 +22,7 @@ object Dependencies {
       val cli        = "1.0.0"
       val sop        = "1.0.0"
       val catsNormal = "1.0.1"
-      val catsEffect = "1.0.0-RC"
+      val catsEffect = "0.10.1"
       val http4s     = "0.18.12"
       val circe      = "0.9.3"
 
@@ -45,10 +45,10 @@ object Dependencies {
     }
 
     lazy val cats = {
-      Seq("cats-core", "cats-free")
+      Seq("core", "free", "effect")
         .map({
-          case x if x == "cats-effect" ⇒ Dpd("org.typelevel", x, versions.catsEffect)
-          case x                       ⇒ Dpd("org.typelevel", x, versions.catsNormal)
+          case x if x == "effect" ⇒ Dpd("org.typelevel", s"cats-$x", versions.catsEffect)
+          case x                       ⇒ Dpd("org.typelevel", s"cats-$x", versions.catsNormal)
         })
         .map(_.libraryDependencies)
     }
@@ -57,7 +57,6 @@ object Dependencies {
       Dpd("org.scalatest",
           "scalatest",
           versions.scalatest,
-          autoScalaVersion = true,
           configuration = "test")
     ).map(_.libraryDependencies)
 

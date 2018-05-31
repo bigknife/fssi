@@ -4,13 +4,17 @@ import fssi.world.Args.NymphArgs
 import bigknife.jsonrpc._
 import bigknife.jsonrpc.implicits._
 import io.circe.Json
+import fssi.ast.domain.components.Model.Op
+import fssi.ast.usecase.Nymph
+import fssi.interpreter._
+import scala.util._
 
 class NymphHandler extends ArgsHandler[NymphArgs] {
 
   override def run(args: NymphArgs): Unit = {
     server.run(name = args.serviceName,
                version = args.serviceVersion,
-               resource = NymphHandler.res,
+               resource = NymphHandler.res(args),
                port = args.port,
                host = args.host)
     Thread.currentThread().join()
@@ -18,7 +22,16 @@ class NymphHandler extends ArgsHandler[NymphArgs] {
 }
 
 object NymphHandler {
-  object res extends Resource {
+
+  import io.circe.syntax._
+  import io.circe.generic.semiauto._
+  import jsonCodec._
+
+  val nymph: Nymph[Op] = Nymph[Op]
+
+  case class res(args: NymphArgs) extends Resource {
+
+    lazy val setting: Setting = Setting() // from args
 
     private val allowedMethods: Set[String] = Set(
       "register",
@@ -34,7 +47,7 @@ object NymphHandler {
 
     /** invoke method with parameters */
     override def invoke(method: String, params: Json): Either[Throwable, Json] = method match {
-      case "register" => Right(Json.fromString("demo"))
+      case "register" => invokeRegister(params)
       case x          => Left(new UnsupportedOperationException(s"unsupported operation: $x"))
 
     }
@@ -46,6 +59,16 @@ object NymphHandler {
       case "register" => params.asString.isDefined // def register(rand: String): SP[F, Account]
 
       case _ => true
+    }
+
+    private def invokeRegister(params: Json): Either[Throwable, Json] = {
+      Try {
+        runner.runIOAttempt(nymph.register(params.asString.get), setting).unsafeRunSync()
+      }.toEither match {
+        case Left(x)               => Left(x): Either[Throwable, Json]
+        case Right(Left(x))        => Left(x): Either[Throwable, Json]
+        case Right(Right(account)) => Right(account.asJson): Either[Throwable, Json]
+      }
     }
   }
 }

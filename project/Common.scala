@@ -96,21 +96,33 @@ object Common {
           )
 
       def apply(id: String): Project = apply(id, id)
-      def apply(): Project = apply("ast")
+      def apply(): Project           = apply("ast")
     }
 
     object jsonrpc {
       def apply(id: String, dir: String): Project =
         Project(id, file(dir))
-        .settings(settings)
-        .settings(
-          libraryDependencies ++= all.cats,
-          libraryDependencies ++= all.http4s,
-          libraryDependencies ++= all.circe
-        )
+          .settings(settings)
+          .settings(
+            libraryDependencies ++= all.cats,
+            libraryDependencies ++= all.http4s,
+            libraryDependencies ++= all.circe
+          )
 
       def apply(id: String): Project = apply(id, id)
-      def apply(): Project = apply("jsonrpc")
+      def apply(): Project           = apply("jsonrpc")
+    }
+
+    object interpreter {
+      def apply(id: String, dir: String): Project =
+        Project(id, file(dir))
+          .settings(settings)
+          .settings(
+            libraryDependencies ++= all.cats,
+            libraryDependencies ++= all.circe
+          )
+      def apply(id: String): Project = apply(id, id)
+      def apply(): Project           = apply("interpreter")
     }
   }
 }
