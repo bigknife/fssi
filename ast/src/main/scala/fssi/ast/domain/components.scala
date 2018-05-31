@@ -24,5 +24,6 @@ object components {
     val accountSnapshot: AccountSnapshot[F]
     val transactionStore: TransactionStore[F]
     val contractStore: ContractStore[F]
+    val ledgerStore: LedgerStore[F]
   }
 }

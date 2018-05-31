@@ -1,10 +1,8 @@
 package fssi.ast.usecase
 
-import bigknife.sop._
-import implicits._
-import fssi.ast.domain.{Moment, Proposal}
+import bigknife.sop._, implicits._
 import fssi.ast.domain.components.Model
-import fssi.ast.domain.types.{Account, Contract, Signature, Transaction}
+import fssi.ast.domain.types._
 
 trait Warrior[F[_]] extends WarriorUseCases[F] {
 
@@ -13,6 +11,7 @@ trait Warrior[F[_]] extends WarriorUseCases[F] {
 
   /**
     * uc1. handle message from Nymph
+    *     transaction -> contract -> moment
     */
   override def processTransaction(transaction: Transaction): SP[F, Transaction.Status] = {
 
@@ -73,11 +72,14 @@ trait Warrior[F[_]] extends WarriorUseCases[F] {
     // then, put the moment into the proposal moment pool (contract engine will run proposal consensus periodically
     def putToPool(moment: Moment): SP[F, Transaction.Status] =
       for {
-        _      <- consensusEngine.poolMoment(moment)
-        status <- Transaction.Status.Pending(transaction.id).pureSP
+        pooled <- consensusEngine.poolMoment(moment)
+        status <- (if (pooled) Transaction.Status.Pending(transaction.id)
+                   else Transaction.Status.Rejected(transaction.id)).pureSP
+        // fire to run consensus to validate proposal
+        _ <- validateProposal()
       } yield status
 
-    // put it together
+    // put  together
     findAccount { account =>
       validateSignature(account) {
         findProperContract { contract =>
@@ -88,4 +90,38 @@ trait Warrior[F[_]] extends WarriorUseCases[F] {
       }
     }
   }
+
+  /**
+    * uc2. run consensus when the proposal pool is full or time is up.
+    */
+  override def validateProposal(): SP[F, Unit] = {
+    // first build proposal from moment pool
+    def buildProposal(next: Proposal => SP[F, Unit]): SP[F, Unit] =
+      for {
+        proposalOpt <- consensusEngine.buildProposal()
+        _           <- if (proposalOpt.isDefined) next(proposalOpt.get) else ().pureSP[F]
+      } yield ()
+
+    // run consensus to validate proposal
+    def validate(proposal: Proposal)(next: Proposal => SP[F, Unit]): SP[F, Unit] =
+      for {
+        validProposal <- consensusEngine.runConsensus(proposal)
+        _             <- next(validProposal)
+      } yield ()
+
+    // commit agreed proposal
+    def commit(proposal: Proposal): SP[F, Unit] =
+      for {
+        _ <- ledgerStore.commit(proposal)
+        _ <- accountSnapshot.commit(proposal)
+      } yield ()
+
+    // put together
+    buildProposal { proposal =>
+      validate(proposal) { validProposal =>
+        commit(validProposal)
+      }
+    }
+  }
+
 }

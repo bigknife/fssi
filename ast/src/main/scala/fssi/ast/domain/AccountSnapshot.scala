@@ -11,4 +11,7 @@ import fssi.ast.domain.types._
 
   /** find account with an id */
   def findAccount(id: Account.ID): P[F, Option[Account]]
+
+  /** commit new state(moments in proposal) */
+  def commit(proposal: Proposal): P[F, Unit]
 }
