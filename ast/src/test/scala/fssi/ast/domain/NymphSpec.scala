@@ -17,7 +17,7 @@ class NymphSpec extends FunSuite {
     import components.Model._
 
     assertThrows[scala.NotImplementedError] {
-      nymph.enroll(rand).interpret[Id]
+      nymph.register(rand).interpret[Id]
     }
 
 

@@ -24,6 +24,11 @@ class JsonRpcSpec extends FlatSpec with Matchers {
       if (method == "test1") Right(Json.fromString("test1 ok"))
       else Left(new Exception("test2 exception"))
     }
+
+    /** can the params be accepted
+      *
+      */
+    override def paramsAcceptable(method: String, params: Json): Boolean = true
   }
 
   "POST -> /jsonrpc/test/v1" should "got a jsonrpc output" in {

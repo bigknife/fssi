@@ -52,7 +52,7 @@ object Server {
             }
           } yield resp
 
-        def validateJson(json: Json)(next: JsonObject => Resp): Resp = {
+        def validateJson(json: Json)(next: bigknife.jsonrpc.Request[Json] => Resp): Resp = {
           // json should be object
           // MUST Container 4 fields
           // version should be 2.0
@@ -66,30 +66,42 @@ object Server {
                     "jsonrpc request object should contain id, jsonrpc, method and params")).asJson)
               else if (!jso("jsonrpc").contains(Json.fromString(Version)))
                 BadRequest(invalidRequest(Some("jsonrpc should be 2.0")).asJson)
-              else next(jso)
+              else {
+                val id      = jso("id").get.asString.get
+                val method  = jso("method").get.asString.get
+                val params  = jso("params").get
+                val request = bigknife.jsonrpc.Request[Json](id, method, params)
+                next(request)
+              }
 
             case None =>
               BadRequest(invalidRequest(Some("jsonrpc request should be a json object")).asJson)
           }
         }
 
-        def invokeMethod(json: JsonObject): Resp = {
-          val method: String = json("method").flatMap(_.asString).get
-          if (resource.contains(method)) {
-            val id: String   = json("id").flatMap(_.asString).get
-            val params: Json = json("params").get
-            resource.invoke(method, params) match {
-              case Left(t)  => InternalServerError(internalError(Some(t.getMessage)).asJson)
+        def validateParams(req: bigknife.jsonrpc.Request[Json])(
+            next: bigknife.jsonrpc.Request[Json] => Resp): Resp = {
+          if (resource.paramsAcceptable(req.method, req.params)) next(req)
+          else BadRequest(invalidParams(Some("Parameters can't be accepted.")).asJson)
+        }
+
+        def invokeMethod(req: bigknife.jsonrpc.Request[Json]): Resp = {
+          if (resource.contains(req.method)) {
+            resource.invoke(req.method, req.params) match {
+              case Left(t) => InternalServerError(internalError(Some(t.getMessage)).asJson)
               case Right(x) =>
-                Ok(success(id, x).asJson)
+                Ok(success(req.id, x).asJson)
             }
-          } else NotFound(methodNotFound(Some(s"Method Not Found: $method")).asJson)
+          } else NotFound(methodNotFound(Some(s"Method Not Found: ${req.method}")).asJson)
 
         }
 
         parseJson { json =>
-          validateJson(json) { jso =>
-            invokeMethod(jso)
+          validateJson(json) { req =>
+            validateParams(req) { validReq =>
+              invokeMethod(validReq)
+            }
+
           }
         }
     }

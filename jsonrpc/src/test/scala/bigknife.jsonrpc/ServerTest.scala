@@ -14,6 +14,11 @@ object ServerTest extends App {
     override def invoke(method: String, params: Json): Either[Throwable, Json] = {
       Right(Json.fromString("test result"))
     }
+
+    /** can the params be accepted
+      *
+      */
+    override def paramsAcceptable(method: String, params: Json): Boolean = true
   }
 
   server.run("test", "v1", resource)
