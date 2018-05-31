@@ -15,7 +15,7 @@ jdk:
   - oraclejdk8
 
 script:
-  - sbt ++$TRAVIS_SCALA_VERSION "project ast" clean coverage test coverageReport
+  - sbt ++$TRAVIS_SCALA_VERSION "; project ast; clean; test; coverageReport; project jsonrpc; clean; test; coverageReport"
 
 after_success:
   - export CODECOV_TOKEN="6498d3cf-c13e-4321-bda9-03ed07514cf6"

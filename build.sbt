@@ -2,6 +2,7 @@ import Common._, prj._
 import sbtassembly.AssemblyPlugin.defaultShellScript
 
 coverageExcludedFiles in ThisBuild := ".*macro.*"
+coverageEnabled in ThisBuild := true
 // ast prj
 lazy val pAst = ast()
 
