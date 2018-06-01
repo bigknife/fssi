@@ -20,7 +20,7 @@ package object interpreter {
   }
 
   // all types json codec
-  object jsonCodec extends AccountJsonCodec
+  object jsonCodec extends AccountJsonCodec with TokenJsonCodec
 
   object orm extends AccountSnapshotORM
 
@@ -47,7 +47,8 @@ package object interpreter {
 
     def runStack[A](p: SP[Model.Op, A]): Stack[A]                         = p.interpret[Stack]
     def runIO[A](p: SP[Model.Op, A], setting: Setting): cats.effect.IO[A] = runStack(p)(setting)
-    def runIOAttempt[A](p: SP[Model.Op, A], setting: Setting): cats.effect.IO[Either[Throwable, A]] =
+    def runIOAttempt[A](p: SP[Model.Op, A],
+                        setting: Setting): cats.effect.IO[Either[Throwable, A]] =
       runStack(p)(setting).attempt
 
   }

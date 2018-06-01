@@ -14,11 +14,14 @@ object ArgsHandler {
   trait Implicits {
     implicit lazy val emptyArgsHandler: ArgsHandler[Args.EmptyArgs] = EmptyArgsHandler
     implicit lazy val nymphArgsHandler: ArgsHandler[Args.NymphArgs] = new NymphHandler
+    implicit lazy val createAccountArgsHandler: ArgsHandler[Args.CreateAccountArgs] =
+      new CreateAccountHandler
 
     implicit lazy val argsHandler: ArgsHandler[Args] = summon {
-      case a: Args.EmptyArgs => ArgsHandler[Args.EmptyArgs].run(a)
-      case a: Args.NymphArgs => ArgsHandler[Args.NymphArgs].run(a)
-      case _ => ???
+      case a: Args.EmptyArgs         => ArgsHandler[Args.EmptyArgs].run(a)
+      case a: Args.NymphArgs         => ArgsHandler[Args.NymphArgs].run(a)
+      case a: Args.CreateAccountArgs => ArgsHandler[Args.CreateAccountArgs].run(a)
+      case _                         => ???
     }
 
   }
