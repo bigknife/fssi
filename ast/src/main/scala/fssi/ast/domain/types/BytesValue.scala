@@ -5,7 +5,7 @@ import java.math.BigInteger
 trait BytesValue {
   def bytes: Array[Byte]
 
-  def hex: String = bytes.map("%2x" format _).mkString("")
+  def hex: String = bytes.map("%02x" format _).mkString("")
 
   override def equals(obj: scala.Any): Boolean = obj match {
     case x: BytesValue => x.bytes sameElements bytes
