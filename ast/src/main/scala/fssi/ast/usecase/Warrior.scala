@@ -18,13 +18,13 @@ trait Warrior[F[_]] extends WarriorUseCases[F] {
     // first, find the account of the transaction's sender
     def findAccount(next: Account => SP[F, Transaction.Status]): SP[F, Transaction.Status] =
       for {
-        accOpt <- accountSnapshot.findAccount(transaction.sender)
+        accOpt <- accountSnapshot.findAccountSnapshot(transaction.sender)
         status <- if (accOpt.isEmpty) for {
           _ <- log.warn(
             s"Account(id=${transaction.sender}) Not Found, Transaction(id=${transaction.id}) rejected!")
           s1 <- Transaction.Status.Rejected(transaction.id).pureSP
         } yield s1
-        else next(accOpt.get)
+        else next(accOpt.map(_.account).get)
       } yield status
 
     // then, validate the signature of the transaction

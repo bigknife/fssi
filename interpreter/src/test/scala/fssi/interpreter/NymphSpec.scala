@@ -8,7 +8,7 @@ class NymphSpec extends FunSuite {
   val nymph: Nymph[Op] = Nymph[Op]
   val setting: Setting = Setting()
 
-  test("register") {
+  ignore("register") {
     info(s"$nymph")
     val register = nymph.register("hello,world")
 

@@ -22,6 +22,8 @@ package object interpreter {
   // all types json codec
   object jsonCodec extends AccountJsonCodec
 
+  object orm extends AccountSnapshotORM
+
   object handlers
       extends AccountServiceHandler.Implicits
       with CryptoServiceHandler.Implicits

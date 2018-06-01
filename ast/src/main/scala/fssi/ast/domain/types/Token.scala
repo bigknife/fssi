@@ -6,6 +6,10 @@ case class Token(
 ) {
   def ordered: Ordered[Token] = Ordered.orderingToOrdered(this)
 
+  def toBase: Token = {
+    // todo other unit to base unit.
+    this
+  }
 }
 
 object Token {
@@ -22,4 +26,7 @@ object Token {
   }
 
   val Zero: Token = Token(0, Unit.Sweet)
+
+  // build with sweet
+  def tokenWithBaseUnit(amount: Long): Token = Token(amount, Unit.Sweet)
 }
