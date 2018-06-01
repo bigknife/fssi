@@ -119,6 +119,8 @@ object Common {
           .settings(settings)
           .settings(
             libraryDependencies ++= all.cats,
+            libraryDependencies ++= all.bcprov,
+            libraryDependencies ++= all.h2,
             libraryDependencies ++= all.circe
           )
       def apply(id: String): Project = apply(id, id)

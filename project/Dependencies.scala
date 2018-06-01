@@ -32,6 +32,12 @@ object Dependencies {
         val logback = "1.3.0-alpha4"
         val logbackColorizer = "1.0.1"
       }
+
+      // crypto
+      val bcprov = "1.59"
+
+      // builtin db h2
+      val h2 = "1.4.197"
     }
 
     lazy val log = {
@@ -76,6 +82,18 @@ object Dependencies {
     lazy val circe = Seq("core", "generic", "parser")
       .map(x => Dpd("io.circe", s"circe-$x", versions.circe))
       .map(_.libraryDependencies)
+
+    lazy val bcprov = {
+      Seq(
+        Dpd("org.bouncycastle", "bcprov-jdk15on", versions.bcprov, autoScalaVersion = false)
+      ).map(_.libraryDependencies)
+    }
+
+    lazy val h2 = {
+      Seq(
+        Dpd("com.h2database", "h2", versions.h2, autoScalaVersion = false)
+      ).map(_.libraryDependencies)
+    }
   }
 
   // resolvers

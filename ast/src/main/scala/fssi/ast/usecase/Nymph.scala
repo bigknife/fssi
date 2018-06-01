@@ -25,19 +25,23 @@ trait Nymph[F[_]] extends NymphUseCases[F] {
   override def register(rand: String): SP[F, Account] = {
     // first we create an account
     val createAccount: SP[F, Account] = for {
-      kp      <- cryptoService.generateKeyPair()
-      iv      <- cryptoService.randomByte(len = 8)
-      pass    <- cryptoService.enforceDes3Key(BytesValue(rand))
-      encPriv <- cryptoService.des3cbcEncrypt(kp.priv, pass, iv)
-      uuid    <- cryptoService.randomUUID()
-      acc     <- accountService.createAccount(kp.publ, encPriv, iv, uuid)
+      kp          <- cryptoService.generateKeyPair()
+      privData    <- cryptoService.privateKeyData(kp.priv)
+      publData    <- cryptoService.publicKeyData(kp.publ)
+      iv          <- cryptoService.randomByte(len = 8)
+      pass        <- cryptoService.enforceDes3Key(BytesValue(rand))
+      encPrivData <- cryptoService.des3cbcEncrypt(privData, pass, iv)
+      uuid        <- cryptoService.randomUUID()
+      acc         <- accountService.createAccount(publData, encPrivData, iv, uuid)
     } yield acc
 
     // then, save the account as an inactive one
-    def saveAccountAsInactive(account: Account): SP[F, Account] =
+    def saveAccountSnapshot(account: Account): SP[F, Unit] =
       for {
-        acc <- accountSnapshot.saveInactiveAccount(account)
-      } yield acc
+        desensitized <- accountService.desensitize(account)
+        snapshot     <- accountService.makeSnapshot(desensitized)
+        _            <- accountSnapshot.saveSnapshot(snapshot)
+      } yield ()
 
     // finally, we disseminate the ACCOUNT-CREATED message to warriors
     //   they will save the account data too
@@ -53,12 +57,12 @@ trait Nymph[F[_]] extends NymphUseCases[F] {
     for {
       _          <- log.info(s"begin to handle enrollment: $rand")
       t0         <- monitorService.startNow()
-      acc0       <- createAccount
-      acc1       <- saveAccountAsInactive(acc0)
-      _          <- disseminateAccountCreated(acc1)
+      acc        <- createAccount
+      _          <- saveAccountSnapshot(acc)
+      _          <- disseminateAccountCreated(acc)
       timePassed <- monitorService.timePassed(t0)
       _          <- log.info(s"finish handling enrollment: $rand. from $t0, time passed: $timePassed")
-    } yield acc1
+    } yield acc
   }
 
   /**
@@ -80,9 +84,9 @@ trait Nymph[F[_]] extends NymphUseCases[F] {
     } yield ()
 
     for {
-      accOpt <- accountSnapshot.findAccount(id)
+      accOpt <- accountSnapshot.findAccountSnapshot(id)
       _      <- if (accOpt.isDefined) nothingToDo else disseminateAccountSyncMessage
-    } yield accOpt
+    } yield accOpt.map(_.account)
   }
 
   /**
@@ -97,7 +101,6 @@ trait Nymph[F[_]] extends NymphUseCases[F] {
     // we should validate transaction:
     // 1. transaction should be signed by the account
 
-
     val existedAccount: SP[F, Account] = for {
       accOpt <- queryAccount(id)
       acc <- err.either(
@@ -107,24 +110,14 @@ trait Nymph[F[_]] extends NymphUseCases[F] {
 
     def transactionWithRightSignature(account: Account): SP[F, Transaction] =
       for {
-        passed <- cryptoService.validateSignature(transaction.signature, account.pub)
+        publ <- cryptoService.rebuildPubl(account.publicKeyData)
+        passed <- cryptoService.validateSignature(transaction.signature,
+                                                  transaction.toBeVerified,
+                                                  publ)
         trans <- err.either(
           Either.cond(passed, transaction, IllegalSignature("TRANSACTION"))
         )
       } yield trans
-
-    /*
-    def affordableTransaction(transaction: Transaction, account: Account): SP[F, Transaction] =
-      for {
-        cost <- transactionService.instrumentCost(transaction)
-        trans <- err.either(
-          Either.cond(
-            account.balance.ordered >= cost,
-            transaction,
-            UnAffordableTransaction(account.id, transaction.id)
-          ))
-      } yield trans
-    */
 
     def disseminateTransaction(account: Account, transaction: Transaction): SP[F, Unit] =
       for {
@@ -138,7 +131,6 @@ trait Nymph[F[_]] extends NymphUseCases[F] {
     for {
       acc   <- existedAccount
       trans <- transactionWithRightSignature(acc)
-      //_     <- affordableTransaction(trans, acc) // unnecessary to instrument costs here.
       _     <- disseminateTransaction(acc, trans)
     } yield Transaction.Status.Pending(trans.id)
   }

@@ -31,7 +31,10 @@ trait Warrior[F[_]] extends WarriorUseCases[F] {
     def validateSignature(account: Account)(
         next: => SP[F, Transaction.Status]): SP[F, Transaction.Status] =
       for {
-        passed <- cryptoService.validateSignature(transaction.signature, account.pub)
+        publ <- cryptoService.rebuildPubl(account.publicKeyData)
+        passed <- cryptoService.validateSignature(transaction.signature,
+                                                  transaction.toBeVerified,
+                                                  publ)
         status <- if (passed) next
         else
           for {

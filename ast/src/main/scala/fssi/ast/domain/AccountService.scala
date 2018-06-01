@@ -12,4 +12,18 @@ import fssi.ast.domain.types.{Account, BytesValue, KeyPair}
     * @return an account
     */
   def createAccount(publ: BytesValue, priv: BytesValue, iv: BytesValue, uuid: String): P[F, Account]
+
+  /**
+    * desensitize the account data
+    * @param account account
+    * @return an account without sensitive info.
+    */
+  def desensitize(account: Account): P[F, Account]
+
+  /**
+    * make a snapshot for account
+    * @param account account
+    * @return
+    */
+  def makeSnapshot(account: Account): P[F, Account.Snapshot]
 }
