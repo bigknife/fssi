@@ -20,7 +20,9 @@ package object interpreter {
   }
 
   // all types json codec
-  object jsonCodec extends AccountJsonCodec with TokenJsonCodec
+  object jsonCodec extends AccountJsonCodec
+    with TokenJsonCodec
+    with NodeJsonCodec
 
   object orm extends AccountSnapshotORM
 
@@ -37,6 +39,7 @@ package object interpreter {
       with ContractServiceHandler.Implicits
       with ContractStoreHandler.Implicits
       with LedgerStoreHandler.Implicits
+      with NetworkStoreHandler.Implicits
       with bigknife.sop.effect.error.ErrorMInstance
 
   object runner {

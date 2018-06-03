@@ -7,16 +7,22 @@ import io.circe.Json
 import fssi.ast.domain.components.Model.Op
 import fssi.ast.usecase.Nymph
 import fssi.interpreter._
+import org.slf4j.{Logger, LoggerFactory}
+
 import scala.util._
 
 class NymphHandler extends ArgsHandler[NymphArgs] {
 
   override def run(args: NymphArgs): Unit = {
-    server.run(name = args.serviceName,
-               version = args.serviceVersion,
+    // first start a p2p node
+    NymphHandler.startP2PNode(args)
+
+    // run jsonrpc server
+    server.run(name = args.jsonrpcServiceName,
+               version = args.jsonrpcServiceVersion,
                resource = NymphHandler.res(args),
-               port = args.port,
-               host = args.host)
+               port = args.jsonrpcPort,
+               host = args.jsonrpcHost)
     Thread.currentThread().join()
   }
 }
@@ -29,6 +35,25 @@ object NymphHandler {
 
   val nymph: Nymph[Op] = Nymph[Op]
 
+  val logger: Logger = LoggerFactory.getLogger(getClass)
+
+  // start p2p node
+  def startP2PNode(args: NymphArgs): Unit = {
+    val p = nymph.startNewNode(args.nodeIp, args.nodePort, args.seeds)
+    runner.runIOAttempt(p, args.toSetting).unsafeRunSync() match {
+      case Left(t) => logger.error("start p2p node failed", t)
+      case Right(v) => logger.info("p2p node start, id {}", v.id.value)
+    }
+    // add shutdown hook
+    Runtime.getRuntime.addShutdownHook(new Thread(() => {
+      runner.runIOAttempt(nymph.shutdown(), args.toSetting).unsafeRunSync() match {
+        case Left(t) => logger.info("shutdown p2p node failed", t)
+        case Right(_) => logger.info("p2p node shut down.")
+      }
+    }))
+  }
+
+  // jsonrpc resources
   case class res(args: NymphArgs) extends Resource {
 
     lazy val setting: Setting = Setting() // from args

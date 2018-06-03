@@ -49,3 +49,5 @@ so nodes may be bound to an account. of course it's ok not to be bound to an acc
 if bound, the account balance would increase by being paid.
 
 that means, an account should be create without nodes, so, a command tool is needed to do such things.
+
+----

@@ -17,12 +17,16 @@ object Token {
     override def compare(x: Token, y: Token): Int = ???
   }
 
-
   sealed trait Unit {}
 
   object Unit {
     // basic, primary, minimum unit
     case object Sweet extends Unit
+
+    def apply(s: String): Unit = s match {
+      case x if x equalsIgnoreCase "sweet" => Sweet
+      case _                               => Sweet
+    }
   }
 
   val Zero: Token = Token(0, Unit.Sweet)

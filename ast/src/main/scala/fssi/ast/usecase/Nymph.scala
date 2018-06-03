@@ -9,7 +9,7 @@ import fssi.ast.domain.types._
 /** implementation of core use cases of NymphUseCases
   *
   */
-trait Nymph[F[_]] extends NymphUseCases[F] {
+trait Nymph[F[_]] extends NymphUseCases[F] with P2P[F] {
   val model: Model[F]
 
   import model._
@@ -47,8 +47,8 @@ trait Nymph[F[_]] extends NymphUseCases[F] {
     //   they will save the account data too
     def disseminateAccountCreated(account: Account): SP[F, Unit] =
       for {
-        self       <- networkService.currentNode()
-        warriors   <- networkService.warriorNodesOfNymph(self)
+        self       <- networkStore.currentNode()
+        warriors   <- networkService.warriorNodesOfNymph(self.get)
         dataPacket <- networkService.buildCreateAccountDataMessage(account)
         _          <- networkService.disseminate(dataPacket, warriors)
       } yield ()
@@ -77,8 +77,8 @@ trait Nymph[F[_]] extends NymphUseCases[F] {
     //    async get account data from warrior
 
     val disseminateAccountSyncMessage: SP[F, Unit] = for {
-      self       <- networkService.currentNode()
-      warriors   <- networkService.warriorNodesOfNymph(self)
+      self       <- networkStore.currentNode()
+      warriors   <- networkService.warriorNodesOfNymph(self.get)
       dataPacket <- networkService.buildSyncAccountMessage(id)
       _          <- networkService.disseminate(dataPacket, warriors)
     } yield ()
@@ -122,8 +122,8 @@ trait Nymph[F[_]] extends NymphUseCases[F] {
     def disseminateTransaction(account: Account, transaction: Transaction): SP[F, Unit] =
       for {
         dataPacket <- networkService.buildSubmitTransactionMessage(account, transaction)
-        self       <- networkService.currentNode()
-        warriors   <- networkService.warriorNodesOfNymph(self)
+        self       <- networkStore.currentNode()
+        warriors   <- networkService.warriorNodesOfNymph(self.get)
         _          <- networkService.disseminate(dataPacket, warriors)
       } yield ()
 
@@ -144,8 +144,8 @@ trait Nymph[F[_]] extends NymphUseCases[F] {
   override def queryTransactionStatus(id: Transaction.ID): SP[F, Option[Transaction.Status]] = {
     // first we find transaction locally, if not found, send a SYNC-Transaction message to warrior
     val disseminate: SP[F, Unit] = for {
-      self       <- networkService.currentNode()
-      warriors   <- networkService.warriorNodesOfNymph(self)
+      self       <- networkStore.currentNode()
+      warriors   <- networkService.warriorNodesOfNymph(self.get)
       dataPacket <- networkService.buildSyncTransactionMessage()
       _          <- networkService.disseminate(dataPacket, warriors)
     } yield ()

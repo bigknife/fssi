@@ -4,7 +4,7 @@ import bigknife.sop._
 import fssi.ast.domain.types._
 
 /** use cases of Nymph */
-trait NymphUseCases[F[_]] {
+trait NymphUseCases[F[_]] extends P2PUseCases[F]{
 
   /**
     * uc1. enroll, become a member of the chain who's identified by an account.

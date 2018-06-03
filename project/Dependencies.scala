@@ -38,6 +38,12 @@ object Dependencies {
 
       // builtin db h2
       val h2 = "1.4.197"
+
+      // scalecube
+      val scalecube = "1.0.9"
+
+      // better files
+      val betterfiles = "3.5.0"
     }
 
     lazy val log = {
@@ -92,6 +98,18 @@ object Dependencies {
     lazy val h2 = {
       Seq(
         Dpd("com.h2database", "h2", versions.h2, autoScalaVersion = false)
+      ).map(_.libraryDependencies)
+    }
+
+    lazy val scalecube = {
+      Seq(
+        Dpd("io.scalecube", "scalecube-cluster", versions.scalecube, autoScalaVersion = false)
+      ).map(_.libraryDependencies)
+    }
+
+    lazy val betterfiles = {
+      Seq(
+        Dpd("com.github.pathikrit", "better-files", versions.betterfiles)
       ).map(_.libraryDependencies)
     }
   }

@@ -4,7 +4,7 @@ import bigknife.sop._, implicits._
 import fssi.ast.domain.components.Model
 import fssi.ast.domain.types._
 
-trait Warrior[F[_]] extends WarriorUseCases[F] {
+trait Warrior[F[_]] extends WarriorUseCases[F] with P2P[F] {
 
   val model: Model[F]
   import model._
@@ -127,4 +127,10 @@ trait Warrior[F[_]] extends WarriorUseCases[F] {
     }
   }
 
+}
+
+object Warrior {
+  def apply[F[_]](implicit M: Model[F]): Warrior[F] = new Warrior[F] {
+    override val model: Model[F] = M
+  }
 }
