@@ -15,12 +15,13 @@ class AccountSnapshotHandler extends AccountSnapshot.Handler[Stack] {
     s"publ varchar(512) not null," +
     s"iv varchar(255) not null," +
     s"balance bigint not null," +
-    s"timestamp bigint not null" +
+    s"timestamp bigint not null," +
+    s"status varchar(60) not null" +
     s")"
   private val SQL_UpsertAccountSnapshot: String = s"MERGE INTO $ACCOUNT_TABLE_NAME " +
-    s"KEY(id) VALUES (?, ?, ?, ?, ?)"
+    s"KEY(id) VALUES (?, ?, ?, ?, ?, ?)"
   private val Sql_SelectAccountSnapshot
-    : String = s"SELECT id, publ, iv, balance, timestamp FROM $ACCOUNT_TABLE_NAME " +
+    : String = s"SELECT id, publ, iv, balance, timestamp, status FROM $ACCOUNT_TABLE_NAME " +
     s"WHERE id=?"
 
   override def saveSnapshot(snapshot: Account.Snapshot): Stack[Account.Snapshot] = Stack {
@@ -38,7 +39,8 @@ class AccountSnapshotHandler extends AccountSnapshot.Handler[Stack] {
                                 acc.publicKeyData.hex,
                                 acc.iv.hex,
                                 acc.balance.amount,
-                                snapshot.timestamp)
+                                snapshot.timestamp,
+        snapshot.status.toString)
 
       snapshot
   }

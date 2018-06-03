@@ -5,18 +5,19 @@ import java.math.BigInteger
 import fssi.ast.domain.types.Account
 
 case class Node(
-    port: Int,
-    ip: String,
+    address: Node.Address,
     nodeType: Node.Type,
     boundAccount: Option[Account],
     seeds: Vector[String],
     runtimeId: Option[Node.ID] = None
 ) {
-  def id: Node.ID = Node.ID.from(port, ip, nodeType)
+  def id: Node.ID = Node.ID.from(address.port, address.ip, nodeType)
 }
 
 object Node {
   case class ID(value: String)
+
+  case class Address(ip: String, port: Int)
 
   object ID {
     def from(port: Int, ip: String, nodeType: Node.Type): ID = {

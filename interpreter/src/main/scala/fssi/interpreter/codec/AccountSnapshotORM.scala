@@ -6,7 +6,7 @@ import fssi.ast.domain.types.{Account, BytesValue, Token}
 import fssi.interpreter.util.SnapshotDB
 
 trait AccountSnapshotORM {
-  implicit val accountSnapshotORM = new SnapshotDB.ORM[Account.Snapshot] {
+  implicit val accountSnapshotORM: SnapshotDB.ORM[Account.Snapshot] = new SnapshotDB.ORM[Account.Snapshot] {
     override def to(result: ResultSet): Account.Snapshot = {
       Account.Snapshot(
         account = Account(
@@ -16,7 +16,8 @@ trait AccountSnapshotORM {
           iv = BytesValue.decodeHex(result.getObject[String](3, classOf[String])),
           balance = Token.tokenWithBaseUnit(result.getLong(4))
         ),
-        timestamp = result.getLong(5)
+        timestamp = result.getLong(5),
+        status = Account.Snapshot(result.getObject[String](6, classOf[String]))
       )
     }
   }
