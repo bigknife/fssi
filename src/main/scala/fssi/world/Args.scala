@@ -2,6 +2,7 @@ package fssi.world
 
 import java.nio.file.Paths
 
+import fssi.ast.domain.Node.Address
 import fssi.interpreter.Setting
 
 sealed trait Args {
@@ -22,13 +23,15 @@ object Args {
       jsonrpcServiceName: String = "nymph",
       jsonrpcServiceVersion: String = "v1",
       nodePort: Int = 28080,
-      nodeIp: String = "0.0.0.0"
+      nodeIp: String = "0.0.0.0",
+      warriorNodes: Vector[String] = Vector.empty
   ) extends Args {
     override def toSetting: Setting = Setting().copy(
       workingDir = workingDir,
       snapshotDbPort = snapshotDbPort,
       startSnapshotDbConsole = startSnapshotDbConsole,
-      snapshotDbConsolePort = snapshotDbConsolePort
+      snapshotDbConsolePort = snapshotDbConsolePort,
+      warriorNodes.map(Address.apply)
     )
   }
 
@@ -118,6 +121,20 @@ object Args {
             .action((s, a) =>
               a match {
                 case x: NymphArgs => x.copy(nodeIp = s)
+                case x            => x
+            }),
+          opt[String]("seeds")
+            .text("p2p seed nodes, format is like <ip:port,ip1:port1...>")
+            .action((ss, a) =>
+              a match {
+                case x: NymphArgs => x.copy(seeds = ss.split(",").toVector.map(_.trim))
+                case x            => x
+            }),
+          opt[String]("warrior-nodes")
+            .text("the warrior p2p nodes of a nymph, format is like <ip:port,ip1:port2...>")
+            .action((ss, a) =>
+              a match {
+                case x: NymphArgs => x.copy(warriorNodes = ss.split(",").toVector.map(_.trim))
                 case x            => x
             })
         )

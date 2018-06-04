@@ -3,6 +3,21 @@ package fssi.world.handler
 import fssi.world.Args
 
 trait ArgsHandler[A <: Args] {
+
+  def logbackConfigResource(): String = "/logback.xml"
+  private def initLogback(): Unit = {
+    val is = getClass.getResourceAsStream(logbackConfigResource())
+    try {
+      LogbackUtil.setConfig(is)
+    } finally {
+      is.close()
+    }
+    ()
+  }
+
+  // init logback
+  initLogback()
+
   def run(args: A): Unit
 }
 
