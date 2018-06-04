@@ -16,9 +16,30 @@
             <pattern>[%date] [%level] [%logger{5}@%thread] %msg%n</pattern>
         </encoder>
     </appender>
-    <root level="debug">
+    <root level="ERROR">
         <appender-ref ref="COLOR"/>
     </root>
+    <!-- ast -->
+    <logger name="fssi.ast" level="debug" additivity="false">
+        <appender-ref ref="COLOR" />
+    </logger>
+
+    <!-- interpreter -->
+    <logger name="fssi.interpreter" level="debug" additivity="false">
+        <appender-ref ref="COLOR" />
+    </logger>
+
+    <!-- world -->
+    <logger name="fssi.world" level="debug" additivity="false">
+        <appender-ref ref="COLOR" />
+    </logger>
+
+    <!-- jsonrpc -->
+    <logger name="fssi.warrior" level="debug" additivity="false">
+        <appender-ref ref="COLOR" />
+    </logger>
+
+    <!-- 3rd lib -->
     <logger name="org.http4s.blaze.pipeline" additivity="fase" level="warn">
         <appender-ref ref="COLOR"/>
     </logger>
@@ -42,4 +63,5 @@
     <logger name="org.http4s" additivity="false" level="error">
         <appender-ref ref="COLOR" />
     </logger>
+
 </configuration>

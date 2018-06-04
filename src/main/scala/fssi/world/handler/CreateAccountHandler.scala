@@ -19,4 +19,6 @@ class CreateAccountHandler extends ArgsHandler[CreateAccountArgs]{
         println(account.asJson.spaces4)
     }
   }
+
+  override def logbackConfigResource(args: CreateAccountArgs): String = "/logback.xml"
 }

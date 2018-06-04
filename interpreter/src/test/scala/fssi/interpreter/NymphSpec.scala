@@ -10,7 +10,7 @@ class NymphSpec extends FunSuite {
 
   test("register") {
     info(s"$nymph")
-    val p2p = nymph.startSeedNode("localhost", 9080)
+    val p2p = nymph.startup("localhost", 9080, Vector.empty)
 
     val register = nymph.register("hello,world")
 

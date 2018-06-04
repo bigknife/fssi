@@ -5,7 +5,7 @@ import fssi.ast.domain.components.Model
 import fssi.ast.usecase.Nymph
 import fssi.world.handler.ArgsHandler
 
-object Main{
+object Main {
   import bigknife.cli.scopt._
   import fssi.world.Args.implicits._
 
@@ -13,8 +13,7 @@ object Main{
   lazy implicit val model: Model[Model.Op] = Model[Model.Op]
 
   // this is where the real app runs
-  import ArgsHandler.implicits._
-  lazy implicit val p: Program[Args] = ArgsHandler[Args].run(_)
+  lazy implicit val p: Program[Args] = ArgsHandler.program
 
   def main(args: Array[String]): Unit = {
     CommandLineProgram[Args](args, Args.default).run()

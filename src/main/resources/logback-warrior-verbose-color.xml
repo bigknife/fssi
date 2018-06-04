@@ -3,15 +3,11 @@
     <conversionRule conversionWord="colorize" converterClass="org.tuxdude.logback.extensions.LogColorizer"/>
     <appender name="COLOR" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
-            <pattern>%cyan(%date{HH:mm:ss.SSS}) %highlight(%-5logger %line) %colorize(%msg) %n</pattern>
+            <pattern>%date %highlight(%-5level) %cyan(%logger{5}@[%-4.30thread]) - %colorize(%msg) %n</pattern>
         </encoder>
     </appender>
 
-    <logger name="org.wexchain" additivity="false" level="info">
-        <appender-ref ref="COLOR"/>
-    </logger>
-
-    <root level="error" additivity="false">
+    <root level="debug">
         <appender-ref ref="COLOR"/>
     </root>
 </configuration>

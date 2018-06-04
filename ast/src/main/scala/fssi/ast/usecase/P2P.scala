@@ -1,7 +1,9 @@
 package fssi.ast.usecase
-import bigknife.sop._, implicits._
+import bigknife.sop._
+import implicits._
 import fssi.ast.domain.Node
 import fssi.ast.domain.components.Model
+import fssi.ast.domain.types.DataPacket
 
 trait P2P[F[_]] extends P2PUseCases[F] {
 
@@ -11,12 +13,12 @@ trait P2P[F[_]] extends P2PUseCases[F] {
   /** start a p2p node, connect to some seed nodes
     * if there are no seed nodes, start this node as a seed.
     */
-  override def startNewNode(ip: String, port: Int, seeds: Vector[String]): SP[F, Node] = {
+  override def startup(ip: String, port: Int, seeds: Vector[String], handler: DataPacket => Unit = _ => ()): SP[F, Node] = {
     for {
       _           <- log.info(s"starting node(ip = $ip, port = $port, seeds = $seeds)...")
       node        <- networkService.createNode(port, ip, seeds)
       _           <- log.info(s"created node: $node")
-      runtimeNode <- networkService.startupP2PNode(node)
+      runtimeNode <- networkService.startupP2PNode(node, handler)
       _           <- log.info(s"node started, runtime node: $runtimeNode")
       _           <- networkStore.saveNode(runtimeNode)
       _           <- log.info(s"runtime node $runtimeNode saved locally")

@@ -28,7 +28,7 @@ import fssi.ast.domain.types._
 
   /** startup a p2p node, return runtime node.
     */
-  def startupP2PNode(node: Node): P[F, Node]
+  def startupP2PNode(node: Node, handler: DataPacket => Unit = _ => ()): P[F, Node]
 
   /** shutdown p2p node
     *
