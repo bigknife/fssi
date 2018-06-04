@@ -55,13 +55,16 @@ trait Nymph[F[_]] extends NymphUseCases[F] with P2P[F] {
 
     // combine these steps to describe the complete process.
     for {
-      _          <- log.info(s"begin to handle enrollment: $rand")
       t0         <- monitorService.startNow()
+      _          <- log.info(s"begin to handle registration at $t0 with rand($rand)")
       acc        <- createAccount
+      _          <- log.info(s"created account(${acc.id.value})")
       _          <- saveAccountSnapshot(acc)
+      _          <- log.info(s"saved snapshot of account(${acc.id.value})")
       _          <- disseminateAccountCreated(acc)
+      _          <- log.info(s"disseminated account(${acc.id.value})")
       timePassed <- monitorService.timePassed(t0)
-      _          <- log.info(s"finish handling enrollment: $rand. from $t0, time passed: $timePassed")
+      _          <- log.info(s"finish handling registration with rand($rand) within $timePassed ms")
     } yield acc
   }
 

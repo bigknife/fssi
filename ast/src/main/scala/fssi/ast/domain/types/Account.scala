@@ -6,7 +6,9 @@ case class Account(
     publicKeyData: BytesValue,
     iv: BytesValue,
     balance: Token
-)
+) {
+  override def toString: String = s"Account(${id.value})"
+}
 
 object Account {
   case class ID(value: String)

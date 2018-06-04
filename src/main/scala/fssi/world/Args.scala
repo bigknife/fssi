@@ -6,11 +6,13 @@ import fssi.ast.domain.Node.Address
 import fssi.interpreter.Setting
 
 sealed trait Args {
-  def toSetting: Setting = Setting()
+  def toSetting: Setting
 }
 
 object Args {
-  case class EmptyArgs() extends Args
+  case class EmptyArgs() extends Args {
+    override def toSetting: Setting = Setting()
+  }
 
   case class NymphArgs(
       workingDir: String = Paths.get(System.getProperty("user.home"), ".fssi").toString,
@@ -26,7 +28,7 @@ object Args {
       nodeIp: String = "0.0.0.0",
       warriorNodes: Vector[String] = Vector.empty
   ) extends Args {
-    override def toSetting: Setting = Setting().copy(
+    lazy val toSetting: Setting = Setting().copy(
       workingDir = workingDir,
       snapshotDbPort = snapshotDbPort,
       startSnapshotDbConsole = startSnapshotDbConsole,
@@ -37,7 +39,9 @@ object Args {
 
   case class CreateAccountArgs(
       pass: String = "88888888"
-  ) extends Args
+  ) extends Args {
+    override def toSetting: Setting = Setting()
+  }
 
   def default: Args = EmptyArgs()
 

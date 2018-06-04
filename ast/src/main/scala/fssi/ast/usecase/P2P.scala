@@ -13,11 +13,21 @@ trait P2P[F[_]] extends P2PUseCases[F] {
     */
   override def startNewNode(ip: String, port: Int, seeds: Vector[String]): SP[F, Node] = {
     for {
-      node <- networkService.createNode(port, ip, seeds)
-      runtimeNode    <- networkService.startupP2PNode(node)
-      _    <- networkStore.saveNode(runtimeNode)
+      _           <- log.info(s"starting node(ip = $ip, port = $port, seeds = $seeds)...")
+      node        <- networkService.createNode(port, ip, seeds)
+      _           <- log.info(s"created node: $node")
+      runtimeNode <- networkService.startupP2PNode(node)
+      _           <- log.info(s"node started, runtime node: $runtimeNode")
+      _           <- networkStore.saveNode(runtimeNode)
+      _           <- log.info(s"runtime node $runtimeNode saved locally")
     } yield runtimeNode
   }
 
-  override def shutdown(): SP[F, Unit] = networkService.shutdownP2PNode()
+  override def shutdown(): SP[F, Unit] =
+    for {
+      runtimeNode <- networkStore.currentNode()
+      _           <- log.info(s"shutting down node: $runtimeNode")
+      _           <- networkService.shutdownP2PNode()
+      _           <- log.info(s"node $runtimeNode shutdown!")
+    } yield ()
 }

@@ -12,6 +12,11 @@ case class Node(
     runtimeId: Option[Node.ID] = None
 ) {
   def id: Node.ID = Node.ID.from(address.port, address.ip, nodeType)
+
+  override def toString: String = runtimeId match {
+    case Some(x) => s"Node(${id.value}/${x.value})"
+    case None    => s"Node(${id.value})"
+  }
 }
 
 object Node {
@@ -27,7 +32,7 @@ object Node {
   }
 
   def address(ip: String, port: Int): Address = Address(ip, port)
-  def address(s: String): Address = Address(s)
+  def address(s: String): Address             = Address(s)
 
   object ID {
     def from(port: Int, ip: String, nodeType: Node.Type): ID = {

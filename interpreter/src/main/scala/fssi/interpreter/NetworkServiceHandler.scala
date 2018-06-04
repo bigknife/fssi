@@ -3,13 +3,14 @@ package fssi.interpreter
 import fssi.ast.domain._
 import fssi.ast.domain.types._
 import fssi.interpreter.util._
+import io.scalecube.cluster.membership.MembershipEvent
 import io.scalecube.cluster.{Cluster, ClusterConfig}
 import io.scalecube.transport.Address
 import org.slf4j.{Logger, LoggerFactory}
 
 class NetworkServiceHandler extends NetworkService.Handler[Stack] {
   val clusterOnce: Once[Cluster] = Once.empty
-  val logger: Logger             = LoggerFactory.getLogger("")
+  val logger: Logger             = LoggerFactory.getLogger(getClass)
 
   override def createNode(port: Int, ip: String, seeds: Vector[String]): Stack[Node] = Stack {
     Node(Node.Address(ip, port), Node.Type.Nymph, None, seeds)
@@ -31,6 +32,17 @@ class NetworkServiceHandler extends NetworkService.Handler[Stack] {
       logger.info(s"P2P node started, ID = ${node.id.value}")
 
     printMembers()
+    clusterOnce foreach {cluster =>
+      cluster.listenMembership().subscribe { membershipEvent =>
+        logger.info(s"P2P Membership Event: ${membershipEvent.`type`()}, ${membershipEvent.member()}")
+        printMembers()
+      }
+      cluster.listen().subscribe {message =>
+        logger.info(s"Got p2p message: $message")
+      }
+      ()
+    }
+
     val currentMember = clusterOnce.unsafe().member()
     node.copy(
       runtimeId = Some(Node.ID(currentMember.id())),
@@ -57,14 +69,15 @@ class NetworkServiceHandler extends NetworkService.Handler[Stack] {
 
   override def disseminate(packet: DataPacket, nodes: Vector[Node.Address]): Stack[Unit] = Stack {
     setting =>
-      clusterOnce.foreach {cluster =>
+      clusterOnce.foreach { cluster =>
+        logger.info(s"disseminating to ${nodes.length} targets")
         val message = DataPacketUtil.toMessage(packet)
-        nodes.foreach {addr =>
+        nodes.foreach { addr =>
           cluster.send(Address.create(addr.ip, addr.port), message)
           logger.info(s"disseminate message to $addr")
         }
       }
-    }
+  }
 
   private def printMembers(): Unit = {
     logger.info("current members:")
