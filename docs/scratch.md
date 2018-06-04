@@ -51,3 +51,18 @@ if bound, the account balance would increase by being paid.
 that means, an account should be create without nodes, so, a command tool is needed to do such things.
 
 ----
+
+Transaction jsonrpc protocol.
+
+```json
+{
+  "type": "Transfer",
+  "payload": {
+    "id": "usercreatedid",
+    "from": "account-id",
+    "to": "account-id",
+    "amount": "1000Sweet",
+  },
+  "signature": "BlaBla..."
+}
+```
