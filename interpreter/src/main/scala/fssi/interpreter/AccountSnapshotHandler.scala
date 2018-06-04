@@ -4,6 +4,7 @@ import fssi.ast.domain._
 import fssi.ast.domain.types._
 import fssi.interpreter.util.SnapshotDB
 import fssi.interpreter.orm._
+
 /**
   * Account Snapshot is a store, which save some snapshot info of account.
   * of course, no sensitive info should be stored. so check out that it was desensitized.
@@ -24,11 +25,19 @@ class AccountSnapshotHandler extends AccountSnapshot.Handler[Stack] {
     : String = s"SELECT id, publ, iv, balance, timestamp, status FROM $ACCOUNT_TABLE_NAME " +
     s"WHERE id=?"
 
-  override def saveSnapshot(snapshot: Account.Snapshot): Stack[Account.Snapshot] = Stack {
-    setting =>
-      SnapshotDB.initOnDemand(setting.snapshotDbBaseDir,
-                              startWebConsole = setting.startSnapshotDbConsole)
 
+  override def startupSnapshotDB(): Stack[Unit] = Stack {setting =>
+    SnapshotDB.initOnDemand(setting.snapshotDbBaseDir,
+      tcpPort = setting.snapshotDbPort,
+      webPort = setting.snapshotDbConsolePort,
+      startWebConsole = setting.startSnapshotDbConsole)
+  }
+
+  override def shutdownSnapshotDB(): Stack[Unit] = Stack {
+    SnapshotDB.shutdown()
+  }
+
+  override def saveSnapshot(snapshot: Account.Snapshot): Stack[Account.Snapshot] = Stack {
       // create table
       SnapshotDB.executeCommand(SQL_CreateTable)
 
@@ -40,16 +49,12 @@ class AccountSnapshotHandler extends AccountSnapshot.Handler[Stack] {
                                 acc.iv.hex,
                                 acc.balance.amount,
                                 snapshot.timestamp,
-        snapshot.status.toString)
+                                snapshot.status.toString)
 
       snapshot
   }
 
   override def findAccountSnapshot(id: Account.ID): Stack[Option[Account.Snapshot]] = Stack {
-    setting =>
-      SnapshotDB.initOnDemand(setting.snapshotDbBaseDir,
-                              startWebConsole = setting.startSnapshotDbConsole)
-
       //query
       SnapshotDB.executeQuery[Account.Snapshot](Sql_SelectAccountSnapshot, id.value).headOption
   }

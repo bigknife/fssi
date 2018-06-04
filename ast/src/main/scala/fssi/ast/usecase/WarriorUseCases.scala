@@ -14,4 +14,11 @@ trait WarriorUseCases[F[_]] extends P2PUseCases[F]{
     * uc2. run consensus when the proposal pool is full or time is up.
     */
   def validateProposal(): SP[F, Unit]
+
+  /**
+    * uc3. handle the message of CreateAccount
+    * @param account account created in Nymph, or heard from other warriors
+    * @return
+    */
+  def createNewAccount(account: Account): SP[F, Unit]
 }

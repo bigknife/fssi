@@ -9,38 +9,45 @@ import org.h2.tools._
 import org.slf4j.LoggerFactory
 
 trait SnapshotDB {
-  private val logger = LoggerFactory.getLogger("snapshot")
+  private val logger = LoggerFactory.getLogger(getClass)
 
   val h2: Once[Connection]    = Once.empty[Connection]
-  val tcpServer: Once[Server] = Once.empty[Server]
-  val webServer: Once[Server] = Once.empty[Server]
+  val tcpServer: Once[TcpServer] = Once.empty[TcpServer]
+  val webServer: Once[WebServer] = Once.empty[WebServer]
 
-  def initOnDemand(dbBaseDir: String, startWebConsole: Boolean = false): Unit = {
+  def initOnDemand(dbBaseDir: String, tcpPort: Int, webPort: Int, startWebConsole: Boolean = false): Unit = {
     h2 := {
       Paths.get(dbBaseDir).toFile.mkdirs()
 
 
       // 以server模式打开
       System.setProperty("h2.bindAddress", "localhost")
-      val tcpArgs    = Seq("-tcp", "-tcpPort", "28080", "-baseDir", s"$dbBaseDir")
+      val tcpArgs    = Seq("-tcp", "-tcpPort", s"$tcpPort", "-baseDir", s"$dbBaseDir")
       val _tcpServer = {
-        val server = new Server()
-        server.runTool(tcpArgs: _*)
-        server
+        val service = new TcpServer() //Server.createPgServer(tcpArgs: _*).asInstanceOf[TcpServer]
+        val server = new Server(service, tcpArgs: _*)
+        service.setShutdownHandler(server)
+        server.start()
+        logger.info(server.getStatus)
+        service
       }
 
-      logger.info(_tcpServer.getStatus)
+
       tcpServer := _tcpServer
 
       if (startWebConsole) {
-        val webArgs = Seq("-web","-webPort", "28081", "-baseDir", s"$dbBaseDir")
+        val webArgs = Seq("-web","-webPort", s"$webPort", "-baseDir", s"$dbBaseDir")
         val _webServer  = {
-          val server = new Server()
-          server.runTool(webArgs: _*)
-          server
+          val service = new WebServer()
+          val server = new Server(service, webArgs: _*)
+
+          service.setShutdownHandler(server)
+          server.start()
+          logger.info(server.getStatus)
+          service
         }
 
-        logger.info(_webServer.getStatus)
+
         webServer := _webServer
       }
 
@@ -49,14 +56,14 @@ trait SnapshotDB {
         shutdown()
       }))
 
-      DriverManager.getConnection(s"jdbc:h2:tcp://localhost:28080/snapshot.db")
+      DriverManager.getConnection(s"jdbc:h2:tcp://localhost:$tcpPort/snapshot.db")
     }
   }
 
   def shutdown(): Unit = {
     h2.foreach(_.close())
-    webServer.foreach(_.shutdown())
-    tcpServer.foreach(_.shutdown())
+    webServer.foreach(_.stop())
+    tcpServer.foreach(_.stop())
 
     h2.reset()
     webServer.reset()

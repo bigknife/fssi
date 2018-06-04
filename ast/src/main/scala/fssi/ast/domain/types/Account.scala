@@ -23,13 +23,19 @@ object Account {
     sealed trait Status
 
     /** created locally, have not been disseminated to warrior nodes*/
-    object Created extends Status
+    object Created extends Status {
+      override def toString: String = "Created"
+    }
 
     /** disseminated to at least one warrior node */
-    object Disseminated extends Status
+    object Disseminated extends Status {
+      override def toString: String = "Disseminated"
+    }
 
     /** synced from other nodes */
-    object Synced extends Status
+    object Synced extends Status {
+      override def toString: String = "Synced"
+    }
 
     def apply(s: String): Status = s match {
       case x if x equals "Synced"       => Synced
