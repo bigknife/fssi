@@ -9,12 +9,12 @@ class NymphSpec extends FunSuite with BeforeAndAfterAll {
   val setting: Setting = Setting()
 
   override protected def afterAll(): Unit = {
-    /*
+
     runner.runIOAttempt(nymph.shutdown(), setting).unsafeRunSync() match {
-      case Left(t) => t.printStackTrace()
+      case Left(t) => info(s"afterAll failed: ${t.getMessage}")
       case Right(_) => ()
     }
-    */
+
   }
 
   test("register") {

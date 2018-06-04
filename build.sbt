@@ -3,7 +3,7 @@ import Common._, prj._
 
 coverageExcludedFiles in ThisBuild := ".*macro.*"
 coverageEnabled in ThisBuild := true
-parallelExecution in Test := false
+parallelExecution in ThisBuild := false
 // ast prj
 lazy val pAst = ast()
 
