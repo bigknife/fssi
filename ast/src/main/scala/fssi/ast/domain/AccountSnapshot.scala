@@ -6,6 +6,12 @@ import fssi.ast.domain.types._
 /** account store */
 @sp trait AccountSnapshot[F[_]] {
 
+  /** startup snapshot db */
+  def startupSnapshotDB(): P[F, Unit]
+
+  /** close snapshot db */
+  def shutdownSnapshotDB(): P[F, Unit]
+
   /** save an account which is not active */
   def saveSnapshot(snapshot: Account.Snapshot): P[F, Account.Snapshot]
 

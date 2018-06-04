@@ -4,9 +4,18 @@ import fssi.ast.domain.components.Model.Op
 import fssi.ast.usecase.Nymph
 import org.scalatest._
 
-class NymphSpec extends FunSuite {
+class NymphSpec extends FunSuite with BeforeAndAfterAll {
   val nymph: Nymph[Op] = Nymph[Op]
   val setting: Setting = Setting()
+
+  override protected def afterAll(): Unit = {
+    /*
+    runner.runIOAttempt(nymph.shutdown(), setting).unsafeRunSync() match {
+      case Left(t) => t.printStackTrace()
+      case Right(_) => ()
+    }
+    */
+  }
 
   test("register") {
     info(s"$nymph")
@@ -26,5 +35,6 @@ class NymphSpec extends FunSuite {
     import fssi.interpreter.jsonCodec._
 
     info(result.right.get.asJson.spaces4)
+
   }
 }

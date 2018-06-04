@@ -127,6 +127,23 @@ trait Warrior[F[_]] extends WarriorUseCases[F] with P2P[F] {
     }
   }
 
+  /**
+    * uc3. handle the message of CreateAccount
+    *
+    * @param account account created in Nymph, or heard from other warriors
+    * @return
+    */
+  override def createNewAccount(account: Account): SP[F, Unit] =
+    for {
+      t0       <- monitorService.startNow()
+      _        <- log.info(s"creating new account: $account at $t0")
+      snapshot <- accountService.makeSnapshot(account)
+      _        <- log.info(s"prepared account snaptho: $snapshot")
+      _        <- accountSnapshot.saveSnapshot(snapshot)
+      passed   <- monitorService.timePassed(t0)
+      _ <- log.info(
+        s"saved account snapshot, process of creating new account finished, timepassed $passed")
+    } yield ()
 }
 
 object Warrior {

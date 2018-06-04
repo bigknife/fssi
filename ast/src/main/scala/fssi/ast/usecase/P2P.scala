@@ -13,9 +13,13 @@ trait P2P[F[_]] extends P2PUseCases[F] {
   /** start a p2p node, connect to some seed nodes
     * if there are no seed nodes, start this node as a seed.
     */
-  override def startup(ip: String, port: Int, seeds: Vector[String], handler: DataPacket => Unit = _ => ()): SP[F, Node] = {
+  override def startup(ip: String,
+                       port: Int,
+                       seeds: Vector[String],
+                       handler: DataPacket => Unit = _ => ()): SP[F, Node] = {
     for {
       _           <- log.info(s"starting node(ip = $ip, port = $port, seeds = $seeds)...")
+      _           <- accountSnapshot.startupSnapshotDB()
       node        <- networkService.createNode(port, ip, seeds)
       _           <- log.info(s"created node: $node")
       runtimeNode <- networkService.startupP2PNode(node, handler)
@@ -30,6 +34,7 @@ trait P2P[F[_]] extends P2PUseCases[F] {
       runtimeNode <- networkStore.currentNode()
       _           <- log.info(s"shutting down node: $runtimeNode")
       _           <- networkService.shutdownP2PNode()
+      _           <- accountSnapshot.shutdownSnapshotDB()
       _           <- log.info(s"node $runtimeNode shutdown!")
     } yield ()
 }

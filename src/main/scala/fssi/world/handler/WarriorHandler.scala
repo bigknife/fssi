@@ -31,11 +31,12 @@ object WarriorHandler {
   // all p2p message is delegated to P2PDataPacketHandler to handle.
   object dataPacketHandler extends P2PDataPacketHandler
 
-  val p2pHandler: DataPacket => Unit = dataPacketHandler.handle(_, warrior)
+  def p2pHandler(args: Args.WarriorArgs): DataPacket => Unit =
+    dataPacketHandler.handle(_, warrior, args)
 
   // start p2p node
   def startP2PNode(args: Args.WarriorArgs): Unit = {
-    val p = warrior.startup(args.nodeIp, args.nodePort, args.seeds, p2pHandler)
+    val p = warrior.startup(args.nodeIp, args.nodePort, args.seeds, p2pHandler(args))
     runner.runIOAttempt(p, args.toSetting).unsafeRunSync() match {
       case Left(t)  => logger.error("start p2p node failed", t)
       case Right(v) => logger.info("p2p node start, id {}", v.toString)

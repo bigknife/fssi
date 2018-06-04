@@ -9,8 +9,11 @@ class AccountSnapshotHandlerSpec extends FunSuite with BeforeAndAfterAll {
   val setting: Setting = Setting()
 
   override protected def afterAll(): Unit = {
-    info("shutdown...")
-    SnapshotDB.shutdown()
+    accountSnapshotHandler.shutdownSnapshotDB()(setting).unsafeRunSync()
+  }
+
+  override protected def beforeAll(): Unit = {
+    accountSnapshotHandler.startupSnapshotDB()(setting).unsafeRunSync()
   }
 
   test("saveSnapshot") {
