@@ -6,10 +6,13 @@ import io.scalecube.transport.Message
 
 /** DataPacket transformer */
 trait DataPacketUtil {
-  def toMessage[A <: DataPacket](a: A): Message = a match {
+  // if it is not necessary, keep it simple.
+  def toMessage[A <: DataPacket](a: A): Message = Message.builder().data(a).build()
+  /*
+    a match {
     case x: CreateAccount =>
-      Message.builder().data(x.data).build()
-  }
+      Message.builder().data(x).build()
+  }*/
 }
 
 object DataPacketUtil extends DataPacketUtil

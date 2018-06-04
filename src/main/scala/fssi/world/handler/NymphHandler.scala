@@ -2,7 +2,6 @@ package fssi.world.handler
 
 import fssi.world.Args.NymphArgs
 import bigknife.jsonrpc._
-import bigknife.jsonrpc.implicits._
 import io.circe.Json
 import fssi.ast.domain.components.Model.Op
 import fssi.ast.usecase.Nymph
@@ -13,9 +12,16 @@ import scala.util._
 
 class NymphHandler extends ArgsHandler[NymphArgs] {
 
-  override def logbackConfigResource(): String = "/logback-nymph.xml"
+  override def logbackConfigResource(args: NymphArgs): String =
+    (args.verbose, args.colorfulLog) match {
+      case (true, true)   => "/logback-nymph-verbose-color.xml"
+      case (true, false)  => "/logback-nymph-verbose.xml"
+      case (false, false) => "/logback-nymph.xml"
+      case (false, true)  => "/logback-nymph-color.xml"
+    }
 
   override def run(args: NymphArgs): Unit = {
+
     // first start a p2p node
     NymphHandler.startP2PNode(args)
 
@@ -29,12 +35,11 @@ class NymphHandler extends ArgsHandler[NymphArgs] {
 object NymphHandler {
 
   import io.circe.syntax._
-  import io.circe.generic.semiauto._
   import jsonCodec._
 
   val nymph: Nymph[Op] = Nymph[Op]
 
-  val logger: Logger = LoggerFactory.getLogger(getClass)
+  val logger: Logger        = LoggerFactory.getLogger(getClass)
   val jsonrpcLogger: Logger = LoggerFactory.getLogger("fssi.jsonrpc")
 
   def startJsonrpcServer(args: NymphArgs): Unit = {
@@ -55,7 +60,7 @@ object NymphHandler {
 
   // start p2p node
   def startP2PNode(args: NymphArgs): Unit = {
-    val p = nymph.startNewNode(args.nodeIp, args.nodePort, args.seeds)
+    val p = nymph.startup(args.nodeIp, args.nodePort, args.seeds)
     runner.runIOAttempt(p, args.toSetting).unsafeRunSync() match {
       case Left(t)  => logger.error("start p2p node failed", t)
       case Right(v) => logger.info("p2p node start, id {}", v.toString)
@@ -83,9 +88,10 @@ object NymphHandler {
 
     jsonrpcLogger.debug("jsonrpc supported method: ")
     jsonrpcLogger.debug("==========================")
-    allowedMethods foreach {x =>  jsonrpcLogger.debug(s"    $x")}
+    allowedMethods foreach { x =>
+      jsonrpcLogger.debug(s"    $x")
+    }
     jsonrpcLogger.debug("==========================")
-
 
     /** if method included in current resource
       *
@@ -97,7 +103,7 @@ object NymphHandler {
       jsonrpcLogger.debug(s"invoking $method with params = ${params.spaces2}")
       method match {
         case "register" => invokeRegister(params)
-        case x => Left(new UnsupportedOperationException(s"unsupported operation: $x"))
+        case x          => Left(new UnsupportedOperationException(s"unsupported operation: $x"))
 
       }
     }

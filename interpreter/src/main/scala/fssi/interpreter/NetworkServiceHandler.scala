@@ -3,10 +3,11 @@ package fssi.interpreter
 import fssi.ast.domain._
 import fssi.ast.domain.types._
 import fssi.interpreter.util._
-import io.scalecube.cluster.membership.MembershipEvent
 import io.scalecube.cluster.{Cluster, ClusterConfig}
 import io.scalecube.transport.Address
 import org.slf4j.{Logger, LoggerFactory}
+
+import scala.util._
 
 class NetworkServiceHandler extends NetworkService.Handler[Stack] {
   val clusterOnce: Once[Cluster] = Once.empty
@@ -16,39 +17,52 @@ class NetworkServiceHandler extends NetworkService.Handler[Stack] {
     Node(Node.Address(ip, port), Node.Type.Nymph, None, seeds)
   }
 
-  override def startupP2PNode(node: Node): Stack[Node] = Stack { setting =>
-    val config = ClusterConfig
-      .builder()
-      .port(node.address.port)
-      .portAutoIncrement(false)
-      .seedMembers(node.seeds.map(Address.from): _*)
-      .build()
+  override def startupP2PNode(node: Node, handler: DataPacket => Unit = _ => ()): Stack[Node] =
+    Stack { setting =>
+      val config = ClusterConfig
+        .builder()
+        .port(node.address.port)
+        .portAutoIncrement(false)
+        .seedMembers(node.seeds.map(Address.from): _*)
+        .suspicionMult(ClusterConfig.DEFAULT_WAN_SUSPICION_MULT)
+        .build()
 
-    clusterOnce := Cluster.joinAwait(config)
+      clusterOnce := Cluster.joinAwait(config)
 
-    if (node.seeds.isEmpty) // as seed
-      logger.info(s"P2P node started as a seed node of ID = ${node.id.value}")
-    else
-      logger.info(s"P2P node started, ID = ${node.id.value}")
+      if (node.seeds.isEmpty) // as seed
+        logger.info(s"P2P node started as a seed node of ID = ${node.id.value}")
+      else
+        logger.info(s"P2P node started, ID = ${node.id.value}")
 
-    printMembers()
-    clusterOnce foreach {cluster =>
-      cluster.listenMembership().subscribe { membershipEvent =>
-        logger.info(s"P2P Membership Event: ${membershipEvent.`type`()}, ${membershipEvent.member()}")
-        printMembers()
+      printMembers()
+      clusterOnce foreach { cluster =>
+        cluster.listenMembership().subscribe { membershipEvent =>
+          logger.info(
+            s"P2P Membership Event: ${membershipEvent.`type`()}, ${membershipEvent.member()}")
+          printMembers()
+        }
+        cluster.listen().subscribe { message =>
+          logger.info(s"got p2p message: $message")
+          Try {
+            val dataPacket = message.data[DataPacket]()
+            handler(dataPacket)
+          } match {
+            case Success(_) =>
+              logger.info(s"handled p2p message: $message")
+            case Failure(t) =>
+              logger.info(s"handling p2p message $message failed", t)
+          }
+
+        }
+        ()
       }
-      cluster.listen().subscribe {message =>
-        logger.info(s"Got p2p message: $message")
-      }
-      ()
+
+      val currentMember = clusterOnce.unsafe().member()
+      node.copy(runtimeId = Some(Node.ID(currentMember.id())),
+                address =
+                  Node.Address(currentMember.address().host(), currentMember.address().port()))
+
     }
-
-    val currentMember = clusterOnce.unsafe().member()
-    node.copy(
-      runtimeId = Some(Node.ID(currentMember.id())),
-      address = Node.Address(currentMember.address().host(), currentMember.address().port()))
-
-  }
 
   override def shutdownP2PNode(): Stack[Unit] = Stack {
     clusterOnce.foreach { x =>
