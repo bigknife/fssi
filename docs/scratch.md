@@ -32,3 +32,22 @@ from `Warrior Node`, and provide a responsible web page to show system status,
 and receive query request and show the result.
 
 **Mirror Node** is not so urgent.
+
+----
+
+Node can be categorized:
+1. NymphNode
+2. WarriorNode
+3. QueryNode
+
+every node will be paid for their work:
+1. NymphNode, paid by completing every uc,such as register, sendTransaction.
+2. WarriorNode, paid by validating every moment.
+3. query node, paid by their services of querying.
+
+so nodes may be bound to an account. of course it's ok not to be bound to an account.
+if bound, the account balance would increase by being paid.
+
+that means, an account should be create without nodes, so, a command tool is needed to do such things.
+
+----

@@ -4,7 +4,7 @@ import bigknife.sop._, implicits._
 import fssi.ast.domain.components.Model
 import fssi.ast.domain.types._
 
-trait Warrior[F[_]] extends WarriorUseCases[F] {
+trait Warrior[F[_]] extends WarriorUseCases[F] with P2P[F] {
 
   val model: Model[F]
   import model._
@@ -18,20 +18,23 @@ trait Warrior[F[_]] extends WarriorUseCases[F] {
     // first, find the account of the transaction's sender
     def findAccount(next: Account => SP[F, Transaction.Status]): SP[F, Transaction.Status] =
       for {
-        accOpt <- accountSnapshot.findAccount(transaction.sender)
+        accOpt <- accountSnapshot.findAccountSnapshot(transaction.sender)
         status <- if (accOpt.isEmpty) for {
           _ <- log.warn(
             s"Account(id=${transaction.sender}) Not Found, Transaction(id=${transaction.id}) rejected!")
           s1 <- Transaction.Status.Rejected(transaction.id).pureSP
         } yield s1
-        else next(accOpt.get)
+        else next(accOpt.map(_.account).get)
       } yield status
 
     // then, validate the signature of the transaction
     def validateSignature(account: Account)(
         next: => SP[F, Transaction.Status]): SP[F, Transaction.Status] =
       for {
-        passed <- cryptoService.validateSignature(transaction.signature, account.pub)
+        publ <- cryptoService.rebuildPubl(account.publicKeyData)
+        passed <- cryptoService.validateSignature(transaction.signature,
+                                                  transaction.toBeVerified,
+                                                  publ)
         status <- if (passed) next
         else
           for {
@@ -124,4 +127,10 @@ trait Warrior[F[_]] extends WarriorUseCases[F] {
     }
   }
 
+}
+
+object Warrior {
+  def apply[F[_]](implicit M: Model[F]): Warrior[F] = new Warrior[F] {
+    override val model: Model[F] = M
+  }
 }

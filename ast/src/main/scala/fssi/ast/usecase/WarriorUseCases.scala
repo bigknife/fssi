@@ -3,7 +3,7 @@ package fssi.ast.usecase
 import bigknife.sop._
 import fssi.ast.domain.types.{Proposal, _}
 
-trait WarriorUseCases[F[_]] {
+trait WarriorUseCases[F[_]] extends P2PUseCases[F]{
   /**
     * uc1. handle message from Nymph
     *     transaction -> contract -> moment

@@ -8,6 +8,7 @@ sealed trait Transaction {
   def sender: Account.ID
   def signature: Signature
   def status: Transaction.Status
+  def toBeVerified: BytesValue
 }
 
 object Transaction {
@@ -21,6 +22,8 @@ object Transaction {
       status: Transaction.Status
   ) extends Transaction {
     val sender: Account.ID = from
+
+    override def toBeVerified: BytesValue = ???
   }
 
   // publish a contract
@@ -32,6 +35,7 @@ object Transaction {
       status: Transaction.Status
   ) extends Transaction {
     val sender: Account.ID = owner
+    override def toBeVerified: BytesValue = ???
   }
 
   // invoke a contract
@@ -45,6 +49,7 @@ object Transaction {
       status: Transaction.Status
   ) extends Transaction {
     val sender: Account.ID = invoker
+    override def toBeVerified: BytesValue = ???
   }
 
   // transaction id

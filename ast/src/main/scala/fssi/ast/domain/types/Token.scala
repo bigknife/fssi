@@ -6,6 +6,10 @@ case class Token(
 ) {
   def ordered: Ordered[Token] = Ordered.orderingToOrdered(this)
 
+  def toBase: Token = {
+    // todo other unit to base unit.
+    this
+  }
 }
 
 object Token {
@@ -13,13 +17,20 @@ object Token {
     override def compare(x: Token, y: Token): Int = ???
   }
 
-
   sealed trait Unit {}
 
   object Unit {
     // basic, primary, minimum unit
     case object Sweet extends Unit
+
+    def apply(s: String): Unit = s match {
+      case x if x equalsIgnoreCase "sweet" => Sweet
+      case _                               => Sweet
+    }
   }
 
   val Zero: Token = Token(0, Unit.Sweet)
+
+  // build with sweet
+  def tokenWithBaseUnit(amount: Long): Token = Token(amount, Unit.Sweet)
 }

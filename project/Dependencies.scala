@@ -22,7 +22,7 @@ object Dependencies {
       val cli        = "1.0.0"
       val sop        = "1.0.0"
       val catsNormal = "1.0.1"
-      val catsEffect = "1.0.0-RC"
+      val catsEffect = "0.10.1"
       val http4s     = "0.18.12"
       val circe      = "0.9.3"
 
@@ -32,6 +32,18 @@ object Dependencies {
         val logback = "1.3.0-alpha4"
         val logbackColorizer = "1.0.1"
       }
+
+      // crypto
+      val bcprov = "1.59"
+
+      // builtin db h2
+      val h2 = "1.4.197"
+
+      // scalecube
+      val scalecube = "1.0.9"
+
+      // better files
+      val betterfiles = "3.5.0"
     }
 
     lazy val log = {
@@ -45,10 +57,10 @@ object Dependencies {
     }
 
     lazy val cats = {
-      Seq("cats-core", "cats-free")
+      Seq("core", "free", "effect")
         .map({
-          case x if x == "cats-effect" ⇒ Dpd("org.typelevel", x, versions.catsEffect)
-          case x                       ⇒ Dpd("org.typelevel", x, versions.catsNormal)
+          case x if x == "effect" ⇒ Dpd("org.typelevel", s"cats-$x", versions.catsEffect)
+          case x                       ⇒ Dpd("org.typelevel", s"cats-$x", versions.catsNormal)
         })
         .map(_.libraryDependencies)
     }
@@ -57,7 +69,6 @@ object Dependencies {
       Dpd("org.scalatest",
           "scalatest",
           versions.scalatest,
-          autoScalaVersion = true,
           configuration = "test")
     ).map(_.libraryDependencies)
 
@@ -77,6 +88,30 @@ object Dependencies {
     lazy val circe = Seq("core", "generic", "parser")
       .map(x => Dpd("io.circe", s"circe-$x", versions.circe))
       .map(_.libraryDependencies)
+
+    lazy val bcprov = {
+      Seq(
+        Dpd("org.bouncycastle", "bcprov-jdk15on", versions.bcprov, autoScalaVersion = false)
+      ).map(_.libraryDependencies)
+    }
+
+    lazy val h2 = {
+      Seq(
+        Dpd("com.h2database", "h2", versions.h2, autoScalaVersion = false)
+      ).map(_.libraryDependencies)
+    }
+
+    lazy val scalecube = {
+      Seq(
+        Dpd("io.scalecube", "scalecube-cluster", versions.scalecube, autoScalaVersion = false)
+      ).map(_.libraryDependencies)
+    }
+
+    lazy val betterfiles = {
+      Seq(
+        Dpd("com.github.pathikrit", "better-files", versions.betterfiles)
+      ).map(_.libraryDependencies)
+    }
   }
 
   // resolvers

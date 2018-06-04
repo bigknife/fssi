@@ -7,11 +7,11 @@ import fssi.ast.domain.types._
 @sp trait AccountSnapshot[F[_]] {
 
   /** save an account which is not active */
-  def saveInactiveAccount(account: Account): P[F, Account]
+  def saveSnapshot(snapshot: Account.Snapshot): P[F, Account.Snapshot]
 
   /** find account with an id */
-  def findAccount(id: Account.ID): P[F, Option[Account]]
+  def findAccountSnapshot(id: Account.ID): P[F, Option[Account.Snapshot]]
 
-  /** commit new state(moments in proposal) */
+  /** todo: commit new state(moments in proposal) */
   def commit(proposal: Proposal): P[F, Unit]
 }

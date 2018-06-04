@@ -15,6 +15,12 @@ import fssi.ast.domain.types.{BytesValue, KeyPair, Signature}
     */
   def generateKeyPair(): P[F, KeyPair]
 
+  def privateKeyData(priv: KeyPair.Priv): P[F, BytesValue]
+  def publicKeyData(publ: KeyPair.Publ): P[F, BytesValue]
+
+  def rebuildPubl(bytesValue: BytesValue): P[F, KeyPair.Publ]
+  def rebuildPriv(bytesValue: BytesValue): P[F, KeyPair.Priv]
+
   /**
     * encrypt source data
     * @param source source data
@@ -47,5 +53,9 @@ import fssi.ast.domain.types.{BytesValue, KeyPair, Signature}
   def randomUUID(): P[F, String]
 
   /** validate a sign by using a public key, if passed return true, or false */
-  def validateSignature(sign: Signature, publ: KeyPair.Publ): P[F, Boolean]
+  def validateSignature(sign: Signature, source: BytesValue, publ: KeyPair.Publ): P[F, Boolean]
+
+  /** make a signature */
+  def makeSignature(source: BytesValue, priv: KeyPair.Priv): P[F, BytesValue]
+  
 }

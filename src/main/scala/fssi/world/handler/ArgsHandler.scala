@@ -3,6 +3,21 @@ package fssi.world.handler
 import fssi.world.Args
 
 trait ArgsHandler[A <: Args] {
+
+  def logbackConfigResource(): String = "/logback.xml"
+  private def initLogback(): Unit = {
+    val is = getClass.getResourceAsStream(logbackConfigResource())
+    try {
+      LogbackUtil.setConfig(is)
+    } finally {
+      is.close()
+    }
+    ()
+  }
+
+  // init logback
+  initLogback()
+
   def run(args: A): Unit
 }
 
@@ -14,11 +29,14 @@ object ArgsHandler {
   trait Implicits {
     implicit lazy val emptyArgsHandler: ArgsHandler[Args.EmptyArgs] = EmptyArgsHandler
     implicit lazy val nymphArgsHandler: ArgsHandler[Args.NymphArgs] = new NymphHandler
+    implicit lazy val createAccountArgsHandler: ArgsHandler[Args.CreateAccountArgs] =
+      new CreateAccountHandler
 
     implicit lazy val argsHandler: ArgsHandler[Args] = summon {
-      case a: Args.EmptyArgs => ArgsHandler[Args.EmptyArgs].run(a)
-      case a: Args.NymphArgs => ArgsHandler[Args.NymphArgs].run(a)
-      case _ => ???
+      case a: Args.EmptyArgs         => ArgsHandler[Args.EmptyArgs].run(a)
+      case a: Args.NymphArgs         => ArgsHandler[Args.NymphArgs].run(a)
+      case a: Args.CreateAccountArgs => ArgsHandler[Args.CreateAccountArgs].run(a)
+      case _                         => ???
     }
 
   }
