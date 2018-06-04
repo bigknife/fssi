@@ -1,5 +1,9 @@
 package fssi.ast.domain.types
 
-case class DataPacket(
-    bytes: Array[Byte]
-)
+sealed trait DataPacket {
+
+}
+
+object DataPacket {
+  case class CreateAccount(data: Account) extends DataPacket
+}

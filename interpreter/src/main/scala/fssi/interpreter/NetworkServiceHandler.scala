@@ -2,11 +2,10 @@ package fssi.interpreter
 
 import fssi.ast.domain._
 import fssi.ast.domain.types._
-import fssi.interpreter.util.Once
+import fssi.interpreter.util._
 import io.scalecube.cluster.{Cluster, ClusterConfig}
 import io.scalecube.transport.Address
 import org.slf4j.{Logger, LoggerFactory}
-import scala.collection.JavaConverters._
 
 class NetworkServiceHandler extends NetworkService.Handler[Stack] {
   val clusterOnce: Once[Cluster] = Once.empty
@@ -33,8 +32,9 @@ class NetworkServiceHandler extends NetworkService.Handler[Stack] {
 
     printMembers()
     val currentMember = clusterOnce.unsafe().member()
-    node.copy(runtimeId = Some(Node.ID(currentMember.id())),
-              address = Node.Address(currentMember.address().host(),,currentMember.address().port()))
+    node.copy(
+      runtimeId = Some(Node.ID(currentMember.id())),
+      address = Node.Address(currentMember.address().host(), currentMember.address().port()))
 
   }
 
@@ -45,12 +45,26 @@ class NetworkServiceHandler extends NetworkService.Handler[Stack] {
     }
   }
 
-
-  override def warriorNodesOfNymph(nymphNode: Node): Stack[Vector[Node]] = Stack {setting =>
-    clusterOnce.unsafe().otherMembers().asScala
-    // todo, from current members, match the settings.
-    ???
+  override def warriorNodesOfNymph(nymphNode: Node): Stack[Vector[Node.Address]] = Stack {
+    setting =>
+      setting.warriorNodesOfNymph
   }
+
+  override def buildCreateAccountDataMessage(account: Account): Stack[DataPacket] = Stack {
+    //io.scalecube.transport.Message
+    DataPacket.CreateAccount(account)
+  }
+
+  override def disseminate(packet: DataPacket, nodes: Vector[Node.Address]): Stack[Unit] = Stack {
+    setting =>
+      clusterOnce.foreach {cluster =>
+        val message = DataPacketUtil.toMessage(packet)
+        nodes.foreach {addr =>
+          cluster.send(Address.create(addr.ip, addr.port), message)
+          logger.info(s"disseminate message to $addr")
+        }
+      }
+    }
 
   private def printMembers(): Unit = {
     logger.info("current members:")

@@ -23,7 +23,7 @@ class AccountServiceHandler extends AccountService.Handler[Stack] {
   }
 
   override def makeSnapshot(account: Account): Stack[Account.Snapshot] = Stack {
-    Account.Snapshot(System.currentTimeMillis(), account)
+    Account.Snapshot(System.currentTimeMillis(), account, Account.Snapshot.Created)
   }
 }
 

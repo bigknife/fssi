@@ -19,7 +19,7 @@ class NetworkStoreHandler extends NetworkStore.Handler[Stack]{
 
   override def currentNode(): Stack[Option[Node]] = Stack {setting =>
     val f = File(setting.nodeJsonFile)
-    if (f.exists && f.isRegularFile) {
+    if (f.exists) {
       val nodeJson = File(setting.nodeJsonFile).contentAsString(Charset.forName("utf-8"))
       parse(nodeJson).toOption.map(_.as[Node]).flatMap(_.toOption)
     } else None

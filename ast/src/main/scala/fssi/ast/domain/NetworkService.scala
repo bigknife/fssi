@@ -9,10 +9,10 @@ import fssi.ast.domain.types._
 @sp trait NetworkService[F[_]] {
 
   /** find warrior nodes of a nymph node */
-  def warriorNodesOfNymph(nymphNode: Node): P[F, Vector[Node]]
+  def warriorNodesOfNymph(nymphNode: Node): P[F, Vector[Node.Address]]
 
   /** disseminate a network message */
-  def disseminate(packet: DataPacket, nodes: Vector[Node]): P[F, Unit]
+  def disseminate(packet: DataPacket, nodes: Vector[Node.Address]): P[F, Unit]
 
   /** build a network message by using an account */
   def buildCreateAccountDataMessage(account: Account): P[F, DataPacket]

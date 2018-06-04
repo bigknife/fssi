@@ -23,7 +23,6 @@ trait NodeJsonCodec extends AccountJsonCodec {
   implicit val nodeJsonDecoder: Decoder[Node] = (c: HCursor) => {
     for {
       address           <- c.get[Node.Address]("address")
-      ip           <- c.get[String]("ip")
       nodeType     <- c.get[String]("nodeType")
       boundAccount <- c.get[Option[Account]]("boundAccount")
       seeds        <- c.get[Vector[String]]("seeds")

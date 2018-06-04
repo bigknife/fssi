@@ -4,13 +4,12 @@ import fssi.ast.domain.Node
 import org.scalatest._
 
 class NetworkStoreHandlerSpec extends FunSuite {
-  val setting: Setting = Setting()
+  val setting: Setting    = Setting()
   val networkStoreHandler = new NetworkStoreHandler
 
   test("network store") {
     val node: Node = Node(
-      18085,
-      "127.0.0.1",
+      Node.Address("127.0.0.1", 18085),
       Node.Type.Nymph,
       None,
       Vector.empty

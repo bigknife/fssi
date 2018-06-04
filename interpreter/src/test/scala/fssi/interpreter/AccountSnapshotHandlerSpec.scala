@@ -22,8 +22,8 @@ class AccountSnapshotHandlerSpec extends FunSuite with BeforeAndAfterAll {
       iv = BytesValue("fake iv"),
       balance = Token.Zero
     )
-    val snapshot1 = Account.Snapshot(1, account)
-    val snapshot2 = Account.Snapshot(2, account)
+    val snapshot1 = Account.Snapshot(1, account, Account.Snapshot.Created)
+    val snapshot2 = Account.Snapshot(2, account, Account.Snapshot.Created)
 
     // save snapshot1
     val s1 = accountSnapshotHandler.saveSnapshot(snapshot1)(setting).unsafeRunSync()

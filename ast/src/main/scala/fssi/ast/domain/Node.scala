@@ -18,6 +18,16 @@ object Node {
   case class ID(value: String)
 
   case class Address(ip: String, port: Int)
+  object Address {
+    def apply(s: String): Address = s.split(":") match {
+      case Array(ip, port) if "^\\d{2,5}$".r.pattern.matcher(port).matches() =>
+        Address(ip, port.toInt)
+      case _ => Address(s, 0)
+    }
+  }
+
+  def address(ip: String, port: Int): Address = Address(ip, port)
+  def address(s: String): Address = Address(s)
 
   object ID {
     def from(port: Int, ip: String, nodeType: Node.Type): ID = {
