@@ -105,7 +105,7 @@ object Args {
 
       def colorfulLog: OptionDef[Boolean, Args] =
         opt[Boolean]("color")
-          .text("print all logs")
+          .text("turn on/off the colorful log")
           .action((b, a) =>
             a match {
               case x: NymphArgs   => x.copy(colorfulLog = b)
