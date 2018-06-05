@@ -77,3 +77,5 @@ trait TransactionJsonCodec {
       )
   }
 }
+
+object TransactionJsonCodec extends TransactionJsonCodec

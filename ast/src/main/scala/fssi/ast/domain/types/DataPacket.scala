@@ -6,4 +6,6 @@ sealed trait DataPacket {
 
 object DataPacket {
   case class CreateAccount(data: Account) extends DataPacket
+  case class SyncAccount(id: Account.ID) extends DataPacket
+  case class SubmitTransaction(account: Account, transaction: Transaction) extends DataPacket
 }

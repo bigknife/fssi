@@ -24,6 +24,7 @@ package object interpreter {
       extends AccountJsonCodec
       with TokenJsonCodec
       with NodeJsonCodec
+      with TransactionSendingStatusCodec
       with TransactionJsonCodec
 
   object orm extends AccountSnapshotORM

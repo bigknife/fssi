@@ -1,6 +1,8 @@
 package fssi.ast.usecase
 
-import bigknife.sop._, implicits._
+import bigknife.sop._
+import fssi.ast.domain.Node
+import implicits._
 import implicits._
 import fssi.ast.domain.components.Model
 import fssi.ast.domain.exceptions._
@@ -100,42 +102,57 @@ trait Nymph[F[_]] extends NymphUseCases[F] with P2P[F] {
     * @return return the transaction's current status
     */
   override def sendTransaction(id: Account.ID,
-                               transaction: Transaction): SP[F, Transaction.Status] = {
+                               transaction: Transaction): SP[F, TransactionSendingStatus] = {
     // we should validate transaction:
     // 1. transaction should be signed by the account
 
-    val existedAccount: SP[F, Account] = for {
-      accOpt <- queryAccount(id)
-      acc <- err.either(
-        Either.cond(accOpt.isDefined, accOpt.get, AccountNotFound(id))
-      )
-    } yield acc
+    def existedAccount(
+        next: Account => SP[F, TransactionSendingStatus]): SP[F, TransactionSendingStatus] =
+      for {
+        accOpt <- queryAccount(id)
+        acc <- if (accOpt.isDefined) next(accOpt.get)
+        else TransactionSendingStatus.reject(transaction.id, AccountNotFound(id)).pureSP[F]
+      } yield acc
 
-    def transactionWithRightSignature(account: Account): SP[F, Transaction] =
+    def transactionWithRightSignature(account: Account)(
+        next: Transaction => SP[F, TransactionSendingStatus]): SP[F, TransactionSendingStatus] =
       for {
         publ <- cryptoService.rebuildPubl(account.publicKeyData)
         passed <- cryptoService.validateSignature(transaction.signature,
                                                   transaction.toBeVerified,
                                                   publ)
-        trans <- err.either(
-          Either.cond(passed, transaction, IllegalSignature("TRANSACTION"))
-        )
+        trans <- if (passed) next(transaction)
+        else
+          TransactionSendingStatus.reject(transaction.id, IllegalSignature("TRANSACTION")).pureSP[F]
       } yield trans
 
-    def disseminateTransaction(account: Account, transaction: Transaction): SP[F, Unit] =
+    def findWarriors(next: Vector[Node.Address] => SP[F, TransactionSendingStatus])
+      : SP[F, TransactionSendingStatus] =
+      for {
+        self     <- networkStore.currentNode()
+        warriors <- networkService.warriorNodesOfNymph(self.get)
+        s <- if (warriors.isEmpty)
+          TransactionSendingStatus.reject(transaction.id, WarriorsNotFound).pureSP[F]
+        else next(warriors)
+      } yield s
+
+    def disseminateTransaction(warriors: Vector[Node.Address],
+                               account: Account,
+                               transaction: Transaction): SP[F, TransactionSendingStatus] =
       for {
         dataPacket <- networkService.buildSubmitTransactionMessage(account, transaction)
-        self       <- networkStore.currentNode()
-        warriors   <- networkService.warriorNodesOfNymph(self.get)
         _          <- networkService.disseminate(dataPacket, warriors)
-      } yield ()
+      } yield TransactionSendingStatus.pending(transaction.id)
 
     // put it together
-    for {
-      acc   <- existedAccount
-      trans <- transactionWithRightSignature(acc)
-      _     <- disseminateTransaction(acc, trans)
-    } yield Transaction.Status.Pending(trans.id)
+    existedAccount { account =>
+      transactionWithRightSignature(account) { trans =>
+        findWarriors { warriors =>
+          disseminateTransaction(warriors, account, trans)
+        }
+
+      }
+    }
   }
 
   /**

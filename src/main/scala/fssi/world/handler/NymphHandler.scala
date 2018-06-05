@@ -149,7 +149,7 @@ object NymphHandler {
         case Left(x)                    => Left(x): Either[Throwable, Json]
         case Right(Left(x))             => Left(x): Either[Throwable, Json]
         case Right(Right(Left(x)))      => Left(x): Either[Throwable, Json]
-        case Right(Right(Right(value))) => Right(value.toString.asJson): Either[Throwable, Json]
+        case Right(Right(Right(value))) => Right(value.asJson): Either[Throwable, Json]
       }
     }
   }
