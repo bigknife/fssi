@@ -3,7 +3,6 @@ package fssi.ast.usecase
 import bigknife.sop._
 import fssi.ast.domain.Node
 import implicits._
-import implicits._
 import fssi.ast.domain.components.Model
 import fssi.ast.domain.exceptions._
 import fssi.ast.domain.types._

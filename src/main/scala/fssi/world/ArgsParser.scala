@@ -8,13 +8,13 @@ trait ArgsParser {
     head("fssi", "0.0.1")
     help("help").abbr("h").text("print this help documents")
 
-    def workingDir: OptionDef[String, Args] =
-      opt[String]("working-dir")
+    def workingDir: OptionDef[java.io.File, Args] =
+      opt[java.io.File]("working-dir")
         .text("nymph working dir")
         .action((s, a) =>
           a match {
-            case x: NymphArgs   => x.copy(workingDir = s)
-            case x: WarriorArgs => x.copy(workingDir = s)
+            case x: NymphArgs   => x.copy(workingDir = s.getAbsolutePath)
+            case x: WarriorArgs => x.copy(workingDir = s.getAbsolutePath)
             case x              => x
         })
 
