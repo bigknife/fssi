@@ -66,3 +66,7 @@ Transaction jsonrpc protocol.
   "signature": "BlaBla..."
 }
 ```
+
+how to sign?
+
+ECDSAwithUserPrivateKey(type + ascorder(payload properties))
