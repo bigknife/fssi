@@ -44,6 +44,9 @@ object Dependencies {
 
       // better files
       val betterfiles = "3.5.0"
+
+      // asm
+      val asm = "6.1.1"
     }
 
     lazy val log = {
@@ -110,6 +113,15 @@ object Dependencies {
     lazy val betterfiles = {
       Seq(
         Dpd("com.github.pathikrit", "better-files", versions.betterfiles)
+      ).map(_.libraryDependencies)
+    }
+
+    lazy val asm = {
+      Seq(
+        Dpd("org.ow2.asm", "asm", versions.asm, autoScalaVersion = false),
+        Dpd("org.ow2.asm", "asm-util", versions.asm, autoScalaVersion = false),
+        Dpd("org.ow2.asm", "asm-tree", versions.asm, autoScalaVersion = false),
+        Dpd("org.ow2.asm", "asm-commons", versions.asm, autoScalaVersion = false)
       ).map(_.libraryDependencies)
     }
   }

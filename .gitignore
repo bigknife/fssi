@@ -31,3 +31,11 @@
 # interpreter
 !/interpreter/
 /interpreter/target/
+
+# sandbox
+!/sandbox/
+/sandbox/target/
+
+# contract-lib
+!/contract-lib/
+/contract-lib/target/
