@@ -1,7 +1,6 @@
 package fssi.ast.usecase
 
 import bigknife.sop._
-import fssi.ast.domain.types.Transaction.Transfer
 import fssi.ast.domain.types._
 
 /** command line tools */
@@ -18,5 +17,5 @@ trait CmdToolUseCases[F[_]] {
                      amount: Long,
                      privateKey: String,
                      password: String,
-                     iv: String): SP[F, Transfer]
+                     iv: String): SP[F, Transaction]
 }

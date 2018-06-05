@@ -33,7 +33,7 @@ trait CmdTool[F[_]] extends CmdToolUseCases[F] {
                               amount: Long,
                               privateKey: String,
                               password: String,
-                              iv: String): SP[F, Transaction.Transfer] =
+                              iv: String): SP[F, Transaction] =
     for {
       id                <- transactionService.randomTransactionID()
       transferNotSigned <- transactionService.createTransferWithoutSign(id, from, to, amount)
@@ -43,7 +43,7 @@ trait CmdTool[F[_]] extends CmdToolUseCases[F] {
                                               BytesValue.decodeHex(iv))
       pk   <- cryptoService.rebuildPriv(pkValue)
       sign <- cryptoService.makeSignature(transferNotSigned.toBeVerified, pk)
-    } yield transferNotSigned.copy(signature = Signature(sign.bytes))
+    } yield transferNotSigned.copy(signature = Signature(sign.bytes)): Transaction
 }
 
 object CmdTool {
