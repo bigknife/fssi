@@ -10,6 +10,8 @@ case class Token(
     // todo other unit to base unit.
     this
   }
+
+  override def toString: String = s"$amount${unit.toString}"
 }
 
 object Token {
@@ -21,7 +23,9 @@ object Token {
 
   object Unit {
     // basic, primary, minimum unit
-    case object Sweet extends Unit
+    case object Sweet extends Unit {
+      override def toString: String = "Sweet"
+    }
 
     def apply(s: String): Unit = s match {
       case x if x equalsIgnoreCase "sweet" => Sweet

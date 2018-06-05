@@ -23,7 +23,14 @@ object Transaction {
   ) extends Transaction {
     val sender: Account.ID = from
 
-    override def toBeVerified: BytesValue = ???
+    override def toBeVerified: BytesValue = {
+      val buf = new StringBuilder
+      buf.append(id.value)
+      buf.append(from.value)
+      buf.append(to.value)
+      buf.append(amount.toString)
+      BytesValue(buf.toString())
+    }
   }
 
   // publish a contract
@@ -34,7 +41,7 @@ object Transaction {
       signature: Signature,
       status: Transaction.Status
   ) extends Transaction {
-    val sender: Account.ID = owner
+    val sender: Account.ID                = owner
     override def toBeVerified: BytesValue = ???
   }
 
@@ -48,7 +55,7 @@ object Transaction {
       signature: Signature,
       status: Transaction.Status
   ) extends Transaction {
-    val sender: Account.ID = invoker
+    val sender: Account.ID                = invoker
     override def toBeVerified: BytesValue = ???
   }
 
@@ -61,8 +68,9 @@ object Transaction {
   }
 
   object Status {
+    case class Init(id: ID)     extends Status
     case class Rejected(id: ID) extends Status
     case class Pending(id: ID)  extends Status
-    case class Failed(id: ID) extends Status
+    case class Failed(id: ID)   extends Status
   }
 }

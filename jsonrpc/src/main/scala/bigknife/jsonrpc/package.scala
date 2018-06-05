@@ -9,5 +9,5 @@ package object jsonrpc {
   val server = new Server {}
 
   // implicits
-  val implicits = Response.implicits
+  object implicits extends Response.Implicits with Request.Implicits
 }

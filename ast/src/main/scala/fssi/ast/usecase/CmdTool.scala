@@ -24,6 +24,26 @@ trait CmdTool[F[_]] extends CmdToolUseCases[F] {
       uuid        <- cryptoService.randomUUID()
       acc         <- accountService.createAccount(publData, encPrivData, iv, uuid)
     } yield acc
+
+  /** create a transfer transaction
+    *
+    */
+  override def createTransfer(from: String,
+                              to: String,
+                              amount: Long,
+                              privateKey: String,
+                              password: String,
+                              iv: String): SP[F, Transaction.Transfer] =
+    for {
+      id                <- transactionService.randomTransactionID()
+      transferNotSigned <- transactionService.createTransferWithoutSign(id, from, to, amount)
+      key               <- cryptoService.enforceDes3Key(BytesValue(password))
+      pkValue <- cryptoService.des3cbcDecrypt(BytesValue.decodeHex(privateKey),
+                                              key,
+                                              BytesValue.decodeHex(iv))
+      pk   <- cryptoService.rebuildPriv(pkValue)
+      sign <- cryptoService.makeSignature(transferNotSigned.toBeVerified, pk)
+    } yield transferNotSigned.copy(signature = Signature(sign.bytes))
 }
 
 object CmdTool {

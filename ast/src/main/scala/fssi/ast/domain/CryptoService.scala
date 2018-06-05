@@ -30,6 +30,15 @@ import fssi.ast.domain.types.{BytesValue, KeyPair, Signature}
     */
   def des3cbcEncrypt(source: BytesValue, key: BytesValue, iv: BytesValue): P[F, BytesValue]
 
+  /**
+    * decrypt source data
+    * @param source encrypted data
+    * @param key the key used to decrypt sourc
+    * @param iv iv of des3cbc
+    * @return data decrypted from source
+    */
+  def des3cbcDecrypt(source: BytesValue, key: BytesValue, iv: BytesValue): P[F, BytesValue]
+
   /** des3 key size should be 24bytes
     *
     * @param key key that the size may be not 24

@@ -10,6 +10,7 @@ lazy val pAst = ast()
 // interpreter prj
 lazy val pInterpreter = interpreter()
   .dependsOn(pAst)
+  .dependsOn(pJsonRpc)
 
 // jsonrpc prj
 lazy val pJsonRpc = jsonrpc()
@@ -17,7 +18,6 @@ lazy val pJsonRpc = jsonrpc()
 // fssi
 lazy val pFssi = fssi("fssi", ".")
   .dependsOn(pInterpreter)
-  .dependsOn(pJsonRpc)
   .settings(
     mainClass in assembly := Some("fssi.world.Main"),
     assemblyMergeStrategy in assembly := {

@@ -1,9 +1,29 @@
 package fssi.interpreter
 
 import fssi.ast.domain._
+import fssi.ast.domain.types.Transaction.Transfer
 import fssi.ast.domain.types._
 
-class TransactionServiceHandler extends TransactionService.Handler[Stack] {}
+class TransactionServiceHandler extends TransactionService.Handler[Stack] {
+  override def randomTransactionID(): Stack[Transaction.ID] = Stack {
+    Transaction.ID(java.util.UUID.randomUUID().toString.replace("-", ""))
+  }
+
+  override def createTransferWithoutSign(id: Transaction.ID,
+                                         from: String,
+                                         to: String,
+                                         amount: Long): Stack[Transaction.Transfer] = Stack {
+    Transfer(
+      id,
+      Account.ID(from),
+      Account.ID(to),
+      Token(amount, Token.Unit.Sweet),
+      Signature.Empty,
+      Transaction.Status.Init(id)
+    )
+  }
+
+}
 
 object TransactionServiceHandler {
   trait Implicits {

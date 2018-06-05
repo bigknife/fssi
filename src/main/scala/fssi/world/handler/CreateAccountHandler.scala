@@ -13,7 +13,7 @@ class CreateAccountHandler extends ArgsHandler[CreateAccountArgs]{
 
   override def run(args: CreateAccountArgs): Unit = {
     val p = commandTool.createAccount(args.pass)
-    runner.runIOAttempt(p, Setting()).unsafeRunSync() match {
+    runner.runIOAttempt(p, args.toSetting).unsafeRunSync() match {
       case Left(t) => t.printStackTrace()
       case Right(account) =>
         println(account.asJson.spaces4)
