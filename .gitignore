@@ -1,6 +1,7 @@
 *
 !/**/
 !*.scala
+!*.java
 !*.sbt
 !*.txt
 !*.md
