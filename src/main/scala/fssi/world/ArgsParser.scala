@@ -242,6 +242,17 @@ trait ArgsParser {
                   case x: CreateTransferArgs => x.copy(outputFormat = f)
                   case x                     => x
               })
+          ),
+        cmd("compileContract")
+          .text("compile a contract project")
+          .action((_, _) => CompileContractArgs())
+          .children(
+            opt[java.io.File]("project-dir")
+              .text("the project root directory, which should include src and META-INF")
+              .action((f, a) => a match {
+                case x: CompileContractArgs => x.copy(projectDir = f.getAbsolutePath)
+                case x => x
+              })
           )
       )
   }

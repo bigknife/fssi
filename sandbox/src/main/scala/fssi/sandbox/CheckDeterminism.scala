@@ -23,7 +23,7 @@ object CheckDeterminism {
     errors.toVector
   }
 
-  /** check the class file if it has undeterministic elements */
+  /** check the class file if it has un-deterministic elements */
   class CheckVisitor(errors: mutable.ListBuffer[String]) extends ClassVisitor(ASM5) {
     var classDesc: String = _
 

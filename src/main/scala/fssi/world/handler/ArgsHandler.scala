@@ -5,7 +5,7 @@ import fssi.world.Args
 
 trait ArgsHandler[A <: Args] {
 
-  def logbackConfigResource(args: A): String
+  def logbackConfigResource(args: A): String = "/logback.xml"
 
   private def initLogback(args: A): Unit = {
     val conf = logbackConfigResource(args)

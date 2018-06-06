@@ -1,7 +1,10 @@
 package fssi.ast.usecase
 
+import java.nio.file.Path
+
 import bigknife.sop._
 import fssi.ast.domain.types._
+
 
 /** command line tools */
 trait CmdToolUseCases[F[_]] {
@@ -18,4 +21,7 @@ trait CmdToolUseCases[F[_]] {
                      privateKey: String,
                      password: String,
                      iv: String): SP[F, Transaction]
+
+  /** compile a contract project, output jar bytes */
+  def compileContract(source: Path): SP[F, BytesValue]
 }

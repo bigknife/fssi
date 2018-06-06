@@ -1,8 +1,13 @@
 package fssi.ast.usecase
 
-import bigknife.sop._, implicits._
+import java.nio.file.Path
+
+import bigknife.sop._
+import implicits._
 import fssi.ast.domain.components.Model
 import fssi.ast.domain.types._
+
+
 
 trait CmdTool[F[_]] extends CmdToolUseCases[F] {
 
@@ -44,6 +49,13 @@ trait CmdTool[F[_]] extends CmdToolUseCases[F] {
       pk   <- cryptoService.rebuildPriv(pkValue)
       sign <- cryptoService.makeSignature(transferNotSigned.toBeVerified, pk)
     } yield transferNotSigned.copy(signature = Signature(sign.bytes)): Transaction
+
+  override def compileContract(source: Path): SP[F, BytesValue] =
+    for {
+      classPath <- contractService.compileContractSourceCode(source)
+      determined <- contractService.checkDeterministicOfClass(classPath)
+      bytes <- contractService.jarContract(determined)
+    } yield bytes
 }
 
 object CmdTool {

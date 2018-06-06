@@ -2,10 +2,10 @@ package fssi.world.handler
 
 import fssi.ast.domain.components.Model
 import fssi.ast.usecase.CmdTool
-import fssi.interpreter.{Setting, runner}
+import fssi.interpreter.jsonCodec._
+import fssi.interpreter.runner
 import fssi.world.Args.CreateAccountArgs
 import io.circe.syntax._
-import fssi.interpreter.jsonCodec._
 
 class CreateAccountHandler extends ArgsHandler[CreateAccountArgs]{
 

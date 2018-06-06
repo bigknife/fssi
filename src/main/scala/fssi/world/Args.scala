@@ -79,6 +79,12 @@ object Args {
     override def toSetting: Setting = Setting()
   }
 
+  case class CompileContractArgs(
+      projectDir: String = ""
+  ) extends Args {
+    override def toSetting: Setting = Setting()
+  }
+
   def default: Args = EmptyArgs()
 
   trait Implicits  extends ArgsParser
