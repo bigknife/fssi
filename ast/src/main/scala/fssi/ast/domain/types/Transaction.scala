@@ -41,8 +41,14 @@ object Transaction {
       signature: Signature,
       status: Transaction.Status
   ) extends Transaction {
-    val sender: Account.ID                = owner
-    override def toBeVerified: BytesValue = ???
+    val sender: Account.ID = owner
+    override def toBeVerified: BytesValue = {
+      val buf = new StringBuilder
+      buf.append(id.value)
+      buf.append(owner.value)
+      buf.append(contract.codeSign.base64)
+      BytesValue(buf.toString())
+    }
   }
 
   // invoke a contract

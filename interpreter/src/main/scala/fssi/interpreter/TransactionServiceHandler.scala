@@ -1,7 +1,7 @@
 package fssi.interpreter
 
 import fssi.ast.domain._
-import fssi.ast.domain.types.Transaction.Transfer
+import fssi.ast.domain.types.Transaction.{PublishContract, Transfer}
 import fssi.ast.domain.types._
 
 class TransactionServiceHandler extends TransactionService.Handler[Stack] {
@@ -22,6 +22,21 @@ class TransactionServiceHandler extends TransactionService.Handler[Stack] {
       Transaction.Status.Init(id)
     )
   }
+
+  override def createPublishContractWithoutSign(id: Transaction.ID,
+                                                accountId: String,
+                                                name: String,
+                                                version: String,
+                                                contract: Contract): Stack[PublishContract] =
+    Stack {
+      PublishContract(
+        id,
+        Account.ID(accountId),
+        contract,
+        Signature.Empty,
+        Transaction.Status.Init(id)
+      )
+    }
 
 }
 

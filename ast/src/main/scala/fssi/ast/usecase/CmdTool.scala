@@ -2,8 +2,7 @@ package fssi.ast.usecase
 
 import java.nio.file.Path
 
-import bigknife.sop._
-import implicits._
+import bigknife.sop._, implicits._
 import fssi.ast.domain.components.Model
 import fssi.ast.domain.types._
 
@@ -48,6 +47,28 @@ trait CmdTool[F[_]] extends CmdToolUseCases[F] {
       sign <- cryptoService.makeSignature(transferNotSigned.toBeVerified, pk)
     } yield transferNotSigned.copy(signature = Signature(sign.bytes)): Transaction
 
+  override def createPublishContract(owner: String,
+                                     privateKey: String,
+                                     password: String,
+                                     iv: String,
+                                     name: String,
+                                     version: String,
+                                     contract: String): SP[F, Transaction] =
+    for {
+      pk                <- rebuildPriv(password, privateKey, iv)
+      id                <- transactionService.randomTransactionID()
+      contractNotSigned <- contractService.createContractWithoutSing(name, version, contract)
+      contractSign      <- cryptoService.makeSignature(contractNotSigned.toBeVerified, pk)
+      contractSigned    <- contractNotSigned.copy(codeSign = Signature(contractSign.bytes)).pureSP[F]
+      pubContractNotSigned <- transactionService.createPublishContractWithoutSign(id,
+                                                                                  owner,
+                                                                                  name,
+                                                                                  version,
+                                                                                  contractSigned)
+
+      sign <- cryptoService.makeSignature(pubContractNotSigned.toBeVerified, pk)
+    } yield pubContractNotSigned.copy(signature = Signature(sign.bytes)): Transaction
+
   override def compileContract(source: Path): SP[F, BytesValue] =
     for {
       classPathOr  <- contractService.compileContractSourceCode(source)
@@ -56,6 +77,17 @@ trait CmdTool[F[_]] extends CmdToolUseCases[F] {
       determined   <- err.either(determinedOr)
       path         <- contractService.jarContract(determined)
     } yield path
+
+  private def rebuildPriv(password: String,
+                          encryptedPrivateKey: String,
+                          iv: String): SP[F, KeyPair.Priv] =
+    for {
+      key <- cryptoService.enforceDes3Key(BytesValue(password))
+      pkValue <- cryptoService.des3cbcDecrypt(BytesValue.decodeHex(encryptedPrivateKey),
+                                              key,
+                                              BytesValue.decodeHex(iv))
+      pk <- cryptoService.rebuildPriv(pkValue)
+    } yield pk
 }
 
 object CmdTool {

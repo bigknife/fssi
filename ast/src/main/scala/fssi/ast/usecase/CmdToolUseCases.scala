@@ -5,7 +5,6 @@ import java.nio.file.Path
 import bigknife.sop._
 import fssi.ast.domain.types._
 
-
 /** command line tools */
 trait CmdToolUseCases[F[_]] {
 
@@ -21,6 +20,17 @@ trait CmdToolUseCases[F[_]] {
                      privateKey: String,
                      password: String,
                      iv: String): SP[F, Transaction]
+
+  /** create a publish contract transaction
+    * @param contract contract base64 encoded
+    */
+  def createPublishContract(owner: String,
+                            privateKey: String,
+                            password: String,
+                            iv: String,
+                            name: String,
+                            version: String,
+                            contract: String): SP[F, Transaction]
 
   /** compile a contract project, output jar file */
   def compileContract(source: Path): SP[F, BytesValue]

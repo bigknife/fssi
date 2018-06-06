@@ -8,6 +8,59 @@ trait ArgsParser {
     head("fssi", "0.0.1")
     help("help").abbr("h").text("print this help documents")
 
+    def protocolOutputFormat: OptionDef[String, Args] =
+      opt[String]("output-format")
+        .text(
+          "json output format, one of the tree: 1. nospace, 2. space2, 3. space4. default is 1.")
+        .action((f, a) =>
+          a match {
+            case x: CreateTransferArgs        => x.copy(outputFormat = f)
+            case x: CreatePublishContractArgs => x.copy(outputFormat = f)
+            case x                            => x
+        })
+
+    def accountId: OptionDef[String, Args] =
+      opt[String]("account-id")
+        .text("account id from whom the token is transferred")
+        .required()
+        .action((id, a) =>
+          a match {
+            case x: CreateTransferArgs        => x.copy(accountId = id)
+            case x: CreatePublishContractArgs => x.copy(accountId = id)
+            case x                            => x
+        })
+    def privateKey: OptionDef[String, Args] =
+      opt[String]("private-key")
+        .text("the account's private key, used to sign the transfer transaction")
+        .required()
+        .action((p, a) =>
+          a match {
+            case x: CreateTransferArgs        => x.copy(privateKey = p)
+            case x: CreatePublishContractArgs => x.copy(privateKey = p)
+            case x                            => x
+        })
+    def password: OptionDef[String, Args] =
+      opt[String]("password")
+        .text("the password to decrypt the private key")
+        .required()
+        .action((p, a) =>
+          a match {
+            case x: CreateTransferArgs        => x.copy(password = p)
+            case x: CreatePublishContractArgs => x.copy(password = p)
+            case x                            => x
+        })
+
+    def iv: OptionDef[String, Args] =
+      opt[String]("iv")
+        .text("the iv spec to decrypt the private key")
+        .required()
+        .action((i, a) =>
+          a match {
+            case x: CreateTransferArgs        => x.copy(iv = i)
+            case x: CreatePublishContractArgs => x.copy(iv = i)
+            case x                            => x
+        })
+
     def workingDir: OptionDef[java.io.File, Args] =
       opt[java.io.File]("working-dir")
         .text("nymph working dir")
@@ -185,14 +238,10 @@ trait ArgsParser {
           .text("create a transfer protocol represented with jsonrpc")
           .action((_, _) => CreateTransferArgs())
           .children(
-            opt[String]("account-id")
-              .text("account id from whom the token is transferred")
-              .required()
-              .action((id, a) =>
-                a match {
-                  case x: CreateTransferArgs => x.copy(accountId = id)
-                  case x                     => x
-              }),
+            privateKey,
+            password,
+            iv,
+            accountId,
             opt[String]("transfer-to")
               .text("account id to whom the token is transferred")
               .required()
@@ -211,37 +260,43 @@ trait ArgsParser {
                   case x: CreateTransferArgs => x.copy(amount = amount)
                   case x                     => x
               }),
-            opt[String]("private-key")
-              .text("the account's private key, used to sign the transfer transaction")
+            protocolOutputFormat
+          ),
+        cmd("createPublishContract")
+          .text("create a publish contract protocol represented with jsonrpc")
+          .action((_, _) => CreatePublishContractArgs())
+          .children(
+            privateKey,
+            password,
+            iv,
+            accountId,
+            opt[String]("name")
+              .text("the name of the contract")
               .required()
-              .action((p, a) =>
+              .action((n, a) =>
                 a match {
-                  case x: CreateTransferArgs => x.copy(privateKey = p)
-                  case x                     => x
+                  case x: CreatePublishContractArgs => x.copy(name = n)
+                  case x                            => x
               }),
-            opt[String]("password")
-              .text("the password to decrypt the private key")
+            opt[String]("version")
+              .text("the version of the contract")
               .required()
-              .action((p, a) =>
+              .action((v, a) =>
                 a match {
-                  case x: CreateTransferArgs => x.copy(password = p)
-                  case x                     => x
+                  case x: CreatePublishContractArgs => x.copy(version = v)
+                  case x                            => x
               }),
-            opt[String]("iv")
-              .text("the iv spec to decrypt the private key")
+            opt[java.io.File]("contract")
+              .text("the contract file, whild should be encoded with base64, and one line.")
               .required()
-              .action((i, a) =>
-                a match {
-                  case x: CreateTransferArgs => x.copy(iv = i)
-                  case x                     => x
-              }),
-            opt[String]("output-format")
-              .text("json output format, one of the tree: 1. nospace, 2. space2, 3. space4. default is 1.")
               .action((f, a) =>
                 a match {
-                  case x: CreateTransferArgs => x.copy(outputFormat = f)
-                  case x                     => x
-              })
+                  case x: CreatePublishContractArgs =>
+                    val contractContent = scala.io.Source.fromFile(f).getLines().mkString("")
+                    x.copy(contract = contractContent)
+                  case x => x
+              }),
+            protocolOutputFormat
           ),
         cmd("compileContract")
           .text("compile a contract project")

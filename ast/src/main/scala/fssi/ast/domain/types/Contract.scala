@@ -1,22 +1,25 @@
 package fssi.ast.domain.types
 
-import fssi.ast.domain.types.Contract.ZippedCodes
-
 /** smart contract */
 case class Contract(
-    id: Contract.ID,
     name: Contract.Name,
-    zippedCodes: ZippedCodes,
-    codeSign: Signature,
     version: Contract.Version,
-)
+    code: Contract.Code,
+    codeSign: Signature = Signature.Empty
+) {
+  def toBeVerified: BytesValue = {
+    val buf = new StringBuilder
+    buf.append(name.value)
+    buf.append(version.value)
+    buf.append(code.base64)
+    BytesValue(buf.toString)
+  }
+}
 
 object Contract {
-  case class ID(value: String)
   case class Name(value: String)
-  case class Version()
-
-  case class ZippedCodes(bytes: Array[Byte]) extends BytesValue
+  case class Version(value: String)
+  case class Code(base64: String)
 
   /** parameters of contract */
   trait Parameter {}

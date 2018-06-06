@@ -3,9 +3,10 @@ package fssi.ast.domain
 import bigknife.sop._
 import bigknife.sop.macros._
 import bigknife.sop.implicits._
-import fssi.ast.domain.types.{Token, Transaction}
+import fssi.ast.domain.types.{Contract, Token, Transaction}
 
 @sp trait TransactionService[F[_]] {
+
   /** create a randomized transaction id */
   def randomTransactionID(): P[F, Transaction.ID]
 
@@ -16,5 +17,14 @@ import fssi.ast.domain.types.{Token, Transaction}
     * @param amount token amount, with `Sweet` unit.
     * @return
     */
-  def createTransferWithoutSign(id: Transaction.ID, from: String, to: String, amount: Long): P[F, Transaction.Transfer]
+  def createTransferWithoutSign(id: Transaction.ID,
+                                from: String,
+                                to: String,
+                                amount: Long): P[F, Transaction.Transfer]
+
+  def createPublishContractWithoutSign(id: Transaction.ID,
+                                       accountId: String,
+                                       name: String,
+                                       version: String,
+                                       contract: Contract): P[F, Transaction.PublishContract]
 }

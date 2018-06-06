@@ -65,7 +65,7 @@ object Args {
     override def toSetting: Setting = Setting()
   }
 
-  // cmd tool, create an transfer transaction
+  // cmd tool, create a transfer transaction
   // transfer token from current account to another one.
   case class CreateTransferArgs(
       accountId: String = "",
@@ -79,6 +79,21 @@ object Args {
     override def toSetting: Setting = Setting()
   }
 
+  // cmd tool, create a publishContract transaction
+  case class CreatePublishContractArgs(
+      accountId: String = "",
+      name: String = "",
+      version: String = "",
+      contract: String = "",
+      privateKey: String = "",
+      password: String = "",
+      iv: String = "",
+      outputFormat: String = "nospace" // or space2, or space4
+  ) extends Args {
+    override def toSetting: Setting = Setting()
+  }
+
+  // cmd tool, compile a contract project
   case class CompileContractArgs(
       projectDir: String = "",
       outputFormat: String = "", // jar, hex or base64

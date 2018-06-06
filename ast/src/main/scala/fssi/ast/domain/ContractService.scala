@@ -7,6 +7,15 @@ import fssi.ast.domain.exceptions.ContractCompileError
 import fssi.ast.domain.types._
 
 @sp trait ContractService[F[_]] {
+  /**
+    * create a contract, but the signature is Empty
+    * @param name name
+    * @param version version
+    * @param code code (base64 encoded jar)
+    * @return
+    */
+  def createContractWithoutSing(name: String, version: String, code: String): P[F, Contract]
+
   /** resolve a transaction to contract */
   def resolveTransaction(transaction: Transaction): P[F, (Contract.Name, Contract.Version)]
 

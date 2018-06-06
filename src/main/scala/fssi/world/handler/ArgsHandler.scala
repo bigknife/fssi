@@ -47,6 +47,8 @@ object ArgsHandler {
       new CreateTransferHandler
     implicit lazy val compileContractHandler: ArgsHandler[Args.CompileContractArgs] =
       new CompileContractHandler
+    implicit lazy val publishContractHandler: ArgsHandler[Args.CreatePublishContractArgs] =
+      new CreatePublishContractHandler
   }
   object implicits extends Implicits
 
@@ -58,5 +60,7 @@ object ArgsHandler {
     case a: Args.WarriorArgs         => ArgsHandler[Args.WarriorArgs].runWorld(a)
     case a: Args.CreateTransferArgs  => ArgsHandler[Args.CreateTransferArgs].runWorld(a)
     case a: Args.CompileContractArgs => ArgsHandler[Args.CompileContractArgs].runWorld(a)
+    case a: Args.CreatePublishContractArgs =>
+      ArgsHandler[Args.CreatePublishContractArgs].runWorld(a)
   }
 }
