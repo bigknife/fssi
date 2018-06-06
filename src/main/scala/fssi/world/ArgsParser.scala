@@ -249,9 +249,29 @@ trait ArgsParser {
           .children(
             opt[java.io.File]("project-dir")
               .text("the project root directory, which should include src and META-INF")
-              .action((f, a) => a match {
-                case x: CompileContractArgs => x.copy(projectDir = f.getAbsolutePath)
-                case x => x
+              .action((f, a) =>
+                a match {
+                  case x: CompileContractArgs => x.copy(projectDir = f.getAbsolutePath)
+                  case x                      => x
+              }),
+            opt[String]("output-format")
+              .text("the contract output format, should be `jar`, `hex` or `base64`")
+              .validate(f =>
+                if (f == "jar" || f == "hex" || f == "base64") Right(())
+                else Left("the contract output format, should be `jar`, `hex` or `base64`"))
+              .required()
+              .action((f, a) =>
+                a match {
+                  case x: CompileContractArgs => x.copy(outputFormat = f)
+                  case x                      => x
+              }),
+            opt[java.io.File]("output-file")
+              .text("the path of contract file saved")
+              .required()
+              .action((f, a) =>
+                a match {
+                  case x: CompileContractArgs => x.copy(outputFile = f.getAbsolutePath)
+                  case x                      => x
               })
           )
       )

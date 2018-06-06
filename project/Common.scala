@@ -143,6 +143,10 @@ object Common {
     object contractLib {
       def apply(id: String,dir: String): Project =
         Project(id, file(dir))
+        .settings(settings)
+        .settings(
+          version := "0.0.1_BETA"
+        )
       def apply(id: String): Project = apply(id, id)
       def apply(): Project = apply("contract-lib")
     }

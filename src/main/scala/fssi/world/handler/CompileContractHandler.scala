@@ -15,7 +15,27 @@ class CompileContractHandler extends ArgsHandler[Args.CompileContractArgs] {
     runner.runIOAttempt(p, args.toSetting).unsafeRunSync() match {
       case Left(t) => t.printStackTrace()
       case Right(bytesValue) =>
-        println(bytesValue.hex)
+        args.outputFormat match {
+          case "jar" =>
+            better.files
+              .File(args.outputFile)
+              .outputStream
+              .map(os => os.write(bytesValue.bytes))
+              .get()
+          case "hex" =>
+            better.files
+              .File(args.outputFile)
+              .outputStream
+              .map(os => os.write(bytesValue.hex.getBytes("utf-8")))
+              .get()
+          case "base64" =>
+            better.files
+              .File(args.outputFile)
+              .outputStream
+              .map(os => os.write(bytesValue.base64.getBytes("utf-8")))
+              .get()
+        }
+        println(s"compiled, check output file: ${args.outputFile}")
     }
   }
 }

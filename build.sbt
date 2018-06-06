@@ -11,6 +11,7 @@ lazy val pAst = ast()
 lazy val pInterpreter = interpreter()
   .dependsOn(pAst)
   .dependsOn(pJsonRpc)
+  .dependsOn(pSandbox)
 
 // jsonrpc prj
 lazy val pJsonRpc = jsonrpc()
@@ -25,7 +26,6 @@ lazy val pContractLib = contractLib()
 // fssi
 lazy val pFssi = fssi("fssi", ".")
   .dependsOn(pInterpreter)
-  .dependsOn(pSandbox)
   .settings(
     mainClass in assembly := Some("fssi.world.Main"),
     assemblyMergeStrategy in assembly := {
@@ -37,6 +37,6 @@ lazy val pFssi = fssi("fssi", ".")
     },
     assemblyOption in assembly := (assemblyOption in assembly).value
       .copy(prependShellScript = Some(defaultShellScript)),
-    assemblyJarName in assembly := s"${name.value}-${version.value}",
+    assemblyJarName in assembly := s"${name.value}",
     test in assembly := {}
   )

@@ -136,7 +136,4 @@ trait Compiler {
 
     func0(src.toFile, Vector.empty)
   }
-
 }
-
-object Compiler extends Compiler

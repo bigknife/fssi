@@ -7,8 +7,6 @@ import implicits._
 import fssi.ast.domain.components.Model
 import fssi.ast.domain.types._
 
-
-
 trait CmdTool[F[_]] extends CmdToolUseCases[F] {
 
   val model: Model[F]
@@ -52,10 +50,12 @@ trait CmdTool[F[_]] extends CmdToolUseCases[F] {
 
   override def compileContract(source: Path): SP[F, BytesValue] =
     for {
-      classPath <- contractService.compileContractSourceCode(source)
-      determined <- contractService.checkDeterministicOfClass(classPath)
-      bytes <- contractService.jarContract(determined)
-    } yield bytes
+      classPathOr  <- contractService.compileContractSourceCode(source)
+      classPath    <- err.either(classPathOr)
+      determinedOr <- contractService.checkDeterministicOfClass(classPath)
+      determined   <- err.either(determinedOr)
+      path         <- contractService.jarContract(determined)
+    } yield path
 }
 
 object CmdTool {

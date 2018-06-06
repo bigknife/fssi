@@ -22,6 +22,6 @@ trait CmdToolUseCases[F[_]] {
                      password: String,
                      iv: String): SP[F, Transaction]
 
-  /** compile a contract project, output jar bytes */
+  /** compile a contract project, output jar file */
   def compileContract(source: Path): SP[F, BytesValue]
 }

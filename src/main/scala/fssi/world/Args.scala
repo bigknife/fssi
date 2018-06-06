@@ -80,7 +80,9 @@ object Args {
   }
 
   case class CompileContractArgs(
-      projectDir: String = ""
+      projectDir: String = "",
+      outputFormat: String = "", // jar, hex or base64
+      outputFile: String = ""
   ) extends Args {
     override def toSetting: Setting = Setting()
   }
