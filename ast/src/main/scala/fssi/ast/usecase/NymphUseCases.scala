@@ -24,9 +24,9 @@ trait NymphUseCases[F[_]] extends P2PUseCases[F]{
     * uc3. send a transaction.
     * @param id sender's account id
     * @param transaction transaction info
-    * @return return the transaction's current status
+    * @return return the transaction's sending status
     */
-  def sendTransaction(id: Account.ID, transaction: Transaction): SP[F, Transaction.Status]
+  def sendTransaction(id: Account.ID, transaction: Transaction): SP[F, TransactionSendingStatus]
 
   /**
     * uc4. query current status of a transaction.
@@ -45,7 +45,7 @@ trait NymphUseCases[F[_]] extends P2PUseCases[F]{
   def transferBalance(from: Account.ID,
                       to: Account.ID,
                       amount: Token,
-                      sign: String): SP[F, Transaction.Status] =
+                      sign: String): SP[F, TransactionSendingStatus] =
     for {
       id <- randomizeTransactionID()
       x <- sendTransaction(
@@ -56,7 +56,7 @@ trait NymphUseCases[F[_]] extends P2PUseCases[F]{
   /** publish smart contract */
   def publishContract(owner: Account.ID,
                       contract: Contract,
-                      sign: String): SP[F, Transaction.Status] =
+                      sign: String): SP[F, TransactionSendingStatus] =
     for {
 
       id <- randomizeTransactionID()
@@ -73,7 +73,7 @@ trait NymphUseCases[F[_]] extends P2PUseCases[F]{
                      name: Contract.Name,
                      version: Contract.Version,
                      parameter: Contract.Parameter,
-                     sign: String): SP[F, Transaction.Status] =
+                     sign: String): SP[F, TransactionSendingStatus] =
     for {
       id <- randomizeTransactionID()
       transaction = Transaction.InvokeContract(id,

@@ -128,6 +128,28 @@ object Common {
       def apply(id: String): Project = apply(id, id)
       def apply(): Project           = apply("interpreter")
     }
+
+    object sandbox {
+      def apply(id: String, dir: String): Project =
+        Project(id, file(dir))
+        .settings(settings)
+        .settings(
+          libraryDependencies ++= all.asm
+        )
+      def apply(id: String): Project = apply(id, id)
+      def apply(): Project           = apply("sandbox")
+    }
+
+    object contractLib {
+      def apply(id: String,dir: String): Project =
+        Project(id, file(dir))
+        .settings(settings)
+        .settings(
+          version := "0.0.1_BETA"
+        )
+      def apply(id: String): Project = apply(id, id)
+      def apply(): Project = apply("contract-lib")
+    }
   }
 
   val defaultShellScript: Seq[String] = defaultShellScript(
@@ -138,6 +160,9 @@ object Common {
 
   def defaultShellScript(javaOpts: Seq[String] = Seq.empty): Seq[String] = {
     val javaOptsString = javaOpts.map(_ + " ").mkString
-    Seq("#!/usr/bin/env sh", s"""exec java --add-exports java.base/jdk.internal.misc=ALL-UNNAMED -jar $javaOptsString$$JAVA_OPTS "$$0" "$$@"""", "")
+    Seq(
+      "#!/usr/bin/env sh",
+      s"""exec java --add-exports java.base/jdk.internal.misc=ALL-UNNAMED -jar $javaOptsString$$JAVA_OPTS "$$0" "$$@"""",
+      "")
   }
 }

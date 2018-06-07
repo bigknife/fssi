@@ -34,3 +34,9 @@ Some important arguments:
 
 After startup, we can visit the jsonrpc service via urls prefixed with
 `http://<ip>:<port>/jsonrpc/nympy/v1`.
+
+### Contract lib
+
+[ ![Download](https://api.bintray.com/packages/bigknife/maven/contract-lib/images/download.svg) ](https://bintray.com/bigknife/maven/contract-lib/_latestVersion)
+
+Download: [https://dl.bintray.com/bigknife/maven/fssi/contract-lib_2.12/0.0.1_BETA/:contract-lib_2.12-0.0.1_BETA.jar](https://dl.bintray.com/bigknife/maven/fssi/contract-lib_2.12/0.0.1_BETA/:contract-lib_2.12-0.0.1_BETA.jar)

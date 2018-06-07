@@ -1,6 +1,7 @@
 package fssi.interpreter
 
 import fssi.ast.domain._
+import fssi.ast.domain.types.DataPacket.SubmitTransaction
 import fssi.ast.domain.types._
 import fssi.interpreter.util._
 import io.scalecube.cluster.{Cluster, ClusterConfig}
@@ -18,7 +19,7 @@ class NetworkServiceHandler extends NetworkService.Handler[Stack] {
   }
 
   override def startupP2PNode(node: Node, handler: DataPacket => Unit = _ => ()): Stack[Node] =
-    Stack { setting =>
+    Stack {
       val config = ClusterConfig
         .builder()
         .port(node.address.port)
@@ -81,16 +82,24 @@ class NetworkServiceHandler extends NetworkService.Handler[Stack] {
     DataPacket.CreateAccount(account)
   }
 
+  override def buildSubmitTransactionMessage(account: Account,
+                                             transaction: Transaction): Stack[DataPacket] = Stack {
+    SubmitTransaction(account, transaction)
+  }
+
+  override def buildSyncAccountMessage(id: Account.ID): Stack[DataPacket] = Stack {
+    DataPacket.SyncAccount(id)
+  }
+
   override def disseminate(packet: DataPacket, nodes: Vector[Node.Address]): Stack[Unit] = Stack {
-    setting =>
-      clusterOnce.foreach { cluster =>
-        logger.info(s"disseminating to ${nodes.length} targets")
-        val message = DataPacketUtil.toMessage(packet)
-        nodes.foreach { addr =>
-          cluster.send(Address.create(addr.ip, addr.port), message)
-          logger.info(s"disseminate message to $addr")
-        }
+    clusterOnce.foreach { cluster =>
+      logger.info(s"disseminating to ${nodes.length} targets")
+      val message = DataPacketUtil.toMessage(packet)
+      nodes.foreach { addr =>
+        cluster.send(Address.create(addr.ip, addr.port), message)
+        logger.info(s"disseminate message to $addr")
       }
+    }
   }
 
   private def printMembers(): Unit = {

@@ -20,9 +20,13 @@ package object interpreter {
   }
 
   // all types json codec
-  object jsonCodec extends AccountJsonCodec
-    with TokenJsonCodec
-    with NodeJsonCodec
+  object jsonCodec
+      extends AccountJsonCodec
+      with TokenJsonCodec
+      with NodeJsonCodec
+      with TransactionSendingStatusCodec
+      with ContractJsonCodec
+      with TransactionJsonCodec
 
   object orm extends AccountSnapshotORM
 

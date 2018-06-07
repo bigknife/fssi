@@ -2,8 +2,9 @@ package fssi.world.handler
 
 import fssi.world.Args.NymphArgs
 import bigknife.jsonrpc._
-import io.circe.Json
+import io.circe.{DecodingFailure, Json}
 import fssi.ast.domain.components.Model.Op
+import fssi.ast.domain.types.Transaction
 import fssi.ast.usecase.Nymph
 import fssi.interpreter._
 import org.slf4j.{Logger, LoggerFactory}
@@ -101,18 +102,28 @@ object NymphHandler {
     /** invoke method with parameters */
     override def invoke(method: String, params: Json): Either[Throwable, Json] = {
       jsonrpcLogger.debug(s"invoking $method with params = ${params.spaces2}")
-      method match {
-        case "register" => invokeRegister(params)
-        case x          => Left(new UnsupportedOperationException(s"unsupported operation: $x"))
+      val res = method match {
+        case "register"        => invokeRegister(params)
+        case "sendTransaction" => invokeSendTransaction(params)
+        case x                 => Left(new UnsupportedOperationException(s"unsupported operation: $x"))
 
       }
+      res.left
+        .map { t =>
+          jsonrpcLogger.error(s"invoking $method failed", t); t
+        }
+        .right
+        .map { json =>
+          jsonrpcLogger.info(s"invoked $method, got result: ${json.spaces2}"); json
+        }
     }
 
     /** can the params be accepted
       *
       */
     override def paramsAcceptable(method: String, params: Json): Boolean = method match {
-      case "register" => params.asString.isDefined // def register(rand: String): SP[F, Account]
+      case "register"        => params.asString.isDefined // def register(rand: String): SP[F, Account]
+      case "sendTransaction" => true //todo: check the format
 
       case _ => true
     }
@@ -124,6 +135,21 @@ object NymphHandler {
         case Left(x)               => Left(x): Either[Throwable, Json]
         case Right(Left(x))        => Left(x): Either[Throwable, Json]
         case Right(Right(account)) => Right(account.asJson): Either[Throwable, Json]
+      }
+    }
+
+    private def invokeSendTransaction(params: Json): Either[Throwable, Json] = {
+      Try {
+        params.as[Transaction].right.map { transaction =>
+          runner
+            .runIOAttempt(nymph.sendTransaction(transaction.sender, transaction), setting)
+            .unsafeRunSync()
+        }
+      }.toEither match {
+        case Left(x)                    => Left(x): Either[Throwable, Json]
+        case Right(Left(x))             => Left(x): Either[Throwable, Json]
+        case Right(Right(Left(x)))      => Left(x): Either[Throwable, Json]
+        case Right(Right(Right(value))) => Right(value.asJson): Either[Throwable, Json]
       }
     }
   }

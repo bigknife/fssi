@@ -23,7 +23,14 @@ object Transaction {
   ) extends Transaction {
     val sender: Account.ID = from
 
-    override def toBeVerified: BytesValue = ???
+    override def toBeVerified: BytesValue = {
+      val buf = new StringBuilder
+      buf.append(id.value)
+      buf.append(from.value)
+      buf.append(to.value)
+      buf.append(amount.toString)
+      BytesValue(buf.toString())
+    }
   }
 
   // publish a contract
@@ -35,7 +42,13 @@ object Transaction {
       status: Transaction.Status
   ) extends Transaction {
     val sender: Account.ID = owner
-    override def toBeVerified: BytesValue = ???
+    override def toBeVerified: BytesValue = {
+      val buf = new StringBuilder
+      buf.append(id.value)
+      buf.append(owner.value)
+      buf.append(contract.codeSign.base64)
+      BytesValue(buf.toString())
+    }
   }
 
   // invoke a contract
@@ -48,8 +61,16 @@ object Transaction {
       signature: Signature,
       status: Transaction.Status
   ) extends Transaction {
-    val sender: Account.ID = invoker
-    override def toBeVerified: BytesValue = ???
+    val sender: Account.ID                = invoker
+    override def toBeVerified: BytesValue = {
+      val buf = new StringBuilder
+      buf.append(id.value)
+      buf.append(invoker.value)
+      buf.append(name.value)
+      buf.append(version.value)
+      buf.append(parameter.toString)
+      BytesValue(buf.toString())
+    }
   }
 
   // transaction id
@@ -61,8 +82,9 @@ object Transaction {
   }
 
   object Status {
+    case class Init(id: ID)     extends Status
     case class Rejected(id: ID) extends Status
     case class Pending(id: ID)  extends Status
-    case class Failed(id: ID) extends Status
+    case class Failed(id: ID)   extends Status
   }
 }

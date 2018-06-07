@@ -117,6 +117,18 @@ class CryptoServiceHandler extends CryptoService.Handler[Stack] {
     val kf      = KeyFactory.getInstance(KeyFactoryAlgo, ProviderName)
     KeyPair.Priv(kf.generatePrivate(prvSpec))
   }
+
+  override def des3cbcDecrypt(source: BytesValue,
+                              key: BytesValue,
+                              iv: BytesValue): Stack[BytesValue] = Stack {
+    val spec       = new DESedeKeySpec(key.bytes)
+    val keyFactory = SecretKeyFactory.getInstance(SecretKeyFactoryAlgo)
+    val desKey     = keyFactory.generateSecret(spec)
+    val cipher     = Cipher.getInstance(CipherAlgo)
+    val ivSpec     = new IvParameterSpec(iv.bytes)
+    cipher.init(Cipher.DECRYPT_MODE, desKey, ivSpec)
+    BytesValue(cipher.doFinal(source.bytes))
+  }
 }
 
 object CryptoServiceHandler {
