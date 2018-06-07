@@ -4,7 +4,7 @@ import java.nio.file._
 
 import fssi.ast.domain._
 import fssi.ast.domain.exceptions.{ContractCompileError, IllegalContractParams}
-import fssi.ast.domain.types.{BytesValue, Contract}
+import fssi.ast.domain.types._
 import fssi.sandbox.compiler
 import _root_.java.util.zip.{ZipEntry, ZipOutputStream}
 import java.io._
@@ -114,6 +114,20 @@ class ContractServiceHandler extends ContractService.Handler[Stack] {
     baos.close()
     BytesValue(bytes)
 
+  }
+
+  override def resolveTransaction(
+      transaction: Transaction): Stack[(Contract.Name, Contract.Version)] = Stack {
+    import Contract.inner._
+    transaction match {
+      case _: Transaction.Transfer        => TransferContract.name -> TransferContract.version
+      case _: Transaction.PublishContract => PublishContract.name  -> PublishContract.version
+      case x: Transaction.InvokeContract  => x.name                -> x.version
+    }
+  }
+
+  override def runContract(invoker: Account, contract: Contract): Stack[Either[Throwable, Moment]] = Stack {
+    ???
   }
 }
 object ContractServiceHandler {

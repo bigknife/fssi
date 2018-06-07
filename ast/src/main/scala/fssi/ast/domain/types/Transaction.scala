@@ -87,4 +87,9 @@ object Transaction {
     case class Pending(id: ID)  extends Status
     case class Failed(id: ID)   extends Status
   }
+
+  def initStatus(id: ID): Status = Status.Init(id)
+  def rejectedStatus(id: ID): Status = Status.Rejected(id)
+  def pendingStatus(id: ID): Status = Status.Pending(id)
+  def failedStatus(id: ID): Status = Status.Failed(id)
 }

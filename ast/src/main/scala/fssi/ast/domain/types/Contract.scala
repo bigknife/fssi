@@ -46,4 +46,19 @@ object Contract {
       val Empty: PArray = PArray(Array.empty[PrimaryParameter])
     }
   }
+
+  // inner contract
+  object inner {
+    trait TransferContract{}
+    object TransferContract {
+      val name: Contract.Name = Contract.Name("fssi.ast.contract.inner.TransferContract")
+      val version: Contract.Version = Contract.Version("0.0.1")
+    }
+
+    trait PublishContract{}
+    object PublishContract {
+      val name: Contract.Name = Contract.Name("fssi.ast.contract.inner.PublishContract")
+      val version: Contract.Version = Contract.Version("0.0.1")
+    }
+  }
 }
