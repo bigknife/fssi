@@ -3,12 +3,14 @@ package fssi.interpreter
 import java.nio.file._
 
 import fssi.ast.domain._
-import fssi.ast.domain.exceptions.ContractCompileError
+import fssi.ast.domain.exceptions.{ContractCompileError, IllegalContractParams}
 import fssi.ast.domain.types.{BytesValue, Contract}
 import fssi.sandbox.compiler
 import _root_.java.util.zip.{ZipEntry, ZipOutputStream}
 import java.io._
 import java.nio.file.attribute.BasicFileAttributes
+
+import io.circe.Json.{JArray, JBoolean, JNumber, JString}
 
 import scala.annotation.tailrec
 
@@ -22,6 +24,42 @@ class ContractServiceHandler extends ContractService.Handler[Stack] {
       Contract.Version(version),
       Contract.Code(code)
     )
+  }
+
+  override def createParameterFromString(
+      params: String): Stack[Either[IllegalContractParams, Contract.Parameter]] = Stack {
+    import io.circe.parser._
+    import Contract.Parameter
+    import Contract.Parameter._
+
+    def parseParams(): Either[IllegalContractParams, Parameter] = {
+      parse(params) match {
+        case Left(t)                        => Left(IllegalContractParams(Some(t.getMessage())))
+        case Right(value) if value.isString => Right(PString(value.asString.get))
+        case Right(value) if value.isNumber =>
+          Right(PBigDecimal(value.asNumber.flatMap(_.toBigDecimal).map(_.bigDecimal).get))
+        case Right(value) if value.isBoolean => Right(PBool(value.asBoolean.get))
+        case Right(values) if values.isArray =>
+          val initData: Either[IllegalContractParams, PArray] = Right(PArray.Empty)
+          values.asArray.get.foldLeft(initData) {
+            case (x @ Left(_), _) => x
+            case (Right(arr), n) =>
+              n match {
+                case value if value.isString => Right(arr :+ PString(value.asString.get))
+                case value if value.isNumber =>
+                  Right(
+                    arr :+ PBigDecimal(
+                      value.asNumber.flatMap(_.toBigDecimal).map(_.bigDecimal).get))
+                case value if value.isBoolean => Right(arr :+ PBool(value.asBoolean.get))
+                case a                        => Left(IllegalContractParams(Some(s"Not Support Json: ${a.noSpaces}")))
+              }
+          }
+
+        case Right(x) => Left(IllegalContractParams(Some(s"Not Support Json: ${x.noSpaces}")))
+      }
+    }
+
+    parseParams()
   }
 
   override def compileContractSourceCode(source: Path): Stack[Either[ContractCompileError, Path]] =

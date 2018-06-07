@@ -16,6 +16,7 @@ trait ArgsParser {
           a match {
             case x: CreateTransferArgs        => x.copy(outputFormat = f)
             case x: CreatePublishContractArgs => x.copy(outputFormat = f)
+            case x: CreateRunContractArgs     => x.copy(outputFormat = f)
             case x                            => x
         })
 
@@ -27,6 +28,7 @@ trait ArgsParser {
           a match {
             case x: CreateTransferArgs        => x.copy(accountId = id)
             case x: CreatePublishContractArgs => x.copy(accountId = id)
+            case x: CreateRunContractArgs     => x.copy(accountId = id)
             case x                            => x
         })
     def privateKey: OptionDef[String, Args] =
@@ -37,6 +39,7 @@ trait ArgsParser {
           a match {
             case x: CreateTransferArgs        => x.copy(privateKey = p)
             case x: CreatePublishContractArgs => x.copy(privateKey = p)
+            case x: CreateRunContractArgs     => x.copy(privateKey = p)
             case x                            => x
         })
     def password: OptionDef[String, Args] =
@@ -47,6 +50,7 @@ trait ArgsParser {
           a match {
             case x: CreateTransferArgs        => x.copy(password = p)
             case x: CreatePublishContractArgs => x.copy(password = p)
+            case x: CreateRunContractArgs     => x.copy(password = p)
             case x                            => x
         })
 
@@ -58,6 +62,7 @@ trait ArgsParser {
           a match {
             case x: CreateTransferArgs        => x.copy(iv = i)
             case x: CreatePublishContractArgs => x.copy(iv = i)
+            case x: CreateRunContractArgs     => x.copy(iv = i)
             case x                            => x
         })
 
@@ -328,6 +333,40 @@ trait ArgsParser {
                   case x: CompileContractArgs => x.copy(outputFile = f.getAbsolutePath)
                   case x                      => x
               })
+          ),
+        cmd("createRunContract")
+          .text("create a run contract protocol represented with jsonrpc")
+          .action((_, _) => CreateRunContractArgs())
+          .children(
+            privateKey,
+            password,
+            iv,
+            accountId,
+            opt[String]("name")
+              .text("the name of the contract")
+              .required()
+              .action((n, a) =>
+                a match {
+                  case x: CreateRunContractArgs => x.copy(name = n)
+                  case x                        => x
+              }),
+            opt[String]("version")
+              .text("the version of the contract")
+              .required()
+              .action((v, a) =>
+                a match {
+                  case x: CreateRunContractArgs => x.copy(version = v)
+                  case x                        => x
+              }),
+            opt[String]("params")
+              .text("the parameters, only support primary data type, or array of primary data type. should be a legal json.")
+              .required()
+              .action((p, a) =>
+                a match {
+                  case x: CreateRunContractArgs => x.copy(params = p)
+                  case x                        => x
+              }),
+            protocolOutputFormat
           )
       )
   }

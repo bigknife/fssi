@@ -1,7 +1,8 @@
 package fssi.interpreter.codec
 
+import fssi.ast.domain.types.Contract.Parameter._
 import fssi.ast.domain.types.{BytesValue, Contract, Signature}
-import io.circe.{Decoder, Encoder, HCursor, Json}
+import io.circe._
 
 trait ContractJsonCodec {
   implicit val contractJsonEncoder: Encoder[Contract] = (c: Contract) => {
@@ -26,6 +27,47 @@ trait ContractJsonCodec {
         Contract.Code(code),
         Signature(BytesValue.decodeBase64(codeSign))
       )
+  }
+
+  implicit val contractParameterEncoder: Encoder[Contract.Parameter] = {
+    case x: Contract.Parameter.PString     => Json.fromString(x.value)
+    case x: Contract.Parameter.PBigDecimal => Json.fromBigDecimal(x.value)
+    case x: Contract.Parameter.PBool       => Json.fromBoolean(x.value)
+    case xs: Contract.Parameter.PArray =>
+      Json.fromValues(xs.array.map {
+        case x0: Contract.Parameter.PString     => Json.fromString(x0.value)
+        case x0: Contract.Parameter.PBigDecimal => Json.fromBigDecimal(x0.value)
+        case x0: Contract.Parameter.PBool       => Json.fromBoolean(x0.value)
+      })
+  }
+
+  implicit val contractParameterDecoder: Decoder[Contract.Parameter] = (c: HCursor) => {
+    // String, Number, Bool, Array
+    c.as[String]
+      .map(PString)
+      .left
+      .flatMap(_ => c.as[BigDecimal].map(x => PBigDecimal(x.bigDecimal)))
+      .left
+      .flatMap(_ => c.as[Boolean].map(PBool))
+      .left
+      .flatMap(_ =>
+        c.values match {
+          //case None => ???
+          case Some(arr) =>
+            val xs: Iterable[Either[DecodingFailure, PrimaryParameter]] = arr.map { json =>
+              json
+                .as[String]
+                .map(PString)
+                .left
+                .flatMap(_ => c.as[BigDecimal].map(x => PBigDecimal(x.bigDecimal)))
+                .left
+                .flatMap(_ => c.as[Boolean].map(PBool))
+            }
+            xs.find(_.isLeft) match {
+              case Some(x) => x
+              case None    => Right(PArray(xs.map(_.right.get).toArray))
+            }
+      })
   }
 }
 object ContractJsonCodec extends ContractJsonCodec

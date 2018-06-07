@@ -62,7 +62,15 @@ object Transaction {
       status: Transaction.Status
   ) extends Transaction {
     val sender: Account.ID                = invoker
-    override def toBeVerified: BytesValue = ???
+    override def toBeVerified: BytesValue = {
+      val buf = new StringBuilder
+      buf.append(id.value)
+      buf.append(invoker.value)
+      buf.append(name.value)
+      buf.append(version.value)
+      buf.append(parameter.toString)
+      BytesValue(buf.toString())
+    }
   }
 
   // transaction id

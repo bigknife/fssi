@@ -32,6 +32,14 @@ trait CmdToolUseCases[F[_]] {
                             version: String,
                             contract: String): SP[F, Transaction]
 
+  def createRunContract(owner: String,
+                        privateKey: String,
+                        password: String,
+                        iv: String,
+                        name: String,
+                        version: String,
+                        params: String): SP[F, Transaction]
+
   /** compile a contract project, output jar file */
   def compileContract(source: Path): SP[F, BytesValue]
 }

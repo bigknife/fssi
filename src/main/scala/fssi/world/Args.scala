@@ -93,6 +93,20 @@ object Args {
     override def toSetting: Setting = Setting()
   }
 
+  // cmd tool, run a contract with params
+  case class CreateRunContractArgs(
+      accountId: String = "",
+      name: String = "",
+      version: String = "",
+      params: String = "",
+      privateKey: String = "",
+      password: String = "",
+      iv: String = "",
+      outputFormat: String = "nospace" // or space2, or space4
+  ) extends Args {
+    override def toSetting: Setting = Setting()
+  }
+
   // cmd tool, compile a contract project
   case class CompileContractArgs(
       projectDir: String = "",

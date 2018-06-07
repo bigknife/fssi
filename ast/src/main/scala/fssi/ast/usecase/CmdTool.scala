@@ -69,6 +69,27 @@ trait CmdTool[F[_]] extends CmdToolUseCases[F] {
       sign <- cryptoService.makeSignature(pubContractNotSigned.toBeVerified, pk)
     } yield pubContractNotSigned.copy(signature = Signature(sign.bytes)): Transaction
 
+  override def createRunContract(owner: String,
+                                 privateKey: String,
+                                 password: String,
+                                 iv: String,
+                                 name: String,
+                                 version: String,
+                                 params: String): SP[F, Transaction] =
+    for {
+      pk         <- rebuildPriv(password, privateKey, iv)
+      id         <- transactionService.randomTransactionID()
+      parameter  <- contractService.createParameterFromString(params)
+      legalParam <- err.either(parameter)
+      runContractNotSigned <- transactionService.createRunContractWithoutSign(id,
+                                                                              owner,
+                                                                              name,
+                                                                              version,
+                                                                              legalParam)
+
+      sign <- cryptoService.makeSignature(runContractNotSigned.toBeVerified, pk)
+    } yield runContractNotSigned.copy(signature = Signature(sign.bytes)): Transaction
+
   override def compileContract(source: Path): SP[F, BytesValue] =
     for {
       classPathOr  <- contractService.compileContractSourceCode(source)

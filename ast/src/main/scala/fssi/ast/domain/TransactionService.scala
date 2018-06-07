@@ -22,9 +22,33 @@ import fssi.ast.domain.types.{Contract, Token, Transaction}
                                 to: String,
                                 amount: Long): P[F, Transaction.Transfer]
 
+  /**
+    * create a publish contract transaction
+    * @param id trans id
+    * @param accountId account id of the contract owner.
+    * @param name name of contract
+    * @param version version of contract
+    * @param contract contract data
+    * @return
+    */
   def createPublishContractWithoutSign(id: Transaction.ID,
                                        accountId: String,
                                        name: String,
                                        version: String,
                                        contract: Contract): P[F, Transaction.PublishContract]
+
+  /**
+    * create a run contract transaction
+    * @param id trans id
+    * @param accountId account id of the contract owner
+    * @param name name of contract
+    * @param version version of contract
+    * @param params parameters
+    * @return
+    */
+  def createRunContractWithoutSign(id: Transaction.ID,
+                                   accountId: String,
+                                   name: String,
+                                   version: String,
+                                   params: Contract.Parameter): P[F, Transaction.InvokeContract]
 }
