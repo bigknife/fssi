@@ -2,7 +2,7 @@ package fssi.world.handler
 
 import fssi.world.Args.NymphArgs
 import bigknife.jsonrpc._
-import io.circe.Json
+import io.circe.{DecodingFailure, Json}
 import fssi.ast.domain.components.Model.Op
 import fssi.ast.domain.types.Transaction
 import fssi.ast.usecase.Nymph

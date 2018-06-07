@@ -94,7 +94,7 @@ trait TransactionJsonCodec {
       "version"   -> Json.fromString(c.version.value),
       "parameter" -> c.parameter.asJson,
       "signature" -> Json.fromString(c.signature.base64),
-      "satus"     -> c.status.asJson
+      "status"     -> c.status.asJson
     )
   }
 
