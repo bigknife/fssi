@@ -47,6 +47,9 @@ object Dependencies {
 
       // asm
       val asm = "6.1.1"
+
+      // leveldb
+      val leveldb = "1.8"
     }
 
     lazy val log = {
@@ -122,6 +125,12 @@ object Dependencies {
         Dpd("org.ow2.asm", "asm-util", versions.asm, autoScalaVersion = false),
         Dpd("org.ow2.asm", "asm-tree", versions.asm, autoScalaVersion = false),
         Dpd("org.ow2.asm", "asm-commons", versions.asm, autoScalaVersion = false)
+      ).map(_.libraryDependencies)
+    }
+
+    lazy val leveldb = {
+      Seq(
+        Dpd("org.fusesource.leveldbjni", "leveldbjni-all", versions.leveldb, autoScalaVersion = false)
       ).map(_.libraryDependencies)
     }
   }

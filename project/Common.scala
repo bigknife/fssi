@@ -123,7 +123,8 @@ object Common {
             libraryDependencies ++= all.h2,
             libraryDependencies ++= all.circe,
             libraryDependencies ++= all.scalecube,
-            libraryDependencies ++= all.betterfiles
+            libraryDependencies ++= all.betterfiles,
+            libraryDependencies ++= all.leveldb
           )
       def apply(id: String): Project = apply(id, id)
       def apply(): Project           = apply("interpreter")
