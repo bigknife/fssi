@@ -10,7 +10,8 @@ import _root_.java.util.zip.{ZipEntry, ZipOutputStream}
 import java.io._
 import java.nio.file.attribute.BasicFileAttributes
 
-import io.circe.Json.{JArray, JBoolean, JNumber, JString}
+import fssi.ast.domain.types.Contract.Parameter.{PArray, PBigDecimal, PString}
+import fssi.contract.States
 
 import scala.annotation.tailrec
 
@@ -18,8 +19,8 @@ class ContractServiceHandler extends ContractService.Handler[Stack] {
 
   override def createContractWithoutSing(name: String,
                                          version: String,
-                                         code: String): Stack[Contract] = Stack {
-    Contract(
+                                         code: String): Stack[Contract.UserContract] = Stack {
+    Contract.UserContract(
       Contract.Name(name),
       Contract.Version(version),
       Contract.Code(code)
@@ -116,19 +117,43 @@ class ContractServiceHandler extends ContractService.Handler[Stack] {
 
   }
 
-  override def resolveTransaction(
-      transaction: Transaction): Stack[(Contract.Name, Contract.Version)] = Stack {
+  override def resolveTransaction(transaction: Transaction)
+    : Stack[(Contract.Name, Contract.Version, Option[Contract.Parameter])] = Stack {
     import Contract.inner._
     transaction match {
-      case _: Transaction.Transfer        => TransferContract.name -> TransferContract.version
-      case _: Transaction.PublishContract => PublishContract.name  -> PublishContract.version
-      case x: Transaction.InvokeContract  => x.name                -> x.version
+      case x: Transaction.Transfer =>
+        // to, amount
+        val parameter = PArray(PString(x.to.value),
+                               PBigDecimal(java.math.BigDecimal.valueOf(x.amount.toBase.amount)))
+        (TransferContract.name, TransferContract.version, Some(parameter))
+
+      case x: Transaction.PublishContract =>
+        // name, version, code, sig
+        val parameter = PArray(
+          PString(x.contract.name.value),
+          PString(x.contract.version.value),
+          PString(x.contract.code.base64),
+          PString(x.signature.base64)
+        )
+        (PublishContract.name, PublishContract.version, Some(parameter))
+
+      case x: Transaction.InvokeContract => (x.name, x.version, Some(x.parameter))
     }
   }
 
-  override def runContract(invoker: Account, contract: Contract): Stack[Either[Throwable, Moment]] = Stack {
-    ???
-  }
+  override def runContract(invoker: Account,
+                           contract: Contract,
+                           currentStates: States,
+                           parameter: Option[Contract.Parameter],
+                           transactionId: Transaction.ID): Stack[Either[Throwable, Moment]] =
+    Stack {
+      import Contract.inner._
+      contract match {
+        case TransferContract         => ???
+        case PublishContract          => ???
+        case x: Contract.UserContract => ???
+      }
+    }
 }
 object ContractServiceHandler {
   trait Implicits {

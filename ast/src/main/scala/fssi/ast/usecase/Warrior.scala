@@ -1,7 +1,9 @@
 package fssi.ast.usecase
 
-import bigknife.sop._, implicits._
+import bigknife.sop._
+import implicits._
 import fssi.ast.domain.components.Model
+import fssi.ast.domain.types.Contract.Parameter
 import fssi.ast.domain.types._
 
 trait Warrior[F[_]] extends WarriorUseCases[F] with P2P[F] {
@@ -44,12 +46,14 @@ trait Warrior[F[_]] extends WarriorUseCases[F] with P2P[F] {
       } yield status
 
     // then, find appropriately contract
-    def findProperContract(next: Contract => SP[F, Transaction.Status]): SP[F, Transaction.Status] =
+    def findProperContract(
+        next: (Contract, Option[Contract.Parameter]) => SP[F, Transaction.Status])
+      : SP[F, Transaction.Status] =
       for {
-        contract_name_version <- contractService.resolveTransaction(transaction)
-        contractOpt <- contractStore.findContract(contract_name_version._1,
-                                                  contract_name_version._2)
-        status <- if (contractOpt.isDefined) next(contractOpt.get)
+        contract_name_version_param <- contractService.resolveTransaction(transaction)
+        contractOpt <- contractStore.findContract(contract_name_version_param._1,
+                                                  contract_name_version_param._2)
+        status <- if (contractOpt.isDefined) next(contractOpt.get, contract_name_version_param._3)
         else
           for {
             _  <- log.warn(s"Can't Resolve Contract from Transaction(id=${transaction.id})")
@@ -58,10 +62,15 @@ trait Warrior[F[_]] extends WarriorUseCases[F] with P2P[F] {
       } yield status
 
     // then, run the contract
-    def runContract(invoker: Account, contract: Contract)(
+    def runContract(invoker: Account, contract: Contract, parameter: Option[Parameter])(
         next: Moment => SP[F, Transaction.Status]): SP[F, Transaction.Status] =
       for {
-        momentOrThrowable <- contractService.runContract(invoker, contract)
+        currentStates <- ledgerStore.loadStates(transaction)
+        momentOrThrowable <- contractService.runContract(invoker,
+                                                         contract,
+                                                         currentStates,
+                                                         parameter,
+                                                         transaction.id)
         status <- momentOrThrowable match {
           case Left(t) =>
             for {
@@ -85,8 +94,8 @@ trait Warrior[F[_]] extends WarriorUseCases[F] with P2P[F] {
     // put  together
     findAccount { account =>
       validateSignature(account) {
-        findProperContract { contract =>
-          runContract(account, contract) { moment =>
+        findProperContract { (contract, param) =>
+          runContract(account, contract, param) { moment =>
             putToPool(moment)
           }
         }
@@ -138,7 +147,7 @@ trait Warrior[F[_]] extends WarriorUseCases[F] with P2P[F] {
       t0       <- monitorService.startNow()
       _        <- log.info(s"creating new account: $account at $t0")
       snapshot <- accountService.makeSnapshot(account)
-      _        <- log.info(s"prepared account snaptho: $snapshot")
+      _        <- log.info(s"prepared account snapshot: $snapshot")
       _        <- accountSnapshot.saveSnapshot(snapshot)
       passed   <- monitorService.timePassed(t0)
       _ <- log.info(

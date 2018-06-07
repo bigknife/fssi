@@ -35,7 +35,7 @@ import fssi.ast.domain.types.{Contract, Token, Transaction}
                                        accountId: String,
                                        name: String,
                                        version: String,
-                                       contract: Contract): P[F, Transaction.PublishContract]
+                                       contract: Contract.UserContract): P[F, Transaction.PublishContract]
 
   /**
     * create a run contract transaction

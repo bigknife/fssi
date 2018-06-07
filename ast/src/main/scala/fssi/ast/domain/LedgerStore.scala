@@ -1,7 +1,8 @@
 package fssi.ast.domain
 
-import bigknife.sop._, macros._, implicits._
+import bigknife.sop._,implicits._,macros._
 import fssi.ast.domain.types._
+import fssi.contract.States
 
 @sp trait LedgerStore[F[_]] {
   /**
@@ -10,4 +11,11 @@ import fssi.ast.domain.types._
     * @return
     */
   def commit(proposal: Proposal): P[F, Unit]
+
+  /** load current transaction relative world states
+    *
+    * @param transaction transaction
+    * @return
+    */
+  def loadStates(transaction: Transaction): P[F, States]
 }

@@ -1,22 +1,24 @@
 package fssi.ast.domain.types
 
 /** smart contract */
-case class Contract(
-    name: Contract.Name,
-    version: Contract.Version,
-    code: Contract.Code,
-    codeSign: Signature = Signature.Empty
-) {
-  def toBeVerified: BytesValue = {
-    val buf = new StringBuilder
-    buf.append(name.value)
-    buf.append(version.value)
-    buf.append(code.base64)
-    BytesValue(buf.toString)
-  }
-}
+sealed trait Contract {}
 
 object Contract {
+  case class UserContract(
+      name: Contract.Name,
+      version: Contract.Version,
+      code: Contract.Code,
+      codeSign: Signature = Signature.Empty
+  ) extends Contract {
+    def toBeVerified: BytesValue = {
+      val buf = new StringBuilder
+      buf.append(name.value)
+      buf.append(version.value)
+      buf.append(code.base64)
+      BytesValue(buf.toString)
+    }
+  }
+
   case class Name(value: String)
   case class Version(value: String)
   case class Code(base64: String)
@@ -44,20 +46,21 @@ object Contract {
     }
     object PArray {
       val Empty: PArray = PArray(Array.empty[PrimaryParameter])
+      def apply(xs: PrimaryParameter*): PArray = PArray(xs.toArray)
     }
   }
 
   // inner contract
   object inner {
-    trait TransferContract{}
-    object TransferContract {
-      val name: Contract.Name = Contract.Name("fssi.ast.contract.inner.TransferContract")
+    //trait TransferContract extends Contract {}
+    object TransferContract extends Contract {
+      val name: Contract.Name       = Contract.Name("fssi.ast.contract.inner.TransferContract")
       val version: Contract.Version = Contract.Version("0.0.1")
     }
 
-    trait PublishContract{}
-    object PublishContract {
-      val name: Contract.Name = Contract.Name("fssi.ast.contract.inner.PublishContract")
+    //trait PublishContract extends Contract {}
+    object PublishContract extends Contract {
+      val name: Contract.Name       = Contract.Name("fssi.ast.contract.inner.PublishContract")
       val version: Contract.Version = Contract.Version("0.0.1")
     }
   }

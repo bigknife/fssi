@@ -55,7 +55,7 @@ trait NymphUseCases[F[_]] extends P2PUseCases[F]{
 
   /** publish smart contract */
   def publishContract(owner: Account.ID,
-                      contract: Contract,
+                      contract: Contract.UserContract,
                       sign: String): SP[F, TransactionSendingStatus] =
     for {
 

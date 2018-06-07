@@ -37,7 +37,7 @@ object Transaction {
   case class PublishContract(
       id: Transaction.ID,
       owner: Account.ID,
-      contract: Contract,
+      contract: Contract.UserContract,
       signature: Signature,
       status: Transaction.Status
   ) extends Transaction {
@@ -61,7 +61,7 @@ object Transaction {
       signature: Signature,
       status: Transaction.Status
   ) extends Transaction {
-    val sender: Account.ID                = invoker
+    val sender: Account.ID = invoker
     override def toBeVerified: BytesValue = {
       val buf = new StringBuilder
       buf.append(id.value)
@@ -88,8 +88,8 @@ object Transaction {
     case class Failed(id: ID)   extends Status
   }
 
-  def initStatus(id: ID): Status = Status.Init(id)
+  def initStatus(id: ID): Status     = Status.Init(id)
   def rejectedStatus(id: ID): Status = Status.Rejected(id)
-  def pendingStatus(id: ID): Status = Status.Pending(id)
-  def failedStatus(id: ID): Status = Status.Failed(id)
+  def pendingStatus(id: ID): Status  = Status.Pending(id)
+  def failedStatus(id: ID): Status   = Status.Failed(id)
 }

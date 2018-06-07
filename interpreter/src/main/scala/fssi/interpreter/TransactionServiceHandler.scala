@@ -27,7 +27,7 @@ class TransactionServiceHandler extends TransactionService.Handler[Stack] {
                                                 accountId: String,
                                                 name: String,
                                                 version: String,
-                                                contract: Contract): Stack[PublishContract] =
+                                                contract: Contract.UserContract): Stack[PublishContract] =
     Stack {
       PublishContract(
         id,

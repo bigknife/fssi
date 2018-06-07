@@ -6,6 +6,7 @@ coverageEnabled in ThisBuild := true
 parallelExecution in ThisBuild := false
 // ast prj
 lazy val pAst = ast()
+  .dependsOn(pContractLib)
 
 // interpreter prj
 lazy val pInterpreter = interpreter()

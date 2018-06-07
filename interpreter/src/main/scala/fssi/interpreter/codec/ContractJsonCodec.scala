@@ -6,7 +6,7 @@ import io.circe.Decoder.Result
 import io.circe._
 
 trait ContractJsonCodec {
-  implicit val contractJsonEncoder: Encoder[Contract] = (c: Contract) => {
+  implicit val contractJsonEncoder: Encoder[Contract.UserContract] = (c: Contract.UserContract) => {
     Json.obj(
       "name"     -> Json.fromString(c.name.value),
       "version"  -> Json.fromString(c.version.value),
@@ -15,14 +15,14 @@ trait ContractJsonCodec {
     )
   }
 
-  implicit val contractJsonDecoder: Decoder[Contract] = (c: HCursor) => {
+  implicit val contractJsonDecoder: Decoder[Contract.UserContract] = (c: HCursor) => {
     for {
       name     <- c.get[String]("name")
       version  <- c.get[String]("version")
       code     <- c.get[String]("code")
       codeSign <- c.get[String]("codeSign")
     } yield
-      Contract(
+      Contract.UserContract(
         Contract.Name(name),
         Contract.Version(version),
         Contract.Code(code),
@@ -53,7 +53,7 @@ trait ContractJsonCodec {
         .left
         .flatMap(_ =>
           c.values match {
-            //case None => ???
+            case None => Right(PArray())
             case Some(arr) =>
               val xs: Iterable[Either[DecodingFailure, PrimaryParameter]] = arr.map { json =>
                 json.as[String].toOption.map(PString)

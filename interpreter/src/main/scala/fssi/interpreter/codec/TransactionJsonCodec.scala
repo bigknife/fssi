@@ -73,7 +73,7 @@ trait TransactionJsonCodec {
     for {
       id        <- c.get[String]("id")
       owner     <- c.get[String]("owner")
-      contract  <- c.get[Contract]("contract")
+      contract  <- c.get[Contract.UserContract]("contract")
       signature <- c.get[String]("signature")
       status    <- c.get[Transaction.Status]("status")
     } yield
