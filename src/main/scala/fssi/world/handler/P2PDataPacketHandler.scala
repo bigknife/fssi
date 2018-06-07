@@ -26,8 +26,12 @@ trait P2PDataPacketHandler {
         logger.warn("this feature is been developed")
 
       case SubmitTransaction(account, transaction) =>
-        //todo SubmitTransaction
-        logger.warn("this feature is been developed")
+        runner
+          .runIOAttempt(warrior.processTransaction(transaction), warriorArgs.toSetting)
+          .unsafeRunSync() match {
+          case Left(t)       => logger.error(s"failed to process transaction(${transaction.id})", t)
+          case Right(status) => logger.info(s"processing transaction($status)")
+        }
 
     }
 }
