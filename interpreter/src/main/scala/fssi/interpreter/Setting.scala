@@ -10,12 +10,14 @@ case class Setting(
     snapshotDbPort: Int = 18080,
     startSnapshotDbConsole: Boolean = false,
     snapshotDbConsolePort: Int = 18081,
-    warriorNodesOfNymph: Vector[Node.Address] = Vector.empty
+    warriorNodesOfNymph: Vector[Node.Address] = Vector.empty,
+    maxMomentSize: Int = 20,
+    maxMomentPoolElapsedSecond: Int = 3
 ) {
   // try create working dir
   new java.io.File(workingDir).mkdirs()
 
   val snapshotDbBaseDir: String = Paths.get(workingDir, "snapshotdb").toString
-  val nodeJsonFile: String = Paths.get(workingDir, ".node").toString
-  val contractTempDir: String = Paths.get(workingDir, "temp/contract").toString
+  val nodeJsonFile: String      = Paths.get(workingDir, ".node").toString
+  val contractTempDir: String   = Paths.get(workingDir, "temp/contract").toString
 }
