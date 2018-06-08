@@ -1,20 +1,36 @@
 package fssi.interpreter
 
+import java.nio.file.Paths
+
 import fssi.ast.domain.types.Contract.Parameter.{PArray, PBigDecimal, PString}
 import fssi.ast.domain.types._
-import org.scalatest.FunSuite
+import org.scalatest.{BeforeAndAfter, FunSuite}
+import scala.language.reflectiveCalls
 
-class LedgerStoreHandlerSpec extends FunSuite {
-  val setting: Setting   = Setting()
-  val ledgerStoreHandler = new LedgerStoreHandler
+class LedgerStoreHandlerSpec extends FunSuite with BeforeAndAfter {
+  def fixture = new {
+    val setting: Setting = Setting(workingDir =
+      Paths.get(System.getProperty("user.home"), s".fssi/${scala.util.Random.nextLong()}").toString)
+    val ledgerStoreHandler = new LedgerStoreHandler
+  }
+
+  val f = fixture
+
+  before {
+    f.ledgerStoreHandler.init(f.setting)
+  }
+
+  after {
+    f.ledgerStoreHandler.clean()
+  }
 
   test("load states for TransferContract") {
-    val r = ledgerStoreHandler
+    val r = f.ledgerStoreHandler
       .loadStates(
         Account.ID("account_1"),
         Contract.inner.TransferContract,
         Some(PArray(PString("account_2"), PBigDecimal(10000)))
-      )(setting)
+      )(f.setting)
       .attempt
       .unsafeRunSync()
     r match {
@@ -26,12 +42,12 @@ class LedgerStoreHandlerSpec extends FunSuite {
   }
 
   test("load states for PublishContract") {
-    val r = ledgerStoreHandler
+    val r = f.ledgerStoreHandler
       .loadStates(
         Account.ID("account_1"),
         Contract.inner.PublishContract,
         Some(PArray(PString("account_2"), PBigDecimal(10000)))
-      )(setting)
+      )(f.setting)
       .attempt
       .unsafeRunSync()
     r match {
@@ -50,12 +66,12 @@ class LedgerStoreHandlerSpec extends FunSuite {
       Signature(BytesValue.decodeBase64(
         "MEUCIGI0zK5Ga1YOZF4johc/JFDSmzcvNvqI7feqAVaPlTWXAiEAphD0ZXC0si0Gzgk0lo5f2f2W0yRPC3yFlYln9UvJxGE="))
     )
-    val r = ledgerStoreHandler
+    val r = f.ledgerStoreHandler
       .loadStates(
         Account.ID("account_1"),
         contract,
         None
-      )(setting)
+      )(f.setting)
       .attempt
       .unsafeRunSync()
     r match {
@@ -64,5 +80,4 @@ class LedgerStoreHandlerSpec extends FunSuite {
     }
     assert(r.isRight)
   }
-
 }

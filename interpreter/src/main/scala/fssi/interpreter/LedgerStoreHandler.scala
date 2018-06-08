@@ -19,7 +19,7 @@ import scala.collection.immutable
 class LedgerStoreHandler extends LedgerStore.Handler[Stack] {
   val accountStateTrie: Once[Trie] = Once.empty
 
-  private def init(setting: Setting): Unit = {
+  def init(setting: Setting): Unit = {
     accountStateTrie := {
       val path = Paths.get(setting.workingDir, "states")
       path.toFile.mkdirs()
@@ -27,11 +27,16 @@ class LedgerStoreHandler extends LedgerStore.Handler[Stack] {
     }
   }
 
+  def clean(): Unit = {
+    accountStateTrie.foreach(_.store.shutdown())
+    accountStateTrie.reset()
+  }
+
   override def loadStates(invoker: Account.ID,
                           contract: Contract,
                           parameter: Option[Parameter]): Stack[Either[WorldStatesError, States]] =
     Stack { setting =>
-      init(setting)
+      //init(setting)
       accountStateTrie
         .map { trie =>
           // parameters of a transaction were resolved by ContractServiceHandler#resolveTransaction

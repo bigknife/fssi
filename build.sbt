@@ -4,6 +4,8 @@ import Common._, prj._
 coverageExcludedFiles in ThisBuild := ".*macro.*"
 coverageEnabled in ThisBuild := true
 parallelExecution in ThisBuild := false
+fork in ThisBuild := true
+
 // ast prj
 lazy val pAst = ast()
   .dependsOn(pContractLib)
