@@ -2,7 +2,7 @@ package fssi.interpreter.util
 
 trait SafeVar[A] {outter =>
   @volatile
-  private var a: Option[A] = None
+  private[util] var a: Option[A] = None
 
   def isDefined: Boolean = a.isDefined
   def isEmpty: Boolean = a.isEmpty
@@ -21,6 +21,11 @@ trait SafeVar[A] {outter =>
   def foreach(f: A => Unit): Unit = {
     if (a.isDefined) f(a.get)
     else ()
+  }
+
+  def map[B](f: A => B): SafeVar[B] = new SafeVar[B] {
+    @volatile
+    private[util] override var a: Option[B] = outter.a.map(f)
   }
 
   def reset(): Unit = a = None

@@ -1,10 +1,14 @@
 package fssi.ast.domain
 
-import bigknife.sop._,implicits._,macros._
+import bigknife.sop._
+import bigknife.sop.implicits._
+import bigknife.sop.macros._
+import fssi.ast.domain.types.Contract.Parameter
 import fssi.ast.domain.types._
 import fssi.contract.States
 
 @sp trait LedgerStore[F[_]] {
+
   /**
     * commit the moments in the proposal, then all things determinedly happened.
     * @param proposal agreed proposal, including some moments
@@ -12,10 +16,12 @@ import fssi.contract.States
     */
   def commit(proposal: Proposal): P[F, Unit]
 
-  /** load current transaction relative world states
+  /** load current contract-relative world states
     *
-    * @param transaction transaction
+    * @param contract relative contract
     * @return
     */
-  def loadStates(transaction: Transaction): P[F, States]
+  def loadStates(invoker: Account.ID,
+                 contract: Contract,
+                 parameter: Option[Parameter]): P[F, States]
 }
