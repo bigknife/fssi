@@ -57,6 +57,19 @@ class TransactionServiceHandler extends TransactionService.Handler[Stack] {
         Transaction.Status.Init(id)
       )
     }
+
+  override def createMoment(transaction: Transaction,
+                            statesChange: StatesChange,
+                            oldStatesHash: BytesValue,
+                            newStatesHash: BytesValue): Stack[Moment] = Stack {
+    Moment(
+      statesChange.previous,
+      transaction,
+      statesChange.current,
+      oldStatesHash,
+      newStatesHash
+    )
+  }
 }
 
 object TransactionServiceHandler {

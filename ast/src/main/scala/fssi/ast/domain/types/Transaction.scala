@@ -46,7 +46,7 @@ object Transaction {
       val buf = new StringBuilder
       buf.append(id.value)
       buf.append(owner.value)
-      buf.append(contract.codeSign.base64)
+      buf.append(contract.codeHash.base64)
       BytesValue(buf.toString())
     }
   }

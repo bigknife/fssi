@@ -2,8 +2,9 @@ package fssi.interpreter
 
 import java.nio.file._
 
+import fssi.interpreter.util._
 import fssi.ast.domain._
-import fssi.ast.domain.exceptions.{ContractCompileError, IllegalContractParams}
+import fssi.ast.domain.exceptions._
 import fssi.ast.domain.types._
 import fssi.sandbox.compiler
 import _root_.java.util.zip.{ZipEntry, ZipOutputStream}
@@ -11,13 +12,19 @@ import java.io._
 import java.nio.file.attribute.BasicFileAttributes
 
 import fssi.ast.domain.types.Contract.Parameter.{PArray, PBigDecimal, PString}
-import fssi.contract.States
+import fssi.contract.{AccountState, States}
 
 import scala.annotation.tailrec
+import fssi.interpreter.jsonCodec._
+import io.circe.Decoder.Result
+import io.circe.DecodingFailure
+import io.circe.syntax._
+import org.slf4j.{Logger, LoggerFactory}
 
 class ContractServiceHandler extends ContractService.Handler[Stack] {
+  val logger: Logger = LoggerFactory.getLogger(getClass)
 
-  override def createContractWithoutSing(name: String,
+  override def createContractWithoutHash(name: String,
                                          version: String,
                                          code: String): Stack[Contract.UserContract] = Stack {
     Contract.UserContract(
@@ -134,7 +141,7 @@ class ContractServiceHandler extends ContractService.Handler[Stack] {
             PString(x.contract.name.value),
             PString(x.contract.version.value),
             PString(x.contract.code.base64),
-            PString(x.signature.base64)
+            PString(x.contract.codeHash.base64)
           )
           (PublishContract.name, PublishContract.version, None, Some(parameter))
 
@@ -143,17 +150,92 @@ class ContractServiceHandler extends ContractService.Handler[Stack] {
       }
     }
 
-  override def runContract(invoker: Account,
-                           contract: Contract,
-                           function: Option[Contract.Function],
-                           currentStates: States,
-                           parameter: Option[Contract.Parameter],
-                           transactionId: Transaction.ID): Stack[Either[Throwable, Moment]] =
+  //todo: now, not necessary to consider the cost of a transaction
+  override def runContract(
+      invoker: Account,
+      contract: Contract,
+      function: Option[Contract.Function],
+      currentStates: States,
+      parameter: Option[Contract.Parameter]): Stack[Either[Throwable, StatesChange]] =
     Stack {
       import Contract.inner._
       contract match {
-        case TransferContract         => ???
-        case PublishContract          => ???
+        case TransferContract =>
+          parameter match {
+            case Some(PArray(Array(PString(to), PBigDecimal(amount)))) =>
+              // from - amount , to + amount
+              val newStates = for {
+                fromState <- currentStates.of(invoker.id.value)
+                toState   <- currentStates.of(to)
+              } yield {
+                (fromState.withAmount(fromState.amount - amount),
+                 toState.withAmount(toState.amount + amount))
+              }
+
+              // check newStates
+              // 1. not None
+              // 2. amount is gt 0
+              if (newStates.isDefined) {
+                val fromState = newStates.get._1
+                if (fromState.amount < 0) Left(InsufficientBalance(fromState.accountId))
+                else {
+                  val changedStates = currentStates
+                    .update(fromState)
+                    .update(newStates.get._2)
+                  Right(StatesChange(currentStates, changedStates))
+                }
+              } else Left(InsufficientTradePartners)
+
+            case _ =>
+              Left(IllegalContractParams("Invoking TransferContract Without Proper Parameters"))
+          }
+
+        case PublishContract =>
+          //name, version, code, sig
+          parameter match {
+            case Some(
+                PArray(Array(PString(name), PString(version), PString(code), PString(codeHash)))) =>
+              // first, validate the sig
+              //   @see: Contract#toBeHashed
+              val source =
+                BytesValue(new StringBuilder().append(name).append(version).append(code).toString())
+              val hash = crypto.hash(source)
+              if (hash.base64 != codeHash) Left(ContractTampered(name, version))
+              else {
+                // then, save the contract to invoker's assets
+                val ret: Option[Either[DecodingFailure, AccountState]] =
+                  currentStates.of(invoker.id.value).map { accountState =>
+                    val codeMapEl: Result[Map[String, ContractCodeItem]] = accountState
+                      .assetOf(PublishContract.ASSET_NAME)
+                      .map(new String(_, "UTF-8"))
+                      .map(_.asJson.as[Map[String, ContractCodeItem]])
+                      .getOrElse(Right(Map.empty))
+
+                    codeMapEl.right
+                      .map { codeMap =>
+                        codeMap + (crypto
+                          .hash(BytesValue(name + version))
+                          .hex -> ContractCodeItem(name, version, code, codeHash))
+                      }
+                      .map { items =>
+                        accountState.updateAsset(PublishContract.ASSET_NAME,
+                                                 items.asJson.noSpaces.getBytes("UTF-8"))
+                      }
+                  }
+                ret match {
+                  case None => Left(InsufficientTradePartners)
+                  case Some(Left(t)) =>
+                    logger.error("contract assets is broken", t)
+                    Left(ContractAssetsBroken(invoker.id.value))
+                  case Some(Right(contractAssets)) =>
+                    Right(StatesChange(currentStates, currentStates.update(contractAssets)))
+
+                }
+              }
+
+            case _ =>
+              Left(IllegalContractParams("Invoking PublishContract Without Proper Parameters"))
+          }
         case x: Contract.UserContract => ???
       }
     }

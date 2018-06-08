@@ -11,7 +11,7 @@ trait ContractJsonCodec {
       "name"     -> Json.fromString(c.name.value),
       "version"  -> Json.fromString(c.version.value),
       "code"     -> Json.fromString(c.code.base64),
-      "codeSign" -> Json.fromString(c.codeSign.base64)
+      "codeSign" -> Json.fromString(c.codeHash.base64)
     )
   }
 

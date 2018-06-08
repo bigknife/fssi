@@ -75,19 +75,29 @@ trait Warrior[F[_]] extends WarriorUseCases[F] with P2P[F] {
       for {
         currentStatesOr <- ledgerStore.loadStates(invoker.id, contract, parameter)
         currentStates   <- err.either(currentStatesOr)
-        momentOrThrowable <- contractService.runContract(invoker,
-                                                         contract,
-                                                         function,
-                                                         currentStates,
-                                                         parameter,
-                                                         transaction.id)
-        status <- momentOrThrowable match {
+        statesChangeOrThrowable <- contractService.runContract(invoker,
+                                                               contract,
+                                                               function,
+                                                               currentStates,
+                                                               parameter)
+        status <- statesChangeOrThrowable match {
           case Left(t) =>
             for {
               _  <- log.error("Contract Run Failed.", Some(t))
               s0 <- Transaction.Status.Failed(transaction.id).pureSP
             } yield s0
-          case Right(moment) => next(moment)
+          case Right(statesChange) =>
+            for {
+              prevBytes <- transactionService.calculateStatesToBeSigned(statesChange.previous)
+              prevSign  <- cryptoService.hash(prevBytes)
+              currBytes <- transactionService.calculateStatesToBeSigned(statesChange.current)
+              currSign  <- cryptoService.hash(currBytes)
+              moment <- transactionService.createMoment(transaction,
+                                                        statesChange,
+                                                        prevSign,
+                                                        currSign)
+              x <- next(moment)
+            } yield x
         }
       } yield status
 

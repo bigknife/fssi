@@ -18,7 +18,7 @@ import fssi.contract.States
     * @param code code (base64 encoded jar)
     * @return
     */
-  def createContractWithoutSing(name: String,
+  def createContractWithoutHash(name: String,
                                 version: String,
                                 code: String): P[F, Contract.UserContract]
 
@@ -31,8 +31,7 @@ import fssi.contract.States
                   contract: Contract,
                   function: Option[Contract.Function],
                   currentStates: States,
-                  parameter: Option[Contract.Parameter],
-                  transactionId: Transaction.ID): P[F, Either[Throwable, Moment]]
+                  parameter: Option[Contract.Parameter]): P[F, Either[Throwable, StatesChange]]
 
   /** compile source code to class file */
   def compileContractSourceCode(source: Path): P[F, Either[ContractCompileError, Path]]

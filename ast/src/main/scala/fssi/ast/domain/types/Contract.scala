@@ -10,9 +10,9 @@ object Contract {
       name: Contract.Name,
       version: Contract.Version,
       code: Contract.Code,
-      codeSign: Signature = Signature.Empty
+      codeHash: BytesValue = BytesValue.Empty
   ) extends Contract {
-    def toBeVerified: BytesValue = {
+    def toBeHashed: BytesValue = {
       val buf = new StringBuilder
       buf.append(name.value)
       buf.append(version.value)
@@ -70,6 +70,8 @@ object Contract {
     object PublishContract extends Contract {
       val name: Contract.Name       = Contract.Name("fssi.ast.contract.inner.PublishContract")
       val version: Contract.Version = Contract.Version("0.0.1")
+
+      val ASSET_NAME: String = "fssi.ast.contract.inner.publishedcontract.____"
     }
   }
 }

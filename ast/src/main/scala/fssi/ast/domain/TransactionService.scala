@@ -3,7 +3,8 @@ package fssi.ast.domain
 import bigknife.sop._
 import bigknife.sop.macros._
 import bigknife.sop.implicits._
-import fssi.ast.domain.types.{Contract, Token, Transaction}
+import fssi.ast.domain.types._
+import fssi.contract.States
 
 @sp trait TransactionService[F[_]] {
 
@@ -31,11 +32,12 @@ import fssi.ast.domain.types.{Contract, Token, Transaction}
     * @param contract contract data
     * @return
     */
-  def createPublishContractWithoutSign(id: Transaction.ID,
-                                       accountId: String,
-                                       name: String,
-                                       version: String,
-                                       contract: Contract.UserContract): P[F, Transaction.PublishContract]
+  def createPublishContractWithoutSign(
+      id: Transaction.ID,
+      accountId: String,
+      name: String,
+      version: String,
+      contract: Contract.UserContract): P[F, Transaction.PublishContract]
 
   /**
     * create a run contract transaction
@@ -52,4 +54,22 @@ import fssi.ast.domain.types.{Contract, Token, Transaction}
                                    version: String,
                                    function: String,
                                    params: Contract.Parameter): P[F, Transaction.InvokeContract]
+
+  /**
+    * calculate the bytes used to be signed of states
+    * @param states States object
+    * @return bytes value
+    */
+  def calculateStatesToBeSigned(states: States): P[F, BytesValue]
+
+  /**
+    * create a moment via transaction and states changes.
+    * @param transaction
+    * @param statesChange
+    * @return
+    */
+  def createMoment(transaction: Transaction,
+                   statesChange: StatesChange,
+                   oldStatesHash: BytesValue,
+                   newStatesHash: BytesValue): P[F, Moment]
 }

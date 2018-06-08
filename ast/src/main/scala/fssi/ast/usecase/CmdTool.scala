@@ -57,14 +57,14 @@ trait CmdTool[F[_]] extends CmdToolUseCases[F] {
     for {
       pk                <- rebuildPriv(password, privateKey, iv)
       id                <- transactionService.randomTransactionID()
-      contractNotSigned <- contractService.createContractWithoutSing(name, version, contract)
-      contractSign      <- cryptoService.makeSignature(contractNotSigned.toBeVerified, pk)
-      contractSigned    <- contractNotSigned.copy(codeSign = Signature(contractSign.bytes)).pureSP[F]
+      contractNotHashed <- contractService.createContractWithoutHash(name, version, contract)
+      codeHash          <- cryptoService.hash(contractNotHashed.toBeHashed)
+      contractHashed    <- contractNotHashed.copy(codeHash = codeHash).pureSP[F]
       pubContractNotSigned <- transactionService.createPublishContractWithoutSign(id,
                                                                                   owner,
                                                                                   name,
                                                                                   version,
-                                                                                  contractSigned)
+                                                                                  contractHashed)
 
       sign <- cryptoService.makeSignature(pubContractNotSigned.toBeVerified, pk)
     } yield pubContractNotSigned.copy(signature = Signature(sign.bytes)): Transaction
