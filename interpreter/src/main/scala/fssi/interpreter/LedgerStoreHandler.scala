@@ -69,8 +69,13 @@ class LedgerStoreHandler extends LedgerStore.Handler[Stack] {
               // then extract jarFile
               better.files.File(jarFile).unzipTo(better.files.File(tmpDir))
               val contractMetaFile = better.files.File(s"$tmpDir/META-INF/accounts")
+
               // Got the accounts
-              Vector(invoker.value) ++ contractMetaFile.lines.toVector
+              val ret =  Vector(invoker.value) ++ contractMetaFile.lines.toVector
+
+              better.files.File(tmpDir).delete()
+
+              ret
           }
 
           val s: immutable.Seq[Either[WorldStatesError, AccountState]] = accountIds.map {

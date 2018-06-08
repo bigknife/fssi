@@ -6,12 +6,12 @@ import fssi.interpreter.util._
 import fssi.ast.domain._
 import fssi.ast.domain.exceptions._
 import fssi.ast.domain.types._
-import fssi.sandbox.compiler
+import fssi.sandbox.{Runner, compiler}
 import _root_.java.util.zip.{ZipEntry, ZipOutputStream}
 import java.io._
 import java.nio.file.attribute.BasicFileAttributes
 
-import fssi.ast.domain.types.Contract.Parameter.{PArray, PBigDecimal, PString}
+import fssi.ast.domain.types.Contract.Parameter._
 import fssi.contract.{AccountState, States}
 
 import scala.annotation.tailrec
@@ -157,7 +157,7 @@ class ContractServiceHandler extends ContractService.Handler[Stack] {
       function: Option[Contract.Function],
       currentStates: States,
       parameter: Option[Contract.Parameter]): Stack[Either[Throwable, StatesChange]] =
-    Stack {
+    Stack { setting =>
       import Contract.inner._
       contract match {
         case TransferContract =>
@@ -236,7 +236,76 @@ class ContractServiceHandler extends ContractService.Handler[Stack] {
             case _ =>
               Left(IllegalContractParams("Invoking PublishContract Without Proper Parameters"))
           }
-        case x: Contract.UserContract => ???
+        case x: Contract.UserContract =>
+          if (function.isEmpty)
+            Left(IllegalContractInvoke(x.name.value, x.version.value, "no function to invoke"))
+          else {
+            val rand   = java.util.UUID.randomUUID().toString
+            val tmpDir = Paths.get(setting.contractTempDir, rand)
+            tmpDir.toFile.mkdirs()
+            val jarFile = Paths.get(tmpDir.toString, s"${x.name.value}.jar")
+            better.files
+              .File(jarFile)
+              .writeByteArray(BytesValue.decodeBase64(x.code.base64).bytes)
+
+            // then extract jarFile
+            better.files.File(jarFile).unzipTo(better.files.File(tmpDir))
+            val contractMetaFile = better.files.File(s"$tmpDir/META-INF/contract")
+
+            // contract config:
+            // function1 = me.bigknife.test.TestContract#registerMyBanana
+            val functionMap: Map[String, String] = contractMetaFile.lines
+              .map(line =>
+                line.split("=") match {
+                  case Array(k, v) => Some((k, v))
+                  case _           => None
+              })
+              .filter(_.isDefined)
+              .map(_.get)
+              .toMap
+            if (functionMap.contains(function.get.name)) {
+
+              functionMap(function.get.name).split("#") match {
+                case Array(fullName, method) =>
+                  val params: Seq[Any] = parameter
+                    .map {
+                      case PString(x0)    => Seq(x0)
+                      case PBool(x0)      => Seq(x0)
+                      case PBigDecimal(x) => Seq(x)
+                      case PArray(array) =>
+                        array.toSeq.map {
+                          case PString(x1)     => Seq(x1)
+                          case PBool(x1)       => Seq(x1)
+                          case PBigDecimal(x1) => Seq(x1)
+                        }
+                    }
+                    .getOrElse(Seq.empty)
+                  Runner.runAndInstrument(tmpDir,
+                                          fullName,
+                                          method,
+                                          invoker.id.value,
+                                          currentStates,
+                                          params.map(_.asInstanceOf[AnyRef])) match {
+                    case Left(t) => Left(ContractRuntimeError(x.name.value, x.version.value, t))
+                    case Right((states, cost)) =>
+                      logger.info(
+                        s"run contract(name=${x.name.value}, version=${x.version.value}) cost = $cost")
+                      Right(StatesChange(currentStates, states))
+                  }
+                case _ =>
+                  Left(
+                    IllegalContractInvoke(
+                      x.name.value,
+                      x.version.value,
+                      s"function(${function.get.name} = ${functionMap(function.get.name)}) shape is illegal"))
+              }
+
+            } else
+              Left(
+                IllegalContractInvoke(x.name.value,
+                                      x.version.value,
+                                      s"function(${function.get.name}) not found"))
+          }
       }
     }
 }

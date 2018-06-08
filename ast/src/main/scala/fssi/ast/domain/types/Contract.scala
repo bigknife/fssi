@@ -1,7 +1,5 @@
 package fssi.ast.domain.types
 
-import fssi.contract.States
-
 /** smart contract */
 sealed trait Contract {}
 
