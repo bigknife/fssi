@@ -3,8 +3,8 @@ package fssi.ast.domain
 import java.nio.file.Path
 
 import bigknife.sop._
-import implicits._
-import macros._
+import bigknife.sop.implicits._
+import bigknife.sop.macros._
 import fssi.ast.domain.exceptions._
 import fssi.ast.domain.types._
 import fssi.contract.States
@@ -23,11 +23,13 @@ import fssi.contract.States
                                 code: String): P[F, Contract.UserContract]
 
   /** resolve a transaction to contract */
-  def resolveTransaction(transaction: Transaction): P[F, (Contract.Name, Contract.Version, Option[Contract.Parameter])]
+  def resolveTransaction(transaction: Transaction)
+    : P[F, (Contract.Name, Contract.Version, Option[Contract.Function], Option[Contract.Parameter])]
 
   /** run the contract */
   def runContract(invoker: Account,
                   contract: Contract,
+                  function: Option[Contract.Function],
                   currentStates: States,
                   parameter: Option[Contract.Parameter],
                   transactionId: Transaction.ID): P[F, Either[Throwable, Moment]]

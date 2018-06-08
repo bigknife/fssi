@@ -23,11 +23,12 @@ class TransactionServiceHandler extends TransactionService.Handler[Stack] {
     )
   }
 
-  override def createPublishContractWithoutSign(id: Transaction.ID,
-                                                accountId: String,
-                                                name: String,
-                                                version: String,
-                                                contract: Contract.UserContract): Stack[PublishContract] =
+  override def createPublishContractWithoutSign(
+      id: Transaction.ID,
+      accountId: String,
+      name: String,
+      version: String,
+      contract: Contract.UserContract): Stack[PublishContract] =
     Stack {
       PublishContract(
         id,
@@ -42,6 +43,7 @@ class TransactionServiceHandler extends TransactionService.Handler[Stack] {
                                             accountId: String,
                                             name: String,
                                             version: String,
+                                            function: String,
                                             params: Contract.Parameter): Stack[InvokeContract] =
     Stack {
       InvokeContract(
@@ -49,6 +51,7 @@ class TransactionServiceHandler extends TransactionService.Handler[Stack] {
         Account.ID(accountId),
         Contract.Name(name),
         Contract.Version(version),
+        Contract.Function(function),
         params,
         Signature.Empty,
         Transaction.Status.Init(id)

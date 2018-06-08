@@ -38,6 +38,7 @@ trait CmdToolUseCases[F[_]] {
                         iv: String,
                         name: String,
                         version: String,
+                        function: String,
                         params: String): SP[F, Transaction]
 
   /** compile a contract project, output jar file */

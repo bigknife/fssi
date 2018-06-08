@@ -57,6 +57,7 @@ object Transaction {
       invoker: Account.ID,
       name: Contract.Name,
       version: Contract.Version,
+      function: Contract.Function,
       parameter: Contract.Parameter,
       signature: Signature,
       status: Transaction.Status

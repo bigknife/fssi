@@ -92,9 +92,10 @@ trait TransactionJsonCodec {
       "invoker"   -> Json.fromString(c.invoker.value),
       "name"      -> Json.fromString(c.name.value),
       "version"   -> Json.fromString(c.version.value),
+      "function"  -> Json.fromString(c.function.name),
       "parameter" -> c.parameter.asJson,
       "signature" -> Json.fromString(c.signature.base64),
-      "status"     -> c.status.asJson
+      "status"    -> c.status.asJson
     )
   }
 
@@ -104,6 +105,7 @@ trait TransactionJsonCodec {
       invoker   <- c.get[String]("invoker")
       name      <- c.get[String]("name")
       version   <- c.get[String]("version")
+      function  <- c.get[String]("function")
       parameter <- c.get[Contract.Parameter]("parameter")
       signature <- c.get[String]("signature")
       status    <- c.get[Transaction.Status]("status")
@@ -113,6 +115,7 @@ trait TransactionJsonCodec {
         Account.ID(invoker),
         Contract.Name(name),
         Contract.Version(version),
+        Contract.Function(function),
         parameter,
         Signature(BytesValue.decodeBase64(signature)),
         status

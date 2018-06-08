@@ -98,6 +98,7 @@ object Args {
       accountId: String = "",
       name: String = "",
       version: String = "",
+      function: String = "",
       params: String = "",
       privateKey: String = "",
       password: String = "",

@@ -75,6 +75,7 @@ trait CmdTool[F[_]] extends CmdToolUseCases[F] {
                                  iv: String,
                                  name: String,
                                  version: String,
+                                 function: String,
                                  params: String): SP[F, Transaction] =
     for {
       pk         <- rebuildPriv(password, privateKey, iv)
@@ -85,6 +86,7 @@ trait CmdTool[F[_]] extends CmdToolUseCases[F] {
                                                                               owner,
                                                                               name,
                                                                               version,
+                                                                              function,
                                                                               legalParam)
 
       sign <- cryptoService.makeSignature(runContractNotSigned.toBeVerified, pk)

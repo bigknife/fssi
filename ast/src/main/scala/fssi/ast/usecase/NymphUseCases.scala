@@ -4,7 +4,7 @@ import bigknife.sop._
 import fssi.ast.domain.types._
 
 /** use cases of Nymph */
-trait NymphUseCases[F[_]] extends P2PUseCases[F]{
+trait NymphUseCases[F[_]] extends P2PUseCases[F] {
 
   /**
     * uc1. enroll, become a member of the chain who's identified by an account.
@@ -72,6 +72,7 @@ trait NymphUseCases[F[_]] extends P2PUseCases[F]{
   def invokeContract(invoker: Account.ID,
                      name: Contract.Name,
                      version: Contract.Version,
+                     function: Contract.Function,
                      parameter: Contract.Parameter,
                      sign: String): SP[F, TransactionSendingStatus] =
     for {
@@ -80,6 +81,7 @@ trait NymphUseCases[F[_]] extends P2PUseCases[F]{
                                                invoker,
                                                name,
                                                version,
+                                               function,
                                                parameter,
                                                Signature(sign),
                                                Transaction.Status.Pending(id))

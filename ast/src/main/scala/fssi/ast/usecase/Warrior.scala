@@ -47,13 +47,18 @@ trait Warrior[F[_]] extends WarriorUseCases[F] with P2P[F] {
 
     // then, find appropriately contract
     def findProperContract(
-        next: (Contract, Option[Contract.Parameter]) => SP[F, Transaction.Status])
-      : SP[F, Transaction.Status] =
+        next: (
+            Contract,
+            Option[Contract.Function],
+            Option[Contract.Parameter]) => SP[F, Transaction.Status]): SP[F, Transaction.Status] =
       for {
-        contract_name_version_param <- contractService.resolveTransaction(transaction)
-        contractOpt <- contractStore.findContract(contract_name_version_param._1,
-                                                  contract_name_version_param._2)
-        status <- if (contractOpt.isDefined) next(contractOpt.get, contract_name_version_param._3)
+        contract_name_version_fun_param <- contractService.resolveTransaction(transaction)
+        contractOpt <- contractStore.findContract(contract_name_version_fun_param._1,
+                                                  contract_name_version_fun_param._2)
+        status <- if (contractOpt.isDefined)
+          next(contractOpt.get,
+               contract_name_version_fun_param._3,
+               contract_name_version_fun_param._4)
         else
           for {
             _  <- log.warn(s"Can't Resolve Contract from Transaction(id=${transaction.id})")
@@ -62,13 +67,17 @@ trait Warrior[F[_]] extends WarriorUseCases[F] with P2P[F] {
       } yield status
 
     // then, run the contract
-    def runContract(invoker: Account, contract: Contract, parameter: Option[Parameter])(
+    def runContract(invoker: Account,
+                    contract: Contract,
+                    function: Option[Contract.Function],
+                    parameter: Option[Parameter])(
         next: Moment => SP[F, Transaction.Status]): SP[F, Transaction.Status] =
       for {
         currentStatesOr <- ledgerStore.loadStates(invoker.id, contract, parameter)
         currentStates   <- err.either(currentStatesOr)
         momentOrThrowable <- contractService.runContract(invoker,
                                                          contract,
+                                                         function,
                                                          currentStates,
                                                          parameter,
                                                          transaction.id)
@@ -95,8 +104,8 @@ trait Warrior[F[_]] extends WarriorUseCases[F] with P2P[F] {
     // put  together
     findAccount { account =>
       validateSignature(account) {
-        findProperContract { (contract, param) =>
-          runContract(account, contract, param) { moment =>
+        findProperContract { (contract, function, param) =>
+          runContract(account, contract, function, param) { moment =>
             putToPool(moment)
           }
         }

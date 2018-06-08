@@ -50,5 +50,6 @@ import fssi.ast.domain.types.{Contract, Token, Transaction}
                                    accountId: String,
                                    name: String,
                                    version: String,
+                                   function: String,
                                    params: Contract.Parameter): P[F, Transaction.InvokeContract]
 }

@@ -1,5 +1,7 @@
 package fssi.ast.domain.types
 
+import fssi.contract.States
+
 /** smart contract */
 sealed trait Contract {}
 
@@ -22,6 +24,7 @@ object Contract {
   case class Name(value: String)
   case class Version(value: String)
   case class Code(base64: String)
+  case class Function(name: String)
 
   /** parameters of contract */
   sealed trait Parameter {}
@@ -50,7 +53,7 @@ object Contract {
       override def toString: String = "[" + array.map(_.toString).mkString(",") + "]"
     }
     object PArray {
-      val Empty: PArray = PArray(Array.empty[PrimaryParameter])
+      val Empty: PArray                        = PArray(Array.empty[PrimaryParameter])
       def apply(xs: PrimaryParameter*): PArray = PArray(xs.toArray)
     }
   }

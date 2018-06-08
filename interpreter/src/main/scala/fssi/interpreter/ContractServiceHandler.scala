@@ -117,32 +117,35 @@ class ContractServiceHandler extends ContractService.Handler[Stack] {
 
   }
 
-  override def resolveTransaction(transaction: Transaction)
-    : Stack[(Contract.Name, Contract.Version, Option[Contract.Parameter])] = Stack {
-    import Contract.inner._
-    transaction match {
-      case x: Transaction.Transfer =>
-        // to, amount
-        val parameter = PArray(PString(x.to.value),
-                               PBigDecimal(java.math.BigDecimal.valueOf(x.amount.toBase.amount)))
-        (TransferContract.name, TransferContract.version, Some(parameter))
+  override def resolveTransaction(transaction: Transaction): Stack[
+    (Contract.Name, Contract.Version, Option[Contract.Function], Option[Contract.Parameter])] =
+    Stack {
+      import Contract.inner._
+      transaction match {
+        case x: Transaction.Transfer =>
+          // to, amount
+          val parameter = PArray(PString(x.to.value),
+                                 PBigDecimal(java.math.BigDecimal.valueOf(x.amount.toBase.amount)))
+          (TransferContract.name, TransferContract.version, None, Some(parameter))
 
-      case x: Transaction.PublishContract =>
-        // name, version, code, sig
-        val parameter = PArray(
-          PString(x.contract.name.value),
-          PString(x.contract.version.value),
-          PString(x.contract.code.base64),
-          PString(x.signature.base64)
-        )
-        (PublishContract.name, PublishContract.version, Some(parameter))
+        case x: Transaction.PublishContract =>
+          // name, version, code, sig
+          val parameter = PArray(
+            PString(x.contract.name.value),
+            PString(x.contract.version.value),
+            PString(x.contract.code.base64),
+            PString(x.signature.base64)
+          )
+          (PublishContract.name, PublishContract.version, None, Some(parameter))
 
-      case x: Transaction.InvokeContract => (x.name, x.version, Some(x.parameter))
+        case x: Transaction.InvokeContract =>
+          (x.name, x.version, Some(x.function), Some(x.parameter))
+      }
     }
-  }
 
   override def runContract(invoker: Account,
                            contract: Contract,
+                           function: Option[Contract.Function],
                            currentStates: States,
                            parameter: Option[Contract.Parameter],
                            transactionId: Transaction.ID): Stack[Either[Throwable, Moment]] =
