@@ -3,6 +3,7 @@ package fssi.ast.domain
 import bigknife.sop._
 import bigknife.sop.implicits._
 import bigknife.sop.macros._
+import fssi.ast.domain.exceptions.WorldStatesError
 import fssi.ast.domain.types.Contract.Parameter
 import fssi.ast.domain.types._
 import fssi.contract.States
@@ -23,5 +24,5 @@ import fssi.contract.States
     */
   def loadStates(invoker: Account.ID,
                  contract: Contract,
-                 parameter: Option[Parameter]): P[F, States]
+                 parameter: Option[Parameter]): P[F, Either[WorldStatesError, States]]
 }

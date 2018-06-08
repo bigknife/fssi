@@ -1,5 +1,6 @@
 package fssi.ast.domain.types
 
+import java.io.ByteArrayInputStream
 import java.nio.ByteBuffer
 
 import fssi.ast.domain.types.BytesValue.Converter
@@ -15,6 +16,9 @@ trait BytesValue {
     case x: BytesValue => x.bytes sameElements bytes
     case _             => false
   }
+
+  def toByteArrayInputStream: ByteArrayInputStream =
+    new ByteArrayInputStream(bytes)
 
   override def toString: String = s"Hex($hex)"
 

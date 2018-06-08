@@ -1,33 +1,35 @@
 package fssi.interpreter.util
 
-trait SafeVar[A] {outter =>
-  @volatile
-  private[util] var a: Option[A] = None
+import java.util.concurrent.atomic.AtomicReference
 
-  def isDefined: Boolean = a.isDefined
-  def isEmpty: Boolean = a.isEmpty
+trait SafeVar[A] { outter =>
 
-  private def safeUpdate(a: => A): Unit = synchronized {
-    unsafeUpdate(a)
+  private[util] val a: AtomicReference[Option[A]] = new AtomicReference[Option[A]](None)
+
+  def isDefined: Boolean = a.get().isDefined
+  def isEmpty: Boolean   = a.get().isEmpty
+
+  private def _safeUpdate(a1: => A): Unit = {
+    if (a.compareAndSet(a.get(), Some(a1))) ()
+    else _safeUpdate(a1)
   }
 
-  protected def unsafeUpdate(a: => A): Unit = outter.a = Some(a)
+  protected def safeUpdate(a: => A): Unit = _safeUpdate(a)
 
-  def apply(): Option[A] = a
-  def unsafe(): A = a.get
+  def apply(): Option[A] = a.get()
+  def unsafe(): A        = a.get.get
 
-  def := (a: => A): Unit = safeUpdate(a)
+  def :=(a: => A): Unit = safeUpdate(a)
 
   def foreach(f: A => Unit): Unit = {
-    if (a.isDefined) f(a.get)
+    if (a.get().isDefined) f(a.get.get)
     else ()
   }
 
   def map[B](f: A => B): SafeVar[B] = new SafeVar[B] {
-    @volatile
-    private[util] override var a: Option[B] = outter.a.map(f)
+    private[util] override val a: AtomicReference[Option[B]] =
+      new AtomicReference[Option[B]](outter.a.get().map(f))
   }
 
-  def reset(): Unit = a = None
+  def reset(): Unit = a.set(None)
 }
-

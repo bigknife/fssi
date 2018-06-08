@@ -35,6 +35,11 @@ object Contract {
     case class PBigDecimal(value: java.math.BigDecimal) extends PrimaryParameter {
       override def toString: String = value.toPlainString
     }
+
+    object PBigDecimal {
+      def apply(value: Long): PBigDecimal = PBigDecimal(java.math.BigDecimal.valueOf(value))
+    }
+
     case class PBool(value: Boolean) extends PrimaryParameter {
       override def toString: String = value.toString
     }

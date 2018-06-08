@@ -65,7 +65,8 @@ trait Warrior[F[_]] extends WarriorUseCases[F] with P2P[F] {
     def runContract(invoker: Account, contract: Contract, parameter: Option[Parameter])(
         next: Moment => SP[F, Transaction.Status]): SP[F, Transaction.Status] =
       for {
-        currentStates <- ledgerStore.loadStates(invoker.id, contract, parameter)
+        currentStatesOr <- ledgerStore.loadStates(invoker.id, contract, parameter)
+        currentStates   <- err.either(currentStatesOr)
         momentOrThrowable <- contractService.runContract(invoker,
                                                          contract,
                                                          currentStates,
