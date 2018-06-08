@@ -24,8 +24,8 @@ object Node {
         if (isEmpty) Array.emptyByteArray
         else children.filter(_.isDefined).map(_.get).reduce(_ ++ _)
       value match {
-        case Some(v) => sha3.sha3(sha3.sha3(v) ++ childHashes)
-        case None    => sha3.sha3(childHashes)
+        case Some(v) => crypto.sha3(crypto.sha3(v) ++ childHashes)
+        case None    => crypto.sha3(childHashes)
       }
     }
 
@@ -57,7 +57,7 @@ object Node {
       s"Leaf($prefix,$key -> [Value])"
     }
 
-    override def hash: Hash = sha3.sha3(value ++ encodedPath.toByteArray())
+    override def hash: Hash = crypto.sha3(value ++ encodedPath.toByteArray())
   }
   case class Extension(encodedPath: Nibble.Sequence, key: Key) extends Node {
     override def toString: String = {
@@ -66,7 +66,7 @@ object Node {
       s"Extension($prefix,$key -> [Key])"
     }
 
-    override def hash: Hash = sha3.sha3(key ++ encodedPath.toByteArray())
+    override def hash: Hash = crypto.sha3(key ++ encodedPath.toByteArray())
   }
 
   def leaf(key: Key, value: Value): Node = {

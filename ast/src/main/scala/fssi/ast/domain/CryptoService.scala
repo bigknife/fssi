@@ -66,5 +66,8 @@ import fssi.ast.domain.types.{BytesValue, KeyPair, Signature}
 
   /** make a signature */
   def makeSignature(source: BytesValue, priv: KeyPair.Priv): P[F, BytesValue]
+
+  /** make a hash */
+  def hash(source: BytesValue): P[F, BytesValue]
   
 }
