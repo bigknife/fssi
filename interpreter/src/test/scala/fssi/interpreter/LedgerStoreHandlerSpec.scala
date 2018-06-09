@@ -17,7 +17,7 @@ class LedgerStoreHandlerSpec extends FunSuite with BeforeAndAfter {
   val f = fixture
 
   before {
-    f.ledgerStoreHandler.init(f.setting)
+    f.ledgerStoreHandler.init().run(f.setting).unsafeRunSync()
   }
 
   after {

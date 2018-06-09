@@ -11,6 +11,7 @@ import scala.collection.JavaConverters._
 
 trait Compiler {
   private val logger = LoggerFactory.getLogger(getClass)
+
   /** compile src to normal class files, no determinism checking.
     *
     * @param src source code path
@@ -32,16 +33,17 @@ trait Compiler {
       val libPath = Paths.get(src.getParent.toString, "lib")
 
       var classPath = System.getProperty("java.class.path")
-      if(libPath.toFile.isDirectory) {
-        classPath = libPath.toFile.list(new FilenameFilter {
-          override def accept(dir: File, name: String): Boolean = name.endsWith(".jar")
-        }).foldLeft(classPath) {(acc, n) =>
-          classPath + ":" + Paths.get(libPath.toString, n)
-        }
+      if (libPath.toFile.isDirectory) {
+        classPath = libPath.toFile
+          .list(new FilenameFilter {
+            override def accept(dir: File, name: String): Boolean = name.endsWith(".jar")
+          })
+          .foldLeft(classPath) { (acc, n) =>
+            classPath + ":" + Paths.get(libPath.toString, n)
+          }
       }
 
-      val options = Vector("-d", s"${out.toFile.getAbsolutePath}",
-      "-classpath", classPath)
+      val options = Vector("-d", s"${out.toFile.getAbsolutePath}", "-classpath", classPath)
 
       val diagnosticCollector = new DiagnosticCollector[JavaFileObject]()
       val compilationTask = javaCompiler.getTask(
@@ -57,10 +59,11 @@ trait Compiler {
           // after compilation done, copy the META-INF to the out
           object FV extends SimpleFileVisitor[Path] {
             override def visitFile(file: Path, attrs: BasicFileAttributes): FileVisitResult = {
-              val meta_inf = file.toString.substring(Paths.get(src.toString, "main/resources").toString.length)
+              val meta_inf =
+                file.toString.substring(Paths.get(src.toString, "main/resources").toString.length)
               val meta_inf_out = Paths.get(out.toString, meta_inf)
 
-              if(meta_inf_out.toFile.isFile) meta_inf_out.toFile.delete()
+              if (meta_inf_out.toFile.isFile) meta_inf_out.toFile.delete()
 
               Files.copy(file, meta_inf_out)
               FileVisitResult.CONTINUE
@@ -77,7 +80,6 @@ trait Compiler {
     }
   }
 
-
   /** check the class files if they have undeterminism
     *
     * @param clz contract class files
@@ -89,22 +91,21 @@ trait Compiler {
     if (!contract.isFile) Left(Vector("META-INF/contract not found"))
     else {
       val reader = new FileReader(contract)
-      try{
+      try {
         val br = new BufferedReader(reader)
         def readline0(acc: Vector[String]): Vector[String] =
           Option(br.readLine()) match {
-            case None => acc
+            case None    => acc
             case Some(l) => acc :+ l
           }
         val lines = readline0(Vector.empty)
-        if(logger.isInfoEnabled) {
+        if (logger.isInfoEnabled) {
           lines.foreach(logger.info)
         }
 
         val track = CheckingClassLoader.ClassCheckingStatus()
-        val ccl = new CheckingClassLoader(clz, track)
-
-        lines.foreach { x =>
+        val ccl   = new CheckingClassLoader(clz, track)
+        lines.map(_.split(" = ")(1).trim).foreach { x =>
           x.split("#") match {
             case Array(c, m) =>
               ccl.findClass(c)
@@ -113,9 +114,8 @@ trait Compiler {
           }
         }
 
-        if(track.isLegal) Right(clz)
+        if (track.isLegal) Right(clz)
         else Left(track.errors())
-
 
       } finally {
         reader.close()

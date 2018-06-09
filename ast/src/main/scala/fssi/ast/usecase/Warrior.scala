@@ -61,7 +61,7 @@ trait Warrior[F[_]] extends WarriorUseCases[F] with P2P[F] {
                contract_name_version_fun_param._4)
         else
           for {
-            _  <- log.warn(s"Can't Resolve Contract from Transaction(id=${transaction.id})")
+            _  <- log.warn(s"Can't Find Contract Invoked In Transaction(id=${transaction.id})")
             s0 <- Transaction.Status.Rejected(transaction.id).pureSP
           } yield s0
       } yield status
@@ -105,10 +105,9 @@ trait Warrior[F[_]] extends WarriorUseCases[F] with P2P[F] {
     def putToPool(moment: Moment): SP[F, Transaction.Status] =
       for {
         pooled <- consensusEngine.poolMoment(moment)
+        _      <- log.info(s"${moment} pooling: $pooled")
         status <- (if (pooled) Transaction.Status.Pending(transaction.id)
                    else Transaction.Status.Rejected(transaction.id)).pureSP
-        // fire to run consensus to validate proposal
-        _ <- validateProposal()
       } yield status
 
     // put  together

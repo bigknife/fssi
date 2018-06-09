@@ -257,7 +257,7 @@ class ContractServiceHandler extends ContractService.Handler[Stack] {
             val functionMap: Map[String, String] = contractMetaFile.lines
               .map(line =>
                 line.split("=") match {
-                  case Array(k, v) => Some((k, v))
+                  case Array(k, v) => Some((k.trim, v.trim))
                   case _           => None
               })
               .filter(_.isDefined)
@@ -267,19 +267,33 @@ class ContractServiceHandler extends ContractService.Handler[Stack] {
 
               functionMap(function.get.name).split("#") match {
                 case Array(fullName, method) =>
+                  val params: Seq[Any] = parameter.map {
+                    case PString(x0)    => Seq(x0)
+                    case PBool(x0)      => Seq(x0)
+                    case PBigDecimal(x0) => Seq(x0)
+                    case PArray(array) =>
+                      array.toSeq.map {
+                        case PString(x1)     => x1
+                        case PBool(x1)       => x1
+                        case PBigDecimal(x1) => x1
+                      }
+                  }.getOrElse(Seq.empty)
+                  /*
                   val params: Seq[Any] = parameter
                     .map {
-                      case PString(x0)    => Seq(x0)
-                      case PBool(x0)      => Seq(x0)
-                      case PBigDecimal(x) => Seq(x)
+                      case PString(x0)    => x0
+                      case PBool(x0)      => x0
+                      case PBigDecimal(x0) => x0
+                        /*
                       case PArray(array) =>
                         array.toSeq.map {
-                          case PString(x1)     => Seq(x1)
-                          case PBool(x1)       => Seq(x1)
-                          case PBigDecimal(x1) => Seq(x1)
+                          case PString(x1)     => x1
+                          case PBool(x1)       => x1
+                          case PBigDecimal(x1) => x1
                         }
+                        */
                     }
-                    .getOrElse(Seq.empty)
+                    .getOrElse(Seq.empty[Any])*/
                   Runner.runAndInstrument(tmpDir,
                                           fullName,
                                           method,

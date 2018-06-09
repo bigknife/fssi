@@ -9,6 +9,11 @@ import fssi.ast.domain.types._
 import fssi.contract.States
 
 @sp trait LedgerStore[F[_]] {
+  /**
+    * init the ledger store
+    * @return
+    */
+  def init(): P[F, Unit]
 
   /**
     * commit the moments in the proposal, then all things determinedly happened.

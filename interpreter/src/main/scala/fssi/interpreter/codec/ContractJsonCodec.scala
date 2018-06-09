@@ -1,8 +1,7 @@
 package fssi.interpreter.codec
 
 import fssi.ast.domain.types.Contract.Parameter._
-import fssi.ast.domain.types.{BytesValue, Contract, Signature}
-import io.circe.Decoder.Result
+import fssi.ast.domain.types.{BytesValue, Contract}
 import io.circe._
 
 trait ContractJsonCodec {
@@ -11,7 +10,7 @@ trait ContractJsonCodec {
       "name"     -> Json.fromString(c.name.value),
       "version"  -> Json.fromString(c.version.value),
       "code"     -> Json.fromString(c.code.base64),
-      "codeSign" -> Json.fromString(c.codeHash.base64)
+      "codeHash" -> Json.fromString(c.codeHash.base64)
     )
   }
 
@@ -20,13 +19,13 @@ trait ContractJsonCodec {
       name     <- c.get[String]("name")
       version  <- c.get[String]("version")
       code     <- c.get[String]("code")
-      codeSign <- c.get[String]("codeSign")
+      codeHash <- c.get[String]("codeHash")
     } yield
       Contract.UserContract(
         Contract.Name(name),
         Contract.Version(version),
         Contract.Code(code),
-        Signature(BytesValue.decodeBase64(codeSign))
+        BytesValue.decodeBase64(codeHash)
       )
   }
 
@@ -42,8 +41,8 @@ trait ContractJsonCodec {
       })
   }
 
-  implicit val contractParameterDecoder: Decoder[Contract.Parameter] = new Decoder[Contract.Parameter] {
-    override def apply(c: HCursor): Result[Contract.Parameter] = {
+  implicit val contractParameterDecoder: Decoder[Contract.Parameter] =
+    (c: HCursor) => {
       c.as[String]
         .map(PString)
         .left
@@ -56,10 +55,13 @@ trait ContractJsonCodec {
             case None => Right(PArray())
             case Some(arr) =>
               val xs: Iterable[Either[DecodingFailure, PrimaryParameter]] = arr.map { json =>
-                json.as[String].toOption.map(PString)
-                    .orElse(json.as[BigDecimal].toOption.map(x => PBigDecimal(x.bigDecimal)))
-                    .orElse(json.as[Boolean].toOption.map(PBool)) match {
-                  case None => Left(DecodingFailure("Unsupported Json Type", List()))
+                json
+                  .as[String]
+                  .toOption
+                  .map(PString)
+                  .orElse(json.as[BigDecimal].toOption.map(x => PBigDecimal(x.bigDecimal)))
+                  .orElse(json.as[Boolean].toOption.map(PBool)) match {
+                  case None    => Left(DecodingFailure("Unsupported Json Type", List()))
                   case Some(j) => Right(j)
                 }
               }
@@ -67,8 +69,7 @@ trait ContractJsonCodec {
                 case Some(x) => x
                 case None    => Right(PArray(xs.map(_.right.get).toArray))
               }
-          })
+        })
     }
-  }
 }
 object ContractJsonCodec extends ContractJsonCodec

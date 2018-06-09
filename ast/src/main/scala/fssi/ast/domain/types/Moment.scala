@@ -11,4 +11,9 @@ case class Moment(
     newStates: States,
     oldStatesHash: BytesValue,
     newStatesHash: BytesValue
-)
+) {
+  override def toString: String =
+    s"Moment(Old(hash=${oldStatesHash.base64})," +
+      s"Trans(sign=${transaction.signature.base64})," +
+      s"New(hash=${newStatesHash.base64}))"
+}

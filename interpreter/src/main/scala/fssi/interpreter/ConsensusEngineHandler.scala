@@ -8,12 +8,15 @@ class ConsensusEngineHandler extends ConsensusEngine.Handler[Stack] {
 
   private val momentPool: Once[MomentPool] = Once.empty
 
-   def init(setting: Setting): Unit = {
-     momentPool := MomentPool.newPool(setting.maxMomentSize, setting.maxMomentPoolElapsedSecond)
-   }
+  private def _init(setting: Setting): Unit = {
+    momentPool := MomentPool.newPool(setting.maxMomentSize, setting.maxMomentPoolElapsedSecond)
+  }
 
-  override def poolMoment(moment: Moment): Stack[Boolean] = Stack { setting =>
-    init(setting)
+  override def init(): Stack[Unit] = Stack { setting =>
+    _init(setting)
+  }
+
+  override def poolMoment(moment: Moment): Stack[Boolean] = Stack {
     momentPool.unsafe().push(moment)
   }
 }

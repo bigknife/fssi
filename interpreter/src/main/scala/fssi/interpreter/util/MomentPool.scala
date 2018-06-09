@@ -39,8 +39,8 @@ trait MomentPool {
 }
 
 object MomentPool {
-  def newPool(size: Int, elapsedSeconds: Int): MomentPool = new MomentPool {
-    override val maxSize: Int          = size
+  def newPool(momentSize: Int, elapsedSeconds: Int): MomentPool = new MomentPool {
+    override val maxSize: Int          = momentSize
     override val maxElapsedSecond: Int = elapsedSeconds
   }
 }

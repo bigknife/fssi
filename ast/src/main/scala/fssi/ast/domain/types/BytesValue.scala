@@ -23,6 +23,8 @@ trait BytesValue {
   override def toString: String = s"Hex($hex)"
 
   def convertTo[A](implicit converter: Converter[A]): A = converter.to(this)
+
+  def ++(other: BytesValue): BytesValue = BytesValue.combine(this, other)
 }
 
 object BytesValue {
@@ -36,6 +38,7 @@ object BytesValue {
     apply(bb.array())
   }
 
+  def combine(b1: BytesValue, b2: BytesValue): BytesValue = BytesValue(b1.bytes ++ b2.bytes)
 
 
   def decodeHex(hex: String): BytesValue = {

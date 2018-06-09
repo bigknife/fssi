@@ -5,6 +5,11 @@ import fssi.ast.domain.types._
 
 @sp trait ConsensusEngine[F[_]] {
   /**
+    * init engine
+    * @return
+    */
+  def init(): P[F, Unit]
+  /**
     * put the moment into the pool
     * @param moment moment
     * @return if the pool can accept it return true, or false

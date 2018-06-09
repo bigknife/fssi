@@ -45,6 +45,8 @@ trait Runner {
         java.CostAccounting.jumpCost(),
         java.CostAccounting.methodCallCost()
       )
+      //todo | we can make a restriction here to get rid of the over-cost transactions
+      //todo | more precisely, we can throw the over-cost exception when accounting in running process.
       (nowStates, cost)
     }.toEither
   }

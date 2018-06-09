@@ -17,11 +17,6 @@ import org.bouncycastle.jce.spec.{ECPrivateKeySpec, ECPublicKeySpec}
   * put all cryptography operations together
   */
 trait Crypto {
-  // init bcprovider
-  if (!Security.getProviders.exists(_.getName == ProviderName)) {
-    Security.addProvider(new BouncyCastleProvider)
-  }
-
   // ECDSA
   //       ref: http://www.bouncycastle.org/wiki/display/JA1/Elliptic+Curve+Key+Pair+Generation+and+Key+Factories
   //            http://www.bouncycastle.org/wiki/pages/viewpage.action?pageId=362269
@@ -32,6 +27,11 @@ trait Crypto {
   val CipherAlgo: String           = "desede/CBC/PKCS5Padding"
   val SignAlgo: String             = "SHA256withECDSA"
   val KeyFactoryAlgo: String       = "ECDH"
+
+  // init bcprovider
+  if (!Security.getProviders.exists(_.getName == ProviderName)) {
+    Security.addProvider(new BouncyCastleProvider)
+  }
 
   def generateKeyPair(): KeyPair = {
     val ecSpec = ECNamedCurveTable.getParameterSpec(ECSpec)

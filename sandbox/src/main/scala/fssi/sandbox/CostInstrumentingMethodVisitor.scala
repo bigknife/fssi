@@ -10,7 +10,7 @@ import org.slf4j.LoggerFactory
 class CostInstrumentingMethodVisitor(mv: MethodVisitor) extends MethodVisitor(ASM5, mv) {
   private val logger = LoggerFactory.getLogger(getClass)
 
-  val runtimeAccounterTypeName = "org/wexchain/sandbox/java/CostAccounting"
+  val runtimeAccounterTypeName = "fssi/sandbox/java/CostAccounting"
 
   override def visitInsn(opcode: Int): Unit = {
     opcode match {

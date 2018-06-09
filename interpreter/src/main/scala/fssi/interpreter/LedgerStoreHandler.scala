@@ -19,12 +19,17 @@ import scala.collection.immutable
 class LedgerStoreHandler extends LedgerStore.Handler[Stack] {
   val accountStateTrie: Once[Trie] = Once.empty
 
-  def init(setting: Setting): Unit = {
+  private def _init(setting: Setting): Unit = {
     accountStateTrie := {
       val path = Paths.get(setting.workingDir, "states")
       path.toFile.mkdirs()
       Trie.empty(Store.levelDB(path.toString))
     }
+  }
+
+
+  override def init(): Stack[Unit] = Stack {setting =>
+    _init(setting)
   }
 
   def clean(): Unit = {

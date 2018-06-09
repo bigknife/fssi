@@ -1,6 +1,6 @@
 package fssi.interpreter.codec
 
-import fssi.contract.AccountState
+import fssi.contract.{AccountState, States}
 import io.circe._
 import io.circe.syntax._
 
@@ -19,6 +19,18 @@ trait AccountStateJsonCodec {
       amount    <- c.get[BigDecimal]("amount")
       assets    <- c.get[Map[String, Array[Byte]]]("assets")
     } yield AccountState(accountId, amount, assets)
+  }
+
+  implicit val accountStatesJsonEncoder: Encoder[States] = (s: States) => {
+    Json.obj(
+      "states" -> s.states.asJson
+    )
+  }
+
+  implicit val accountStatesJsonDecoder: Decoder[States] = (c: HCursor) => {
+    for {
+      states <- c.get[Map[String, AccountState]]("states")
+    } yield States(states)
   }
 }
 
