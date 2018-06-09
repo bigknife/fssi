@@ -358,6 +358,14 @@ trait ArgsParser {
                   case x: CreateRunContractArgs => x.copy(version = v)
                   case x                        => x
               }),
+            opt[String]("function")
+              .text("the version of the contract")
+              .required()
+              .action((v, a) =>
+                a match {
+                  case x: CreateRunContractArgs => x.copy(function = v)
+                  case x                        => x
+                }),
             opt[String]("params")
               .text("the parameters, only support primary data type, or array of primary data type. should be a legal json.")
               .required()

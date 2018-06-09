@@ -1,9 +1,11 @@
 package fssi.interpreter.util
 
 sealed trait Once[A] extends SafeVar[A] {
-  override protected def unsafeUpdate(a: => A): Unit = {
-    if (isEmpty) super.unsafeUpdate(a)
-    else ()
+  override protected def safeUpdate(a: => A): Unit = {
+    if (isEmpty) {
+      super.safeUpdate(a)
+    } else ()
+
   }
 }
 

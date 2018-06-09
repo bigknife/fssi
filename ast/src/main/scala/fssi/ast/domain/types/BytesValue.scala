@@ -1,5 +1,10 @@
 package fssi.ast.domain.types
 
+import java.io.ByteArrayInputStream
+import java.nio.ByteBuffer
+
+import fssi.ast.domain.types.BytesValue.Converter
+
 trait BytesValue {
   def bytes: Array[Byte]
 
@@ -12,13 +17,30 @@ trait BytesValue {
     case _             => false
   }
 
+  def toByteArrayInputStream: ByteArrayInputStream =
+    new ByteArrayInputStream(bytes)
+
   override def toString: String = s"Hex($hex)"
+
+  def convertTo[A](implicit converter: Converter[A]): A = converter.to(this)
+
+  def ++(other: BytesValue): BytesValue = BytesValue.combine(this, other)
 }
 
 object BytesValue {
   case class SimpleBytesValue(bytes: Array[Byte]) extends BytesValue
   def apply(xs: Array[Byte]): BytesValue = SimpleBytesValue(xs)
   def apply(str: String): BytesValue     = SimpleBytesValue(str.getBytes("utf-8"))
+
+  def valueOf(i: Int): BytesValue = {
+    val bb = ByteBuffer.allocate(4)
+    bb.putInt(i)
+    apply(bb.array())
+  }
+
+  def combine(b1: BytesValue, b2: BytesValue): BytesValue = BytesValue(b1.bytes ++ b2.bytes)
+
+
   def decodeHex(hex: String): BytesValue = {
 
     // seq size should be
@@ -26,7 +48,9 @@ object BytesValue {
       seq.splitAt(2) match {
         case (Vector(), _) => bytes
         case (Vector(c1, c2), t) =>
-          loop(t, bytes :+ ((Integer.parseInt(c1.toString, 16) << 4) | Integer.parseInt(c2.toString, 16)).toByte)
+          loop(t,
+               bytes :+ ((Integer.parseInt(c1.toString, 16) << 4) | Integer.parseInt(c2.toString,
+                                                                                     16)).toByte)
       }
     }
 
@@ -39,4 +63,18 @@ object BytesValue {
   def decodeBase64(base64: String): BytesValue = apply(java.util.Base64.getDecoder.decode(base64))
 
   val Empty: BytesValue = SimpleBytesValue(Array.emptyByteArray)
+
+  trait Converter[A] {
+    def to(bv: BytesValue): A
+  }
+
+  object Converter {
+    def summon[A](f: BytesValue => A): Converter[A] = (bv: BytesValue) => f(bv)
+  }
+
+  object converters {
+    implicit val toIntConverter: Converter[Int] =
+      Converter.summon(bv => ByteBuffer.wrap(bv.bytes).getInt)
+  }
+
 }

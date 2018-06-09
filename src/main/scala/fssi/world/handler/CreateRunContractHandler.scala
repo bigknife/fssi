@@ -19,6 +19,7 @@ class CreateRunContractHandler extends ArgsHandler[Args.CreateRunContractArgs] {
                                           args.iv,
                                           args.name,
                                           args.version,
+                                          args.function,
                                           args.params)
     runner.runIOAttempt(p, args.toSetting).unsafeRunSync() match {
       case Left(t)                => t.printStackTrace()

@@ -43,15 +43,17 @@ class NetworkServiceHandler extends NetworkService.Handler[Stack] {
           printMembers()
         }
         cluster.listen().subscribe { message =>
-          logger.info(s"got p2p message: $message")
+          if (logger.isDebugEnabled) logger.info(s"got p2p message: $message")
+          else ()
           Try {
             val dataPacket = message.data[DataPacket]()
             handler(dataPacket)
           } match {
             case Success(_) =>
-              logger.info(s"handled p2p message: $message")
+              if (logger.isDebugEnabled) logger.debug(s"handled p2p message: $message")
+              else ()
             case Failure(t) =>
-              logger.info(s"handling p2p message $message failed", t)
+              logger.error(s"handling p2p message $message failed", t)
           }
 
         }
