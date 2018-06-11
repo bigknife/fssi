@@ -40,4 +40,16 @@ class QuorumSetSpec extends FunSuite {
     case2()
   }
 
+  test("Quorum set for all") {
+    val nodeNames = Vector("node-1", "node-2", "node-3", "node-4", "node-5", "node-1")
+    val qs = QuorumSet.simple(4, nodeNames.map(x => crypto.sha3(x.getBytes())).map(PublicKey))
+    val counter: collection.mutable.ListBuffer[Int] = collection.mutable.ListBuffer.empty
+    qs.forAll {nodeId =>
+      info(nodeId.bytes.map("%02x" format _).mkString(""))
+      counter.append(1)
+    }
+
+    assert(counter.size == 5)
+  }
+
 }

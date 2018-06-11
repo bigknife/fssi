@@ -53,24 +53,72 @@ object QuorumSet {
               val leafW = qs0.nodeWeight(nodeID)
               if (leafW != 0) {
                 (BigDecimal(leafW) * n / d).setScale(0, RoundingMode.UP).toLong
-              }else 0
+              } else 0
             }
             .getOrElse(0)
         }
       }
 
-      /*
       def isQuorumSlice(nodeIDs: Set[Node.ID]): Boolean = {
-        val thresholdLeft =  qs.validators.fold(qs.threshold) {(acc, n) =>
+        val thresholdLeft = qs.validators.foldLeft(qs.threshold) { (acc, n) =>
           if (nodeIDs.exists(_.bytes sameElements n.bytes)) acc - 1
           else acc
         }
         if (thresholdLeft <= 0) true
         else {
-          qs.innerSets
+          val thresholdLeft1 = qs.innerSets.foldLeft(thresholdLeft) { (acc, n) =>
+            if (n.isQuorumSlice(nodeIDs)) acc - 1
+            else acc
+          }
+          if (thresholdLeft1 <= 0) true
+          else false
         }
-      }*/
+      }
 
+      def isVBlocking(nodeIDs: Set[Node.ID]): Boolean = {
+        if (qs.threshold <= 0) false
+        else {
+          val leftTillBlock = (qs.validators.size + qs.innerSets.size + 1) - qs.threshold
+          val left0 = qs.validators.foldLeft(leftTillBlock) { (acc, n) =>
+            if (nodeIDs.exists(_.bytes sameElements n.bytes)) acc - 1
+            else acc
+          }
+
+          if (left0 <= 0) true
+          else {
+            val left1 = qs.innerSets.foldLeft(left0) { (acc, n) =>
+              if (n.isVBlocking(nodeIDs)) acc - 1
+              else acc
+            }
+            if (left1 <= 0) true
+            else false
+          }
+        }
+      }
+
+      def forAll(f: Node.ID => Unit): Unit = {
+        def _inner(qs0: QuorumSet,  f0: Node.ID => Unit): Unit = {
+          qs0.validators.foreach(x => f0(Node.ID(x.bytes)))
+          qs0.innerSets.foreach(x => _inner(x, f0))
+        }
+        // to ensure every node is invoked once
+        val invoked: scala.collection.mutable.ListBuffer[Node.ID] = scala.collection.mutable.ListBuffer.empty
+        _inner(qs, nodeID => {
+          if (invoked.contains(nodeID)) ()
+          else {
+            f(nodeID)
+            invoked.append(nodeID)
+          }
+
+        })
+      }
+
+      def isQuorum(envelopes: Map[Node.ID, Envelope],
+                   quorumFunc: Statement => QuorumSet,
+                   filter: Statement => Boolean): Boolean = {
+        val filteredNodeIDs = envelopes.filter(x => filter(x._2.statement)).keys
+        ???
+      }
     }
   }
 
