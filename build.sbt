@@ -10,18 +10,23 @@ fork in ThisBuild := true
 lazy val pAst = ast()
   .dependsOn(pContractLib)
 
-// interpreter prj
-lazy val pInterpreter = interpreter()
-  .dependsOn(pAst)
-  .dependsOn(pJsonRpc)
-  .dependsOn(pSandbox)
-
 // jsonrpc prj
 lazy val pJsonRpc = jsonrpc()
 
 //sandbox prj
 lazy val pSandbox = sandbox()
   .dependsOn(pContractLib)
+
+// scp prj
+lazy val pScp = scp()
+
+// interpreter prj
+lazy val pInterpreter = interpreter()
+  .dependsOn(pAst)
+  .dependsOn(pJsonRpc)
+  .dependsOn(pSandbox)
+  .dependsOn(pScp)
+
 
 // contract lib
 lazy val pContractLib = contractLib()

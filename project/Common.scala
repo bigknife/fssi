@@ -151,6 +151,13 @@ object Common {
       def apply(id: String): Project = apply(id, id)
       def apply(): Project = apply("contract-lib")
     }
+
+    object scp {
+      def apply(id: String, dir: String): Project = Project(id, file(dir))
+        .settings(settings)
+      def apply(id: String): Project = apply(id, id)
+      def apply(): Project = apply("scp")
+    }
   }
 
   val defaultShellScript: Seq[String] = defaultShellScript(
