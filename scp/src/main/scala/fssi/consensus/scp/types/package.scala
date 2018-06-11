@@ -1,6 +1,5 @@
 package fssi.consensus.scp
 
 package object types {
-
-  type Value = Array[Byte]
+  object syntax extends QuorumSet.Syntax
 }

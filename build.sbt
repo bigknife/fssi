@@ -6,6 +6,9 @@ coverageEnabled in ThisBuild := true
 parallelExecution in ThisBuild := false
 fork in ThisBuild := true
 
+// crypto prj
+lazy val pCrypto = crypto()
+
 // ast prj
 lazy val pAst = ast()
   .dependsOn(pContractLib)
@@ -19,6 +22,7 @@ lazy val pSandbox = sandbox()
 
 // scp prj
 lazy val pScp = scp()
+  .dependsOn(pCrypto)
 
 // interpreter prj
 lazy val pInterpreter = interpreter()

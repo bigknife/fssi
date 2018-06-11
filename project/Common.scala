@@ -158,6 +158,16 @@ object Common {
       def apply(id: String): Project = apply(id, id)
       def apply(): Project = apply("scp")
     }
+
+    object crypto {
+      def apply(id: String, dir: String): Project = Project(id, file(dir))
+        .settings(settings)
+        .settings(
+          libraryDependencies ++= all.bcprov
+        )
+      def apply(id: String): Project = apply(id, id)
+      def apply(): Project = apply("crypto")
+    }
   }
 
   val defaultShellScript: Seq[String] = defaultShellScript(
