@@ -1,4 +1,4 @@
-package fssi.consensus.scp.types
+package fssi.consensus.scp.ast.domain.types
 
 /**
   * A 256 bits data.

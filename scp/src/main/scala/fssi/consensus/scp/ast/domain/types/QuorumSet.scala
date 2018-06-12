@@ -1,4 +1,4 @@
-package fssi.consensus.scp.types
+package fssi.consensus.scp.ast.domain.types
 
 import scala.math.BigDecimal.RoundingMode
 
@@ -30,7 +30,7 @@ object QuorumSet {
                 quorumSets: Vector[QuorumSet]): QuorumSet =
     TwoLayerQuorumSet(threshold, validators, quorumSets.filter(_.innerSets.isEmpty))
 
-  trait Syntax {
+  trait Op {
     implicit final class QuorumSetOp(qs: QuorumSet) {
 
       /** calculate a node's weight in this quorum set.
@@ -122,6 +122,6 @@ object QuorumSet {
     }
   }
 
-  object syntax extends Syntax
+  object op extends Op
 
 }

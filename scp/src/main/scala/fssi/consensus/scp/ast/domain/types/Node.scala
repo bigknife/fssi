@@ -1,4 +1,4 @@
-package fssi.consensus.scp.types
+package fssi.consensus.scp.ast.domain.types
 
 case class Node()
 

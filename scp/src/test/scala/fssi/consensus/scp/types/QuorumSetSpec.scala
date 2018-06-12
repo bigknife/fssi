@@ -1,8 +1,10 @@
 package fssi.consensus.scp.types
 
+import fssi.consensus.scp.ast.domain.types.PublicKey
 import org.scalatest.FunSuite
 import fssi.crypto._
-import fssi.consensus.scp.types.syntax._
+import fssi.consensus.scp.ast.domain.types._
+import fssi.consensus.scp.ast.domain.types.op._
 
 class QuorumSetSpec extends FunSuite {
   private def isNear(v: Long, target: Double): Boolean = {
