@@ -5,6 +5,6 @@ import bigknife.sop.macros._
 import bigknife.sop.implicits._
 import fssi.consensus.scp.ast.domain.types._
 
-trait NominationService[F[_]] {
+trait NominationProtocolService[F[_]] {
 
 }

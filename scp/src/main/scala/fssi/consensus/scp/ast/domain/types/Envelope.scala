@@ -2,7 +2,7 @@ package fssi.consensus.scp.ast.domain.types
 
 case class Envelope(
     statement: Statement,
-    signature: Signature
+    signature: Signature = Signature.Empty
 )
 
 object Envelope {
@@ -14,5 +14,8 @@ object Envelope {
     case object Valid extends State {
       override def toString: String = "Valid"
     }
+
+    def invalid: State = Invalid
+    def valid: State = Valid
   }
 }

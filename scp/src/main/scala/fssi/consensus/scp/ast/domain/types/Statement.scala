@@ -48,4 +48,15 @@ object Statement {
       votes: Set[Value],
       accepted: Set[Value]
   ) extends NominationStatement
+
+  // timestamped historical statement wrapper
+  case class HistoricalStatement(
+      statement: Statement,
+      timestamp: Long,
+      validated: Boolean
+  )
+
+  // predict
+  type Predict = Statement => Boolean
+  def predict(p: Statement => Boolean): Predict = p
 }

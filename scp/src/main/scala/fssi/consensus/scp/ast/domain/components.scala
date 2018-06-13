@@ -8,7 +8,9 @@ object components {
   @sps trait Model[F[_]] {
     val envelopeService: EnvelopeService[F]
     val slotService: SlotService[F]
+    val statementService: StatementService[F]
 
     val slotStore: SlotStore[F]
+    val statementStore: StatementStore[F]
   }
 }

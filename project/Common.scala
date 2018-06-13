@@ -156,7 +156,8 @@ object Common {
       def apply(id: String, dir: String): Project = Project(id, file(dir))
         .settings(settings)
         .settings(
-          libraryDependencies ++= all.sop
+          libraryDependencies ++= all.sop,
+          libraryDependencies ++= all.cats
         )
       def apply(id: String): Project = apply(id, id)
       def apply(): Project = apply("scp")

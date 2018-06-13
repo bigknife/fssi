@@ -38,8 +38,9 @@ trait SCP[F[_]]
       case x: Statement.NominationStatement =>
         for {
           slot <- getOrCreateSlot(envelope.statement.slotIndex)
-          state <- runNominationProtocol(slot, envelope)
-        } yield state
+          result <- runNominationProtocol(slot, envelope)
+          _ <- slotStore.saveSlot(result._1)
+        } yield result._2
       case x: Statement.BallotStatement =>
         for {
           slot <- getOrCreateSlot(envelope.statement.slotIndex)
