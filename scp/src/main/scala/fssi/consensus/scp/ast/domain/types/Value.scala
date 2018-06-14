@@ -3,6 +3,8 @@ package fssi.consensus.scp.ast.domain.types
 case class Value(bytes: Array[Byte])
 
 object Value {
+  val Empty: Value = Value(Array.emptyByteArray)
+
   sealed trait ValidationLevel
   object ValidationLevel {
     case object InvalidValue extends ValidationLevel {

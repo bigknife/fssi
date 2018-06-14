@@ -9,8 +9,11 @@ object components {
     val envelopeService: EnvelopeService[F]
     val slotService: SlotService[F]
     val statementService: StatementService[F]
+    val quorumSetService: QuorumSetService[F]
+    val ballotService: BallotService[F]
 
     val slotStore: SlotStore[F]
     val statementStore: StatementStore[F]
+    val envelopeStore: EnvelopeStore[F]
   }
 }

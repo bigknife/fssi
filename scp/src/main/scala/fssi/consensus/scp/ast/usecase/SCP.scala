@@ -35,17 +35,18 @@ trait SCP[F[_]]
     // if the statement in the envelope is NominateStatement, then nominate
     //  or do a ballot, that's to say, run corresponded protocol
     envelope.statement match {
-      case x: Statement.NominationStatement =>
+      case _: Statement.NominationStatement =>
         for {
           slot <- getOrCreateSlot(envelope.statement.slotIndex)
           result <- runNominationProtocol(slot, envelope)
           _ <- slotStore.saveSlot(result._1)
         } yield result._2
-      case x: Statement.BallotStatement =>
+      case _: Statement.BallotStatement =>
         for {
           slot <- getOrCreateSlot(envelope.statement.slotIndex)
-          state <- runBallotProtocol(slot, envelope)
-        } yield state
+          result <- runBallotProtocol(slot, envelope)
+          _ <- slotStore.saveSlot(result._1)
+        } yield result._2
     }
   }
 }

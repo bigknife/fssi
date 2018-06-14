@@ -5,6 +5,8 @@ coverageExcludedFiles in ThisBuild := ".*macro.*"
 coverageEnabled in ThisBuild := true
 parallelExecution in ThisBuild := false
 fork in ThisBuild := true
+ensimeScalaVersion in ThisBuild := "2.12.4"
+ensimeIgnoreMissingDirectories in ThisBuild := true
 
 // crypto prj
 lazy val pCrypto = crypto()

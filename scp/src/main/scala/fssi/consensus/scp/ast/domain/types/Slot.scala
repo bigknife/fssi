@@ -7,11 +7,16 @@ case class Slot(
     accepted: Set[Value],
     candidates: Set[Value],
     roundLeaders: Set[Node.ID],
-    lastEnvelope: Option[Envelope]
+    lastEnvelope: Option[Envelope],
+    fullyValidated: Boolean = true,
+    ballotState: Option[Ballot.State]
 ) {
   def accept(value: Value): Slot = copy(accepted = accepted + value)
   def vote(value: Value): Slot = copy(votes = votes + value)
   def candidate(value: Value): Slot = copy(candidates = candidates + value)
+  def notFullyValidated: Slot = copy(fullyValidated = false)
+
+  def unsafeBallotState: Ballot.State = ballotState.get
 }
 
 object Slot {

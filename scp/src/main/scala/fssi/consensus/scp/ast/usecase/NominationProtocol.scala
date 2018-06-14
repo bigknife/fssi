@@ -22,7 +22,7 @@ trait NominationProtocol[F[_]] extends BaseProtocol[F] {
       envelope.statement match {
         case x: Statement.Nominate =>
           for {
-            sane <- statementService.isSane(x)
+            sane <- statementService.isSaneNominationStatement(x)
             state <- if (!sane) (slot, Envelope.State.invalid).pureSP[F]
             else
               for {
@@ -30,8 +30,9 @@ trait NominationProtocol[F[_]] extends BaseProtocol[F] {
                 s1 <- if (nominateOpt.isEmpty) next(x)
                 else
                   for {
-                    newer <- statementService.newerNomination(x,
-                                                              nominateOpt.get)
+                    newer <- statementService.newerNominationStatement(
+                      x,
+                      nominateOpt.get)
                     s0 <- if (newer == x) next(x)
                     else (slot, Envelope.State.invalid).pureSP[F]
                   } yield s0
@@ -63,7 +64,7 @@ trait NominationProtocol[F[_]] extends BaseProtocol[F] {
         case _                     => false
       }
       def afterAccept(value: Value, slot: Slot): SP[F, Slot] =
-        slotService.validateValue(value).flatMap {
+        slotService.validateValueForNomination(slot, value).flatMap {
           case Value.ValidationLevel.FullyValidatedValue =>
             slot.vote(value).accept(value).pureSP[F]
           case _ =>
@@ -126,7 +127,7 @@ trait NominationProtocol[F[_]] extends BaseProtocol[F] {
           (nominate.votes ++ nominate.accepted).foldLeft(initValue) {
             (acc, n) =>
               val valueToNominateOptEff: SP[F, Option[Value]] =
-                slotService.validateValue(n).flatMap {
+                slotService.validateValueForNomination(slot, n).flatMap {
                   case Value.ValidationLevel.FullyValidatedValue =>
                     Option(n).pureSP[F]
                   case _ => slotService.extractValidValue(n)
@@ -176,8 +177,13 @@ trait NominationProtocol[F[_]] extends BaseProtocol[F] {
         xSlot <- if (ns._2 == Envelope.State.Valid) {
           val tmpNewEnvelope = ns._1.lastEnvelope.getOrElse(newEnvelope)
           val n: SP[F, Slot] = for {
-            newer <- statementService.newerNomination(tmpNewEnvelope.statement.asInstanceOf[Nominate], newNominate)
-          } yield if (newer == newNominate) ns._1.copy(lastEnvelope = Some(newEnvelope)) else ns._1
+            newer <- statementService.newerNominationStatement(
+              tmpNewEnvelope.statement.asInstanceOf[Nominate],
+              newNominate)
+          } yield
+            if (newer == newNominate)
+              ns._1.copy(lastEnvelope = Some(newEnvelope))
+            else ns._1
           n
         } else throw new RuntimeException("moved to a bad state(nomination)")
         _ <- slotService.emitEnvelope(xSlot, newEnvelope)

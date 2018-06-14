@@ -22,11 +22,20 @@ import fssi.consensus.scp.ast.domain.types._
   def resolveChange(s1: Slot, s2: Slot): P[F, Slot.Change]
 
   /**
-    * validate a value
+    * validate a value for nomination
+    * @param slot current slot
     * @param value value
     * @return
     */
-  def validateValue(value: Value): P[F, Value.ValidationLevel]
+  def validateValueForNomination(slot: Slot, value: Value): P[F, Value.ValidationLevel]
+
+  /**
+    * validate a value for Ballot
+    * @param slot current slot
+    * @param value value
+    * @return
+    */
+  def validateValueForBallot(slot: Slot, value: Value): P[F, Value.ValidationLevel]
 
   /**
     * extract valid value
@@ -74,4 +83,11 @@ import fssi.consensus.scp.ast.domain.types._
     * @return
     */
   def bumpState(slot: Slot, value: Value, force: Boolean): P[F, Slot]
+
+  /**
+    * set values of slot may be valid
+    * @param slot slot
+    * @return
+    */
+  def setMaybeValid(slot: Slot): P[F, Unit]
 }

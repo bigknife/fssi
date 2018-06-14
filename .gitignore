@@ -40,3 +40,6 @@
 # contract-lib
 !/contract-lib/
 /contract-lib/target/
+
+/.ensime_cache/
+/crypto/target/
