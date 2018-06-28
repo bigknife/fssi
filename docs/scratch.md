@@ -70,3 +70,16 @@ Transaction jsonrpc protocol.
 how to sign?
 
 ECDSAwithUserPrivateKey(type + ascorder(payload properties))
+
+
+----
+consensus engine uses scp as it's implementation.
+pool moment will be reformed to start scp nominate.
+
+how to init scp?
+- what is the id of this scp node?
+- how to emit scp messages to peers?
+- how to validate values?
+- how to handle scp message?
+
+scp component should be a little world. singleton.
