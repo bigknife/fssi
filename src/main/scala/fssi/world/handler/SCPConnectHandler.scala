@@ -6,6 +6,8 @@ import fssi.ast.domain.components.Model
 import fssi.ast.domain.types.BytesValue
 import fssi.ast.usecase.Warrior
 import fssi.interpreter.{Setting, runner}
+import io.circe.syntax._
+import fssi.interpreter.jsonCodec._
 
 class SCPConnectHandler(setting: Setting, warrior: Warrior[Model.Op]) extends Connect {
   override def extractValidValue(value: Value): Option[Value] = None
@@ -23,6 +25,9 @@ class SCPConnectHandler(setting: Setting, warrior: Warrior[Model.Op]) extends Co
 
   override def broadcastMessage[M <: Message](envelope: Envelope[M]): Unit = {
     //todo message to json
+    val json = envelope.asJson
+    val msg = JsonWrapper(json.noSpaces, "scp.envelope")
+
     ???
   }
 

@@ -29,4 +29,6 @@ trait WarriorUseCases[F[_]] extends P2PUseCases[F]{
     * @return
     */
   def signData(bytes: Array[Byte], publickKeyData: BytesValue): SP[F, BytesValue]
+
+  def broadcastMessage(message: DataPacket): SP[F, Unit]
 }

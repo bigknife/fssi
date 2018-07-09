@@ -192,6 +192,10 @@ trait Warrior[F[_]] extends WarriorUseCases[F] with P2P[F] {
       sign <- cryptoService.makeSignature(BytesValue(bytes), priv)
     } yield sign
   }
+
+  override def broadcastMessage(message: DataPacket): SP[F, Unit] = for {
+
+  }
 }
 
 object Warrior {
