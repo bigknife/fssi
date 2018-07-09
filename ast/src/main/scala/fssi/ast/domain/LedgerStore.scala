@@ -30,4 +30,17 @@ import fssi.contract.States
   def loadStates(invoker: Account.ID,
                  contract: Contract,
                  parameter: Option[Parameter]): P[F, Either[WorldStatesError, States]]
+
+  /**
+    * get current block chain height(length, or slotIndex in scp)
+    * @return
+    */
+  def currentHeight(): P[F, BigInt]
+
+  /**
+    * get the moment at specfied height
+    * @param height height, slotIndex
+    * @return if not found , return moment of 0
+    */
+  def momentOf(height: BigInt): P[F, Moment]
 }

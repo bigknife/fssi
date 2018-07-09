@@ -324,8 +324,9 @@ class ContractServiceHandler extends ContractService.Handler[Stack] {
     }
 }
 object ContractServiceHandler {
+  private val instance = new ContractServiceHandler
   trait Implicits {
-    implicit val contractServiceHandler: ContractServiceHandler = new ContractServiceHandler
+    implicit val contractServiceHandler: ContractServiceHandler = instance
   }
   object implicits extends Implicits
 }

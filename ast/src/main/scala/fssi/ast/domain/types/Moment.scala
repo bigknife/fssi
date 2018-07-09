@@ -10,7 +10,8 @@ case class Moment(
     transaction: Transaction,
     newStates: States,
     oldStatesHash: BytesValue,
-    newStatesHash: BytesValue
+    newStatesHash: BytesValue,
+    timestamp: Long
 ) {
   override def toString: String =
     s"Moment(Old(hash=${oldStatesHash.base64})," +

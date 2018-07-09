@@ -28,7 +28,8 @@ class AccountServiceHandler extends AccountService.Handler[Stack] {
 }
 
 object AccountServiceHandler {
+  private val instance = new AccountServiceHandler
   trait Implicits {
-    implicit val accountServiceHandler: AccountServiceHandler = new AccountServiceHandler
+    implicit val accountServiceHandler: AccountServiceHandler = instance
   }
 }

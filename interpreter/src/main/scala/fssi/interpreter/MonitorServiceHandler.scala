@@ -14,8 +14,9 @@ class MonitorServiceHandler extends MonitorService.Handler[Stack] {
 }
 
 object MonitorServiceHandler {
+  private val instance = new MonitorServiceHandler
   trait Implicits {
-    implicit val monitorServiceHandler: MonitorServiceHandler = new MonitorServiceHandler
+    implicit val monitorServiceHandler: MonitorServiceHandler = instance
   }
   object implicits extends Implicits
 }

@@ -68,7 +68,8 @@ class TransactionServiceHandler extends TransactionService.Handler[Stack] {
       transaction,
       statesChange.current,
       oldStatesHash,
-      newStatesHash
+      newStatesHash,
+      System.currentTimeMillis()
     )
   }
 
@@ -97,9 +98,9 @@ class TransactionServiceHandler extends TransactionService.Handler[Stack] {
 }
 
 object TransactionServiceHandler {
+  private val instance = new TransactionServiceHandler
   trait Implicits {
-    implicit val transactionServiceHandler: TransactionServiceHandler =
-      new TransactionServiceHandler
+    implicit val transactionServiceHandler: TransactionServiceHandler = instance
   }
 
   object implicits extends Implicits

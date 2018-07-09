@@ -109,8 +109,9 @@ class LedgerStoreHandler extends LedgerStore.Handler[Stack] {
 }
 
 object LedgerStoreHandler {
+  private val instance = new LedgerStoreHandler
   trait Implicits {
-    implicit val ledgerStoreHandler: LedgerStoreHandler = new LedgerStoreHandler
+    implicit val ledgerStoreHandler: LedgerStoreHandler = instance
   }
 
   object implicits extends Implicits

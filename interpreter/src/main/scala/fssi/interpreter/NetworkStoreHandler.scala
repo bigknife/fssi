@@ -29,7 +29,8 @@ class NetworkStoreHandler extends NetworkStore.Handler[Stack]{
 }
 
 object NetworkStoreHandler {
+  private val instance = new NetworkStoreHandler
   trait Implicits {
-    implicit val networkStoreHandler: NetworkStoreHandler = new NetworkStoreHandler
+    implicit val networkStoreHandler: NetworkStoreHandler = instance
   }
 }

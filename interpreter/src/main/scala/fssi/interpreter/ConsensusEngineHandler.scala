@@ -1,12 +1,18 @@
 package fssi.interpreter
 
+import bigknife.scalap.ast.types.{NodeID, SlotIndex}
+import bigknife.scalap.ast.usecase.SCP
+import bigknife.scalap.ast.usecase.component._
 import fssi.ast.domain._
 import fssi.ast.domain.types._
+import fssi.interpreter.scp.MomentValue
 import fssi.interpreter.util.{MomentPool, Once}
 
 class ConsensusEngineHandler extends ConsensusEngine.Handler[Stack] {
 
   private val momentPool: Once[MomentPool] = Once.empty
+
+  private val scp: SCP[Model.Op] = SCP[Model.Op]
 
   private def _init(setting: Setting): Unit = {
     momentPool := MomentPool.newPool(setting.maxMomentSize, setting.maxMomentPoolElapsedSecond)
@@ -16,13 +22,32 @@ class ConsensusEngineHandler extends ConsensusEngine.Handler[Stack] {
     _init(setting)
   }
 
-  override def poolMoment(moment: Moment): Stack[Boolean] = Stack {
-    momentPool.unsafe().push(moment)
+  override def poolMoment(node: Node,
+                          currentHeight: BigInt,
+                          previous: Moment,
+                          moment: Moment): Stack[Boolean] = Stack { setting =>
+    //momentPool.unsafe().push(moment)
+    // directly put to scp
+    //setting.
+    val nodeID        = NodeID(node.boundAccount.get.publicKeyData.bytes)
+    val value         = MomentValue(moment)
+    val previousValue = MomentValue(moment)
+    val slotIndex     = SlotIndex(currentHeight + 1)
+
+    val p = scp.nominate(nodeID,
+                         slotIndex,
+                         round = 0,
+                         valueToNominate = value,
+                         previousValue = previousValue)
+
+    bigknife.scalap.interpreter.runner.runIO(p, setting.toScalapSetting(nodeID)).unsafeRunSync()
+
   }
 }
 object ConsensusEngineHandler {
+  private val _instance = new ConsensusEngineHandler
   trait Implicits {
-    implicit val consensusEngineHandler: ConsensusEngineHandler = new ConsensusEngineHandler
+    implicit val consensusEngineHandler: ConsensusEngineHandler = _instance
   }
   object implicits extends Implicits
 }

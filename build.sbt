@@ -23,15 +23,15 @@ lazy val pSandbox = sandbox()
   .dependsOn(pContractLib)
 
 // scp prj
-lazy val pScp = scp()
-  .dependsOn(pCrypto)
+//lazy val pScp = scp()
+//  .dependsOn(pCrypto)
 
 // interpreter prj
 lazy val pInterpreter = interpreter()
   .dependsOn(pAst)
   .dependsOn(pJsonRpc)
   .dependsOn(pSandbox)
-  .dependsOn(pScp)
+//  .dependsOn(pScp)
 
 
 // contract lib

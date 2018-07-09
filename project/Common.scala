@@ -124,7 +124,8 @@ object Common {
             libraryDependencies ++= all.circe,
             libraryDependencies ++= all.scalecube,
             libraryDependencies ++= all.betterfiles,
-            libraryDependencies ++= all.leveldb
+            libraryDependencies ++= all.leveldb,
+            libraryDependencies ++= all.scapap
           )
       def apply(id: String): Project = apply(id, id)
       def apply(): Project           = apply("interpreter")

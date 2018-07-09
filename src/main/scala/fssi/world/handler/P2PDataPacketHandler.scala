@@ -26,8 +26,10 @@ trait P2PDataPacketHandler {
         logger.warn("this feature is been developed")
 
       case SubmitTransaction(account, transaction) =>
+        val setting =
+          warriorArgs.toSetting.copy(scpConnect = new SCPConnectHandler(warriorArgs.toSetting, warrior))
         runner
-          .runIOAttempt(warrior.processTransaction(transaction), warriorArgs.toSetting)
+          .runIOAttempt(warrior.processTransaction(transaction), setting)
           .unsafeRunSync() match {
           case Left(t)       => logger.error(s"failed to process transaction(${transaction.id})", t)
           case Right(status) => logger.info(s"processing transaction($status)")

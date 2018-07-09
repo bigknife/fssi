@@ -111,8 +111,9 @@ class NetworkServiceHandler extends NetworkService.Handler[Stack] {
   }
 }
 object NetworkServiceHandler {
+  private val instance = new NetworkServiceHandler
   trait Implicits {
-    implicit val networkServiceHandler: NetworkServiceHandler = new NetworkServiceHandler
+    implicit val networkServiceHandler: NetworkServiceHandler = instance
   }
   object implicits extends Implicits
 }

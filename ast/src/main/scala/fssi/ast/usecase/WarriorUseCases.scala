@@ -21,4 +21,12 @@ trait WarriorUseCases[F[_]] extends P2PUseCases[F]{
     * @return
     */
   def createNewAccount(account: Account): SP[F, Unit]
+
+  /**
+    * use account's public key to sign a data block
+    * @param bytes data
+    * @param publickKeyData account's public key
+    * @return
+    */
+  def signData(bytes: Array[Byte], publickKeyData: BytesValue): SP[F, BytesValue]
 }
