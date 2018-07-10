@@ -14,6 +14,7 @@ trait ModelHandler
     with ContractStoreHandler.Implicits
     with LedgerStoreHandler.Implicits
     with NetworkStoreHandler.Implicits
+    with LedgerServiceHandler.Implicits
     with bigknife.sop.effect.error.ErrorMInstance
 
 object ModelHandler extends ModelHandler

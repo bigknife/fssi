@@ -38,6 +38,7 @@ import fssi.contract.{AccountState, States}
     */
   def saveStates(states: Map[String, AccountState]): P[F, Unit]
 
+
   /**
     * get current block chain height(length, or slotIndex in scp)
     * @return
@@ -45,11 +46,25 @@ import fssi.contract.{AccountState, States}
   def currentHeight(): P[F, BigInt]
 
   /**
+    * update current height
+    * @param height current height
+    * @return
+    */
+  def updateHeight(height: BigInt): P[F, Unit]
+
+  /**
     * get the time capsule at specified height
     * @param height height, slotIndex
     * @return if not found , return moment of 0
     */
   def timeCapsuleOf(height: BigInt): P[F, TimeCapsule]
+
+  /**
+    * save time capsule
+    * @param timeCapsule new time capsule
+    * @return
+    */
+  def saveTimeCapsule(timeCapsule: TimeCapsule): P[F, Unit]
 
 
 }

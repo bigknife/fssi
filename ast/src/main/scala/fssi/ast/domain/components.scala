@@ -19,6 +19,7 @@ object components {
     val transactionService: TransactionService[F]
     val contractService: ContractService[F]
     val consensusEngine: ConsensusEngine[F]
+    val ledgerService: LedgerService[F]
 
     //// biz store ////
     val accountSnapshot: AccountSnapshot[F]

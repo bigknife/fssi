@@ -107,10 +107,13 @@ trait Warrior[F[_]] extends WarriorUseCases[F] with P2P[F] {
     // then, put the moment into the proposal moment pool (contract engine will run proposal consensus periodically
     def putToPool(node: Node, moment: Moment): SP[F, Transaction.Status] =
       for {
-        currentHeight  <- ledgerStore.currentHeight()
+        currentHeight      <- ledgerStore.currentHeight()
         currentTimeCapsule <- ledgerStore.timeCapsuleOf(currentHeight)
-        pooled         <- consensusEngine.poolMoment(node, currentHeight, currentTimeCapsule.moments, moment)
-        _              <- log.info(s"$moment pooling: $pooled")
+        pooled <- consensusEngine.poolMoment(node,
+                                             currentHeight,
+                                             currentTimeCapsule.moments,
+                                             moment)
+        _ <- log.info(s"$moment pooling: $pooled")
         status <- (if (pooled) Transaction.Status.Pending(transaction.id)
                    else Transaction.Status.Rejected(transaction.id)).pureSP
       } yield status
@@ -237,15 +240,22 @@ trait Warrior[F[_]] extends WarriorUseCases[F] with P2P[F] {
     * @return
     */
   override def momentsDetermined(moments: Vector[Moment], height: BigInt): SP[F, Unit] = {
-    def saveMoment(moment: Moment): SP[F, Unit] = {
-      // persist the new state to the account trie
-      ledgerStore.saveStates(moment.newStates.states)
-
-      // persist moments
-
+    val saveMoments: SP[F, Unit] = moments.foldLeft(().pureSP[F]) { (acc, n) =>
+      for {
+        _ <- ledgerStore.saveStates(n.newStates.states)
+      } yield ()
     }
 
-    ???
+    for {
+      currentHeight      <- ledgerStore.currentHeight()
+      currentTimeCapsule <- ledgerStore.timeCapsuleOf(currentHeight)
+      timeCapsule <- ledgerService.createTimeCapsule(currentHeight + 1,
+                                                     currentTimeCapsule.hash,
+                                                     moments)
+      _ <- ledgerStore.saveTimeCapsule(timeCapsule)
+      _ <- ledgerStore.updateHeight(currentHeight + 1)
+      _ <- saveMoments
+    } yield ()
   }
 }
 

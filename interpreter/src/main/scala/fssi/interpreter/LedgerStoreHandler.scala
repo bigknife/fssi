@@ -10,14 +10,18 @@ import fssi.ast.domain.types._
 import fssi.contract.States
 import fssi.contract.AccountState
 import fssi.interpreter.util.Once
-import fssi.interpreter.util.trie.{Store, Trie}
+import fssi.interpreter.util.trie.{Store, StoreKey, StoreValue, Trie}
 import io.circe.parser._
+import io.circe.syntax._
 import fssi.interpreter.jsonCodec._
 
 import scala.collection.immutable
 
 class LedgerStoreHandler extends LedgerStore.Handler[Stack] {
   val accountStateTrie: Once[Trie] = Once.empty
+  val timeCapsuleTrie: Once[Trie]  = Once.empty
+
+  private val TimeCapsuleHeightKey: StoreKey = Array(0.toByte, 0.toByte, 0.toByte, 0.toByte)
 
   private def _init(setting: Setting): Unit = {
     accountStateTrie := {
@@ -25,10 +29,15 @@ class LedgerStoreHandler extends LedgerStore.Handler[Stack] {
       path.toFile.mkdirs()
       Trie.empty(Store.levelDB(path.toString))
     }
+
+    timeCapsuleTrie := {
+      val path = Paths.get(setting.workingDir, "timecapsule")
+      path.toFile.mkdirs()
+      Trie.empty(Store.levelDB(path.toString))
+    }
   }
 
-
-  override def init(): Stack[Unit] = Stack {setting =>
+  override def init(): Stack[Unit] = Stack { setting =>
     _init(setting)
   }
 
@@ -76,7 +85,7 @@ class LedgerStoreHandler extends LedgerStore.Handler[Stack] {
               val contractMetaFile = better.files.File(s"$tmpDir/META-INF/accounts")
 
               // Got the accounts
-              val ret =  Vector(invoker.value) ++ contractMetaFile.lines.toVector
+              val ret = Vector(invoker.value) ++ contractMetaFile.lines.toVector
 
               better.files.File(tmpDir).delete()
 
@@ -87,7 +96,7 @@ class LedgerStoreHandler extends LedgerStore.Handler[Stack] {
             storeKey =>
               trie.store
                 .load(storeKey.getBytes)
-                .map(x => new String(x))
+                .map(x => new String(x, "utf-8"))
                 .map(parse)
                 .map {
                   case Left(t) => Left(WorldStatesError(storeKey, Some(t)))
@@ -106,6 +115,57 @@ class LedgerStoreHandler extends LedgerStore.Handler[Stack] {
         }
         .unsafe()
     }
+
+  override def currentHeight(): Stack[BigInt] = Stack {
+    // a fix path to save current height
+    timeCapsuleTrie
+      .map { trie =>
+        trie.store.load(TimeCapsuleHeightKey).map(BigInt(_)).getOrElse(BigInt(0))
+      }
+      .unsafe()
+  }
+
+  override def saveStates(states: Map[String, AccountState]): Stack[Unit] = Stack {
+    accountStateTrie.foreach { trie =>
+      states.foreach {
+        case (key, state) =>
+          val storeKey: StoreKey     = key.getBytes("utf-8")
+          val storeValue: StoreValue = state.asJson.noSpaces.getBytes("utf-8")
+          trie.store.save(storeKey, storeValue)
+      }
+    }
+  }
+
+  override def updateHeight(height: BigInt): Stack[Unit] = Stack {
+    timeCapsuleTrie.foreach {trie =>
+      trie.store.save(TimeCapsuleHeightKey, height.toString().getBytes("utf-8"))
+    }
+  }
+
+  override def timeCapsuleOf(height: BigInt): Stack[TimeCapsule] = Stack {
+    timeCapsuleTrie.map {trie =>
+      trie.store.load(height.toString().getBytes) match {
+        case None => throw new RuntimeException(s"no timecapsule found for $height")
+        case Some(value) =>
+          parse(new String(value, "utf-8")) match {
+            case Left(t) => throw t
+            case Right(json) =>
+              json.as[TimeCapsule] match {
+                case Left(t) => throw t
+                case Right(timeCapsule) => timeCapsule
+              }
+          }
+      }
+    }.unsafe()
+  }
+
+  override def saveTimeCapsule(timeCapsule: TimeCapsule): Stack[Unit] = Stack {
+    timeCapsuleTrie.foreach {trie =>
+      val storeKey: StoreKey = timeCapsule.height.toString.getBytes("utf-8")
+      val storeValue: StoreValue = timeCapsule.asJson.noSpaces.getBytes("utf-8")
+      trie.store.save(storeKey, storeValue)
+    }
+  }
 }
 
 object LedgerStoreHandler {
