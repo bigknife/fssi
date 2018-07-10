@@ -14,6 +14,13 @@ import fssi.ast.domain.types._
   /** disseminate a network message */
   def disseminate(packet: DataPacket, nodes: Vector[Node.Address]): P[F, Unit]
 
+  /**
+    * broadcast messages to peers in the p2p network
+    * @param packet data packet
+    * @return
+    */
+  def broadcast(packet: DataPacket): P[F, Unit]
+
   /** build a network message by using an account */
   def buildCreateAccountDataMessage(account: Account): P[F, DataPacket]
 

@@ -9,4 +9,12 @@ object DataPacket {
   case class SyncAccount(id: Account.ID) extends DataPacket
   case class SubmitTransaction(account: Account, transaction: Transaction) extends DataPacket
   case class TypedString(message: String, `type`: String) extends DataPacket
+
+  def scpEnvelope(message: String): DataPacket = TypedString(message, "scp.envelope")
+  object ScpEnvelope {
+    def unapply(arg: DataPacket): Option[String] = arg match {
+      case TypedString(message, "scp.envelope") => Some(message)
+      case _ => None
+    }
+  }
 }

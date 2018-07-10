@@ -1,6 +1,7 @@
 package fssi.ast.usecase
 
 import bigknife.sop._
+import fssi.ast.domain.Node
 import fssi.ast.domain.types.{Proposal, _}
 
 trait WarriorUseCases[F[_]] extends P2PUseCases[F]{
@@ -25,10 +26,37 @@ trait WarriorUseCases[F[_]] extends P2PUseCases[F]{
   /**
     * use account's public key to sign a data block
     * @param bytes data
-    * @param publickKeyData account's public key
+    * @param publicKeyData account's public key
     * @return
     */
-  def signData(bytes: Array[Byte], publickKeyData: BytesValue): SP[F, BytesValue]
+  def signData(bytes: Array[Byte], publicKeyData: BytesValue): SP[F, BytesValue]
 
+  /**
+    * broadcast message to peers
+    * @param message message
+    * @return
+    */
   def broadcastMessage(message: DataPacket): SP[F, Unit]
+
+  /**
+    * query current warrior node info
+    * @return
+    */
+  def currentNode(): SP[F, Node]
+
+  /**
+    * verify data's sign
+    * @param source source bytes
+    * @param publicKeyData public key
+    * @return
+    */
+  def verifySign(source: Array[Byte], signature: Array[Byte], publicKeyData: Array[Byte]): SP[F, Boolean]
+
+  /**
+    * after consensus engine run, moments have reached agreement, so we can persist them
+    * @param height the new block length to be persisted
+    * @param moments all moments
+    * @return
+    */
+  def momentsDetermined(moments: Vector[Moment], height: BigInt): SP[F, Unit]
 }

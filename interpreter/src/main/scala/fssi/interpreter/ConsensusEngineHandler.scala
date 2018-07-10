@@ -24,7 +24,7 @@ class ConsensusEngineHandler extends ConsensusEngine.Handler[Stack] {
 
   override def poolMoment(node: Node,
                           currentHeight: BigInt,
-                          previous: Moment,
+                          previous: Vector[Moment],
                           moment: Moment): Stack[Boolean] = Stack { setting =>
     //momentPool.unsafe().push(moment)
     // directly put to scp

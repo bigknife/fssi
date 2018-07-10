@@ -10,6 +10,7 @@
 !*.sh
 !.travis.yml
 !.gitignore
+!.scalafmt.conf
 /target/
 /project/**
 !/project/*.scala

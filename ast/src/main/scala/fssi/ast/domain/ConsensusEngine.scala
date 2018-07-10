@@ -14,7 +14,7 @@ import fssi.ast.domain.types._
     * @param moment moment
     * @return if the pool can accept it return true, or false
     */
-  def poolMoment(node: Node, currentHeight: BigInt, previous: Moment, moment: Moment): P[F, Boolean]
+  def poolMoment(node: Node, currentHeight: BigInt, previous: Vector[Moment], moment: Moment): P[F, Boolean]
 
   /**
     * build a proposal from moment pool

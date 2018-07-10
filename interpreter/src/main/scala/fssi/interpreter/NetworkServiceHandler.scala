@@ -104,6 +104,13 @@ class NetworkServiceHandler extends NetworkService.Handler[Stack] {
     }
   }
 
+
+  override def broadcast(packet: DataPacket): Stack[Unit] = Stack {
+    clusterOnce.foreach {cluster =>
+      cluster.spreadGossip(DataPacketUtil.toMessage(packet))
+    }
+  }
+
   private def printMembers(): Unit = {
     logger.info("current members:")
     import scala.collection.JavaConverters._

@@ -108,8 +108,8 @@ trait Warrior[F[_]] extends WarriorUseCases[F] with P2P[F] {
     def putToPool(node: Node, moment: Moment): SP[F, Transaction.Status] =
       for {
         currentHeight  <- ledgerStore.currentHeight()
-        previousMoment <- ledgerStore.momentOf(currentHeight)
-        pooled         <- consensusEngine.poolMoment(node, currentHeight, previousMoment, moment)
+        currentTimeCapsule <- ledgerStore.timeCapsuleOf(currentHeight)
+        pooled         <- consensusEngine.poolMoment(node, currentHeight, currentTimeCapsule.moments, moment)
         _              <- log.info(s"$moment pooling: $pooled")
         status <- (if (pooled) Transaction.Status.Pending(transaction.id)
                    else Transaction.Status.Rejected(transaction.id)).pureSP
@@ -188,13 +188,64 @@ trait Warrior[F[_]] extends WarriorUseCases[F] with P2P[F] {
   override def signData(bytes: Array[Byte], publicKeyData: BytesValue): SP[F, BytesValue] = {
     for {
       asOpt <- accountSnapshot.findByPublicKey(publicKeyData)
-      priv <- cryptoService.rebuildPriv(asOpt.get.account.privateKeyData)
-      sign <- cryptoService.makeSignature(BytesValue(bytes), priv)
+      priv  <- cryptoService.rebuildPriv(asOpt.get.account.privateKeyData)
+      sign  <- cryptoService.makeSignature(BytesValue(bytes), priv)
     } yield sign
   }
 
-  override def broadcastMessage(message: DataPacket): SP[F, Unit] = for {
+  /**
+    * broadcast message to peers
+    * @param message message
+    * @return
+    */
+  override def broadcastMessage(message: DataPacket): SP[F, Unit] =
+    for {
+      _ <- log.debug(s"start to broadcast message: $message")
+      _ <- networkService.broadcast(message)
+    } yield ()
 
+  /**
+    * query current warrior node info
+    * @return
+    */
+  override def currentNode(): SP[F, Node] = {
+    for {
+      nodeOpt <- networkStore.currentNode()
+    } yield nodeOpt.get
+  }
+
+  /**
+    * verify data's sign
+    *
+    * @param source         source bytes
+    * @param publicKeyData public key
+    * @return
+    */
+  override def verifySign(source: Array[Byte],
+                          signature: Array[Byte],
+                          publicKeyData: Array[Byte]): SP[F, Boolean] =
+    for {
+      priv <- cryptoService.rebuildPubl(BytesValue(publicKeyData))
+      ret  <- cryptoService.validateSignature(Signature(signature), BytesValue(source), priv)
+    } yield ret
+
+  /**
+    * after consensus engine run, moments have reached agreement, so we can persist them
+    *
+    * @param height  the new block length to be persisted
+    * @param moments all moments
+    * @return
+    */
+  override def momentsDetermined(moments: Vector[Moment], height: BigInt): SP[F, Unit] = {
+    def saveMoment(moment: Moment): SP[F, Unit] = {
+      // persist the new state to the account trie
+      ledgerStore.saveStates(moment.newStates.states)
+
+      // persist moments
+
+    }
+
+    ???
   }
 }
 
