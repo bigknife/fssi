@@ -13,17 +13,20 @@ trait P2P[F[_]] extends P2PUseCases[F] {
   /** start a p2p node, connect to some seed nodes
     * if there are no seed nodes, start this node as a seed.
     */
-  override def startup(ip: String,
+  override def startup(accountPublicKey: String,
+                       ip: String,
                        port: Int,
                        seeds: Vector[String],
                        handler: DataPacket => Unit = _ => ()): SP[F, Node] = {
     for {
       _           <- log.info(s"starting node(ip = $ip, port = $port, seeds = $seeds)...")
       _           <- accountSnapshot.startupSnapshotDB()
-      node        <- networkService.createNode(port, ip, seeds)
-      _           <- ledgerStore.init()
-      _           <- consensusEngine.init()
+      node        <- networkService.createNode(accountPublicKey, port, ip, seeds)
       _           <- log.info(s"created node: $node")
+      _           <- ledgerStore.init()
+      _           <- log.info("ledger store initialized.")
+      _           <- consensusEngine.init()
+      _           <- log.info("censensus engine initialized.")
       runtimeNode <- networkService.startupP2PNode(node, handler)
       _           <- log.info(s"node started, runtime node: $runtimeNode")
       _           <- networkStore.saveNode(runtimeNode)

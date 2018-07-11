@@ -61,7 +61,7 @@ object NymphHandler {
 
   // start p2p node
   def startP2PNode(args: NymphArgs): Unit = {
-    val p = nymph.startup(args.nodeIp, args.nodePort, args.seeds)
+    val p = nymph.startup(args.boundAccountPublicKey, args.nodeIp, args.nodePort, args.seeds)
     runner.runIOAttempt(p, args.toSetting).unsafeRunSync() match {
       case Left(t)  => logger.error("start p2p node failed", t)
       case Right(v) => logger.info("p2p node start, id {}", v.toString)

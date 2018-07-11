@@ -14,10 +14,13 @@ import fssi.interpreter.util.trie.{Store, StoreKey, StoreValue, Trie}
 import io.circe.parser._
 import io.circe.syntax._
 import fssi.interpreter.jsonCodec._
+import org.slf4j.LoggerFactory
 
 import scala.collection.immutable
 
 class LedgerStoreHandler extends LedgerStore.Handler[Stack] {
+  private val logger = LoggerFactory.getLogger(getClass)
+
   val accountStateTrie: Once[Trie] = Once.empty
   val timeCapsuleTrie: Once[Trie]  = Once.empty
 
@@ -157,6 +160,26 @@ class LedgerStoreHandler extends LedgerStore.Handler[Stack] {
           }
       }
     }.unsafe()
+  }
+
+
+  override def findTimeCapsuleAt(height: BigInt): Stack[Option[TimeCapsule]] = Stack {
+    timeCapsuleTrie.map {trie =>
+      trie.store.load(height.toString().getBytes).map {value =>
+          parse(new String(value, "utf-8")) match {
+            case Left(t) =>
+              logger.warn("parse time capsule to json failed", t)
+              None
+            case Right(json) =>
+              json.as[TimeCapsule] match {
+                case Left(t) =>
+                  logger.warn("parse time capsule json to TimeCapsule failed", t)
+                  None
+                case Right(timeCapsule) => Some(timeCapsule)
+              }
+          }
+      }
+    }.unsafe().flatten
   }
 
   override def saveTimeCapsule(timeCapsule: TimeCapsule): Stack[Unit] = Stack {

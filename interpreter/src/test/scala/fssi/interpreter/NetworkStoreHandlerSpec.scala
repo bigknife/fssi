@@ -1,6 +1,7 @@
 package fssi.interpreter
 
 import fssi.ast.domain.Node
+import fssi.ast.domain.types.BytesValue
 import org.scalatest._
 
 class NetworkStoreHandlerSpec extends FunSuite {
@@ -11,7 +12,7 @@ class NetworkStoreHandlerSpec extends FunSuite {
     val node: Node = Node(
       Node.Address("127.0.0.1", 18085),
       Node.Type.Nymph,
-      None,
+      BytesValue.decodeHex("0294282aff25dfc77cf7ac3725078a5eb6098f1eeac44280c4eb2931f97325b0d6"),
       Vector.empty
     )
 

@@ -31,7 +31,7 @@ trait Runner {
       val ccl                   = new ContractClassLoader(p)
       val cls                   = ccl.findClass(clazzName)
       val clss                  = args.map(_ => classOf[String])
-      val statesCls             = classOf[fssi.contract.java.States]
+      val statesCls             = classOf[_root_.fssi.contract.java.States]
       val fullClasses           = Seq(classOf[String], statesCls) ++ clss
       val method                = cls.getMethod(methodName, fullClasses: _*)
       val inst                  = cls.newInstance()

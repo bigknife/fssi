@@ -14,8 +14,11 @@ class NetworkServiceHandler extends NetworkService.Handler[Stack] {
   val clusterOnce: Once[Cluster] = Once.empty
   val logger: Logger             = LoggerFactory.getLogger(getClass)
 
-  override def createNode(port: Int, ip: String, seeds: Vector[String]): Stack[Node] = Stack {
-    Node(Node.Address(ip, port), Node.Type.Nymph, None, seeds)
+  override def createNode(accountPublicKey: String,
+                          port: Int,
+                          ip: String,
+                          seeds: Vector[String]): Stack[Node] = Stack {
+    Node(Node.Address(ip, port), Node.Type.Nymph, BytesValue.decodeHex(accountPublicKey), seeds)
   }
 
   override def startupP2PNode(node: Node, handler: DataPacket => Unit = _ => ()): Stack[Node] =
@@ -23,6 +26,7 @@ class NetworkServiceHandler extends NetworkService.Handler[Stack] {
       val config = ClusterConfig
         .builder()
         .port(node.address.port)
+        .listenAddress(node.address.ip)
         .portAutoIncrement(false)
         .seedMembers(node.seeds.map(Address.from): _*)
         .suspicionMult(ClusterConfig.DEFAULT_WAN_SUSPICION_MULT)
@@ -104,10 +108,10 @@ class NetworkServiceHandler extends NetworkService.Handler[Stack] {
     }
   }
 
-
   override def broadcast(packet: DataPacket): Stack[Unit] = Stack {
-    clusterOnce.foreach {cluster =>
+    clusterOnce.foreach { cluster =>
       cluster.spreadGossip(DataPacketUtil.toMessage(packet))
+      ()
     }
   }
 

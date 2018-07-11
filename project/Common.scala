@@ -177,15 +177,20 @@ object Common {
 
   val defaultShellScript: Seq[String] = defaultShellScript(
     Seq(
-      "-Dio.netty.tryReflectionSetAccessible=true"
+      //"--add-exports",
+      //"java.base/jdk.internal.misc=ALL-UNNAMED"
+    ),
+    Seq(
+      //"-Dio.netty.tryReflectionSetAccessible=true"
     )
   )
 
-  def defaultShellScript(javaOpts: Seq[String] = Seq.empty): Seq[String] = {
+  def defaultShellScript(opts: Seq[String], javaOpts: Seq[String] = Seq.empty): Seq[String] = {
     val javaOptsString = javaOpts.map(_ + " ").mkString
+    val optsString = opts.map(_ + " ").mkString
     Seq(
       "#!/usr/bin/env sh",
-      s"""exec java --add-exports java.base/jdk.internal.misc=ALL-UNNAMED -jar $javaOptsString$$JAVA_OPTS "$$0" "$$@"""",
+      s"""exec java $optsString -jar $javaOptsString$$JAVA_OPTS "$$0" "$$@"""",
       "")
   }
 }

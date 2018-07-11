@@ -29,7 +29,7 @@ class ConsensusEngineHandler extends ConsensusEngine.Handler[Stack] {
     //momentPool.unsafe().push(moment)
     // directly put to scp
     //setting.
-    val nodeID        = NodeID(node.boundAccount.get.publicKeyData.bytes)
+    val nodeID        = NodeID(node.accountPublicKey.bytes)
     val value         = MomentValue(moment)
     val previousValue = MomentValue(moment)
     val slotIndex     = SlotIndex(currentHeight + 1)

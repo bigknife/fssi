@@ -52,7 +52,7 @@ object Dependencies {
       val leveldb = "1.8"
 
       // scalap
-      val scalap = "0.0.1_BETA"
+      val scalap = "0.0.3_BETA"
     }
 
     lazy val log = {

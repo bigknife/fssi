@@ -13,7 +13,7 @@ class AccountServiceHandler extends AccountService.Handler[Stack] {
       privateKeyData = priv,
       publicKeyData = publ,
       iv = iv,
-      balance = Token.Zero
+      balance = Token(10000, Token.Unit.Sweet) //todo: remove, for test, init amount is 10000
     )
   }
 

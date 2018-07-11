@@ -43,7 +43,9 @@ import fssi.ast.domain.types._
   def shutdownP2PNode(): P[F, Unit]
 
   /** create a node
+    * @param port node port
+    * @param accountPublicKey bound account public key, hex
     * @param seeds seed nodes, format: 'ip:port'
     */
-  def createNode(port: Int, ip: String, seeds: Vector[String]): P[F, Node]
+  def createNode(accountPublicKey: String, port: Int, ip: String, seeds: Vector[String]): P[F, Node]
 }

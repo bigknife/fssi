@@ -36,7 +36,11 @@ object WarriorHandler {
 
   // start p2p node
   def startP2PNode(args: Args.WarriorArgs): Unit = {
-    val p = warrior.startup(args.nodeIp, args.nodePort, args.seeds, p2pHandler(args))
+    val p = warrior.startup(args.boundAccountPublicKey,
+                            args.nodeIp,
+                            args.nodePort,
+                            args.seeds,
+                            p2pHandler(args))
     runner.runIOAttempt(p, args.toSetting).unsafeRunSync() match {
       case Left(t)  => logger.error("start p2p node failed", t)
       case Right(v) => logger.info("p2p node start, id {}", v.toString)

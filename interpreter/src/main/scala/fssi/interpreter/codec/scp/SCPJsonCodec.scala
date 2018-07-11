@@ -204,4 +204,27 @@ trait SCPJsonCodec {
         }
       }
     }
+
+  implicit val quorumSetJsonEncoder: Encoder[QuorumSet] = new Encoder[QuorumSet] {
+    override def apply(a: QuorumSet): Json = a match {
+      case x@ QuorumSet.Simple(threashold, validators) => x.asJson
+      case x@ QuorumSet.Nest(threshold, validators, innerSets) => x.asJson
+    }
+  }
+
+  implicit val quorumSetJsonDecoder: Decoder[QuorumSet] = new Decoder[QuorumSet] {
+    override def apply(c: HCursor): Result[QuorumSet] = {
+      c.get[Set[QuorumSet.Simple]]("innerSets") match {
+        case Left(_) => for {
+          threshold <- c.get[Int]("threshold")
+          validators <- c.get[Set[NodeID]]("validators")
+        } yield QuorumSet.Simple(threshold, validators)
+
+        case Right(innerSets) => for {
+          threshold <- c.get[Int]("threshold")
+          validators <- c.get[Set[NodeID]]("validators")
+        } yield QuorumSet.Nest(threshold, validators, innerSets)
+      }
+    }
+  }
 }

@@ -60,6 +60,13 @@ import fssi.contract.{AccountState, States}
   def timeCapsuleOf(height: BigInt): P[F, TimeCapsule]
 
   /**
+    * find the time capsule at height
+    * @param height height
+    * @return none or some time capsule
+    */
+  def findTimeCapsuleAt(height: BigInt): P[F, Option[TimeCapsule]]
+
+  /**
     * save time capsule
     * @param timeCapsule new time capsule
     * @return

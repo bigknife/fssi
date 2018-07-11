@@ -6,4 +6,3 @@ case class TimeCapsule(
     hash: Hash,
     previousHash: Hash
 )
-

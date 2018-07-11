@@ -19,7 +19,8 @@ class NymphSpec extends FunSuite with BeforeAndAfterAll {
 
   test("register") {
     info(s"$nymph")
-    val p2p = nymph.startup("localhost", 9080, Vector.empty)
+    val accountPublicKey = "0294282aff25dfc77cf7ac3725078a5eb6098f1eeac44280c4eb2931f97325b0d6"
+    val p2p = nymph.startup(accountPublicKey ,"localhost", 9080, Vector.empty)
 
     val register = nymph.register("hello,world")
 

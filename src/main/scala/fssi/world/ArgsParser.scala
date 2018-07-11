@@ -156,6 +156,16 @@ trait ArgsParser {
             case x              => x
         })
 
+    def boundAccountPublicKey: OptionDef[String, Args] =
+      opt[String]("account")
+        .text("current node bound account public key in hex")
+        .required()
+        .action((acc, a) => a match {
+          case x: NymphArgs => x.copy(boundAccountPublicKey = acc)
+          case x: WarriorArgs => x.copy(boundAccountPublicKey = acc)
+          case x => x
+        })
+
     cmd("nymph")
       .text("run nymph jsonrpc server")
       .action((_, _) => NymphArgs())
@@ -177,6 +187,7 @@ trait ArgsParser {
               case x: NymphArgs => x.copy(jsonrpcHost = h)
               case x            => x
           }),
+        boundAccountPublicKey,
         opt[String]("service-name")
           .text("jsonrpc service name, which is used as a segment in the service endpoint")
           .action((sn, a) =>
@@ -213,6 +224,7 @@ trait ArgsParser {
       .action((_, _) => WarriorArgs())
       .children(
         workingDir,
+        boundAccountPublicKey,
         snapshotDbPort,
         snapshotDbConsole,
         snapshotDbConsolePort,

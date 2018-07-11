@@ -2,7 +2,7 @@ import Common._, prj._
 //import sbtassembly.AssemblyPlugin.defaultShellScript
 
 coverageExcludedFiles in ThisBuild := ".*macro.*"
-coverageEnabled in ThisBuild := true
+coverageEnabled.in(Test, test) := true
 parallelExecution in ThisBuild := false
 fork in ThisBuild := true
 ensimeScalaVersion in ThisBuild := "2.12.4"
@@ -33,7 +33,6 @@ lazy val pInterpreter = interpreter()
   .dependsOn(pSandbox)
 //  .dependsOn(pScp)
 
-
 // contract lib
 lazy val pContractLib = contractLib()
 
@@ -53,4 +52,5 @@ lazy val pFssi = fssi("fssi", ".")
       .copy(prependShellScript = Some(defaultShellScript)),
     assemblyJarName in assembly := s"${name.value}",
     test in assembly := {}
+
   )

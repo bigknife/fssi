@@ -50,7 +50,7 @@ trait P2PDataPacketHandler {
           case Left(t) => logger.error(s"received bad SCPEnvelope message: $message")
           case Right(json) =>
             val node = runner.runIO(warrior.currentNode(), warriorArgs.toSetting).unsafeRunSync()
-            val nodeID = NodeID(node.boundAccount.get.publicKeyData.bytes)
+            val nodeID = NodeID(node.accountPublicKey.bytes)
 
             json.as[Envelope[Message]] match {
               case Left(t) => logger.error(s"SCPEnvelope message deserialize failed: $message")

@@ -1,5 +1,6 @@
 package fssi.world
 
+import java.io.File
 import java.nio.file.Paths
 
 import fssi.ast.domain.Node.Address
@@ -26,6 +27,7 @@ object Args {
       jsonrpcServiceVersion: String = "v1",
       nodePort: Int = 28080,
       nodeIp: String = "0.0.0.0",
+      boundAccountPublicKey: String = "",
       warriorNodes: Vector[String] = Vector.empty,
       verbose: Boolean = false,
       colorfulLog: Boolean = false
@@ -41,6 +43,7 @@ object Args {
 
   case class WarriorArgs(
       workingDir: String = Paths.get(System.getProperty("user.home"), ".fssi").toString,
+      boundAccountPublicKey: String = "",
       snapshotDbPort: Int = 18080,
       startSnapshotDbConsole: Boolean = false,
       snapshotDbConsolePort: Int = 18081,

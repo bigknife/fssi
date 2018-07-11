@@ -12,6 +12,36 @@ trait Warrior[F[_]] extends WarriorUseCases[F] with P2P[F] {
   val model: Model[F]
   import model._
 
+  /** start a p2p node, connect to some seed nodes
+    * if there are no seed nodes, start this node as a seed.
+    */
+  override def startup(accountPublicKey: String,
+                       ip: String,
+                       port: Int,
+                       seeds: Vector[String],
+                       handler: DataPacket => Unit): SP[F, Node] = {
+    val p2pStartup = super.startup(accountPublicKey, ip, port, seeds, handler)
+    // if ledger is empty, try to create first time capsule (genius block)
+    val tryCreateFirstTimeCapusle: SP[F, Unit] = {
+      for {
+        ch <- ledgerStore.currentHeight()
+        tcOpt <- ledgerStore.findTimeCapsuleAt(ch)
+        _ <- if (tcOpt.isDefined) ().pureSP[F] else {
+          // create genius block
+          for {
+            genius <- ledgerService.createGeniusTimeCapsule()
+            _ <- ledgerStore.saveTimeCapsule(genius)
+          } yield ()
+        }
+      } yield ()
+    }
+
+    for {
+      node <- p2pStartup
+      _ <- tryCreateFirstTimeCapusle
+    } yield node
+  }
+
   /**
     * uc1. handle message from Nymph
     *     transaction -> contract -> moment
@@ -86,7 +116,7 @@ trait Warrior[F[_]] extends WarriorUseCases[F] with P2P[F] {
         status <- statesChangeOrThrowable match {
           case Left(t) =>
             for {
-              _  <- log.error("Contract Run Failed.", Some(t))
+              _  <- log.error(s"Contract Run Failed. ${t.getMessage}", Some(t))
               s0 <- Transaction.Status.Failed(transaction.id).pureSP
             } yield s0
           case Right(statesChange) =>
