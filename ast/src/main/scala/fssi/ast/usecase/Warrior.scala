@@ -59,7 +59,12 @@ trait Warrior[F[_]] extends WarriorUseCases[F] with P2P[F] {
               s"Transaction(id=${transaction.id}) rejected!")
           s1 <- Transaction.Status.Rejected(transaction.id).pureSP
         } yield s1
-        else next(nodeOpt.get, accOpt.map(_.account).get)
+        else for {
+          _ <- log.info(s"found account: 0x${accOpt.map(_.account.publicKeyData.hex).get}@${nodeOpt.get}")
+          x <- next(nodeOpt.get, accOpt.map(_.account).get)
+          _ <- log.info(s"next of findAccount: $x")
+        } yield x
+
       } yield status
 
     // then, validate the signature of the transaction
@@ -221,6 +226,7 @@ trait Warrior[F[_]] extends WarriorUseCases[F] with P2P[F] {
   override def signData(bytes: Array[Byte], publicKeyData: BytesValue): SP[F, BytesValue] = {
     for {
       asOpt <- accountSnapshot.findByPublicKey(publicKeyData)
+      _ <- log.info(s"found account snapshot = $asOpt, with public key: ${publicKeyData.hex}")
       priv  <- cryptoService.rebuildPriv(asOpt.get.account.privateKeyData)
       sign  <- cryptoService.makeSignature(BytesValue(bytes), priv)
     } yield sign

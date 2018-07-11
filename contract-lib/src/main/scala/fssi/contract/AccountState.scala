@@ -14,7 +14,12 @@ case class AccountState(accountId: String, amount: BigDecimal, assets: Map[Strin
 
   def updateAsset(key: String, data: Array[Byte]): AccountState = copy(assets = assets + (key -> data))
 
-
+  lazy val bytes: Array[Byte] = {
+    val assetsBytes = assets.toVector.sortBy(_._1).foldLeft(Array.emptyByteArray) {(acc, n) =>
+      acc ++ n._1.getBytes("utf-8") ++ n._2
+    }
+    accountId.getBytes("utf-8") ++ amount.toString().getBytes("utf-8") ++ assetsBytes
+  }
 }
 
 object AccountState {

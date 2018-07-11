@@ -37,6 +37,11 @@ object BytesValue {
     bb.putInt(i)
     apply(bb.array())
   }
+  def valueOf(i: Long): BytesValue = {
+    val bb = ByteBuffer.allocate(8)
+    bb.putLong(i)
+    apply(bb.array())
+  }
 
   def combine(b1: BytesValue, b2: BytesValue): BytesValue = BytesValue(b1.bytes ++ b2.bytes)
 

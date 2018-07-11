@@ -1,7 +1,7 @@
 package fssi.interpreter.scp
 
 import bigknife.scalap.ast.types.Value
-import fssi.ast.domain.types.{Moment, Transaction}
+import fssi.ast.domain.types.{BytesValue, Moment, Transaction}
 import fssi.contract.States
 import fssi.interpreter.jsonCodec._
 import io.circe.syntax._
@@ -21,7 +21,15 @@ case class MomentValue(moments: Vector[Moment]) extends Value{
 
   }
 
-  override def bytes: Array[Byte] = moments.asJson.noSpaces.getBytes("utf-8")
+  lazy val bytes: Array[Byte] = {
+    val x = moments.foldLeft(Array.emptyByteArray) {(acc, n) => acc ++ n.bytes}
+    val h1 = java.security.MessageDigest.getInstance("md5").digest(x)
+    println(BytesValue(h1).hex)
+    x
+  }
+
+  //override def bytes: Array[Byte] = _bytes
+
 
   override def toString(): String = moments.asJson.spaces2
 }

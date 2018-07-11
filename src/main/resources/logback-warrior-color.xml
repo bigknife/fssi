@@ -63,7 +63,10 @@
     <logger name="org.http4s" additivity="false" level="error">
         <appender-ref ref="COLOR" />
     </logger>
-    <logger name="scp" additivity="false" level="debug">
+    <logger name="scalap.ast" additivity="false" level="info">
+        <appender-ref ref="COLOR" />
+    </logger>
+    <logger name="bigknife.scalap" additivity="false" level="debug">
         <appender-ref ref="COLOR" />
     </logger>
 

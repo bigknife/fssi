@@ -9,6 +9,8 @@ sealed trait Transaction {
   def signature: Signature
   def status: Transaction.Status
   def toBeVerified: BytesValue
+
+  def bytes: Array[Byte]
 }
 
 object Transaction {
@@ -31,6 +33,15 @@ object Transaction {
       buf.append(amount.toString)
       BytesValue(buf.toString())
     }
+
+    lazy val bytes: Array[Byte] = {
+      id.value.getBytes("utf-8") ++
+        from.value.getBytes("utf-8") ++
+        to.value.getBytes("utf-8") ++
+        amount.toString.getBytes("utf-8") ++
+        signature.bytes ++
+        status.toString.getBytes("utf-8")
+    }
   }
 
   // publish a contract
@@ -48,6 +59,14 @@ object Transaction {
       buf.append(owner.value)
       buf.append(contract.codeHash.base64)
       BytesValue(buf.toString())
+    }
+
+    lazy val bytes: Array[Byte] = {
+      id.value.getBytes("utf-8") ++
+        owner.value.getBytes("utf-8") ++
+        contract.toBeHashed.bytes ++
+        signature.bytes ++
+        status.toString.getBytes("utf-8")
     }
   }
 
@@ -72,6 +91,17 @@ object Transaction {
       buf.append(parameter.toString)
       BytesValue(buf.toString())
     }
+
+    lazy val bytes: Array[Byte] = {
+      id.value.getBytes("utf-8") ++
+        invoker.value.getBytes("utf-8") ++
+        name.value.getBytes("utf-8") ++
+        version.value.getBytes("utf-8") ++
+        function.name.getBytes("utf-8") ++
+        parameter.toString.getBytes("utf-8") ++
+        signature.bytes ++
+        status.toString.getBytes("utf-8")
+    }
   }
 
   // transaction id
@@ -83,10 +113,18 @@ object Transaction {
   }
 
   object Status {
-    case class Init(id: ID)     extends Status
-    case class Rejected(id: ID) extends Status
-    case class Pending(id: ID)  extends Status
-    case class Failed(id: ID)   extends Status
+    case class Init(id: ID) extends Status {
+      override def toString: String = s"Init(${id.value})"
+    }
+    case class Rejected(id: ID) extends Status {
+      override def toString: String = s"Rejected(${id.value})"
+    }
+    case class Pending(id: ID) extends Status {
+      override def toString: String = s"Pending(${id.value})"
+    }
+    case class Failed(id: ID) extends Status {
+      override def toString: String = s"Failed(${id.value})"
+    }
   }
 
   def initStatus(id: ID): Status     = Status.Init(id)

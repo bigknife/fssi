@@ -17,4 +17,9 @@ case class Moment(
     s"Moment(Old(hash=${oldStatesHash.base64})," +
       s"Trans(sign=${transaction.signature.base64})," +
       s"New(hash=${newStatesHash.base64}))"
+
+  lazy val bytes: Array[Byte] = {
+    oldStates.bytes ++ transaction.bytes ++ newStates.bytes ++ oldStatesHash.bytes ++ newStatesHash.bytes
+
+  }
 }
