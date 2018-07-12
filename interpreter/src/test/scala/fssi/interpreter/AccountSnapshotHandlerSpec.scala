@@ -19,7 +19,6 @@ class AccountSnapshotHandlerSpec extends FunSuite with BeforeAndAfterAll {
   test("saveSnapshot") {
     val accountId = Account.ID("1")
     val account = Account(
-      id = accountId,
       privateKeyData = BytesValue.Empty,
       publicKeyData = BytesValue("fake publick key"),
       iv = BytesValue("fake iv"),

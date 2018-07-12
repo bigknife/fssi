@@ -1,5 +1,6 @@
 # Scratch
 
+## some idea
 From message-sender's point of view:
 
 1. correspond to user's requests
@@ -188,4 +189,20 @@ fssi nymph \
 	--seeds 10.65.106.11:8800,10.65.106.11:8801 \
 	--color true \
 	--public-key 03d3e70862e399fc94ac62edd111398aa48f61de3a20d1ace979c02b3d9075e08a
+```
+
+### create a transaction
+use acc2 to create a banana transaction
+
+```bash
+fssi cmd createRunContract \
+	--private-key d2a7a192ed9c17a7a3d3f2c92b91618ca515b998567774f9ab911534a68dd3d7f0752c1a1c937ab2 \
+	--password 12345678 \
+	--iv 696c686c726d6e79 \
+	--account-id 0281e3120890180ae38cda921a8223c17f4db284ff43c9c31fed54e0dd6356c042 \
+	--name com.test \
+	--version 0.0.1 \
+	--function function1 \
+	--params '["phi", "0.5", "100"]' \
+	--output-format space2
 ```

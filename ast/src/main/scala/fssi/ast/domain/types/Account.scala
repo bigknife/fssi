@@ -1,12 +1,12 @@
 package fssi.ast.domain.types
 
 case class Account(
-    id: Account.ID,
     privateKeyData: BytesValue,
     publicKeyData: BytesValue,
     iv: BytesValue,
     balance: Token
 ) {
+  lazy val id: Account.ID = Account.ID(publicKeyData.hex)
   override def toString: String = s"Account(${id.value})"
 }
 

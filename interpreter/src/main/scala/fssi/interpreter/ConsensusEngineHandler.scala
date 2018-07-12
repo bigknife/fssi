@@ -29,18 +29,32 @@ class ConsensusEngineHandler extends ConsensusEngine.Handler[Stack] {
     //momentPool.unsafe().push(moment)
     // directly put to scp
     //setting.
+
+    //todo: start a timer to periodly nominate
     val nodeID        = NodeID(node.accountPublicKey.bytes)
     val value         = MomentValue(moment)
     val previousValue = MomentValue(moment)
     val slotIndex     = SlotIndex(currentHeight + 1)
 
-    val p = scp.nominate(nodeID,
-                         slotIndex,
-                         round = 0,
-                         valueToNominate = value,
-                         previousValue = previousValue)
+    //todo: demo
+    var r: Boolean = false
+    for (i <- 0 to 50) {
 
-    bigknife.scalap.interpreter.runner.runIO(p, setting.toScalapSetting(nodeID)).unsafeRunSync()
+
+      val p = scp.nominate(nodeID,
+        slotIndex,
+        round = i,
+        valueToNominate = value,
+        previousValue = previousValue)
+
+      if (!r) r = bigknife.scalap.interpreter.runner.runIO(p, setting.toScalapSetting(nodeID)).unsafeRunSync()
+      else r
+
+      if (!r) Thread.sleep(i * 1000)
+      else ()
+    }
+
+    r
 
   }
 }

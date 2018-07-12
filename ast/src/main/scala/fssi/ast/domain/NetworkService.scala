@@ -28,7 +28,7 @@ import fssi.ast.domain.types._
   def buildSyncAccountMessage(id: Account.ID): P[F, DataPacket]
 
   /** build s SUBMIT-TRANSACTION message */
-  def buildSubmitTransactionMessage(account: Account, transaction: Transaction): P[F, DataPacket]
+  def buildSubmitTransactionMessage(transaction: Transaction): P[F, DataPacket]
 
   /** build a TRANSACTION-SYNC message */
   def buildSyncTransactionMessage(): P[F, DataPacket]

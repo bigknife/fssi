@@ -35,7 +35,7 @@ case class Setting(
     import io.circe.parser._
     import io.circe.syntax._
     import jsonCodec._
-    val scpConfFile = better.files.File(Paths.get(workingDir, ".scp.conf"))
+    val scpConfFile = better.files.File(Paths.get(workingDir, ".scp.json"))
     parse(scpConfFile.contentAsString) match {
       case Left(t) => throw new RuntimeException("scp conf parse failed", t)
       case Right(json) =>

@@ -34,7 +34,7 @@ trait P2PDataPacketHandler {
         //todo SyncAccount
         logger.warn("this feature is been developed")
 
-      case SubmitTransaction(account, transaction) =>
+      case SubmitTransaction(transaction) =>
         val setting =
           warriorArgs.toSetting.copy(scpConnect = new SCPConnectHandler(warriorArgs.toSetting, warrior))
         runner
@@ -47,13 +47,13 @@ trait P2PDataPacketHandler {
       case DataPacket.ScpEnvelope(message) =>
         //todo message to Envelope, then invoke scp process envelope to handle it.
         parse(message) match {
-          case Left(t) => logger.error(s"received bad SCPEnvelope message: $message")
+          case Left(t) => logger.error(s"received bad SCPEnvelope message: $message", t)
           case Right(json) =>
             val node = runner.runIO(warrior.currentNode(), warriorArgs.toSetting).unsafeRunSync()
             val nodeID = NodeID(node.accountPublicKey.bytes)
 
             json.as[Envelope[Message]] match {
-              case Left(t) => logger.error(s"SCPEnvelope message deserialize failed: $message")
+              case Left(t) => logger.error(s"SCPEnvelope message deserialize failed: $message", t)
               case Right(envelope) =>
                 val p = scp.processEnvelope(nodeID, envelope)
                 val state = scprunner.runIO(p, warriorArgs.toSetting.toScalapSetting(nodeID)).unsafeRunSync()

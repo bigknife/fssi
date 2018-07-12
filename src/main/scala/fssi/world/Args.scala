@@ -63,8 +63,7 @@ object Args {
       startSnapshotDbConsole = startSnapshotDbConsole,
       snapshotDbConsolePort = snapshotDbConsolePort,
       boundAccount = Some(
-        Account(Account.emptyID,
-                BytesValue(boundAccountPrivateKey),
+        Account(BytesValue(boundAccountPrivateKey),
                 BytesValue(boundAccountPublicKey),
                 BytesValue.decodeHex(iv),
                 Token.Zero)

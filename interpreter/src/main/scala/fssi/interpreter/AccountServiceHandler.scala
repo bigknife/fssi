@@ -9,7 +9,6 @@ class AccountServiceHandler extends AccountService.Handler[Stack] {
                              iv: BytesValue,
                              uuid: String): Stack[Account] = Stack {
     Account(
-      id = Account.ID(uuid),
       privateKeyData = priv,
       publicKeyData = publ,
       iv = iv,

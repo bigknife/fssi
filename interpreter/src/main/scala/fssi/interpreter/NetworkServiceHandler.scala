@@ -50,6 +50,23 @@ class NetworkServiceHandler extends NetworkService.Handler[Stack] {
             s"P2P Membership Event: ${membershipEvent.`type`()}, ${membershipEvent.member()}")
           printMembers()
         }
+        // listen gossip
+        cluster.listenGossips().subscribe {message =>
+          if (logger.isDebugEnabled) logger.info(s"got gossip p2p message: $message")
+          else ()
+          Try {
+            val dataPacket = message.data[DataPacket]()
+            handler(dataPacket)
+          } match {
+            case Success(_) =>
+              if (logger.isDebugEnabled) logger.debug(s"handled p2p message: $message")
+              else ()
+            case Failure(t) =>
+              logger.error(s"handling p2p message $message failed", t)
+          }
+        }
+
+        //listen message
         cluster.listen().subscribe { message =>
           if (logger.isDebugEnabled) logger.info(s"got p2p message: $message")
           else ()
@@ -92,9 +109,8 @@ class NetworkServiceHandler extends NetworkService.Handler[Stack] {
     DataPacket.CreateAccount(account)
   }
 
-  override def buildSubmitTransactionMessage(account: Account,
-                                             transaction: Transaction): Stack[DataPacket] = Stack {
-    SubmitTransaction(account, transaction)
+  override def buildSubmitTransactionMessage(transaction: Transaction): Stack[DataPacket] = Stack {
+    SubmitTransaction(transaction)
   }
 
   override def buildSyncAccountMessage(id: Account.ID): Stack[DataPacket] = Stack {

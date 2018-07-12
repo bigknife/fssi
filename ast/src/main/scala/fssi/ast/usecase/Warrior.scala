@@ -50,31 +50,28 @@ trait Warrior[F[_]] extends WarriorUseCases[F] with P2P[F] {
   override def processTransaction(transaction: Transaction): SP[F, Transaction.Status] = {
 
     // first, find the account of the transaction's sender
-    def findAccount(next: (Node, Account) => SP[F, Transaction.Status]): SP[F, Transaction.Status] =
+    def findAccount(next: Node => SP[F, Transaction.Status]): SP[F, Transaction.Status] =
       for {
         accOpt  <- accountSnapshot.findAccountSnapshot(transaction.sender)
         nodeOpt <- networkStore.currentNode()
-        status <- if (accOpt.isEmpty || nodeOpt.isEmpty) for {
+        status <- if (/*accOpt.isEmpty || */nodeOpt.isEmpty) for {
           _ <- log.warn(
-            s"current node not found or Account(id=${transaction.sender}) Not Found, " +
+            s"current node Not Found, " +
               s"Transaction(id=${transaction.id}) rejected!")
           s1 <- Transaction.Status.Rejected(transaction.id).pureSP
         } yield s1
         else
           for {
-            _ <- log.info(
-              s"found account: 0x${accOpt.map(_.account.publicKeyData.hex).get}@${nodeOpt.get}")
-            x <- next(nodeOpt.get, accOpt.map(_.account).get)
-            _ <- log.info(s"next of findAccount: $x")
+            _ <- log.info(s"processing transaction on ${nodeOpt.get}")
+            x <- next(nodeOpt.get)
           } yield x
 
       } yield status
 
     // then, validate the signature of the transaction
-    def validateSignature(account: Account)(
-        next: => SP[F, Transaction.Status]): SP[F, Transaction.Status] =
+    def validateSignature(next: => SP[F, Transaction.Status]): SP[F, Transaction.Status] =
       for {
-        publ <- cryptoService.rebuildPubl(account.publicKeyData)
+        publ <- cryptoService.rebuildPubl(BytesValue.decodeHex(transaction.sender.value))
         passed <- cryptoService.validateSignature(transaction.signature,
                                                   transaction.toBeVerified,
                                                   publ)
@@ -108,15 +105,14 @@ trait Warrior[F[_]] extends WarriorUseCases[F] with P2P[F] {
       } yield status
 
     // then, run the contract
-    def runContract(invoker: Account,
-                    contract: Contract,
+    def runContract(contract: Contract,
                     function: Option[Contract.Function],
                     parameter: Option[Parameter])(
         next: Moment => SP[F, Transaction.Status]): SP[F, Transaction.Status] =
       for {
-        currentStatesOr <- ledgerStore.loadStates(invoker.id, contract, parameter)
+        currentStatesOr <- ledgerStore.loadStates(transaction.sender, contract, parameter)
         currentStates   <- err.either(currentStatesOr)
-        statesChangeOrThrowable <- contractService.runContract(invoker,
+        statesChangeOrThrowable <- contractService.runContract(transaction.sender,
                                                                contract,
                                                                function,
                                                                currentStates,
@@ -157,10 +153,12 @@ trait Warrior[F[_]] extends WarriorUseCases[F] with P2P[F] {
       } yield status
 
     // put  together
-    findAccount { (node, account) =>
-      validateSignature(account) {
+    //todo: find account can be used to validate the transaction'sender has enough token to run the contract
+    //      but now, ignore it.
+    findAccount { node =>
+      validateSignature {
         findProperContract { (contract, function, param) =>
-          runContract(account, contract, function, param) { moment =>
+          runContract(contract, function, param) { moment =>
             putToPool(node, moment)
           }
         }
