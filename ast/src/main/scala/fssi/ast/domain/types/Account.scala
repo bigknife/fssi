@@ -12,6 +12,7 @@ case class Account(
 
 object Account {
   case class ID(value: String)
+  def emptyID: ID = ID("")
 
   case class Snapshot(
       timestamp: Long,

@@ -2,7 +2,6 @@ package fssi.interpreter.scp
 
 import bigknife.scalap.ast.types.Value
 import fssi.ast.domain.types.{BytesValue, Moment, Transaction}
-import fssi.contract.States
 import fssi.interpreter.jsonCodec._
 import io.circe.syntax._
 

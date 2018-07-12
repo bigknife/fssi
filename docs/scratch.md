@@ -83,3 +83,109 @@ how to init scp?
 - how to handle scp message?
 
 scp component should be a little world. singleton.
+
+## test cases
+build a four nodes cluster.
+
+### working directories
+make a root directory for the tests.
+
+```
+mkdir ~/fssi_test
+```
+
+then, make 1 nymph node, four warrior nodes woring directories:
+
+```
+mkdir ~/fssi_test/nymph
+mkdir ~/fssi_test/warrior_1
+mkdir ~/fssi_test/warrior_2
+mkdir ~/fssi_test/warrior_3
+mkdir ~/fssi_test/warrior_4
+```
+
+### create four accounts
+assume: set password to 12345678
+so use the command:
+
+```
+fssi cmd createAccount -p 12345678 > acc1.json
+fssi cmd createAccount -p 12345678 > acc2.json
+fssi cmd createAccount -p 12345678 > acc3.json
+fssi cmd createAccount -p 12345678 > acc4.json
+```
+
+### run four warrior nodes
+
+1. warrior 1, create a seed node bound with account 1.
+```bash
+fssi warrior \
+	--working-dir ~/fssi_test/warrior_1 \
+	--snapshot-db-port 20000 \
+	--node-ip 10.65.106.11 \
+	--node-port 8800 \
+	--color true \
+	--public-key 03d3e70862e399fc94ac62edd111398aa48f61de3a20d1ace979c02b3d9075e08a \
+	--private-key 22ff67f0db998bbd11ff4e53eeac3157a8d271e1a4e30b3562bf7e349464d671bcda9c92885e38ab \
+	--iv 616c7a6172746f6a 
+```
+
+**note** you should input the password bound into the node, when starting warrior node.
+
+2. warrior 2, start the second warrior node, with warrior 1 as it's seed. bound account 2.
+
+```bash
+fssi warrior \
+	--working-dir ~/fssi_test/warrior_2 \
+	--snapshot-db-port 20001 \
+	--node-ip 10.65.106.11 \
+	--node-port 8801 \
+	--color true \
+	--public-key  0281e3120890180ae38cda921a8223c17f4db284ff43c9c31fed54e0dd6356c042 \
+	--private-key d2a7a192ed9c17a7a3d3f2c92b91618ca515b998567774f9ab911534a68dd3d7f0752c1a1c937ab2 \
+	--iv 696c686c726d6e79 \
+	--seeds 10.65.106.11:8800
+```
+
+3. warrior 3,4, just like 2.
+
+```bash
+fssi warrior \
+	--working-dir ~/fssi_test/warrior_3 \
+	--snapshot-db-port 20002 \
+	--node-ip 10.65.106.11 \
+	--node-port 8802 \
+	--color true \
+	--public-key  0338984c81ba98e807dee4b1ff2079a77609a7ad8765054b7510df278ef5250f71 \
+	--private-key 2c4f82b557f526b7097e51b9e121465862bf865f0ad5028e0ee36261238d466dd438644491bd60a9 \
+	--iv 6961686c6c707a64 \
+	--seeds 10.65.106.11:8800,10.65.106.11:8801
+```
+
+```bash
+fssi warrior \
+	--working-dir ~/fssi_test/warrior_4 \
+	--snapshot-db-port 20003 \
+	--node-ip 10.65.106.11 \
+	--node-port 8803 \
+	--color true \
+	--public-key  02a107e6206824925ff218add39dcdff99092b426bc79b071eb311edb22be426db \
+	--private-key 1a9eda1696481b9a0bc274bd4dd731069de4591be49871bba63a9a43a05d1bcf4dd7fa0e9bc3a007 \
+	--iv 7979746873626866 \
+	--seeds 10.65.106.11:8800,10.65.106.11:8801
+```
+
+4. start a nymph node
+
+bound account 1
+
+```bash
+fssi nymph \
+	--working-dir ~/fssi_test/nymph \
+	--snapshot-db-port 10000 \
+	--node-ip 10.65.106.11 \
+	--node-port 8700 \
+	--seeds 10.65.106.11:8800,10.65.106.11:8801 \
+	--color true \
+	--public-key 03d3e70862e399fc94ac62edd111398aa48f61de3a20d1ace979c02b3d9075e08a
+```

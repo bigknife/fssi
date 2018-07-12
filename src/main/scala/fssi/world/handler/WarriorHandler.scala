@@ -1,7 +1,7 @@
 package fssi.world.handler
 
 import fssi.ast.domain.components.Model.Op
-import fssi.ast.domain.types.DataPacket
+import fssi.ast.domain.types.{BytesValue, DataPacket}
 import fssi.ast.usecase.Warrior
 import fssi.interpreter.runner
 import fssi.world.Args
@@ -36,18 +36,25 @@ object WarriorHandler {
 
   // start p2p node
   def startP2PNode(args: Args.WarriorArgs): Unit = {
-    val p = warrior.startup(args.boundAccountPublicKey,
-                            args.nodeIp,
-                            args.nodePort,
-                            args.seeds,
-                            p2pHandler(args))
-    runner.runIOAttempt(p, args.toSetting).unsafeRunSync() match {
+    println("Input current warrior node bound account password:")
+    val console = System.console()
+    val password = if (console == null) scala.io.StdIn.readLine().getBytes("utf-8") else console.readPassword().map(_.toByte)
+    val argsFull = args.copy(pass = password)
+
+    val p = warrior.startup(BytesValue(argsFull.boundAccountPublicKey).hex,
+                            argsFull.nodeIp,
+                            argsFull.nodePort,
+                            argsFull.seeds,
+                            p2pHandler(argsFull))
+
+
+    runner.runIOAttempt(p, argsFull.toSetting).unsafeRunSync() match {
       case Left(t)  => logger.error("start p2p node failed", t)
       case Right(v) => logger.info("p2p node start, id {}", v.toString)
     }
     // add shutdown hook
     Runtime.getRuntime.addShutdownHook(new Thread(() => {
-      runner.runIOAttempt(warrior.shutdown(), args.toSetting).unsafeRunSync() match {
+      runner.runIOAttempt(warrior.shutdown(), argsFull.toSetting).unsafeRunSync() match {
         case Left(t)  => logger.warn("shutdown p2p node failed", t)
         case Right(_) => logger.debug("p2p node shut down.")
       }

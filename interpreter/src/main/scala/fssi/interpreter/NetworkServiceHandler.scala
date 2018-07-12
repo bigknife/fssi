@@ -18,7 +18,11 @@ class NetworkServiceHandler extends NetworkService.Handler[Stack] {
                           port: Int,
                           ip: String,
                           seeds: Vector[String]): Stack[Node] = Stack {
-    Node(Node.Address(ip, port), Node.Type.Nymph, BytesValue.decodeHex(accountPublicKey), seeds)
+    Node(Node.Address(ip, port),
+         Node.Type.Nymph,
+         BytesValue.decodeHex(accountPublicKey),
+         BytesValue.Empty,
+         seeds)
   }
 
   override def startupP2PNode(node: Node, handler: DataPacket => Unit = _ => ()): Stack[Node] =

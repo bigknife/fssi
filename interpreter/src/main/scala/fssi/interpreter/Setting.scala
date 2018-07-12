@@ -6,7 +6,7 @@ import bigknife.scalap.ast.types._
 import fssi.ast.domain.Node
 import bigknife.scalap.interpreter.{Setting => ScalapSetting}
 import bigknife.scalap.world.Connect
-import fssi.ast.domain.types.BytesValue
+import fssi.ast.domain.types.{Account, BytesValue}
 import io.circe.{Json, JsonObject}
 
 /** interpreter's setting */
@@ -19,7 +19,8 @@ case class Setting(
     maxMomentSize: Int = 20,
     maxMomentPoolElapsedSecond: Int = 3,
     scpConnect: Connect = Connect.dummy,
-    scpMaxTimeoutSeconds: Int = 30 * 60
+    scpMaxTimeoutSeconds: Int = 30 * 60,
+    boundAccount: Option[Account] = None
 ) {
   // try create working dir
   new java.io.File(workingDir).mkdirs()

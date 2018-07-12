@@ -33,6 +33,9 @@ class AccountSnapshotHandler extends AccountSnapshot.Handler[Stack] {
                             tcpPort = setting.snapshotDbPort,
                             webPort = setting.snapshotDbConsolePort,
                             startWebConsole = setting.startSnapshotDbConsole)
+    // create table
+    SnapshotDB.executeCommand(SQL_CreateTable)
+    ()
   }
 
   override def shutdownSnapshotDB(): Stack[Unit] = Stack {
@@ -40,9 +43,6 @@ class AccountSnapshotHandler extends AccountSnapshot.Handler[Stack] {
   }
 
   override def saveSnapshot(snapshot: Account.Snapshot): Stack[Account.Snapshot] = Stack {
-    // create table
-    SnapshotDB.executeCommand(SQL_CreateTable)
-
     // insert or update
     val acc = snapshot.account
     SnapshotDB.executeCommand(SQL_UpsertAccountSnapshot,

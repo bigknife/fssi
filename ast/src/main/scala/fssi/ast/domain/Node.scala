@@ -8,6 +8,7 @@ case class Node(
     address: Node.Address,
     nodeType: Node.Type,
     accountPublicKey: BytesValue,
+    accountPrivateKey: BytesValue,
     seeds: Vector[String],
     runtimeId: Option[Node.ID] = None
 ) {

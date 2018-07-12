@@ -30,6 +30,7 @@ trait NodeJsonCodec extends AccountJsonCodec {
         address,
         Node.Type(nodeType),
         BytesValue.decodeHex(boundAccount),
+        BytesValue.Empty,
         seeds,
         runtimeId.map(Node.ID.apply)
       )

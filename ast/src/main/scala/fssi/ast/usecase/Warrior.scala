@@ -24,13 +24,14 @@ trait Warrior[F[_]] extends WarriorUseCases[F] with P2P[F] {
     // if ledger is empty, try to create first time capsule (genius block)
     val tryCreateFirstTimeCapusle: SP[F, Unit] = {
       for {
-        ch <- ledgerStore.currentHeight()
+        ch    <- ledgerStore.currentHeight()
         tcOpt <- ledgerStore.findTimeCapsuleAt(ch)
-        _ <- if (tcOpt.isDefined) ().pureSP[F] else {
+        _ <- if (tcOpt.isDefined) ().pureSP[F]
+        else {
           // create genius block
           for {
             genius <- ledgerService.createGeniusTimeCapsule()
-            _ <- ledgerStore.saveTimeCapsule(genius)
+            _      <- ledgerStore.saveTimeCapsule(genius)
           } yield ()
         }
       } yield ()
@@ -38,7 +39,7 @@ trait Warrior[F[_]] extends WarriorUseCases[F] with P2P[F] {
 
     for {
       node <- p2pStartup
-      _ <- tryCreateFirstTimeCapusle
+      _    <- tryCreateFirstTimeCapusle
     } yield node
   }
 
@@ -59,11 +60,13 @@ trait Warrior[F[_]] extends WarriorUseCases[F] with P2P[F] {
               s"Transaction(id=${transaction.id}) rejected!")
           s1 <- Transaction.Status.Rejected(transaction.id).pureSP
         } yield s1
-        else for {
-          _ <- log.info(s"found account: 0x${accOpt.map(_.account.publicKeyData.hex).get}@${nodeOpt.get}")
-          x <- next(nodeOpt.get, accOpt.map(_.account).get)
-          _ <- log.info(s"next of findAccount: $x")
-        } yield x
+        else
+          for {
+            _ <- log.info(
+              s"found account: 0x${accOpt.map(_.account.publicKeyData.hex).get}@${nodeOpt.get}")
+            x <- next(nodeOpt.get, accOpt.map(_.account).get)
+            _ <- log.info(s"next of findAccount: $x")
+          } yield x
 
       } yield status
 
@@ -225,9 +228,8 @@ trait Warrior[F[_]] extends WarriorUseCases[F] with P2P[F] {
     */
   override def signData(bytes: Array[Byte], publicKeyData: BytesValue): SP[F, BytesValue] = {
     for {
-      asOpt <- accountSnapshot.findByPublicKey(publicKeyData)
-      _ <- log.info(s"found account snapshot = $asOpt, with public key: ${publicKeyData.hex}")
-      priv  <- cryptoService.rebuildPriv(asOpt.get.account.privateKeyData)
+      currentNode <- networkStore.currentNode()
+      priv  <- cryptoService.rebuildPriv(currentNode.get.accountPrivateKey)
       sign  <- cryptoService.makeSignature(BytesValue(bytes), priv)
     } yield sign
   }

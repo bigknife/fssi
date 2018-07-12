@@ -1,5 +1,6 @@
 package fssi.world
 
+import fssi.ast.domain.types.BytesValue
 import fssi.world.Args._
 import scopt.OptionDef
 
@@ -22,7 +23,7 @@ trait ArgsParser {
 
     def accountId: OptionDef[String, Args] =
       opt[String]("account-id")
-        .text("account id from whom the token is transferred")
+        .text("account id of the transaction owner.")
         .required()
         .action((id, a) =>
           a match {
@@ -33,7 +34,7 @@ trait ArgsParser {
         })
     def privateKey: OptionDef[String, Args] =
       opt[String]("private-key")
-        .text("the account's private key, used to sign the transfer transaction")
+        .text("the account's private key of the transaction owner, used to sign the transfer transaction")
         .required()
         .action((p, a) =>
           a match {
@@ -44,7 +45,7 @@ trait ArgsParser {
         })
     def password: OptionDef[String, Args] =
       opt[String]("password")
-        .text("the password to decrypt the private key")
+        .text("the password of the transaction owner, used to decrypt the private key")
         .required()
         .action((p, a) =>
           a match {
@@ -56,7 +57,7 @@ trait ArgsParser {
 
     def iv: OptionDef[String, Args] =
       opt[String]("iv")
-        .text("the iv spec to decrypt the private key")
+        .text("the iv spec of the transaction owner, used to decrypt the private key")
         .required()
         .action((i, a) =>
           a match {
@@ -68,7 +69,7 @@ trait ArgsParser {
 
     def workingDir: OptionDef[java.io.File, Args] =
       opt[java.io.File]("working-dir")
-        .text("nymph working dir")
+        .text("nymph or warrior node working dir")
         .action((s, a) =>
           a match {
             case x: NymphArgs   => x.copy(workingDir = s.getAbsolutePath)
@@ -157,12 +158,30 @@ trait ArgsParser {
         })
 
     def boundAccountPublicKey: OptionDef[String, Args] =
-      opt[String]("account")
+      opt[String]("public-key")
         .text("current node bound account public key in hex")
         .required()
-        .action((acc, a) => a match {
-          case x: NymphArgs => x.copy(boundAccountPublicKey = acc)
-          case x: WarriorArgs => x.copy(boundAccountPublicKey = acc)
+        .action((pk, a) => a match {
+          case x: NymphArgs => x.copy(boundAccountPublicKey = pk)
+          case x: WarriorArgs => x.copy(publicKey = pk)
+          case x => x
+        })
+
+    def boundAccountPrivateKey: OptionDef[String, Args] =
+      opt[String]("private-key")
+        .text("current node bound account private key in hex")
+        .required()
+        .action((pk, a) => a match {
+          case x: WarriorArgs => x.copy(privateKey = pk)
+          case x => x
+        })
+
+    def boundAccountIV: OptionDef[String, Args] =
+      opt[String]("iv")
+        .text("current node bound account private key in hex")
+        .required()
+        .action((pk, a) => a match {
+          case x: WarriorArgs => x.copy(iv = pk)
           case x => x
         })
 
@@ -225,6 +244,8 @@ trait ArgsParser {
       .children(
         workingDir,
         boundAccountPublicKey,
+        boundAccountPrivateKey,
+        boundAccountIV,
         snapshotDbPort,
         snapshotDbConsole,
         snapshotDbConsolePort,
