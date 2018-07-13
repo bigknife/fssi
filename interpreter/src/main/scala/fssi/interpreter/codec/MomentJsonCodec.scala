@@ -26,8 +26,8 @@ trait MomentJsonCodec {
         oldStates     <- c.get[States]("oldStates")
         transaction   <- c.get[Transaction]("transaction")
         newStates     <- c.get[States]("newStates")
-        oldStatesHash <- c.get[String]("oldStateHash")
-        newStatesHash <- c.get[String]("newStateHash")
+        oldStatesHash <- c.get[String]("oldStatesHash")
+        newStatesHash <- c.get[String]("newStatesHash")
         timestamp     <- c.get[Long]("timestamp")
       } yield
         Moment(oldStates,

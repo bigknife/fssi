@@ -5,10 +5,12 @@ import bigknife.scalap.ast.usecase.SCP
 import bigknife.scalap.ast.usecase.component._
 import fssi.ast.domain._
 import fssi.ast.domain.types._
-import fssi.interpreter.scp.MomentValue
+import fssi.interpreter.scp.{MomentValue, SCPExecutionService}
 import fssi.interpreter.util.{MomentPool, Once}
+import org.slf4j.LoggerFactory
 
 class ConsensusEngineHandler extends ConsensusEngine.Handler[Stack] {
+  private val log = LoggerFactory.getLogger(getClass)
 
   private val momentPool: Once[MomentPool] = Once.empty
 
@@ -29,32 +31,40 @@ class ConsensusEngineHandler extends ConsensusEngine.Handler[Stack] {
     //momentPool.unsafe().push(moment)
     // directly put to scp
     //setting.
-
-    //todo: start a timer to periodly nominate
     val nodeID        = NodeID(node.accountPublicKey.bytes)
     val value         = MomentValue(moment)
     val previousValue = MomentValue(moment)
     val slotIndex     = SlotIndex(currentHeight + 1)
 
-    //todo: demo
-    var r: Boolean = false
-    for (i <- 0 to 50) {
-
-
-      val p = scp.nominate(nodeID,
+    var p = false
+    var i = 0
+    SCPExecutionService.repeatWhile(!p && i < 50) {
+      val prg = scp.nominate(nodeID,
         slotIndex,
         round = i,
         valueToNominate = value,
         previousValue = previousValue)
 
-      if (!r) r = bigknife.scalap.interpreter.runner.runIO(p, setting.toScalapSetting(nodeID)).unsafeRunSync()
-      else r
-
-      if (!r) Thread.sleep(i * 1000)
-      else ()
+      p = bigknife.scalap.interpreter.runner.runIO(prg, setting.toScalapSetting(nodeID)).unsafeRunSync()
+      log.info(s"run nominate program at round $i, result is $p")
+      i = i + 1
+      Thread.sleep(i * 500L)
     }
 
-    r
+    /*
+    SCPExecutionService.repeat(50) {i =>
+      val p = scp.nominate(nodeID,
+        slotIndex,
+        round = i,
+        valueToNominate = value,
+        previousValue = previousValue)
+      val r = bigknife.scalap.interpreter.runner.runIO(p, setting.toScalapSetting(nodeID)).unsafeRunSync()
+      log.info(s"run nominate program at round $i, result is $r")
+      Thread.sleep((i + 1) * 1000)
+    }
+    */
+
+    i > 50
 
   }
 }

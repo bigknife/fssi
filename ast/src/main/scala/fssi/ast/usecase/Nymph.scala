@@ -139,7 +139,7 @@ trait Nymph[F[_]] extends NymphUseCases[F] with P2P[F] {
                                transaction: Transaction): SP[F, TransactionSendingStatus] =
       for {
         dataPacket <- networkService.buildSubmitTransactionMessage(transaction)
-        _          <- networkService.disseminate(dataPacket, warriors)
+        _          <- networkService.broadcast(dataPacket) //.disseminate(dataPacket, warriors)
       } yield TransactionSendingStatus.pending(transaction.id)
 
     // put it together

@@ -22,8 +22,8 @@ trait SCPJsonCodec {
   implicit val valueJsonDecoder: Decoder[Value] = new Decoder[Value] {
     override def apply(c: HCursor): Result[Value] = {
       for {
-        moment <- c.as[Moment]
-      } yield MomentValue(moment)
+        moments <- c.value.as[Vector[Moment]]
+      } yield MomentValue(moments)
     }
   }
 
@@ -34,7 +34,7 @@ trait SCPJsonCodec {
   implicit val valueSetJsonDecoder: Decoder[ValueSet] = new Decoder[ValueSet] {
     override def apply(c: HCursor): Result[ValueSet] =
       for {
-        vec <- c.as[Vector[Value]]
+        vec <- c.value.as[Vector[Value]]
       } yield ValueSet(vec: _*)
   }
 
@@ -128,10 +128,27 @@ trait SCPJsonCodec {
       override def apply(a: Signature): Json = a.asHex().asJson
     }
 
+  implicit val signatureJsonDecoder: Decoder[Signature] = new Decoder[Signature] {
+    override def apply(c: HCursor): Result[Signature] = {
+      for {
+        x <- c.value.as[String]
+      } yield Signature(BytesValue.decodeHex(x).bytes)
+
+    }
+  }
+
   implicit def envelopeJsonEncoder[M <: Message]: Encoder[Envelope[M]] =
     new Encoder[Envelope[M]] {
       override def apply(a: Envelope[M]): Json = a match {
-        case x @ Envelope.NominationEnvelope(_, _) => x.asJson
+          /*
+        case x @ Envelope.NominationEnvelope(_, _) =>
+          Json.obj(
+            "statement" -> x.statement.asJson,
+            "signature" -> x.signature.asJson,
+            "type" -> Json.fromString("")
+          )
+          x.asJson
+          */
         case x: Envelope[_] =>
           x.statement match {
             case _: Statement.Nominate =>
