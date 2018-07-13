@@ -4,10 +4,11 @@
     <appender name="COLOR" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
             <pattern>%date %highlight(%-5level) %cyan(%logger{5}@[%-4.30thread]) - %colorize(%msg) %n</pattern>
-            <!--
-                    <pattern>[%date] %highlight([%level]) %cyan([%logger{10} %file:%line]) %msg%n</pattern>
-                -->
-            <!--             ^^^^^^^^^^ -->
+        </encoder>
+    </appender>
+    <appender name="COLOR1" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%date %highlight(%-5level) %cyan(@[%-4.30thread]) - %colorize(%msg) %n</pattern>
         </encoder>
     </appender>
     <appender name="NOCOLOR" class="ch.qos.logback.core.ConsoleAppender">
@@ -17,57 +18,14 @@
         </encoder>
     </appender>
     <root level="ERROR">
-        <appender-ref ref="COLOR"/>
+        <appender-ref ref="COLOR1"/>
     </root>
-    <!-- ast -->
-    <logger name="fssi.ast" level="debug" additivity="false">
-        <appender-ref ref="COLOR" />
-    </logger>
 
-    <!-- interpreter -->
-    <logger name="fssi.interpreter" level="debug" additivity="false">
-        <appender-ref ref="COLOR" />
+    <logger name="scalap.ast" additivity="false" level="debug">
+        <appender-ref ref="COLOR1" />
     </logger>
-
-    <!-- world -->
-    <logger name="fssi.world" level="debug" additivity="false">
-        <appender-ref ref="COLOR" />
-    </logger>
-
-    <!-- jsonrpc -->
-    <logger name="fssi.warrior" level="debug" additivity="false">
-        <appender-ref ref="COLOR" />
-    </logger>
-
-    <!-- 3rd lib -->
-    <logger name="org.http4s.blaze.pipeline" additivity="fase" level="warn">
-        <appender-ref ref="COLOR"/>
-    </logger>
-    <logger name="org.http4s.server.blaze" additivity="fase" level="warn">
-        <appender-ref ref="COLOR"/>
-    </logger>
-    <logger name="io.netty" additivity="false" level="info">
-        <appender-ref ref="COLOR"/>
-    </logger>
-
-    <!-- scalecube -->
-    <logger name="io.scalecube" additivity="false" level="info">
-        <appender-ref ref="COLOR"/>
-    </logger>
-    <logger name="io.scalecube.transport" additivity="false" level="error">
-        <appender-ref ref="COLOR"/>
-    </logger>
-    <logger name="io.scalecube.cluster" additivity="false" level="error">
-        <appender-ref ref="COLOR"/>
-    </logger>
-    <logger name="org.http4s" additivity="false" level="error">
-        <appender-ref ref="COLOR" />
-    </logger>
-    <logger name="scalap.ast" additivity="false" level="info">
-        <appender-ref ref="COLOR" />
-    </logger>
-    <logger name="bigknife.scalap" additivity="false" level="info">
-        <appender-ref ref="COLOR" />
+    <logger name="bigknife.scalap" additivity="false" level="debug">
+        <appender-ref ref="COLOR1" />
     </logger>
 
 </configuration>

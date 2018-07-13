@@ -15,6 +15,7 @@ import io.circe.syntax._
 import bigknife.scalap.ast.usecase.{component => scpcomp}
 import bigknife.scalap.interpreter.{runner => scprunner}
 import fssi.interpreter.jsonCodec._
+import fssi.interpreter.scp.SCPExecutionService
 
 trait P2PDataPacketHandler {
   val logger: Logger = LoggerFactory.getLogger(getClass)
@@ -35,14 +36,17 @@ trait P2PDataPacketHandler {
         logger.warn("this feature is been developed")
 
       case SubmitTransaction(transaction) =>
-        val setting =
-          warriorArgs.toSetting.copy(scpConnect = new SCPConnectHandler(warriorArgs.toSetting, warrior))
-        runner
-          .runIOAttempt(warrior.processTransaction(transaction), setting)
-          .unsafeRunSync() match {
-          case Left(t)       => logger.error(s"failed to process transaction(${transaction.id})", t)
-          case Right(status) => logger.info(s"processing transaction($status)")
+        SCPExecutionService.submit {
+          val setting =
+            warriorArgs.toSetting.copy(scpConnect = new SCPConnectHandler(warriorArgs.toSetting, warrior))
+          runner
+            .runIOAttempt(warrior.processTransaction(transaction), setting)
+            .unsafeRunSync() match {
+            case Left(t)       => logger.error(s"failed to process transaction(${transaction.id})", t)
+            case Right(status) => logger.info(s"processing transaction($status)")
+          }
         }
+
 
       case DataPacket.ScpEnvelope(message) =>
         //todo message to Envelope, then invoke scp process envelope to handle it.
@@ -55,16 +59,15 @@ trait P2PDataPacketHandler {
             json.as[Envelope[Message]] match {
               case Left(t) => logger.error(s"SCPEnvelope message deserialize failed: $message", t)
               case Right(envelope) =>
-                val p = scp.processEnvelope(nodeID, envelope)
-                val state = scprunner.runIO(p, warriorArgs.toSetting.toScalapSetting(nodeID)).unsafeRunSync()
-                logger.info(s"scp processed envelope, state is $state")
+                SCPExecutionService.submit {
+                  val setting =
+                    warriorArgs.toSetting.copy(scpConnect = new SCPConnectHandler(warriorArgs.toSetting, warrior))
+                  val p = scp.processEnvelope(nodeID, envelope)
+                  val state = scprunner.runIO(p, setting.toScalapSetting(nodeID)).unsafeRunSync()
+                  logger.info(s"scp processed envelope, state is $state")
+                }
             }
-
-
-
         }
-
-
       case x => logger.warn(s"unsupported messages: $x")
 
     }

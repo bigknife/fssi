@@ -21,10 +21,7 @@ case class MomentValue(moments: Vector[Moment]) extends Value{
   }
 
   lazy val bytes: Array[Byte] = {
-    val x = moments.foldLeft(Array.emptyByteArray) {(acc, n) => acc ++ n.bytes}
-    val h1 = java.security.MessageDigest.getInstance("md5").digest(x)
-    println(BytesValue(h1).hex)
-    x
+    moments.foldLeft(Array.emptyByteArray) {(acc, n) => acc ++ n.bytes}
   }
 
   //override def bytes: Array[Byte] = _bytes

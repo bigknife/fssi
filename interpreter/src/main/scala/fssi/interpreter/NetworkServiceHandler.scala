@@ -5,7 +5,7 @@ import fssi.ast.domain.types.DataPacket.SubmitTransaction
 import fssi.ast.domain.types._
 import fssi.interpreter.util._
 import io.scalecube.cluster.{Cluster, ClusterConfig}
-import io.scalecube.transport.Address
+import io.scalecube.transport.{Address, Message}
 import org.slf4j.{Logger, LoggerFactory}
 
 import scala.util._
@@ -50,37 +50,32 @@ class NetworkServiceHandler extends NetworkService.Handler[Stack] {
             s"P2P Membership Event: ${membershipEvent.`type`()}, ${membershipEvent.member()}")
           printMembers()
         }
-        // listen gossip
-        cluster.listenGossips().subscribe {message =>
-          if (logger.isDebugEnabled) logger.info(s"got gossip p2p message: $message")
-          else ()
+
+        def subscription: Message => Unit = {message =>
+          val uuid = message.header("uuid")
+          val timestamp = message.header("timestamp")
+          logger.error(s"NOTION: recv gossip message: {uuid=$uuid, timestamp=$timestamp}")
           Try {
             val dataPacket = message.data[DataPacket]()
             handler(dataPacket)
           } match {
             case Success(_) =>
-              if (logger.isDebugEnabled) logger.debug(s"handled p2p message: $message")
-              else ()
+              logger.info(s"peer message handled successfully")
             case Failure(t) =>
-              logger.error(s"handling p2p message $message failed", t)
+              logger.error(s"peer message handled failed", t)
           }
+        }
+
+        // listen gossip
+        cluster.listenGossips().subscribe {message =>
+          logger.info("handling gossip message")
+          subscription(message)
         }
 
         //listen message
         cluster.listen().subscribe { message =>
-          if (logger.isDebugEnabled) logger.info(s"got p2p message: $message")
-          else ()
-          Try {
-            val dataPacket = message.data[DataPacket]()
-            handler(dataPacket)
-          } match {
-            case Success(_) =>
-              if (logger.isDebugEnabled) logger.debug(s"handled p2p message: $message")
-              else ()
-            case Failure(t) =>
-              logger.error(s"handling p2p message $message failed", t)
-          }
-
+          logger.info("handling member message")
+          subscription(message)
         }
         ()
       }
@@ -130,6 +125,8 @@ class NetworkServiceHandler extends NetworkService.Handler[Stack] {
 
   override def broadcast(packet: DataPacket): Stack[Unit] = Stack {
     clusterOnce.foreach { cluster =>
+      val message = DataPacketUtil.toMessage(packet)
+      logger.error(s"NOTION: sending gossip message: ${message.headers()}")
       cluster.spreadGossip(DataPacketUtil.toMessage(packet))
       ()
     }

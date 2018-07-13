@@ -25,7 +25,8 @@ sealed trait SCPExecutionService {
         Try {
           t
         } match {
-          case Success(_) => ()
+          case Success(_) =>
+            log.info("executed consensus task successfully")
           case Failure(exception) =>
             log.error("executing consensus task failed", exception)
         }
@@ -34,15 +35,8 @@ sealed trait SCPExecutionService {
 
   def repeat(times: Int)(t: Int => Unit): Unit = {
     for (i <- 0 until times) {
-      submit(t(i))
+      submit( t(i))
     }
-  }
-
-  def repeatWhile(p: Boolean)(t: => Unit): Unit = {
-    if (p) {
-      submit(t)
-      repeatWhile(p)(t)
-    }else submit(t)
   }
 
 }

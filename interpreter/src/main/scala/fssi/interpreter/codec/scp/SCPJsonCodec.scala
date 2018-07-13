@@ -54,6 +54,19 @@ trait SCPJsonCodec {
         accepted <- c.get[ValueSet]("accepted")
       } yield Message.Nomination(voted, accepted)
   }
+
+  implicit val ballotJsonDecoder: Decoder[Ballot] = new Decoder[Ballot] {
+    override def apply(c: HCursor): Result[Ballot] = {
+      val counter = c.get[Int]("counter")
+      counter.flatMap {
+        case x if x == 0 => Right(Ballot.Null)
+        case x => for {
+          v <- c.get[Value]("value")
+        } yield Ballot(x, v)
+      }
+    }
+  }
+
   implicit val messagePrepareDecoder: Decoder[Message.Prepare] = new Decoder[Prepare] {
     override def apply(c: HCursor): Result[Prepare] =
       for {
@@ -140,15 +153,6 @@ trait SCPJsonCodec {
   implicit def envelopeJsonEncoder[M <: Message]: Encoder[Envelope[M]] =
     new Encoder[Envelope[M]] {
       override def apply(a: Envelope[M]): Json = a match {
-          /*
-        case x @ Envelope.NominationEnvelope(_, _) =>
-          Json.obj(
-            "statement" -> x.statement.asJson,
-            "signature" -> x.signature.asJson,
-            "type" -> Json.fromString("")
-          )
-          x.asJson
-          */
         case x: Envelope[_] =>
           x.statement match {
             case _: Statement.Nominate =>
@@ -188,6 +192,42 @@ trait SCPJsonCodec {
           quorumSetHash <- c.get[Hash]("quorumSetHash")
           message       <- c.get[Message.Nomination]("message")
         } yield Statement.Nominate(nodeID, slotIndex, quorumSetHash, message)
+      }
+    }
+
+  implicit val statementCommitJsonDecoder: Decoder[Statement.Commit] =
+    new Decoder[Statement.Commit] {
+      override def apply(c: HCursor): Result[Statement.Commit] = {
+        for {
+          nodeID        <- c.get[NodeID]("nodeID")
+          slotIndex     <- c.get[SlotIndex]("slotIndex")
+          quorumSetHash <- c.get[Hash]("quorumSetHash")
+          message       <- c.get[Message.Commit]("message")
+        } yield Statement.Commit(nodeID, slotIndex, quorumSetHash, message)
+      }
+    }
+
+  implicit val statementPrepareJsonDecoder: Decoder[Statement.Prepare] =
+    new Decoder[Statement.Prepare] {
+      override def apply(c: HCursor): Result[Statement.Prepare] = {
+        for {
+          nodeID        <- c.get[NodeID]("nodeID")
+          slotIndex     <- c.get[SlotIndex]("slotIndex")
+          quorumSetHash <- c.get[Hash]("quorumSetHash")
+          message       <- c.get[Message.Prepare]("message")
+        } yield Statement.Prepare(nodeID, slotIndex, quorumSetHash, message)
+      }
+    }
+
+  implicit val statementExternalizeJsonDecoder: Decoder[Statement.Externalize] =
+    new Decoder[Statement.Externalize] {
+      override def apply(c: HCursor): Result[Statement.Externalize] = {
+        for {
+          nodeID        <- c.get[NodeID]("nodeID")
+          slotIndex     <- c.get[SlotIndex]("slotIndex")
+          quorumSetHash <- c.get[Hash]("quorumSetHash")
+          message       <- c.get[Message.Externalize]("message")
+        } yield Statement.Externalize(nodeID, slotIndex, quorumSetHash, message)
       }
     }
 

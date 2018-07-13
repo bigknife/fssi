@@ -25,6 +25,11 @@ trait BytesValue {
   def convertTo[A](implicit converter: Converter[A]): A = converter.to(this)
 
   def ++(other: BytesValue): BytesValue = BytesValue.combine(this, other)
+
+  def md5: String = {
+    val bs = java.security.MessageDigest.getInstance("md5").digest(bytes)
+    bs.map("%02x" format _).mkString("")
+  }
 }
 
 object BytesValue {
