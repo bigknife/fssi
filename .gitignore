@@ -10,6 +10,7 @@
 !*.sh
 !.travis.yml
 !.gitignore
+!.scalafmt.conf
 /target/
 /project/**
 !/project/*.scala
@@ -40,3 +41,6 @@
 # contract-lib
 !/contract-lib/
 /contract-lib/target/
+
+/.ensime_cache/
+/crypto/target/

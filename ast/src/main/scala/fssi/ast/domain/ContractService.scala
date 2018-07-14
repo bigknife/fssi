@@ -27,7 +27,7 @@ import fssi.contract.States
     : P[F, (Contract.Name, Contract.Version, Option[Contract.Function], Option[Contract.Parameter])]
 
   /** run the contract */
-  def runContract(invoker: Account,
+  def runContract(invoker: Account.ID,
                   contract: Contract,
                   function: Option[Contract.Function],
                   currentStates: States,

@@ -10,7 +10,6 @@ trait AccountSnapshotORM {
     override def to(result: ResultSet): Account.Snapshot = {
       Account.Snapshot(
         account = Account(
-          id = Account.ID(result.getObject[String](1, classOf[String])),
           privateKeyData = BytesValue.Empty,
           publicKeyData = BytesValue.decodeHex(result.getObject[String](2, classOf[String])),
           iv = BytesValue.decodeHex(result.getObject[String](3, classOf[String])),

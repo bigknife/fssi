@@ -1,6 +1,7 @@
 package fssi.ast.usecase
 
 import bigknife.sop._
+import fssi.ast.domain.Node
 import implicits._
 import fssi.ast.domain.components.Model
 import fssi.ast.domain.types.Contract.Parameter
@@ -11,6 +12,37 @@ trait Warrior[F[_]] extends WarriorUseCases[F] with P2P[F] {
   val model: Model[F]
   import model._
 
+  /** start a p2p node, connect to some seed nodes
+    * if there are no seed nodes, start this node as a seed.
+    */
+  override def startup(accountPublicKey: String,
+                       ip: String,
+                       port: Int,
+                       seeds: Vector[String],
+                       handler: DataPacket => Unit): SP[F, Node] = {
+    val p2pStartup = super.startup(accountPublicKey, ip, port, seeds, handler)
+    // if ledger is empty, try to create first time capsule (genius block)
+    val tryCreateFirstTimeCapusle: SP[F, Unit] = {
+      for {
+        ch    <- ledgerStore.currentHeight()
+        tcOpt <- ledgerStore.findTimeCapsuleAt(ch)
+        _ <- if (tcOpt.isDefined) ().pureSP[F]
+        else {
+          // create genius block
+          for {
+            genius <- ledgerService.createGeniusTimeCapsule()
+            _      <- ledgerStore.saveTimeCapsule(genius)
+          } yield ()
+        }
+      } yield ()
+    }
+
+    for {
+      node <- p2pStartup
+      _    <- tryCreateFirstTimeCapusle
+    } yield node
+  }
+
   /**
     * uc1. handle message from Nymph
     *     transaction -> contract -> moment
@@ -18,22 +50,28 @@ trait Warrior[F[_]] extends WarriorUseCases[F] with P2P[F] {
   override def processTransaction(transaction: Transaction): SP[F, Transaction.Status] = {
 
     // first, find the account of the transaction's sender
-    def findAccount(next: Account => SP[F, Transaction.Status]): SP[F, Transaction.Status] =
+    def findAccount(next: Node => SP[F, Transaction.Status]): SP[F, Transaction.Status] =
       for {
-        accOpt <- accountSnapshot.findAccountSnapshot(transaction.sender)
-        status <- if (accOpt.isEmpty) for {
+        accOpt  <- accountSnapshot.findAccountSnapshot(transaction.sender)
+        nodeOpt <- networkStore.currentNode()
+        status <- if (/*accOpt.isEmpty || */nodeOpt.isEmpty) for {
           _ <- log.warn(
-            s"Account(id=${transaction.sender}) Not Found, Transaction(id=${transaction.id}) rejected!")
+            s"current node Not Found, " +
+              s"Transaction(id=${transaction.id}) rejected!")
           s1 <- Transaction.Status.Rejected(transaction.id).pureSP
         } yield s1
-        else next(accOpt.map(_.account).get)
+        else
+          for {
+            _ <- log.info(s"processing transaction on ${nodeOpt.get}")
+            x <- next(nodeOpt.get)
+          } yield x
+
       } yield status
 
     // then, validate the signature of the transaction
-    def validateSignature(account: Account)(
-        next: => SP[F, Transaction.Status]): SP[F, Transaction.Status] =
+    def validateSignature(next: => SP[F, Transaction.Status]): SP[F, Transaction.Status] =
       for {
-        publ <- cryptoService.rebuildPubl(account.publicKeyData)
+        publ <- cryptoService.rebuildPubl(BytesValue.decodeHex(transaction.sender.value))
         passed <- cryptoService.validateSignature(transaction.signature,
                                                   transaction.toBeVerified,
                                                   publ)
@@ -67,15 +105,14 @@ trait Warrior[F[_]] extends WarriorUseCases[F] with P2P[F] {
       } yield status
 
     // then, run the contract
-    def runContract(invoker: Account,
-                    contract: Contract,
+    def runContract(contract: Contract,
                     function: Option[Contract.Function],
                     parameter: Option[Parameter])(
         next: Moment => SP[F, Transaction.Status]): SP[F, Transaction.Status] =
       for {
-        currentStatesOr <- ledgerStore.loadStates(invoker.id, contract, parameter)
+        currentStatesOr <- ledgerStore.loadStates(transaction.sender, contract, parameter)
         currentStates   <- err.either(currentStatesOr)
-        statesChangeOrThrowable <- contractService.runContract(invoker,
+        statesChangeOrThrowable <- contractService.runContract(transaction.sender,
                                                                contract,
                                                                function,
                                                                currentStates,
@@ -83,7 +120,7 @@ trait Warrior[F[_]] extends WarriorUseCases[F] with P2P[F] {
         status <- statesChangeOrThrowable match {
           case Left(t) =>
             for {
-              _  <- log.error("Contract Run Failed.", Some(t))
+              _  <- log.error(s"Contract Run Failed. ${t.getMessage}", Some(t))
               s0 <- Transaction.Status.Failed(transaction.id).pureSP
             } yield s0
           case Right(statesChange) =>
@@ -102,20 +139,27 @@ trait Warrior[F[_]] extends WarriorUseCases[F] with P2P[F] {
       } yield status
 
     // then, put the moment into the proposal moment pool (contract engine will run proposal consensus periodically
-    def putToPool(moment: Moment): SP[F, Transaction.Status] =
+    def putToPool(node: Node, moment: Moment): SP[F, Transaction.Status] =
       for {
-        pooled <- consensusEngine.poolMoment(moment)
-        _      <- log.info(s"${moment} pooling: $pooled")
+        currentHeight      <- ledgerStore.currentHeight()
+        currentTimeCapsule <- ledgerStore.timeCapsuleOf(currentHeight)
+        pooled <- consensusEngine.poolMoment(node,
+                                             currentHeight,
+                                             currentTimeCapsule.moments,
+                                             moment)
+        _ <- log.info(s"$moment pooling: $pooled")
         status <- (if (pooled) Transaction.Status.Pending(transaction.id)
                    else Transaction.Status.Rejected(transaction.id)).pureSP
       } yield status
 
     // put  together
-    findAccount { account =>
-      validateSignature(account) {
+    //todo: find account can be used to validate the transaction'sender has enough token to run the contract
+    //      but now, ignore it.
+    findAccount { node =>
+      validateSignature {
         findProperContract { (contract, function, param) =>
-          runContract(account, contract, function, param) { moment =>
-            putToPool(moment)
+          runContract(contract, function, param) { moment =>
+            putToPool(node, moment)
           }
         }
       }
@@ -172,6 +216,83 @@ trait Warrior[F[_]] extends WarriorUseCases[F] with P2P[F] {
       _ <- log.info(
         s"saved account snapshot, process of creating new account finished, timepassed $passed")
     } yield ()
+
+  /**
+    * use account's public key to sign a data block
+    *
+    * @param bytes          data
+    * @param publicKeyData account's public key
+    * @return
+    */
+  override def signData(bytes: Array[Byte], publicKeyData: BytesValue): SP[F, BytesValue] = {
+    for {
+      currentNode <- networkStore.currentNode()
+      priv  <- cryptoService.rebuildPriv(currentNode.get.accountPrivateKey)
+      sign  <- cryptoService.makeSignature(BytesValue(bytes), priv)
+    } yield sign
+  }
+
+  /**
+    * broadcast message to peers
+    * @param message message
+    * @return
+    */
+  override def broadcastMessage(message: DataPacket): SP[F, Unit] =
+    for {
+      _ <- log.debug(s"start to broadcast message: $message")
+      _ <- networkService.broadcast(message)
+    } yield ()
+
+  /**
+    * query current warrior node info
+    * @return
+    */
+  override def currentNode(): SP[F, Node] = {
+    for {
+      nodeOpt <- networkStore.currentNode()
+    } yield nodeOpt.get
+  }
+
+  /**
+    * verify data's sign
+    *
+    * @param source         source bytes
+    * @param publicKeyData public key
+    * @return
+    */
+  override def verifySign(source: Array[Byte],
+                          signature: Array[Byte],
+                          publicKeyData: Array[Byte]): SP[F, Boolean] =
+    for {
+      priv <- cryptoService.rebuildPubl(BytesValue(publicKeyData))
+      ret  <- cryptoService.validateSignature(Signature(signature), BytesValue(source), priv)
+    } yield ret
+
+  /**
+    * after consensus engine run, moments have reached agreement, so we can persist them
+    *
+    * @param height  the new block length to be persisted
+    * @param moments all moments
+    * @return
+    */
+  override def momentsDetermined(moments: Vector[Moment], height: BigInt): SP[F, Unit] = {
+    val saveMoments: SP[F, Unit] = moments.foldLeft(().pureSP[F]) { (acc, n) =>
+      for {
+        _ <- ledgerStore.saveStates(n.newStates.states)
+      } yield ()
+    }
+
+    for {
+      currentHeight      <- ledgerStore.currentHeight()
+      currentTimeCapsule <- ledgerStore.timeCapsuleOf(currentHeight)
+      timeCapsule <- ledgerService.createTimeCapsule(currentHeight + 1,
+                                                     currentTimeCapsule.hash,
+                                                     moments)
+      _ <- ledgerStore.saveTimeCapsule(timeCapsule)
+      _ <- ledgerStore.updateHeight(currentHeight + 1)
+      _ <- saveMoments
+    } yield ()
+  }
 }
 
 object Warrior {

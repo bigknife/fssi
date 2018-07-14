@@ -9,11 +9,10 @@ class AccountServiceHandler extends AccountService.Handler[Stack] {
                              iv: BytesValue,
                              uuid: String): Stack[Account] = Stack {
     Account(
-      id = Account.ID(uuid),
       privateKeyData = priv,
       publicKeyData = publ,
       iv = iv,
-      balance = Token.Zero
+      balance = Token(10000, Token.Unit.Sweet) //todo: remove, for test, init amount is 10000
     )
   }
 
@@ -28,7 +27,8 @@ class AccountServiceHandler extends AccountService.Handler[Stack] {
 }
 
 object AccountServiceHandler {
+  private val instance = new AccountServiceHandler
   trait Implicits {
-    implicit val accountServiceHandler: AccountServiceHandler = new AccountServiceHandler
+    implicit val accountServiceHandler: AccountServiceHandler = instance
   }
 }

@@ -13,13 +13,16 @@ trait P2PUseCases[F[_]] {
     * if there are no seed nodes, start this node as a seed.
     * @param seeds seed nodes info, format: 'ip:port'
     */
-  def startup(ip: String, port: Int, seeds: Vector[String], handler: DataPacket => Unit = _ => ()): SP[F, Node]
+  def startup(accountPublicKey: String,
+              ip: String,
+              port: Int,
+              seeds: Vector[String],
+              handler: DataPacket => Unit = _ => ()): SP[F, Node]
 
   /** start a p2p seed node
   def startSeedNode(ip: String, port: Int): SP[F, Node] =
     startup(ip, port, Vector.empty)
     */
-
   /** shutdown p2p node */
   def shutdown(): SP[F, Unit]
 

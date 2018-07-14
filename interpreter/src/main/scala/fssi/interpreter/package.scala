@@ -3,6 +3,7 @@ package fssi
 import cats.data.Kleisli
 import cats.effect.IO
 import fssi.interpreter.codec._
+import fssi.interpreter.codec.scp.SCPJsonCodec
 
 package object interpreter {
   type Stack[A] = Kleisli[IO, Setting, A]
@@ -29,6 +30,9 @@ package object interpreter {
       with AccountStateJsonCodec
       with ContractCodeItemJsonCodec
       with TransactionJsonCodec
+      with SCPJsonCodec
+      with TimeCapsuleJsonCodec
+      with MomentJsonCodec
 
   object orm extends AccountSnapshotORM
 
@@ -46,6 +50,7 @@ package object interpreter {
       with ContractStoreHandler.Implicits
       with LedgerStoreHandler.Implicits
       with NetworkStoreHandler.Implicits
+      with LedgerServiceHandler.Implicits
       with bigknife.sop.effect.error.ErrorMInstance
 
   object runner {

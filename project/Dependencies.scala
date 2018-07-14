@@ -50,6 +50,9 @@ object Dependencies {
 
       // leveldb
       val leveldb = "1.8"
+
+      // scalap
+      val scalap = "0.0.15_BETA"
     }
 
     lazy val log = {
@@ -131,6 +134,12 @@ object Dependencies {
     lazy val leveldb = {
       Seq(
         Dpd("org.fusesource.leveldbjni", "leveldbjni-all", versions.leveldb, autoScalaVersion = false)
+      ).map(_.libraryDependencies)
+    }
+
+    lazy val scapap = {
+      Seq(
+        Dpd("bigknife", "scalap", versions.scalap)
       ).map(_.libraryDependencies)
     }
   }

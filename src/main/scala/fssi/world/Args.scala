@@ -1,8 +1,10 @@
 package fssi.world
 
+import java.io.File
 import java.nio.file.Paths
 
 import fssi.ast.domain.Node.Address
+import fssi.ast.domain.types.{Account, BytesValue, Token}
 import fssi.interpreter.Setting
 
 sealed trait Args {
@@ -26,6 +28,7 @@ object Args {
       jsonrpcServiceVersion: String = "v1",
       nodePort: Int = 28080,
       nodeIp: String = "0.0.0.0",
+      boundAccountPublicKey: String = "",
       warriorNodes: Vector[String] = Vector.empty,
       verbose: Boolean = false,
       colorfulLog: Boolean = false
@@ -41,6 +44,10 @@ object Args {
 
   case class WarriorArgs(
       workingDir: String = Paths.get(System.getProperty("user.home"), ".fssi").toString,
+      publicKey: String = "",
+      privateKey: String = "",
+      iv: String = "",
+      pass: Array[Byte] = Array.emptyByteArray,
       snapshotDbPort: Int = 18080,
       startSnapshotDbConsole: Boolean = false,
       snapshotDbConsolePort: Int = 18081,
@@ -54,8 +61,24 @@ object Args {
       workingDir = workingDir,
       snapshotDbPort = snapshotDbPort,
       startSnapshotDbConsole = startSnapshotDbConsole,
-      snapshotDbConsolePort = snapshotDbConsolePort
+      snapshotDbConsolePort = snapshotDbConsolePort,
+      boundAccount = Some(
+        Account(BytesValue(boundAccountPrivateKey),
+                BytesValue(boundAccountPublicKey),
+                BytesValue.decodeHex(iv),
+                Token.Zero)
+      )
     )
+
+    lazy val boundAccountPublicKey: Array[Byte] = BytesValue.decodeHex(publicKey).bytes
+    lazy val boundAccountPrivateKey: Array[Byte] = {
+      import fssi.interpreter.util.crypto
+      crypto
+        .des3cbcDecrypt(BytesValue.decodeHex(privateKey),
+                        crypto.enforceDes3Key(BytesValue(pass)),
+                        BytesValue.decodeHex(iv))
+        .bytes
+    }
   }
 
   // cmd tool, create an account

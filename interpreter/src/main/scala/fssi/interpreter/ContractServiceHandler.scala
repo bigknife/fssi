@@ -152,7 +152,7 @@ class ContractServiceHandler extends ContractService.Handler[Stack] {
 
   //todo: now, not necessary to consider the cost of a transaction
   override def runContract(
-      invoker: Account,
+      invoker: Account.ID,
       contract: Contract,
       function: Option[Contract.Function],
       currentStates: States,
@@ -165,7 +165,7 @@ class ContractServiceHandler extends ContractService.Handler[Stack] {
             case Some(PArray(Array(PString(to), PBigDecimal(amount)))) =>
               // from - amount , to + amount
               val newStates = for {
-                fromState <- currentStates.of(invoker.id.value)
+                fromState <- currentStates.of(invoker.value)
                 toState   <- currentStates.of(to)
               } yield {
                 (fromState.withAmount(fromState.amount - amount),
@@ -204,7 +204,7 @@ class ContractServiceHandler extends ContractService.Handler[Stack] {
               else {
                 // then, save the contract to invoker's assets
                 val ret: Option[Either[DecodingFailure, AccountState]] =
-                  currentStates.of(invoker.id.value).map { accountState =>
+                  currentStates.of(invoker.value).map { accountState =>
                     val codeMapEl: Result[Map[String, ContractCodeItem]] = accountState
                       .assetOf(PublishContract.ASSET_NAME)
                       .map(new String(_, "UTF-8"))
@@ -226,7 +226,7 @@ class ContractServiceHandler extends ContractService.Handler[Stack] {
                   case None => Left(InsufficientTradePartners)
                   case Some(Left(t)) =>
                     logger.error("contract assets is broken", t)
-                    Left(ContractAssetsBroken(invoker.id.value))
+                    Left(ContractAssetsBroken(invoker.value))
                   case Some(Right(contractAssets)) =>
                     Right(StatesChange(currentStates, currentStates.update(contractAssets)))
 
@@ -297,7 +297,7 @@ class ContractServiceHandler extends ContractService.Handler[Stack] {
                   Runner.runAndInstrument(tmpDir,
                                           fullName,
                                           method,
-                                          invoker.id.value,
+                                          invoker.value,
                                           currentStates,
                                           params.map(_.asInstanceOf[AnyRef])) match {
                     case Left(t) => Left(ContractRuntimeError(x.name.value, x.version.value, t))
@@ -324,8 +324,9 @@ class ContractServiceHandler extends ContractService.Handler[Stack] {
     }
 }
 object ContractServiceHandler {
+  private val instance = new ContractServiceHandler
   trait Implicits {
-    implicit val contractServiceHandler: ContractServiceHandler = new ContractServiceHandler
+    implicit val contractServiceHandler: ContractServiceHandler = instance
   }
   object implicits extends Implicits
 }

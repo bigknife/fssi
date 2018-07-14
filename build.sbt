@@ -2,19 +2,18 @@ import Common._, prj._
 //import sbtassembly.AssemblyPlugin.defaultShellScript
 
 coverageExcludedFiles in ThisBuild := ".*macro.*"
-coverageEnabled in ThisBuild := true
+coverageEnabled.in(Test, test) := true
 parallelExecution in ThisBuild := false
 fork in ThisBuild := true
+ensimeScalaVersion in ThisBuild := "2.12.4"
+ensimeIgnoreMissingDirectories in ThisBuild := true
+
+// crypto prj
+lazy val pCrypto = crypto()
 
 // ast prj
 lazy val pAst = ast()
   .dependsOn(pContractLib)
-
-// interpreter prj
-lazy val pInterpreter = interpreter()
-  .dependsOn(pAst)
-  .dependsOn(pJsonRpc)
-  .dependsOn(pSandbox)
 
 // jsonrpc prj
 lazy val pJsonRpc = jsonrpc()
@@ -22,6 +21,17 @@ lazy val pJsonRpc = jsonrpc()
 //sandbox prj
 lazy val pSandbox = sandbox()
   .dependsOn(pContractLib)
+
+// scp prj
+//lazy val pScp = scp()
+//  .dependsOn(pCrypto)
+
+// interpreter prj
+lazy val pInterpreter = interpreter()
+  .dependsOn(pAst)
+  .dependsOn(pJsonRpc)
+  .dependsOn(pSandbox)
+//  .dependsOn(pScp)
 
 // contract lib
 lazy val pContractLib = contractLib()
@@ -42,4 +52,5 @@ lazy val pFssi = fssi("fssi", ".")
       .copy(prependShellScript = Some(defaultShellScript)),
     assemblyJarName in assembly := s"${name.value}",
     test in assembly := {}
+
   )

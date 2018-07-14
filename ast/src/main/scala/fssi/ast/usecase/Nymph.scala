@@ -104,7 +104,7 @@ trait Nymph[F[_]] extends NymphUseCases[F] with P2P[F] {
                                transaction: Transaction): SP[F, TransactionSendingStatus] = {
     // we should validate transaction:
     // 1. transaction should be signed by the account
-
+    /*
     def existedAccount(
         next: Account => SP[F, TransactionSendingStatus]): SP[F, TransactionSendingStatus] =
       for {
@@ -112,11 +112,11 @@ trait Nymph[F[_]] extends NymphUseCases[F] with P2P[F] {
         acc <- if (accOpt.isDefined) next(accOpt.get)
         else TransactionSendingStatus.reject(transaction.id, AccountNotFound(id)).pureSP[F]
       } yield acc
-
-    def transactionWithRightSignature(account: Account)(
+     */
+    def transactionWithRightSignature(
         next: Transaction => SP[F, TransactionSendingStatus]): SP[F, TransactionSendingStatus] =
       for {
-        publ <- cryptoService.rebuildPubl(account.publicKeyData)
+        publ <- cryptoService.rebuildPubl(BytesValue.decodeHex(transaction.sender.value))
         passed <- cryptoService.validateSignature(transaction.signature,
                                                   transaction.toBeVerified,
                                                   publ)
@@ -136,22 +136,19 @@ trait Nymph[F[_]] extends NymphUseCases[F] with P2P[F] {
       } yield s
 
     def disseminateTransaction(warriors: Vector[Node.Address],
-                               account: Account,
                                transaction: Transaction): SP[F, TransactionSendingStatus] =
       for {
-        dataPacket <- networkService.buildSubmitTransactionMessage(account, transaction)
-        _          <- networkService.disseminate(dataPacket, warriors)
+        dataPacket <- networkService.buildSubmitTransactionMessage(transaction)
+        _          <- networkService.broadcast(dataPacket) //.disseminate(dataPacket, warriors)
       } yield TransactionSendingStatus.pending(transaction.id)
 
     // put it together
-    existedAccount { account =>
-      transactionWithRightSignature(account) { trans =>
-        findWarriors { warriors =>
-          disseminateTransaction(warriors, account, trans)
-        }
-
+    transactionWithRightSignature { trans =>
+      findWarriors { warriors =>
+        disseminateTransaction(warriors, trans)
       }
     }
+
   }
 
   /**

@@ -1,7 +1,7 @@
 package fssi.interpreter.codec
 
 import fssi.ast.domain.Node
-import fssi.ast.domain.types.Account
+import fssi.ast.domain.types.{Account, BytesValue}
 import io.circe.Decoder.Result
 import io.circe.{Decoder, Encoder, HCursor, Json}
 import io.circe.generic.auto._
@@ -13,9 +13,7 @@ trait NodeJsonCodec extends AccountJsonCodec {
       "id"       -> Json.fromString(a.id.value),
       "address"     -> a.address.asJson,
       "nodeType" -> Json.fromString(a.nodeType.toString),
-      "boundAccount" -> a.boundAccount
-        .map(AccountJsonCodec.accountCirceEncoder(_))
-        .getOrElse(Json.Null),
+      "accountPublicKey" -> Json.fromString(a.accountPublicKey.hex),
       "seeds"     -> Json.fromValues(a.seeds.map(Json.fromString)),
       "runtimeId" -> a.runtimeId.map(_.value).asJson
   )
@@ -24,14 +22,15 @@ trait NodeJsonCodec extends AccountJsonCodec {
     for {
       address           <- c.get[Node.Address]("address")
       nodeType     <- c.get[String]("nodeType")
-      boundAccount <- c.get[Option[Account]]("boundAccount")
+      boundAccount <- c.get[String]("accountPublicKey")
       seeds        <- c.get[Vector[String]]("seeds")
       runtimeId    <- c.get[Option[String]]("runtimeId")
     } yield
       Node(
         address,
         Node.Type(nodeType),
-        boundAccount,
+        BytesValue.decodeHex(boundAccount),
+        BytesValue.Empty,
         seeds,
         runtimeId.map(Node.ID.apply)
       )

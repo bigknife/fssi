@@ -14,6 +14,13 @@ import fssi.ast.domain.types._
   /** disseminate a network message */
   def disseminate(packet: DataPacket, nodes: Vector[Node.Address]): P[F, Unit]
 
+  /**
+    * broadcast messages to peers in the p2p network
+    * @param packet data packet
+    * @return
+    */
+  def broadcast(packet: DataPacket): P[F, Unit]
+
   /** build a network message by using an account */
   def buildCreateAccountDataMessage(account: Account): P[F, DataPacket]
 
@@ -21,7 +28,7 @@ import fssi.ast.domain.types._
   def buildSyncAccountMessage(id: Account.ID): P[F, DataPacket]
 
   /** build s SUBMIT-TRANSACTION message */
-  def buildSubmitTransactionMessage(account: Account, transaction: Transaction): P[F, DataPacket]
+  def buildSubmitTransactionMessage(transaction: Transaction): P[F, DataPacket]
 
   /** build a TRANSACTION-SYNC message */
   def buildSyncTransactionMessage(): P[F, DataPacket]
@@ -36,7 +43,9 @@ import fssi.ast.domain.types._
   def shutdownP2PNode(): P[F, Unit]
 
   /** create a node
+    * @param port node port
+    * @param accountPublicKey bound account public key, hex
     * @param seeds seed nodes, format: 'ip:port'
     */
-  def createNode(port: Int, ip: String, seeds: Vector[String]): P[F, Node]
+  def createNode(accountPublicKey: String, port: Int, ip: String, seeds: Vector[String]): P[F, Node]
 }

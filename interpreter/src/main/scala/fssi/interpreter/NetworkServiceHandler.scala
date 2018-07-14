@@ -5,7 +5,7 @@ import fssi.ast.domain.types.DataPacket.SubmitTransaction
 import fssi.ast.domain.types._
 import fssi.interpreter.util._
 import io.scalecube.cluster.{Cluster, ClusterConfig}
-import io.scalecube.transport.Address
+import io.scalecube.transport.{Address, Message}
 import org.slf4j.{Logger, LoggerFactory}
 
 import scala.util._
@@ -14,8 +14,15 @@ class NetworkServiceHandler extends NetworkService.Handler[Stack] {
   val clusterOnce: Once[Cluster] = Once.empty
   val logger: Logger             = LoggerFactory.getLogger(getClass)
 
-  override def createNode(port: Int, ip: String, seeds: Vector[String]): Stack[Node] = Stack {
-    Node(Node.Address(ip, port), Node.Type.Nymph, None, seeds)
+  override def createNode(accountPublicKey: String,
+                          port: Int,
+                          ip: String,
+                          seeds: Vector[String]): Stack[Node] = Stack {
+    Node(Node.Address(ip, port),
+         Node.Type.Nymph,
+         BytesValue.decodeHex(accountPublicKey),
+         BytesValue.Empty,
+         seeds)
   }
 
   override def startupP2PNode(node: Node, handler: DataPacket => Unit = _ => ()): Stack[Node] =
@@ -23,6 +30,7 @@ class NetworkServiceHandler extends NetworkService.Handler[Stack] {
       val config = ClusterConfig
         .builder()
         .port(node.address.port)
+        .listenAddress(node.address.ip)
         .portAutoIncrement(false)
         .seedMembers(node.seeds.map(Address.from): _*)
         .suspicionMult(ClusterConfig.DEFAULT_WAN_SUSPICION_MULT)
@@ -42,20 +50,32 @@ class NetworkServiceHandler extends NetworkService.Handler[Stack] {
             s"P2P Membership Event: ${membershipEvent.`type`()}, ${membershipEvent.member()}")
           printMembers()
         }
-        cluster.listen().subscribe { message =>
-          if (logger.isDebugEnabled) logger.info(s"got p2p message: $message")
-          else ()
+
+        def subscription: Message => Unit = {message =>
+          val uuid = message.header("uuid")
+          val timestamp = message.header("timestamp")
+          logger.info(s"NOTION: recv gossip message: {uuid=$uuid, timestamp=$timestamp}")
           Try {
             val dataPacket = message.data[DataPacket]()
             handler(dataPacket)
           } match {
             case Success(_) =>
-              if (logger.isDebugEnabled) logger.debug(s"handled p2p message: $message")
-              else ()
+              logger.info(s"peer message handled successfully")
             case Failure(t) =>
-              logger.error(s"handling p2p message $message failed", t)
+              logger.error(s"peer message handled failed", t)
           }
+        }
 
+        // listen gossip
+        cluster.listenGossips().subscribe {message =>
+          logger.info("handling gossip message")
+          subscription(message)
+        }
+
+        //listen message
+        cluster.listen().subscribe { message =>
+          logger.info("handling member message")
+          subscription(message)
         }
         ()
       }
@@ -84,9 +104,8 @@ class NetworkServiceHandler extends NetworkService.Handler[Stack] {
     DataPacket.CreateAccount(account)
   }
 
-  override def buildSubmitTransactionMessage(account: Account,
-                                             transaction: Transaction): Stack[DataPacket] = Stack {
-    SubmitTransaction(account, transaction)
+  override def buildSubmitTransactionMessage(transaction: Transaction): Stack[DataPacket] = Stack {
+    SubmitTransaction(transaction)
   }
 
   override def buildSyncAccountMessage(id: Account.ID): Stack[DataPacket] = Stack {
@@ -104,6 +123,15 @@ class NetworkServiceHandler extends NetworkService.Handler[Stack] {
     }
   }
 
+  override def broadcast(packet: DataPacket): Stack[Unit] = Stack {
+    clusterOnce.foreach { cluster =>
+      val message = DataPacketUtil.toMessage(packet)
+      logger.info(s"NOTION: sending gossip message: ${message.headers()}")
+      cluster.spreadGossip(DataPacketUtil.toMessage(packet))
+      ()
+    }
+  }
+
   private def printMembers(): Unit = {
     logger.info("current members:")
     import scala.collection.JavaConverters._
@@ -111,8 +139,9 @@ class NetworkServiceHandler extends NetworkService.Handler[Stack] {
   }
 }
 object NetworkServiceHandler {
+  private val instance = new NetworkServiceHandler
   trait Implicits {
-    implicit val networkServiceHandler: NetworkServiceHandler = new NetworkServiceHandler
+    implicit val networkServiceHandler: NetworkServiceHandler = instance
   }
   object implicits extends Implicits
 }

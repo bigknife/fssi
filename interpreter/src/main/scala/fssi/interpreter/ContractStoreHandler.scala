@@ -25,8 +25,9 @@ class ContractStoreHandler extends ContractStore.Handler[Stack] {
   }
 }
 object ContractStoreHandler {
+  private val instance = new ContractStoreHandler
   trait Implicits {
-    implicit val contractStoreHandler: ContractStoreHandler = new ContractStoreHandler
+    implicit val contractStoreHandler: ContractStoreHandler = instance
   }
   object implicits extends Implicits
 }

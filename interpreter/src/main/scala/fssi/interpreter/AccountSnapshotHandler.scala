@@ -24,13 +24,18 @@ class AccountSnapshotHandler extends AccountSnapshot.Handler[Stack] {
   private val Sql_SelectAccountSnapshot
     : String = s"SELECT id, publ, iv, balance, timestamp, status FROM $ACCOUNT_TABLE_NAME " +
     s"WHERE id=?"
+  private val SQL_FindByPublicKey
+    : String = s"SELECT id, publ, iv, balance, timestamp, status FROM $ACCOUNT_TABLE_NAME " +
+    s"WHERE publ=?"
 
-
-  override def startupSnapshotDB(): Stack[Unit] = Stack {setting =>
+  override def startupSnapshotDB(): Stack[Unit] = Stack { setting =>
     SnapshotDB.initOnDemand(setting.snapshotDbBaseDir,
-      tcpPort = setting.snapshotDbPort,
-      webPort = setting.snapshotDbConsolePort,
-      startWebConsole = setting.startSnapshotDbConsole)
+                            tcpPort = setting.snapshotDbPort,
+                            webPort = setting.snapshotDbConsolePort,
+                            startWebConsole = setting.startSnapshotDbConsole)
+    // create table
+    SnapshotDB.executeCommand(SQL_CreateTable)
+    ()
   }
 
   override def shutdownSnapshotDB(): Stack[Unit] = Stack {
@@ -38,32 +43,33 @@ class AccountSnapshotHandler extends AccountSnapshot.Handler[Stack] {
   }
 
   override def saveSnapshot(snapshot: Account.Snapshot): Stack[Account.Snapshot] = Stack {
-      // create table
-      SnapshotDB.executeCommand(SQL_CreateTable)
+    // insert or update
+    val acc = snapshot.account
+    SnapshotDB.executeCommand(SQL_UpsertAccountSnapshot,
+                              acc.id.value,
+                              acc.publicKeyData.hex,
+                              acc.iv.hex,
+                              acc.balance.amount,
+                              snapshot.timestamp,
+                              snapshot.status.toString)
 
-      // insert or update
-      val acc = snapshot.account
-      SnapshotDB.executeCommand(SQL_UpsertAccountSnapshot,
-                                acc.id.value,
-                                acc.publicKeyData.hex,
-                                acc.iv.hex,
-                                acc.balance.amount,
-                                snapshot.timestamp,
-                                snapshot.status.toString)
-
-      snapshot
+    snapshot
   }
 
   override def findAccountSnapshot(id: Account.ID): Stack[Option[Account.Snapshot]] = Stack {
-      //query
-      SnapshotDB.executeQuery[Account.Snapshot](Sql_SelectAccountSnapshot, id.value).headOption
+    //query
+    SnapshotDB.executeQuery[Account.Snapshot](Sql_SelectAccountSnapshot, id.value).headOption
+  }
+
+  override def findByPublicKey(publicKey: BytesValue): Stack[Option[Account.Snapshot]] = Stack {
+    SnapshotDB.executeQuery[Account.Snapshot](Sql_SelectAccountSnapshot, publicKey.hex).headOption
   }
 }
 
 object AccountSnapshotHandler {
-
+  private val instance = new AccountSnapshotHandler
   trait Implicits {
-    implicit val accountSnapshot: AccountSnapshotHandler = new AccountSnapshotHandler {}
+    implicit val accountSnapshot: AccountSnapshotHandler = instance
   }
   object implicits extends Implicits
 }

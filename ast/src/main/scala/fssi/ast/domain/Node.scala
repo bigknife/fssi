@@ -2,12 +2,13 @@ package fssi.ast.domain
 
 import java.math.BigInteger
 
-import fssi.ast.domain.types.Account
+import fssi.ast.domain.types.{Account, BytesValue}
 
 case class Node(
     address: Node.Address,
     nodeType: Node.Type,
-    boundAccount: Option[Account],
+    accountPublicKey: BytesValue,
+    accountPrivateKey: BytesValue,
     seeds: Vector[String],
     runtimeId: Option[Node.ID] = None
 ) {

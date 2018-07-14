@@ -124,7 +124,8 @@ object Common {
             libraryDependencies ++= all.circe,
             libraryDependencies ++= all.scalecube,
             libraryDependencies ++= all.betterfiles,
-            libraryDependencies ++= all.leveldb
+            libraryDependencies ++= all.leveldb,
+            libraryDependencies ++= all.scapap
           )
       def apply(id: String): Project = apply(id, id)
       def apply(): Project           = apply("interpreter")
@@ -151,19 +152,45 @@ object Common {
       def apply(id: String): Project = apply(id, id)
       def apply(): Project = apply("contract-lib")
     }
+
+    object scp {
+      def apply(id: String, dir: String): Project = Project(id, file(dir))
+        .settings(settings)
+        .settings(
+          libraryDependencies ++= all.sop,
+          libraryDependencies ++= all.cats
+        )
+      def apply(id: String): Project = apply(id, id)
+      def apply(): Project = apply("scp")
+    }
+
+    object crypto {
+      def apply(id: String, dir: String): Project = Project(id, file(dir))
+        .settings(settings)
+        .settings(
+          libraryDependencies ++= all.bcprov
+        )
+      def apply(id: String): Project = apply(id, id)
+      def apply(): Project = apply("crypto")
+    }
   }
 
   val defaultShellScript: Seq[String] = defaultShellScript(
     Seq(
-      "-Dio.netty.tryReflectionSetAccessible=true"
+      //"--add-exports",
+      //"java.base/jdk.internal.misc=ALL-UNNAMED"
+    ),
+    Seq(
+      //"-Dio.netty.tryReflectionSetAccessible=true"
     )
   )
 
-  def defaultShellScript(javaOpts: Seq[String] = Seq.empty): Seq[String] = {
+  def defaultShellScript(opts: Seq[String], javaOpts: Seq[String] = Seq.empty): Seq[String] = {
     val javaOptsString = javaOpts.map(_ + " ").mkString
+    val optsString = opts.map(_ + " ").mkString
     Seq(
       "#!/usr/bin/env sh",
-      s"""exec java --add-exports java.base/jdk.internal.misc=ALL-UNNAMED -jar $javaOptsString$$JAVA_OPTS "$$0" "$$@"""",
+      s"""exec java $optsString -jar $javaOptsString$$JAVA_OPTS "$$0" "$$@"""",
       "")
   }
 }

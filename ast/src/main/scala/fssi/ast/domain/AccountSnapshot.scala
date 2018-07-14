@@ -18,6 +18,13 @@ import fssi.ast.domain.types._
   /** find account with an id */
   def findAccountSnapshot(id: Account.ID): P[F, Option[Account.Snapshot]]
 
+  /**
+    * find account by public key
+    * @param publicKey public key data
+    * @return
+    */
+  def findByPublicKey(publicKey: BytesValue): P[F, Option[Account.Snapshot]]
+
   /** todo: commit new state(moments in proposal) */
   def commit(proposal: Proposal): P[F, Unit]
 }

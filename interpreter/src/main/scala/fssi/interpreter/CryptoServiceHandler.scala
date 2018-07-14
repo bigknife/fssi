@@ -70,8 +70,9 @@ class CryptoServiceHandler extends CryptoService.Handler[Stack] {
 }
 
 object CryptoServiceHandler {
+  private val instance = new CryptoServiceHandler
   trait Implicits {
-    implicit val cryptoServiceHandler: CryptoServiceHandler = new CryptoServiceHandler
+    implicit val cryptoServiceHandler: CryptoServiceHandler = instance
   }
   object implicits extends Implicits
 }
