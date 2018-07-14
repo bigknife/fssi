@@ -91,7 +91,7 @@ trait SCPJsonCodec {
   implicit val messageExternalizeDecoder: Decoder[Message.Externalize] = new Decoder[Externalize] {
     override def apply(c: HCursor): Result[Externalize] =
       for {
-        ballot   <- c.get[Ballot]("ballot")
+        ballot   <- c.get[Ballot]("commit")
         hCounter <- c.get[Int]("hCounter")
       } yield Message.Externalize(ballot, hCounter)
   }

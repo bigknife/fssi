@@ -54,7 +54,7 @@ class NetworkServiceHandler extends NetworkService.Handler[Stack] {
         def subscription: Message => Unit = {message =>
           val uuid = message.header("uuid")
           val timestamp = message.header("timestamp")
-          logger.error(s"NOTION: recv gossip message: {uuid=$uuid, timestamp=$timestamp}")
+          logger.info(s"NOTION: recv gossip message: {uuid=$uuid, timestamp=$timestamp}")
           Try {
             val dataPacket = message.data[DataPacket]()
             handler(dataPacket)
@@ -126,7 +126,7 @@ class NetworkServiceHandler extends NetworkService.Handler[Stack] {
   override def broadcast(packet: DataPacket): Stack[Unit] = Stack {
     clusterOnce.foreach { cluster =>
       val message = DataPacketUtil.toMessage(packet)
-      logger.error(s"NOTION: sending gossip message: ${message.headers()}")
+      logger.info(s"NOTION: sending gossip message: ${message.headers()}")
       cluster.spreadGossip(DataPacketUtil.toMessage(packet))
       ()
     }

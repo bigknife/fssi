@@ -123,7 +123,7 @@ class LedgerStoreHandler extends LedgerStore.Handler[Stack] {
     // a fix path to save current height
     timeCapsuleTrie
       .map { trie =>
-        trie.store.load(TimeCapsuleHeightKey).map(BigInt(_)).getOrElse(BigInt(0))
+        trie.store.load(TimeCapsuleHeightKey).map(x => BigInt(new String(x, "utf-8"))).getOrElse(BigInt(0))
       }
       .unsafe()
   }
