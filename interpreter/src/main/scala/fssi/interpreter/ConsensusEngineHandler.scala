@@ -36,21 +36,12 @@ class ConsensusEngineHandler extends ConsensusEngine.Handler[Stack] {
     val previousValue = MomentValue(moment)
     val slotIndex     = SlotIndex(currentHeight + 1)
 
-    var r: Boolean = false
-    SCPExecutionService.repeat(50) {i =>
-      val p = scp.nominate(nodeID,
-        slotIndex,
-        round = i,
-        valueToNominate = value,
-        previousValue = previousValue)
-      if (!r) {
-        r = bigknife.scalap.interpreter.runner.runIO(p, setting.toScalapSetting(nodeID)).unsafeRunSync()
-        log.info(s"run nominate program at round $i, result is $r")
-        Thread.sleep((i + 1) * 1000)
-      } else ()
-    }
-
-    r
+    val p = scp.nominate(nodeID,
+                         slotIndex,
+                         round = 0,
+                         valueToNominate = value,
+                         previousValue = previousValue)
+    bigknife.scalap.interpreter.runner.runIO(p, setting.toScalapSetting(nodeID)).unsafeRunSync()
   }
 }
 object ConsensusEngineHandler {
