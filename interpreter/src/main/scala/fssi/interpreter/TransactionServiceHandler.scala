@@ -74,27 +74,9 @@ class TransactionServiceHandler extends TransactionService.Handler[Stack] {
   }
 
   override def calculateStatesToBeSigned(states: States): Stack[BytesValue] = Stack {
-    states.states match {
-      case x if x.isEmpty => BytesValue.Empty
-      case x              =>
-        // sign should be in determined order, or it will fail to validate the sign
-        def determinedBytesValue(s: AccountState): BytesValue = {
-          val sortedKeys = s.assets.keys.toList.sorted
-          val valueBytes = sortedKeys
-            .map(s.assets(_))
-            .map(BytesValue.apply)
-            .fold(BytesValue.Empty)(BytesValue.combine)
-          val keysBytes =
-            sortedKeys.map(BytesValue.apply).fold(BytesValue.Empty)(BytesValue.combine)
-          BytesValue(s.accountId) ++ BytesValue(s.amount.toString()) ++ keysBytes ++ valueBytes
-        }
-        val sortedKeys = x.keys.toList.sorted
-        val valueBytes =
-          sortedKeys.map(x(_)).map(determinedBytesValue).fold(BytesValue.Empty)(BytesValue.combine)
-        val keyBytes = sortedKeys.map(BytesValue.apply).fold(BytesValue.Empty)(BytesValue.combine)
-        keyBytes ++ valueBytes
-    }
+    BytesValue(states.bytes)
   }
+
 }
 
 object TransactionServiceHandler {

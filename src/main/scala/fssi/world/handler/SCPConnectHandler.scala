@@ -3,22 +3,56 @@ package fssi.world.handler
 import bigknife.scalap.ast.types._
 import bigknife.scalap.world.Connect
 import fssi.ast.domain.components.Model
-import fssi.ast.domain.types.BytesValue
+import fssi.ast.domain.types.{BytesValue, Moment}
 import fssi.ast.domain.types.DataPacket.TypedString
 import fssi.ast.usecase.Warrior
-import fssi.interpreter.{Setting, runner}
+import fssi.interpreter.{CryptoServiceHandler, Setting, runner}
 import io.circe.syntax._
 import fssi.interpreter.jsonCodec._
 import fssi.interpreter.scp.MomentValue
 import bigknife.scalap.interpreter.{runner => scprunner}
 import bigknife.scalap.ast.usecase.{SCP, component => scpcomp}
+import fssi.contract.States
 
 class SCPConnectHandler(setting: Setting, warrior: Warrior[Model.Op]) extends Connect {
   override def extractValidValue(value: Value): Option[Value] = None
 
   override def validateValue(value: Value): Value.Validity = {
-    //todo validate more
-    Value.Validity.FullyValidated
+    //todo: maybe partially valid makes sense.
+    value match {
+      case MomentValue(moments) =>
+        // last moments' states jump should update to next moment to prevent system from double-spend attacking
+        def validateMoment(m: Moment, lastStates: States): (Boolean, States) = {
+          // timestamp should < current
+          val timestampIsLegal = m.timestamp < System.currentTimeMillis()
+
+          // validate state hash
+          val oldStatesHash = CryptoServiceHandler.implicits.cryptoServiceHandler
+            .hash(BytesValue(m.oldStates.bytes))(setting)
+            .unsafeRunSync()
+          val newStatesHash = CryptoServiceHandler.implicits.cryptoServiceHandler
+            .hash(BytesValue(m.newStates.bytes))(setting)
+            .unsafeRunSync()
+          val hashIsValid = m.oldStatesHash == oldStatesHash && m.newStatesHash == newStatesHash
+
+          // validate oldState
+          // when run transaction, pass the last states to it. it' will update the latest
+          // states of the account(relative), to prevent double-spend attack
+          val tmpMoment = runner.runIO(warrior.runTransaction(m.transaction, lastStates), setting).unsafeRunSync()
+          val tempHashIsValid = tmpMoment.exists(x => x.oldStatesHash == m.oldStatesHash && x.newStatesHash == m.oldStatesHash)
+
+          (timestampIsLegal && hashIsValid && tempHashIsValid, tmpMoment.map(_.newStates).getOrElse(States.empty))
+        }
+
+        moments.foldLeft((true, States.empty)) {(acc, n) =>
+          if (!acc._1) acc
+          else validateMoment(n, acc._2)
+        } match {
+          case (false, _) => Value.Validity.invalid
+          case _ => Value.Validity.fullyValidated
+        }
+      case _ => Value.Validity.invalid
+    }
   }
 
   override def signData(bytes: Array[Byte], nodeID: NodeID): Signature = {
