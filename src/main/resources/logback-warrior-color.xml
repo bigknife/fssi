@@ -8,7 +8,7 @@
     </appender>
     <appender name="COLOR1" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
-            <pattern>%date %highlight(%-5level) %cyan(@[%-4.30thread]) - %colorize(%msg) %n</pattern>
+            <pattern>%date %highlight(%-5level) %cyan([%-4.30thread]) - %colorize(%msg) %n</pattern>
         </encoder>
     </appender>
     <appender name="NOCOLOR" class="ch.qos.logback.core.ConsoleAppender">
@@ -17,14 +17,23 @@
             <pattern>[%date] [%level] [%logger{5}@%thread] %msg%n</pattern>
         </encoder>
     </appender>
-    <root level="ERROR">
+    <root level="WARN">
         <appender-ref ref="COLOR1"/>
     </root>
 
-    <logger name="scalap.ast" additivity="false" level="debug">
+    <logger name="fssi" additivity="false" level="warn">
         <appender-ref ref="COLOR1" />
     </logger>
-    <logger name="bigknife.scalap" additivity="false" level="debug">
+    <logger name="fssi.world" additivity="false" level="info">
+        <appender-ref ref="COLOR1" />
+    </logger>
+    <logger name="fssi.ast" additivity="false" level="info">
+        <appender-ref ref="COLOR1" />
+    </logger>
+    <logger name="scalap.ast" additivity="false" level="info">
+        <appender-ref ref="COLOR1" />
+    </logger>
+    <logger name="bigknife.scalap" additivity="false" level="info">
         <appender-ref ref="COLOR1" />
     </logger>
 

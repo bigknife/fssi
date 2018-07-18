@@ -1,11 +1,12 @@
 package fssi.interpreter
 
-import bigknife.scalap.ast.types.{Envelope, Message}
+import bigknife.scalap.ast.types.{Envelope, Message, NodeID, QuorumSet}
 import org.scalatest.FunSuite
 import io.circe.parser._
 import io.circe.syntax._
 import fssi.interpreter.jsonCodec._
 import fssi.ast.domain.types._
+import fssi.interpreter.scp.QuorumSetSync
 
 class JsonCodecSpec extends FunSuite {
   test("Contract.Parameter") {
@@ -80,5 +81,48 @@ class JsonCodecSpec extends FunSuite {
           case Right(m) => info(s"$m")
         }
     }
+  }
+
+  test("Map[NodeID, QuorumSet]") {
+    val message = "[\n  {\n    \"nodeID\" : \"03d3e70862e399fc94ac62edd111398aa48f61de3a20d1ace979c02b3d9075e08a\",\n    \"qs\" : {\n      \"threshold\" : 3,\n      \"validators\" : [\n        \"03d3e70862e399fc94ac62edd111398aa48f61de3a20d1ace979c02b3d9075e08a\",\n        \"0281e3120890180ae38cda921a8223c17f4db284ff43c9c31fed54e0dd6356c042\",\n        \"0338984c81ba98e807dee4b1ff2079a77609a7ad8765054b7510df278ef5250f71\",\n        \"02a107e6206824925ff218add39dcdff99092b426bc79b071eb311edb22be426db\"\n      ]\n    }\n  }\n]"
+    val ret= for {
+      json <- parse(message)
+      map <- json.as[Map[NodeID, QuorumSet]]
+    } yield map
+
+    println(ret)
+  }
+
+  test("QuorumSetSync") {
+    val node1 = NodeID("v1".getBytes)
+    val node2 = NodeID("v2".getBytes)
+    val node3 = NodeID("v3".getBytes)
+    val node4 = NodeID("v4".getBytes)
+    val qs = QuorumSet.simple(3, node1, node2, node3, node4)
+    val qs1 = qs.nest(2, node1, node4)
+
+    val version: Long = 0
+    val hash1 = QuorumSetSync.hash(version, Map(node1 -> qs, node2 -> qs, node3 -> qs1, node4 -> qs1))
+
+    val hash2 = QuorumSetSync.hash(version, Map(node2 -> qs, node1 -> qs, node4 -> qs1, node3 -> qs1))
+
+    assert(hash1 == hash2)
+
+    val qss = QuorumSetSync(version, Map(node2 -> qs, node1 -> qs, node4 -> qs1, node3 -> qs1), hash1)
+
+    val jso = qss.asJson
+    info(jso.spaces2)
+
+    for {
+      str <- parse(jso.spaces2)
+      qss1 <- str.as[QuorumSetSync]
+    } yield {
+      val hash3 = qss1.hash
+      assert(hash1 == hash3)
+      val hash4 = QuorumSetSync.hash(qss1.version, qss1.registeredQuorumSets)
+      assert(hash4 == hash3)
+    }
+
+
   }
 }

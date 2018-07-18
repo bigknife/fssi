@@ -20,8 +20,13 @@ class ConsensusEngineHandler extends ConsensusEngine.Handler[Stack] {
     momentPool := MomentPool.newPool(setting.maxMomentSize, setting.maxMomentPoolElapsedSecond)
   }
 
-  override def init(): Stack[Unit] = Stack { setting =>
+  override def init(node: Node): Stack[Unit] = Stack { setting =>
     _init(setting)
+    // scp should broadcast current node quorumset periodically
+    val p = scp.initialize()
+    bigknife.scalap.interpreter.runner
+      .runIO(p, setting.toScalapSetting(NodeID(node.accountPublicKey.bytes)))
+      .unsafeRunSync()
   }
 
   override def poolMoment(node: Node,

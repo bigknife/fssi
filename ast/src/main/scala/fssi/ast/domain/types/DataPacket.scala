@@ -19,11 +19,5 @@ object DataPacket {
       s"TypedString(${BytesValue(message.getBytes("utf-8") ++ `type`.getBytes("utf-8")).md5})"
   }
 
-  def scpEnvelope(message: String): DataPacket = TypedString(message, "scp.envelope")
-  object ScpEnvelope {
-    def unapply(arg: DataPacket): Option[String] = arg match {
-      case TypedString(message, "scp.envelope") => Some(message)
-      case _                                    => None
-    }
-  }
+
 }

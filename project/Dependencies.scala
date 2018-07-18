@@ -52,8 +52,17 @@ object Dependencies {
       val leveldb = "1.8"
 
       // scalap
-      val scalap = "0.1.0_rc"
+      val scalap = "0.1.8_BETA"
+
+      val nettyNative = "4.1.21"
     }
+
+    /*
+    lazy val nettyNative = {
+      Seq(
+        Dpd("io.netty", "netty-transport-native-epoll", versions.nettyNative, autoScalaVersion = false)
+      ).map(_.libraryDependencies)
+    }*/
 
     lazy val log = {
       Seq(

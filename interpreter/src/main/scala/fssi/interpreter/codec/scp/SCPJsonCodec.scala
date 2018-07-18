@@ -3,12 +3,14 @@ package fssi.interpreter.codec.scp
 import bigknife.scalap.ast.types.Message._
 import bigknife.scalap.ast.types._
 import fssi.ast.domain.types.{BytesValue, Moment}
-import fssi.interpreter.scp.MomentValue
+import fssi.interpreter.scp.{MomentValue, QuorumSetSync}
 import io.circe._
 import fssi.interpreter.jsonCodec._
 import io.circe.Decoder.Result
 import io.circe.syntax._
 import io.circe.generic.auto._
+
+import scala.collection.immutable
 
 trait SCPJsonCodec {
   implicit val valueJsonEncoder: Encoder[Value] = new Encoder[Value] {
@@ -282,6 +284,47 @@ trait SCPJsonCodec {
           validators <- c.get[Set[NodeID]]("validators")
         } yield QuorumSet.Nest(threshold, validators, innerSets)
       }
+    }
+  }
+
+  implicit val quorumSetsJsonEncoder: Encoder[Map[NodeID, QuorumSet]] = new Encoder[Map[NodeID, QuorumSet]] {
+    override def apply(a: Map[NodeID, QuorumSet]): Json = Json.fromValues(a.toVector.map {
+      case (nodeID, quorumSet) => Json.obj(
+        "nodeID" -> nodeID.asJson,
+        "qs" -> quorumSet.asJson
+      )
+    })
+  }
+
+  implicit val quorumSetsJsonDecoder: Decoder[Map[NodeID, QuorumSet]] = new Decoder[Map[NodeID, QuorumSet]] {
+    override def apply(c: HCursor): Result[Map[NodeID, QuorumSet]] = {
+
+        val s: immutable.Seq[Either[DecodingFailure, (NodeID, QuorumSet)]] = c.value.asArray.get.map { json =>
+          val jso = json.asObject.get
+          for {
+            nodeID <- jso("nodeID").get.as[NodeID]
+            qs <- jso("qs").get.as[QuorumSet]
+          } yield nodeID -> qs
+        }
+      Right(s.map(_.right.get).toMap)
+    }
+  }
+
+  implicit val quorumSetSyncJsonEncoder: Encoder[QuorumSetSync] = new Encoder[QuorumSetSync] {
+    override def apply(a: QuorumSetSync): Json = Json.obj(
+      "version" -> Json.fromLong(a.version),
+      "registeredQuorumSets" -> a.registeredQuorumSets.asJson,
+      "hash" -> a.hash.asJson
+    )
+  }
+
+  implicit val quorumSetSyncJsonDecoder: Decoder[QuorumSetSync] = new Decoder[QuorumSetSync] {
+    override def apply(c: HCursor): Result[QuorumSetSync] = {
+      for {
+        version <- c.get[Long]("version")
+        registeredQuorumSets <- c.get[Map[NodeID, QuorumSet]]("registeredQuorumSets")
+        hash <- c.get[Hash]("hash")
+      } yield QuorumSetSync(version, registeredQuorumSets, hash)
     }
   }
 }

@@ -8,7 +8,7 @@ import fssi.ast.domain.types._
     * init engine
     * @return
     */
-  def init(): P[F, Unit]
+  def init(node: Node): P[F, Unit]
   /**
     * put the moment into the pool
     * @param moment moment

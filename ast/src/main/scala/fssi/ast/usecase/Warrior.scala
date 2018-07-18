@@ -37,9 +37,10 @@ trait Warrior[F[_]] extends WarriorUseCases[F] with P2P[F] {
         }
       } yield ()
     }
-
     for {
       node <- p2pStartup
+      _           <- consensusEngine.init(node)
+      _           <- log.info("consensus engine initialized.")
       _    <- tryCreateFirstTimeCapusle
     } yield node
   }
@@ -356,6 +357,18 @@ trait Warrior[F[_]] extends WarriorUseCases[F] with P2P[F] {
     for {
       nodeOpt <- networkStore.currentNode()
     } yield nodeOpt.get
+  }
+
+
+  /**
+    * query current height
+    *
+    * @return
+    */
+  override def currentHeight(): SP[F, BigInt] = {
+    for {
+      height <- ledgerStore.currentHeight()
+    } yield height
   }
 
   /**

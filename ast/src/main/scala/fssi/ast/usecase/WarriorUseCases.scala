@@ -54,6 +54,12 @@ trait WarriorUseCases[F[_]] extends P2PUseCases[F]{
   def currentNode(): SP[F, Node]
 
   /**
+    * query current height
+    * @return
+    */
+  def currentHeight(): SP[F, BigInt]
+
+  /**
     * verify data's sign
     * @param source source bytes
     * @param publicKeyData public key

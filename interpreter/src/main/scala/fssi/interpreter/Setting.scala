@@ -28,6 +28,7 @@ case class Setting(
   val snapshotDbBaseDir: String = Paths.get(workingDir, "snapshotdb").toString
   val nodeJsonFile: String      = Paths.get(workingDir, ".node").toString
   val contractTempDir: String   = Paths.get(workingDir, "temp/contract").toString
+  def workFileOfName(name: String): String =  Paths.get(workingDir, name).toString
 
   lazy val scpRegisteredQuorumSets: Map[NodeID, QuorumSet] = {
     // read from scp conf file (json)
