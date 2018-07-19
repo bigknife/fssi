@@ -20,10 +20,6 @@ trait WarriorUseCases[F[_]] extends P2PUseCases[F]{
     */
   def processTransaction(transaction: Transaction): SP[F, Transaction.Status]
 
-  /**
-    * uc2. run consensus when the proposal pool is full or time is up.
-    */
-  def validateProposal(): SP[F, Unit]
 
   /**
     * uc3. handle the message of CreateAccount

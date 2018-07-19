@@ -59,6 +59,7 @@ class LedgerStoreHandlerSpec extends FunSuite with BeforeAndAfter {
 
   test("load states for UserContract") {
     val contract: Contract.UserContract = Contract.UserContract(
+      Account.ID(""),
       Contract.Name("com.test.test"),
       Contract.Version("0.0.1"),
       Contract.Code(

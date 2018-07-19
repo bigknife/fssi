@@ -1,31 +1,34 @@
 package fssi.interpreter.codec
 
 import fssi.ast.domain.types.Contract.Parameter._
-import fssi.ast.domain.types.{BytesValue, Contract}
+import fssi.ast.domain.types.{Account, BytesValue, Contract, Signature}
 import io.circe._
 
 trait ContractJsonCodec {
   implicit val contractJsonEncoder: Encoder[Contract.UserContract] = (c: Contract.UserContract) => {
     Json.obj(
+      "owner" -> Json.fromString(c.owner.value),
       "name"     -> Json.fromString(c.name.value),
       "version"  -> Json.fromString(c.version.value),
       "code"     -> Json.fromString(c.code.base64),
-      "codeHash" -> Json.fromString(c.codeHash.base64)
+      "codeSign" -> Json.fromString(c.codeSign.base64)
     )
   }
 
   implicit val contractJsonDecoder: Decoder[Contract.UserContract] = (c: HCursor) => {
     for {
+      owner <- c.get[String]("owner")
       name     <- c.get[String]("name")
       version  <- c.get[String]("version")
       code     <- c.get[String]("code")
-      codeHash <- c.get[String]("codeHash")
+      codeHash <- c.get[String]("codeSign")
     } yield
       Contract.UserContract(
+        Account.ID(owner),
         Contract.Name(name),
         Contract.Version(version),
         Contract.Code(code),
-        BytesValue.decodeBase64(codeHash)
+        Signature(BytesValue.decodeBase64(codeHash))
       )
   }
 

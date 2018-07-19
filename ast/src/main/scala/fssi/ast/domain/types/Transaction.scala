@@ -57,14 +57,14 @@ object Transaction {
       val buf = new StringBuilder
       buf.append(id.value)
       buf.append(owner.value)
-      buf.append(contract.codeHash.base64)
+      buf.append(contract.codeSign.base64)
       BytesValue(buf.toString())
     }
 
     lazy val bytes: Array[Byte] = {
       id.value.getBytes("utf-8") ++
         owner.value.getBytes("utf-8") ++
-        contract.toBeHashed.bytes ++
+        contract.toBeSigned.bytes ++
         signature.bytes ++
         status.toString.getBytes("utf-8")
     }

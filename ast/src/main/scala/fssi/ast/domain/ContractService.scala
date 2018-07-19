@@ -13,12 +13,14 @@ import fssi.contract.States
 
   /**
     * create a contract, but the signature is Empty
+    * @param owner the contract's owner
     * @param name name
     * @param version version
     * @param code code (base64 encoded jar)
     * @return
     */
-  def createContractWithoutHash(name: String,
+  def createContractWithoutHash(owner: Account.ID,
+                                name: String,
                                 version: String,
                                 code: String): P[F, Contract.UserContract]
 

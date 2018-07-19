@@ -5,13 +5,15 @@ sealed trait Contract {}
 
 object Contract {
   case class UserContract(
+      owner: Account.ID,
       name: Contract.Name,
       version: Contract.Version,
       code: Contract.Code,
-      codeHash: BytesValue = BytesValue.Empty
+      codeSign: Signature = Signature.Empty
   ) extends Contract {
-    def toBeHashed: BytesValue = {
+    def toBeSigned: BytesValue = {
       val buf = new StringBuilder
+      buf.append(owner.value)
       buf.append(name.value)
       buf.append(version.value)
       buf.append(code.base64)

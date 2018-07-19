@@ -19,7 +19,7 @@ sealed trait SCPExecutionService {
   }
   private val es = Executors.newSingleThreadExecutor(tc)
 
-  def submit(t: => Unit): Unit =
+  def submit(t: => Unit): Unit = {
     es.submit(new Runnable {
       override def run(): Unit = {
         Try {
@@ -32,6 +32,8 @@ sealed trait SCPExecutionService {
         }
       }
     })
+    ()
+  }
 
   def repeat(times: Int)(t: Int => Unit): Unit = {
     for (i <- 0 until times) {
