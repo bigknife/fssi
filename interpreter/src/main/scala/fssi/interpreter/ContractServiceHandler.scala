@@ -300,13 +300,20 @@ class ContractServiceHandler extends ContractService.Handler[Stack] {
                                           invoker.value,
                                           currentStates,
                                           params.map(_.asInstanceOf[AnyRef])) match {
-                    case Left(t) => Left(ContractRuntimeError(x.name.value, x.version.value, t))
+                    case Left(t) =>
+                      //delete tempDir
+                      better.files.File(tmpDir).delete()
+                      Left(ContractRuntimeError(x.name.value, x.version.value, t))
                     case Right((states, cost)) =>
+                      //delete tempDir
+                      better.files.File(tmpDir).delete()
                       logger.info(
                         s"run contract(name=${x.name.value}, version=${x.version.value}) cost = $cost")
                       Right(StatesChange(currentStates, states))
                   }
                 case _ =>
+                  //delete tempDir
+                  better.files.File(tmpDir).delete()
                   Left(
                     IllegalContractInvoke(
                       x.name.value,
@@ -314,11 +321,14 @@ class ContractServiceHandler extends ContractService.Handler[Stack] {
                       s"function(${function.get.name} = ${functionMap(function.get.name)}) shape is illegal"))
               }
 
-            } else
+            } else {
+              //delete tempDir
+              better.files.File(tmpDir).delete()
               Left(
                 IllegalContractInvoke(x.name.value,
-                                      x.version.value,
-                                      s"function(${function.get.name}) not found"))
+                  x.version.value,
+                  s"function(${function.get.name}) not found"))
+            }
           }
       }
     }
