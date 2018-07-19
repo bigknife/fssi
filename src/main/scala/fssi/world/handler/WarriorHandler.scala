@@ -47,8 +47,11 @@ object WarriorHandler {
                             argsFull.seeds,
                             p2pHandler(argsFull))
 
+    val setting = argsFull.toSetting
+    val connect = new SCPConnectHandler(setting, warrior)
+    val finalSetting = setting.copy(scpConnect = connect)
 
-    runner.runIOAttempt(p, argsFull.toSetting).unsafeRunSync() match {
+    runner.runIOAttempt(p, finalSetting).unsafeRunSync() match {
       case Left(t)  => logger.error("start p2p node failed", t)
       case Right(v) => logger.info("p2p node start, id {}", v.toString)
     }

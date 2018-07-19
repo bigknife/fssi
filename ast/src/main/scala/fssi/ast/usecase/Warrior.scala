@@ -6,6 +6,7 @@ import implicits._
 import fssi.ast.domain.components.Model
 import fssi.ast.domain.types.Contract.Parameter
 import fssi.ast.domain.types._
+import fssi.contract.States
 
 trait Warrior[F[_]] extends WarriorUseCases[F] with P2P[F] {
 
@@ -36,11 +37,116 @@ trait Warrior[F[_]] extends WarriorUseCases[F] with P2P[F] {
         }
       } yield ()
     }
-
     for {
       node <- p2pStartup
+      _           <- consensusEngine.init(node)
+      _           <- log.info("consensus engine initialized.")
       _    <- tryCreateFirstTimeCapusle
     } yield node
+  }
+
+
+  /**
+    * run a transaction temporally, update States of same key from lastStates.
+    *
+    * @param transaction transaction
+    * @return states jump, from old states to new states
+    */
+  override def runTransaction(transaction: Transaction, lastStates: States): SP[F, Option[Moment]] = {
+    def findAccount(next: Node => SP[F, Option[Moment]]): SP[F, Option[Moment]] =
+      for {
+        nodeOpt <- networkStore.currentNode()
+        status <- if (/*accOpt.isEmpty || */nodeOpt.isEmpty) for {
+          _ <- log.warn(
+            s"current node Not Found, " +
+              s"runTransaction(id=${transaction.id}) failed!")
+          s1 <- None.pureSP
+        } yield s1
+        else
+          for {
+            _ <- log.info(s"running transaction on ${nodeOpt.get}")
+            x <- next(nodeOpt.get)
+          } yield x
+
+      } yield status
+
+    def validateSignature(next: => SP[F, Option[Moment]]): SP[F, Option[Moment]] =
+      for {
+        publ <- cryptoService.rebuildPubl(BytesValue.decodeHex(transaction.sender.value))
+        passed <- cryptoService.validateSignature(transaction.signature,
+          transaction.toBeVerified,
+          publ)
+        status <- if (passed) next
+        else
+          for {
+            _  <- log.warn(s"runTransaction(id=${transaction.id})'s signature is illegal")
+            s0 <- None.pureSP
+          } yield s0
+      } yield status
+
+    def findProperContract(
+                            next: (
+                              Contract,
+                                Option[Contract.Function],
+                                Option[Contract.Parameter]) => SP[F, Option[Moment]]): SP[F, Option[Moment]] =
+      for {
+        contract_name_version_fun_param <- contractService.resolveTransaction(transaction)
+        contractOpt <- contractStore.findContract(contract_name_version_fun_param._1,
+          contract_name_version_fun_param._2)
+        status <- if (contractOpt.isDefined)
+          next(contractOpt.get,
+            contract_name_version_fun_param._3,
+            contract_name_version_fun_param._4)
+        else
+          for {
+            _  <- log.warn(s"Can't Find Contract Invoked In Transaction(id=${transaction.id})")
+            s0 <- None.pureSP
+          } yield s0
+      } yield status
+
+    def runContract(contract: Contract,
+                    function: Option[Contract.Function],
+                    parameter: Option[Parameter])(
+                     next: Moment => SP[F, Option[Moment]]): SP[F, Option[Moment]] =
+      for {
+        currentStatesOr <- ledgerStore.loadStates(transaction.sender, contract, parameter)
+        currentStates   <- err.either(currentStatesOr)
+        statesChangeOrThrowable <- contractService.runContract(transaction.sender,
+          contract,
+          function,
+          currentStates.updateStates(lastStates), // update last states
+          parameter)
+        status <- statesChangeOrThrowable match {
+          case Left(t) =>
+            for {
+              _  <- log.error(s"Contract Run Failed. ${t.getMessage}", Some(t))
+              s0 <- None.pureSP
+            } yield s0
+          case Right(statesChange) =>
+            for {
+              prevBytes <- transactionService.calculateStatesToBeSigned(statesChange.previous)
+              prevSign  <- cryptoService.hash(prevBytes)
+              currBytes <- transactionService.calculateStatesToBeSigned(statesChange.current)
+              currSign  <- cryptoService.hash(currBytes)
+              moment <- transactionService.createMoment(transaction,
+                statesChange,
+                prevSign,
+                currSign)
+              x <- next(moment)
+            } yield x
+        }
+      } yield status
+
+
+    findAccount { node =>
+      validateSignature {
+        findProperContract { (contract, function, param) =>
+          runContract(contract, function, param) { moment =>
+            Option(moment).pureSP[F]
+          }
+        }
+      }
+    }
   }
 
   /**
@@ -251,6 +357,18 @@ trait Warrior[F[_]] extends WarriorUseCases[F] with P2P[F] {
     for {
       nodeOpt <- networkStore.currentNode()
     } yield nodeOpt.get
+  }
+
+
+  /**
+    * query current height
+    *
+    * @return
+    */
+  override def currentHeight(): SP[F, BigInt] = {
+    for {
+      height <- ledgerStore.currentHeight()
+    } yield height
   }
 
   /**

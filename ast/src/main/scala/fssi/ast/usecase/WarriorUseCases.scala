@@ -3,8 +3,17 @@ package fssi.ast.usecase
 import bigknife.sop._
 import fssi.ast.domain.Node
 import fssi.ast.domain.types.{Proposal, _}
+import fssi.contract.States
 
 trait WarriorUseCases[F[_]] extends P2PUseCases[F]{
+
+  /**
+    * run a transaction temporally, update States of same key from lastStates.
+    * @param transaction transaction
+    * @return states jump, from old states to new states
+    */
+  def runTransaction(transaction: Transaction, lastStates: States): SP[F, Option[Moment]]
+
   /**
     * uc1. handle message from Nymph
     *     transaction -> contract -> moment
@@ -43,6 +52,12 @@ trait WarriorUseCases[F[_]] extends P2PUseCases[F]{
     * @return
     */
   def currentNode(): SP[F, Node]
+
+  /**
+    * query current height
+    * @return
+    */
+  def currentHeight(): SP[F, BigInt]
 
   /**
     * verify data's sign
