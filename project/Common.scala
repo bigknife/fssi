@@ -81,7 +81,7 @@ object Common {
         Project(id, file(dir))
           .settings(settings)
           .settings(
-            libraryDependencies ++= (all.sop ++ all.cli /*++ all.nettyNative*/)
+            libraryDependencies ++= (all.sop ++ all.cli/* ++ all.nettyNative*/)
           )
       def apply(id: String): Project = apply(id, id)
     }

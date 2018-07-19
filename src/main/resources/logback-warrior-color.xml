@@ -17,7 +17,7 @@
             <pattern>[%date] [%level] [%logger{5}@%thread] %msg%n</pattern>
         </encoder>
     </appender>
-    <root level="WARN">
+    <root level="ERROR">
         <appender-ref ref="COLOR1"/>
     </root>
 
