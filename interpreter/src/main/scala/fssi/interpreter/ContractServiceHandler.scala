@@ -19,15 +19,18 @@ import fssi.interpreter.jsonCodec._
 import io.circe.Decoder.Result
 import io.circe.DecodingFailure
 import io.circe.syntax._
+import io.circe.parser._
 import org.slf4j.{Logger, LoggerFactory}
 
 class ContractServiceHandler extends ContractService.Handler[Stack] {
   val logger: Logger = LoggerFactory.getLogger(getClass)
 
-  override def createContractWithoutHash(name: String,
+  override def createContractWithoutHash(owner: Account.ID,
+                                         name: String,
                                          version: String,
                                          code: String): Stack[Contract.UserContract] = Stack {
     Contract.UserContract(
+      owner,
       Contract.Name(name),
       Contract.Version(version),
       Contract.Code(code)
@@ -138,10 +141,11 @@ class ContractServiceHandler extends ContractService.Handler[Stack] {
         case x: Transaction.PublishContract =>
           // name, version, code, sig
           val parameter = PArray(
+            PString(x.contract.owner.value),
             PString(x.contract.name.value),
             PString(x.contract.version.value),
             PString(x.contract.code.base64),
-            PString(x.contract.codeHash.base64)
+            PString(x.contract.codeSign.base64)
           )
           (PublishContract.name, PublishContract.version, None, Some(parameter))
 
@@ -191,16 +195,31 @@ class ContractServiceHandler extends ContractService.Handler[Stack] {
           }
 
         case PublishContract =>
-          //name, version, code, sig
+          //owner, name, version, code, sig
           parameter match {
             case Some(
-                PArray(Array(PString(name), PString(version), PString(code), PString(codeHash)))) =>
+                PArray(
+                  Array(PString(owner),
+                        PString(name),
+                        PString(version),
+                        PString(code),
+                        PString(codeSig)))) =>
               // first, validate the sig
               //   @see: Contract#toBeHashed
               val source =
                 BytesValue(new StringBuilder().append(name).append(version).append(code).toString())
-              val hash = crypto.hash(source)
-              if (hash.base64 != codeHash) Left(ContractTampered(name, version))
+              //MARK: validate signature
+              val userContract = Contract.UserContract(Account.ID(owner),
+                                                       Contract.Name(name),
+                                                       Contract.Version(version),
+                                                       Contract.Code(code),
+                                                       Signature(BytesValue.decodeBase64(codeSig)))
+
+              val validated = crypto.validateSignature(
+                userContract.codeSign,
+                userContract.toBeSigned,
+                crypto.rebuildPubl(BytesValue.decodeHex(userContract.owner.value)))
+              if (!validated) Left(ContractTampered(name, version))
               else {
                 // then, save the contract to invoker's assets
                 val ret: Option[Either[DecodingFailure, AccountState]] =
@@ -208,14 +227,14 @@ class ContractServiceHandler extends ContractService.Handler[Stack] {
                     val codeMapEl: Result[Map[String, ContractCodeItem]] = accountState
                       .assetOf(PublishContract.ASSET_NAME)
                       .map(new String(_, "UTF-8"))
-                      .map(_.asJson.as[Map[String, ContractCodeItem]])
+                      .map(str => parse(str).right.get.as[Map[String, ContractCodeItem]])
                       .getOrElse(Right(Map.empty))
 
                     codeMapEl.right
                       .map { codeMap =>
                         codeMap + (crypto
                           .hash(BytesValue(name + version))
-                          .hex -> ContractCodeItem(name, version, code, codeHash))
+                          .hex -> ContractCodeItem(userContract.owner.value, name, version, code, userContract.codeSign.base64))
                       }
                       .map { items =>
                         accountState.updateAsset(PublishContract.ASSET_NAME,
@@ -267,46 +286,39 @@ class ContractServiceHandler extends ContractService.Handler[Stack] {
 
               functionMap(function.get.name).split("#") match {
                 case Array(fullName, method) =>
-                  val params: Seq[Any] = parameter.map {
-                    case PString(x0)    => Seq(x0)
-                    case PBool(x0)      => Seq(x0)
-                    case PBigDecimal(x0) => Seq(x0)
-                    case PArray(array) =>
-                      array.toSeq.map {
-                        case PString(x1)     => x1
-                        case PBool(x1)       => x1
-                        case PBigDecimal(x1) => x1
-                      }
-                  }.getOrElse(Seq.empty)
-                  /*
                   val params: Seq[Any] = parameter
                     .map {
-                      case PString(x0)    => x0
-                      case PBool(x0)      => x0
-                      case PBigDecimal(x0) => x0
-                        /*
+                      case PString(x0)     => Seq(x0)
+                      case PBool(x0)       => Seq(x0)
+                      case PBigDecimal(x0) => Seq(x0)
                       case PArray(array) =>
                         array.toSeq.map {
                           case PString(x1)     => x1
                           case PBool(x1)       => x1
                           case PBigDecimal(x1) => x1
                         }
-                        */
                     }
-                    .getOrElse(Seq.empty[Any])*/
+                    .getOrElse(Seq.empty)
                   Runner.runAndInstrument(tmpDir,
                                           fullName,
                                           method,
                                           invoker.value,
                                           currentStates,
                                           params.map(_.asInstanceOf[AnyRef])) match {
-                    case Left(t) => Left(ContractRuntimeError(x.name.value, x.version.value, t))
+                    case Left(t) =>
+                      //delete tempDir
+                      better.files.File(tmpDir).delete()
+                      Left(ContractRuntimeError(x.name.value, x.version.value, t))
                     case Right((states, cost)) =>
+                      //delete tempDir
+                      better.files.File(tmpDir).delete()
                       logger.info(
                         s"run contract(name=${x.name.value}, version=${x.version.value}) cost = $cost")
                       Right(StatesChange(currentStates, states))
                   }
                 case _ =>
+                  //delete tempDir
+                  better.files.File(tmpDir).delete()
                   Left(
                     IllegalContractInvoke(
                       x.name.value,
@@ -314,11 +326,14 @@ class ContractServiceHandler extends ContractService.Handler[Stack] {
                       s"function(${function.get.name} = ${functionMap(function.get.name)}) shape is illegal"))
               }
 
-            } else
+            } else {
+              //delete tempDir
+              better.files.File(tmpDir).delete()
               Left(
                 IllegalContractInvoke(x.name.value,
                                       x.version.value,
                                       s"function(${function.get.name}) not found"))
+            }
           }
       }
     }

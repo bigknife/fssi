@@ -68,7 +68,7 @@ class LedgerStoreHandler extends LedgerStore.Handler[Stack] {
 
             case Contract.inner.PublishContract =>
               parameter.map {
-                case PArray(Array(PString(_), PString(_), PString(_), PString(_))) =>
+                case PArray(Array(PString(_), PString(_), PString(_), PString(_), PString(_))) =>
                   Vector(invoker.value)
                 case _ => Vector.empty
               } getOrElse Vector.empty
