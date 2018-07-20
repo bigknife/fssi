@@ -23,8 +23,6 @@ trait P2P[F[_]] extends P2PUseCases[F] {
       _           <- accountSnapshot.startupSnapshotDB()
       node        <- networkService.createNode(accountPublicKey, port, ip, seeds)
       _           <- log.info(s"created node: $node")
-      _           <- ledgerStore.init()
-      _           <- log.info("ledger store initialized.")
       runtimeNode <- networkService.startupP2PNode(node, handler)
       _           <- log.info(s"node started, runtime node: $runtimeNode")
       _           <- networkStore.saveNode(runtimeNode)

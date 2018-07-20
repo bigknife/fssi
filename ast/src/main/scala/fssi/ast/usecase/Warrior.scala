@@ -40,6 +40,10 @@ trait Warrior[F[_]] extends WarriorUseCases[F] with P2P[F] {
     }
     for {
       node <- p2pStartup
+      _    <- ledgerStore.init()
+      _    <- log.info("ledger store initialized.")
+      _    <- contractStore.init()
+      _    <- log.info("contract store initialized")
       _    <- consensusEngine.init(node)
       _    <- log.info("consensus engine initialized.")
       _    <- tryCreateFirstTimeCapusle
@@ -360,10 +364,12 @@ trait Warrior[F[_]] extends WarriorUseCases[F] with P2P[F] {
     * @return
     */
   override def momentsDetermined(moments: Vector[Moment], height: BigInt): SP[F, Unit] = {
-    val saveMoments: SP[F, Unit] = moments.foldLeft(().pureSP[F]) { (acc, n) =>
-      for {
-        _ <- ledgerStore.saveStates(n.newStates.states)
-      } yield ()
+    val saveMoments: SP[F, Vector[Unit]] = moments.foldLeft(Vector.empty[Unit].pureSP[F]) {
+      (acc, n) =>
+        for {
+          pre <- acc
+          x   <- ledgerStore.saveStates(n.newStates.states)
+        } yield pre :+ x
     }
 
     def checkHeight(currentHeight: BigInt): Either[Throwable, Unit] =
@@ -376,11 +382,14 @@ trait Warrior[F[_]] extends WarriorUseCases[F] with P2P[F] {
     }
 
     // save contract snapshot
-    def saveContracts: SP[F, Unit] = {
-      moments.map(_.transaction).foldLeft(().pureSP[F]) {(acc, n) =>
+    def saveContracts: SP[F, Vector[Unit]] = {
+      moments.map(_.transaction).foldLeft(Vector.empty[Unit].pureSP[F]) { (acc, n) =>
         n match {
           case x: Transaction.PublishContract =>
-            acc
+            for {
+              pre <- acc
+              x   <- contractStore.saveContract(x.contract)
+            } yield pre :+ x
           case _ => acc
         }
       }

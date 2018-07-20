@@ -11,6 +11,9 @@ object Contract {
       code: Contract.Code,
       codeSign: Signature = Signature.Empty
   ) extends Contract {
+
+    def key: String = name.value + "#" + version.value
+
     def toBeSigned: BytesValue = {
       val buf = new StringBuilder
       buf.append(owner.value)
