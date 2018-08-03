@@ -76,7 +76,35 @@ object Common {
   )
 
   object prj {
-    
+    def apply(id: String, dir: String): Project = Project(id, file(dir))
+      .settings(settings)
+
+    object utils {
+      def apply(): Project = prj("utils", "utils")
+    }
+
+    object types {
+      def apply(): Project = prj("types", "types")
+    }
+    object typesJson {
+      def apply(): Project = prj("typesJson", "types-json")
+        .settings(
+          libraryDependencies ++= all.circe
+        )
+    }
+    object ast {
+      def apply(): Project = prj("ast", "ast")
+        .settings(
+          libraryDependencies ++= (all.sop ++ all.cats)
+        )
+    }
+
+    object interpreter {
+      def apply(): Project = prj("interpreter", "interpreter")
+        .settings(
+          libraryDependencies ++= all.bcprov
+        )
+    }
   }
 
   val defaultShellScript: Seq[String] = defaultShellScript(
