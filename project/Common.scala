@@ -105,6 +105,13 @@ object Common {
           libraryDependencies ++= all.bcprov
         )
     }
+
+    object tool {
+      def apply(): Project = prj("tool", "tool")
+        .settings(
+          libraryDependencies ++= all.scopt
+        )
+    }
   }
 
   val defaultShellScript: Seq[String] = defaultShellScript(

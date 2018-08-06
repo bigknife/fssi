@@ -55,6 +55,14 @@ object Dependencies {
       val scalap = "0.1.8_BETA"
 
       val nettyNative = "4.1.25.Final"
+
+      val scopt = "3.7.0"
+    }
+
+    lazy val scopt = {
+      Seq(
+        Dpd("com.github.scopt", "scopt", versions.scopt)
+      ).map(_.libraryDependencies)
     }
 
 

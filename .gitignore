@@ -12,6 +12,7 @@
 !.gitignore
 !.scalafmt.conf
 /target/
+/**/target/
 /project/**
 !/project/*.scala
 !/project/*.properties
