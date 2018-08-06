@@ -57,6 +57,14 @@ object Dependencies {
       val nettyNative = "4.1.25.Final"
 
       val scopt = "3.7.0"
+
+      val config = "1.3.2"
+    }
+
+    lazy val config = {
+      Seq(
+        Dpd("com.typesafe", "config", versions.config, autoScalaVersion = false)
+      ).map(_.libraryDependencies)
     }
 
     lazy val scopt = {

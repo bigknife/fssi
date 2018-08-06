@@ -102,7 +102,7 @@ object Common {
     object interpreter {
       def apply(): Project = prj("interpreter", "interpreter")
         .settings(
-          libraryDependencies ++= all.bcprov
+          libraryDependencies ++= (all.bcprov ++ all.scalecube ++ all.config)
         )
     }
 
@@ -110,6 +110,13 @@ object Common {
       def apply(): Project = prj("tool", "tool")
         .settings(
           libraryDependencies ++= all.scopt
+        )
+    }
+
+    object coreNode {
+      def apply(): Project = prj("coreNode", "core-node")
+        .settings(
+          libraryDependencies ++= (all.scopt)
         )
     }
   }

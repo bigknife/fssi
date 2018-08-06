@@ -12,5 +12,6 @@ object components {
     val err: ErrorM[F]
 
     val crypto: Crypto[F]
+    val network: Network[F]
   }
 }

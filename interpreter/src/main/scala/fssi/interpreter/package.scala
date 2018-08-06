@@ -3,7 +3,6 @@ package fssi
 import cats.data.Kleisli
 import cats.effect.IO
 
-
 package object interpreter {
   type Stack[A] = Kleisli[IO, Setting, A]
 
@@ -16,10 +15,10 @@ package object interpreter {
     }
   }
 
-  object handlers extends
-      CryptoHandler.Implicits
+  object handlers
+      extends CryptoHandler.Implicits
+      with NetworkHandler.Implicits
       with bigknife.sop.effect.error.ErrorMInstance
-
 
   object runner {
     import bigknife.sop._, implicits._
@@ -27,11 +26,10 @@ package object interpreter {
     import ast.components.Model._
     import handlers._
 
-
     def runStack[A](p: SP[Model.Op, A]): Stack[A]                         = p.interpret[Stack]
     def runIO[A](p: SP[Model.Op, A], setting: Setting): cats.effect.IO[A] = runStack(p)(setting)
     def runIOAttempt[A](p: SP[Model.Op, A],
-      setting: Setting): cats.effect.IO[Either[Throwable, A]] =
+                        setting: Setting): cats.effect.IO[Either[Throwable, A]] =
       runStack(p)(setting).attempt
   }
 }
