@@ -45,3 +45,5 @@
 
 /.ensime_cache/
 /crypto/target/
+
+!/**/docs/

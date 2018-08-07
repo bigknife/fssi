@@ -11,7 +11,15 @@ import bigknife.sop.implicits._
 @sp trait Network[F[_]] {
   /** startup p2p node
     */
-  def startup(handler: JsonMessageHandler): P[F, Node]
+  def startupP2PNode(handler: JsonMessageHandler): P[F, Node]
+
+  /** shutdown current node
+    */
+  def shutdownP2PNode(node: Node): P[F, Unit]
+
+  /** send json message to some nodes
+    */
+  def broadcastMessage(message: JsonMessage): P[F, Unit]
 
   /** bind an account to a node, then all actions will
     * be considered to be acted by this account

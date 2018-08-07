@@ -21,6 +21,8 @@ lazy val pInterperter = interpreter()
   .dependsOn(pAst)
   .dependsOn(pTypesJson)
 
+lazy val pJsonRpc = jsonrpc()
+
 lazy val pTool = tool()
   .dependsOn(pInterperter)
   .settings(
@@ -43,6 +45,24 @@ lazy val pCoreNode = coreNode()
   .dependsOn(pInterperter)
   .settings(
     mainClass in assembly := Some("fssi.corenode.CoreNodeMain"),
+    assemblyMergeStrategy in assembly := {
+      case "module-info.class"          => MergeStrategy.discard
+      case PathList("META-INF", xs @ _) => MergeStrategy.discard
+      case x =>
+        val oldStrategy = (assemblyMergeStrategy in assembly).value
+        oldStrategy(x)
+    },
+    assemblyOption in assembly := (assemblyOption in assembly).value
+      .copy(prependShellScript = Some(defaultShellScript)),
+    assemblyJarName in assembly := s"${name.value}",
+    test in assembly := {}
+  )
+
+lazy val pEdgeNode = edgeNode()
+  .dependsOn(pInterperter)
+  .dependsOn(pJsonRpc)
+  .settings(
+    mainClass in assembly := Some("fssi.edgenode.EdgeNodeMain"),
     assemblyMergeStrategy in assembly := {
       case "module-info.class"          => MergeStrategy.discard
       case PathList("META-INF", xs @ _) => MergeStrategy.discard

@@ -20,6 +20,10 @@ object HexString {
       }
     }
 
-    HexString(loop(hexString.toVector, Vector.empty).toArray)
+    // sometimes, the hexString is with '0x/0X' prefix, remove them
+    val str = if (hexString.startsWith("0x") || hexString.startsWith("0X")) hexString.drop(2) else hexString
+
+
+    HexString(loop(str.toVector, Vector.empty).toArray)
   }
 }

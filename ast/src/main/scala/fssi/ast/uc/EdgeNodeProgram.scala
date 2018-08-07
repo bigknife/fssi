@@ -7,11 +7,11 @@ import types.syntax._
 import bigknife.sop._
 import bigknife.sop.implicits._
 
-trait CoreNodeProgram[F[_]] {
+trait EdgeNodeProgram[F[_]] {
   val model: components.Model[F]
   import model._
 
-  /** Start up a core node.
+  /** Start up a edge node.
     * @return node info
     */
   def startup(handler: JsonMessageHandler): SP[F, Node] = for {
@@ -20,14 +20,18 @@ trait CoreNodeProgram[F[_]] {
     //TODO: some other components should be initialized here
   } yield n2
 
-  /** Shutdown core node
+  def broadcastMessage(message: JsonMessage): SP[F, Unit] = for {
+    _ <- network.broadcastMessage(message)
+  } yield ()
+
+  /** Shutdown edge node
     */
   def shutdown(node: Node): SP[F, Unit] = for {
     _ <- network.shutdownP2PNode(node)
   } yield()
 }
-object CoreNodeProgram {
-  def apply[F[_]](implicit M: components.Model[F]): CoreNodeProgram[F] = new CoreNodeProgram[F] {
+object EdgeNodeProgram {
+  def apply[F[_]](implicit M: components.Model[F]): EdgeNodeProgram[F] = new EdgeNodeProgram[F] {
     val model: components.Model[F] = M
   }
 }

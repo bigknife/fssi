@@ -76,8 +76,9 @@ object Common {
   )
 
   object prj {
-    def apply(id: String, dir: String): Project = Project(id, file(dir))
-      .settings(settings)
+    def apply(id: String, dir: String): Project =
+      Project(id, file(dir))
+        .settings(settings)
 
     object utils {
       def apply(): Project = prj("utils", "utils")
@@ -87,37 +88,60 @@ object Common {
       def apply(): Project = prj("types", "types")
     }
     object typesJson {
-      def apply(): Project = prj("typesJson", "types-json")
-        .settings(
-          libraryDependencies ++= all.circe
-        )
+      def apply(): Project =
+        prj("typesJson", "types-json")
+          .settings(
+            libraryDependencies ++= all.circe
+          )
     }
     object ast {
-      def apply(): Project = prj("ast", "ast")
-        .settings(
-          libraryDependencies ++= (all.sop ++ all.cats)
-        )
+      def apply(): Project =
+        prj("ast", "ast")
+          .settings(
+            libraryDependencies ++= (all.sop ++ all.cats)
+          )
     }
 
     object interpreter {
-      def apply(): Project = prj("interpreter", "interpreter")
-        .settings(
-          libraryDependencies ++= (all.bcprov ++ all.scalecube ++ all.config)
-        )
+      def apply(): Project =
+        prj("interpreter", "interpreter")
+          .settings(
+            libraryDependencies ++= (all.bcprov ++ all.scalecube ++ all.config)
+          )
+    }
+
+    object jsonrpc {
+      def apply(): Project =
+        prj("jsonrpc", "jsonrpc")
+          .settings(
+            libraryDependencies ++= all.cats,
+            libraryDependencies ++= all.http4s,
+            libraryDependencies ++= all.circe
+          )
     }
 
     object tool {
-      def apply(): Project = prj("tool", "tool")
-        .settings(
-          libraryDependencies ++= all.scopt
-        )
+      def apply(): Project =
+        prj("tool", "tool")
+          .settings(
+            libraryDependencies ++= all.scopt
+          )
     }
 
     object coreNode {
-      def apply(): Project = prj("coreNode", "core-node")
-        .settings(
-          libraryDependencies ++= (all.scopt)
-        )
+      def apply(): Project =
+        prj("coreNode", "core-node")
+          .settings(
+            libraryDependencies ++= (all.scopt)
+          )
+    }
+
+    object edgeNode {
+      def apply(): Project =
+        prj("edgeNode", "edge-node")
+          .settings(
+            libraryDependencies ++= (all.scopt)
+          )
     }
   }
 
@@ -133,10 +157,9 @@ object Common {
 
   def defaultShellScript(opts: Seq[String], javaOpts: Seq[String] = Seq.empty): Seq[String] = {
     val javaOptsString = javaOpts.map(_ + " ").mkString
-    val optsString = opts.map(_ + " ").mkString
-    Seq(
-      "#!/usr/bin/env sh",
-      s"""exec java $optsString -jar $javaOptsString$$JAVA_OPTS "$$0" "$$@"""",
-      "")
+    val optsString     = opts.map(_ + " ").mkString
+    Seq("#!/usr/bin/env sh",
+        s"""exec java $optsString -jar $javaOptsString$$JAVA_OPTS "$$0" "$$@"""",
+        "")
   }
 }
