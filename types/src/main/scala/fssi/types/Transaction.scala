@@ -67,4 +67,10 @@ object Transaction {
       signature: Signature,
       timestamp: Long
   ) extends Transaction
+
+  trait Implicits {
+    implicit val transactionOrdering: Ordering[Transaction] = new Ordering[Transaction] {
+      def compare(t1: Transaction, t2: Transaction): Int = (t1.timestamp - t2.timestamp).toInt
+    }
+  }
 }

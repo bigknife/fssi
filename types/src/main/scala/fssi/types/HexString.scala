@@ -26,4 +26,6 @@ object HexString {
 
     HexString(loop(str.toVector, Vector.empty).toArray)
   }
+
+  def empty: HexString = HexString(Array.emptyByteArray)
 }

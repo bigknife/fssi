@@ -6,7 +6,6 @@ package fssi.types
   * @param name the unique name of asset
   */
 case class Asset(
-  owner: Account.ID,
   name: UniqueName,
-  data: DataBlock.Index
+  data: Data
 )

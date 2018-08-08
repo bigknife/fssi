@@ -1,6 +1,7 @@
 package fssi.types
 
 import fssi.utils._
+import scala.collection._
 
 /**
   * Contract is the engine to drive the chain world state to change
@@ -12,6 +13,13 @@ sealed trait Contract {
 
 object Contract {
 
+  trait Implicits {
+    implicit val contractMethodOrdering: Ordering[Method] = new Ordering[Method] {
+      def compare(x1: Method, x2: Method): Int =
+        Ordering[String].compare(x1.toString, x2.toString)
+    }
+  }
+
   /** Contract method
     * there is no parameters info, so override methods can't be considered as a
     *  contract method.
@@ -19,12 +27,14 @@ object Contract {
   case class Method(
       className: String,
       methodName: String
-  )
+  ) {
+    override def toString(): String = s"$className#$methodName"
+  }
 
   /** Contract meta info
     */
   case class Meta(
-      methods: Vector[Method]
+      methods: immutable.TreeSet[Method]
   )
 
   /**

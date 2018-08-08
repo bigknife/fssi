@@ -18,6 +18,7 @@ package object interpreter {
   object handlers
       extends CryptoHandler.Implicits
       with NetworkHandler.Implicits
+      with LedgerHandler.Implicits
       with bigknife.sop.effect.error.ErrorMInstance
 
   object runner {
@@ -32,4 +33,6 @@ package object interpreter {
                         setting: Setting): cats.effect.IO[Either[Throwable, A]] =
       runStack(p)(setting).attempt
   }
+
+  object cryptoUtil extends util.CryptoUtil
 }
