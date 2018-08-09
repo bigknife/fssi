@@ -1,7 +1,10 @@
 package fssi
 
+import utils.trie._
+
 import cats.data.Kleisli
 import cats.effect.IO
+import java.io._
 
 package object interpreter {
   type Stack[A] = Kleisli[IO, Setting, A]
@@ -36,5 +39,20 @@ package object interpreter {
     def runIOAttempt[A](p: SP[Model.Op, A],
                         setting: Setting): cats.effect.IO[Either[Throwable, A]] =
       runStack(p)(setting).attempt
+  }
+
+  /** a store based leveldb, used for utils.trie
+    */
+  object levelDBStore {
+    def apply(path: String): Store = new LevelDBStore {
+      override val dbFile: File = {
+        val f = new java.io.File(path)
+        if (!f.exists()) {
+          f.mkdirs()
+        }
+        else require(f.isDirectory)
+        f
+      }
+    }
   }
 }

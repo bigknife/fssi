@@ -109,7 +109,15 @@ object Common {
       def apply(): Project =
         prj("interpreter", "interpreter")
           .settings(
-            libraryDependencies ++= (all.bcprov ++ all.scalecube ++ all.config)
+            libraryDependencies ++= all.cats,
+            libraryDependencies ++= all.bcprov,
+            libraryDependencies ++= all.h2,
+            libraryDependencies ++= all.circe,
+            libraryDependencies ++= all.scalecube,
+            libraryDependencies ++= all.betterfiles,
+            libraryDependencies ++= all.leveldb,
+            libraryDependencies ++= all.scapap,
+            libraryDependencies ++= all.config
           )
     }
 
