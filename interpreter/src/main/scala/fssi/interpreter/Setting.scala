@@ -7,9 +7,14 @@ import java.io._
 sealed trait Setting
 
 object Setting {
+
   /** default setting
     */
   case object DefaultSetting extends Setting
+
+  /** Setting for command line tool
+    */
+  case class ToolSetting() extends Setting
 
   /** P2P node setting
     */

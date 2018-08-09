@@ -25,8 +25,8 @@ trait ToolProgram[F[_]] {
   }
 }
 
-object AccountProgram {
-  def apply[F[_]](implicit M: components.Model[F]): AccountProgram[F] = new AccountProgram[F] {
+object ToolProgram {
+  def apply[F[_]](implicit M: components.Model[F]): ToolProgram[F] = new ToolProgram[F] {
     val model: components.Model[F] = M
   }
 }
