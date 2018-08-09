@@ -37,6 +37,4 @@ package object interpreter {
                         setting: Setting): cats.effect.IO[Either[Throwable, A]] =
       runStack(p)(setting).attempt
   }
-
-  object cryptoUtil extends util.CryptoUtil
 }

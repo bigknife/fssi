@@ -1,6 +1,4 @@
-package fssi
-package interpreter
-package util
+package fssi.utils
 
 sealed trait Once[A] extends SafeVar[A] {
   override protected def safeUpdate(a: => A): Unit = {

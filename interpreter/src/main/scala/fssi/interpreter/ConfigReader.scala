@@ -1,6 +1,5 @@
 package fssi
 package interpreter
-package util
 
 import types._
 import com.typesafe.config._

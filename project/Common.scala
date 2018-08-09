@@ -82,6 +82,9 @@ object Common {
 
     object utils {
       def apply(): Project = prj("utils", "utils")
+        .settings(
+          libraryDependencies ++= (all.bcprov)
+        )
     }
 
     object types {
