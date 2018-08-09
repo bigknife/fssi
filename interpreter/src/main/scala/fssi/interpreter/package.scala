@@ -44,15 +44,13 @@ package object interpreter {
   /** a store based leveldb, used for utils.trie
     */
   object levelDBStore {
-    def apply(path: String): Store = new LevelDBStore {
-      override val dbFile: File = {
-        val f = new java.io.File(path)
-        if (!f.exists()) {
-          f.mkdirs()
-        }
-        else require(f.isDirectory)
-        f
-      }
+    def apply(path: File): Store = new LevelDBStore {
+      override val dbFile: File = path
     }
   }
+
+  /** json codecs
+    */
+  val jsonCodecs = types.json.implicits
+
 }

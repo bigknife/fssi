@@ -19,5 +19,5 @@ import java.io._
     * which means, block has correct hashes, correct height etc.
     * @param block a legal block.
     */
-  def saveBlock(block: Block): P[F, Block]
+  def saveBlock(block: Block): P[F, Unit]
 }
