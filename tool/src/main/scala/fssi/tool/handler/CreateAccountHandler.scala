@@ -12,11 +12,11 @@ import io.circe.syntax._
 import json.implicits._
 
 trait CreateAccountHandler {
-  val agentProgram = AccountProgram[components.Model.Op]
+  val toolProgram = ToolProgram[components.Model.Op]
 
   def apply(password: String): Unit = {
     val setting: Setting = Setting()
-    val account          = runner.runIO(agentProgram.createAccount(password), setting).unsafeRunSync
+    val account          = runner.runIO(toolProgram.createAccount(password), setting).unsafeRunSync
     println(showAccount(account))
   }
 

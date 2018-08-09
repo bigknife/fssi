@@ -7,7 +7,7 @@ import types.syntax._
 import bigknife.sop._
 import bigknife.sop.implicits._
 
-trait AccountProgram[F[_]] {
+trait ToolProgram[F[_]] {
   val model: components.Model[F]
   import model._
 
