@@ -6,7 +6,7 @@ import ast._
 
 import scala.collection._
 
-class LedgerHandler extends Ledger.Handler[Stack] {
+class BlockServiceHandler extends BlockService.Handler[Stack] {
   override def createGenesisBlock(chainID: String): Stack[Block] = Stack {
     val b1 = Block(
       hash = Hash.empty,
@@ -76,11 +76,11 @@ class LedgerHandler extends Ledger.Handler[Stack] {
 
 }
 
-object LedgerHandler {
-  private val instance = new LedgerHandler
+object BlockServiceHandler {
+  private val instance = new BlockServiceHandler
 
   trait Implicits {
-    implicit val ledgerHandlerInstance: LedgerHandler = instance
+    implicit val blockServiceHandlerInstance: BlockServiceHandler = instance
   }
 
 }

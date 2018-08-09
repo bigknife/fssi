@@ -13,5 +13,10 @@ object components {
 
     val crypto: Crypto[F]
     val network: Network[F]
+    val blockService: BlockService[F]
+    val blockStore: BlockStore[F]
+    val tokenStore: TokenStore[F]
+    val contractStore: ContractStore[F]
+    val contractDataStore: ContractDataStore[F]
   }
 }

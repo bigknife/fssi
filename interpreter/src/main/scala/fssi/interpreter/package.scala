@@ -18,7 +18,11 @@ package object interpreter {
   object handlers
       extends CryptoHandler.Implicits
       with NetworkHandler.Implicits
-      with LedgerHandler.Implicits
+      with BlockServiceHandler.Implicits
+      with BlockStoreHandler.Implicits
+      with TokenStoreHandler.Implicits
+      with ContractStoreHandler.Implicits
+      with ContractDataStoreHandler.Implicits
       with bigknife.sop.effect.error.ErrorMInstance
 
   object runner {
