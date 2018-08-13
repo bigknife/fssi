@@ -11,11 +11,13 @@ language: scala
 scala:
   - 2.12.4
 
+sbt_args: -no-colors -J-Xss2m
+
 jdk:
   - oraclejdk8
 
 script:
-  - sbt ++$TRAVIS_SCALA_VERSION ";project interpreter; test; coverageReport"
+  - sbt ++$TRAVIS_SCALA_VERSION test
 
 after_success:
   - export CODECOV_TOKEN="6498d3cf-c13e-4321-bda9-03ed07514cf6"
