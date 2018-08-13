@@ -15,7 +15,7 @@ trait CreateAccountHandler {
   val toolProgram = ToolProgram[components.Model.Op]
 
   def apply(password: String): Unit = {
-    val setting: Setting = Setting()
+    val setting: Setting = Setting.ToolSetting()
     val account          = runner.runIO(toolProgram.createAccount(password), setting).unsafeRunSync
     println(showAccount(account))
   }

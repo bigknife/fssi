@@ -9,10 +9,12 @@ import handler._
 object ToolMain extends App {
 
   CmdArgsParser.parse(args, Empty) match {
-    case Some(result) => result match {
-      case CreateAccountArgs(password) => createAccount(password)
-      case _ =>
-    }
+    case Some(result) =>
+      result match {
+        case CreateAccountArgs(password)       => createAccount(password)
+        case CreateChainArgs(dataDir, chainID) => createChain(dataDir, chainID)
+        case _                                 =>
+      }
     case None =>
   }
 }

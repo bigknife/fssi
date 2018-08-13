@@ -1,7 +1,7 @@
 package fssi
 package interpreter
 
-import util._
+import utils._
 import types._
 import ast._
 

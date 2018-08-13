@@ -9,8 +9,8 @@ import ast._, uc._
 
 class AccountProgramSpec extends FunSuite with GivenWhenThen {
 
-  val agentProgram = AccountProgram[components.Model.Op]
-  val setting = Setting()
+  val agentProgram = ToolProgram[components.Model.Op]
+  val setting = Setting.DefaultSetting
 
   test("create account") {
     Given("a password: 88888888")

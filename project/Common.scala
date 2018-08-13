@@ -65,14 +65,15 @@ object Common {
         "-Ywarn-value-discard" // Warn when non-Unit expression results are unused.
       )
     },
-    scalacOptions in (Compile, console) --= Seq("-Ywarn-unused:imports", "-Xfatal-warnings"),
+    //scalacOptions in (Compile, console) --= Seq("-Ywarn-unused:imports", "-Xfatal-warnings"),
     resolvers += Resolver.sonatypeRepo("releases"),
     addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.4"),
     addCompilerPlugin("org.scalameta"  % "paradise"        % "3.0.0-M10" cross CrossVersion.full),
     licenses += ("Apache-2.0", url("https://opensource.org/licenses/Apache-2.0")),
     bintrayRepository := "maven",
     libraryDependencies ++= all.scalatest,
-    libraryDependencies ++= all.log
+    libraryDependencies ++= all.log,
+    scalacOptions in (Compile, console) := Seq()
   )
 
   object prj {
@@ -81,7 +82,11 @@ object Common {
         .settings(settings)
 
     object utils {
-      def apply(): Project = prj("utils", "utils")
+      def apply(): Project =
+        prj("utils", "utils")
+          .settings(
+            libraryDependencies ++= (all.bcprov)
+          )
     }
 
     object types {
@@ -106,7 +111,15 @@ object Common {
       def apply(): Project =
         prj("interpreter", "interpreter")
           .settings(
-            libraryDependencies ++= (all.bcprov ++ all.scalecube ++ all.config)
+            libraryDependencies ++= all.cats,
+            libraryDependencies ++= all.bcprov,
+            libraryDependencies ++= all.h2,
+            libraryDependencies ++= all.circe,
+            libraryDependencies ++= all.scalecube,
+            libraryDependencies ++= all.betterfiles,
+            libraryDependencies ++= all.leveldb,
+            libraryDependencies ++= all.scapap,
+            libraryDependencies ++= all.config
           )
     }
 

@@ -1,7 +1,10 @@
 package fssi
 
+import utils.trie._
+
 import cats.data.Kleisli
 import cats.effect.IO
+import java.io._
 
 package object interpreter {
   type Stack[A] = Kleisli[IO, Setting, A]
@@ -18,7 +21,12 @@ package object interpreter {
   object handlers
       extends CryptoHandler.Implicits
       with NetworkHandler.Implicits
-      with LedgerHandler.Implicits
+      with BlockServiceHandler.Implicits
+      with BlockStoreHandler.Implicits
+      with TokenStoreHandler.Implicits
+      with ContractStoreHandler.Implicits
+      with ContractDataStoreHandler.Implicits
+      with ChainStoreHandler.Implicits
       with bigknife.sop.effect.error.ErrorMInstance
 
   object runner {
@@ -34,5 +42,16 @@ package object interpreter {
       runStack(p)(setting).attempt
   }
 
-  object cryptoUtil extends util.CryptoUtil
+  /** a store based leveldb, used for utils.trie
+    */
+  object levelDBStore {
+    def apply(path: File): Store = new LevelDBStore {
+      override val dbFile: File = path
+    }
+  }
+
+  /** json codecs
+    */
+  val jsonCodecs = types.json.implicits
+
 }

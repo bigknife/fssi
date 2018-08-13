@@ -1,12 +1,10 @@
-package fssi
-package interpreter
-package util
+package fssi.utils
 
 import java.util.concurrent.atomic.AtomicReference
 
 trait SafeVar[A] { outter =>
 
-  private[util] val a: AtomicReference[Option[A]] = new AtomicReference[Option[A]](None)
+  private[utils] val a: AtomicReference[Option[A]] = new AtomicReference[Option[A]](None)
 
   def isDefined: Boolean = a.get().isDefined
   def isEmpty: Boolean   = a.get().isEmpty
@@ -29,7 +27,7 @@ trait SafeVar[A] { outter =>
   }
 
   def map[B](f: A => B): SafeVar[B] = new SafeVar[B] {
-    private[util] override val a: AtomicReference[Option[B]] =
+    private[utils] override val a: AtomicReference[Option[B]] =
       new AtomicReference[Option[B]](outter.a.get().map(f))
   }
 
