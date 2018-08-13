@@ -26,6 +26,7 @@ package object interpreter {
       with TokenStoreHandler.Implicits
       with ContractStoreHandler.Implicits
       with ContractDataStoreHandler.Implicits
+      with ChainStoreHandler.Implicits
       with bigknife.sop.effect.error.ErrorMInstance
 
   object runner {

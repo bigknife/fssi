@@ -11,4 +11,8 @@ object CmdArgs {
     */
   case class CreateAccountArgs(password: String = "GoodLuck") extends CmdArgs
 
+  /** CreateChain Arguments
+    */
+  case class CreateChainArgs(dataDir: java.io.File, chainID: String) extends CmdArgs
+
 }

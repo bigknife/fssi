@@ -18,4 +18,18 @@ object CmdArgsParser extends OptionParser[CmdArgs]("fssitool") {
         .required()
         .action((x, c) => c.asInstanceOf[CreateAccountArgs].copy(password = x))
     )
+
+  cmd("CreateChain")
+    .action((_, _) => CreateChainArgs(new java.io.File("."), "testnet"))
+    .text("Create a chain")
+    .children(
+      opt[java.io.File]("data-dir")
+        .abbr("d")
+        .required()
+        .action((x, c) => c.asInstanceOf[CreateChainArgs].copy(dataDir = x)),
+      opt[String]("chain-id")
+        .abbr("id")
+        .required()
+        .action((x, c) => c.asInstanceOf[CreateChainArgs].copy(chainID = x))
+    )
 }

@@ -31,10 +31,12 @@ trait ToolProgram[F[_]] {
     */
   def createChain(dataDir: File, chainID: String): SP[F, Unit] = {
     for {
-      _            <- blockStore.initialize(dataDir)
-      _            <- tokenStore.initialize(dataDir)
-      _            <- contractStore.initialize(dataDir)
-      _            <- contractDataStore.initialize(dataDir)
+      createRoot   <- chainStore.createChainRoot(dataDir, chainID)
+      root         <- err.either(createRoot)
+      _            <- blockStore.initialize(root)
+      _            <- tokenStore.initialize(root)
+      _            <- contractStore.initialize(root)
+      _            <- contractDataStore.initialize(root)
       genesisBlock <- blockService.createGenesisBlock(chainID)
       _            <- blockStore.saveBlock(genesisBlock)
     } yield ()

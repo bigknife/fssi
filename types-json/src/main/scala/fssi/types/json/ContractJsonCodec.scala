@@ -13,12 +13,48 @@ import implicits._
 import scala.collection._
 
 trait ContractJsonCodec {
-  implicit val contractPrimaryParameterJsonEncoder: Encoder[Contract.Parameter.PrimaryParameter] = (a: Contract.Parameter.PrimaryParameter) => a match {
-    case x: Contract.Parameter.PString => Json.fromString(x.value)
-    case x: Contract.Parameter.PBigDecimal => x.value.asJson
-    case x: Contract.Parameter.PBool => Json.fromBoolean(x.value)
+  implicit val contractPrimaryParameterJsonEncoder: Encoder[Contract.Parameter.PrimaryParameter] =
+    (a: Contract.Parameter.PrimaryParameter) =>
+      a match {
+        case x: Contract.Parameter.PString     => Json.fromString(x.value)
+        case x: Contract.Parameter.PBigDecimal => x.value.asJson
+        case x: Contract.Parameter.PBool       => Json.fromBoolean(x.value)
+    }
+
+  implicit val contractPrimaryParameterJsonDecoder: Decoder[Contract.Parameter.PrimaryParameter] =
+    (a: HCursor) => {
+      a.as[String].right.map(x => Contract.Parameter.PString(x)) match {
+        case Left(_) =>
+          a.as[java.math.BigDecimal].right.map(x => Contract.Parameter.PBigDecimal(x)) match {
+            case Left(_) =>
+              a.as[Boolean].right.map(x => Contract.Parameter.PBool(x))
+            case y @ Right(_) => y
+          }
+        case x @ Right(_) => x
+      }
+    }
+
+  implicit val contractPArrayJsonEncoder: Encoder[Contract.Parameter.PArray] =
+    (a: Contract.Parameter.PArray) => a.asJson
+
+  implicit val contractPArrayJsonDecoder: Decoder[Contract.Parameter.PArray] =
+    (a: HCursor) => a.as[Contract.Parameter.PArray]
+
+
+  implicit val contractParamJsonEncoder: Encoder[Contract.Parameter] = (a: Contract.Parameter) => {
+    a match {
+      case x: Contract.Parameter.PrimaryParameter => x.asJson
+      case x: Contract.Parameter.PArray => x.asJson
+    }
   }
-  implicit val contractPrimaryParameterJsonDecoder: Decoder[Contract.Parameter.PrimaryParameter] = (a: HCursor) => 
+
+  implicit val contractParamJsonDecoder: Decoder[Contract.Parameter] = (a: HCursor) => {
+    a.as[Contract.Parameter.PrimaryParameter] match {
+      case Left(t) =>
+        a.as[Contract.Parameter.PArray]
+      case x@Right(_) => x
+    }
+  }
 
   implicit val contractMethodJsonEncoder: Encoder[Contract.Method] = (a: Contract.Method) =>
     Json.obj(
