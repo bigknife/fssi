@@ -6,7 +6,7 @@ import types._
 import types.syntax._
 
 class CryptoHandlerTest extends FunSuite with GivenWhenThen {
-  val setting = Setting()
+  val setting = Setting.DefaultSetting
   val crypto  = new CryptoHandler
 
   test("create keypair") {
