@@ -8,6 +8,24 @@ sealed trait BytesUtil {
 
   def toBase64(bytes: Array[Byte]): String =
     java.util.Base64.getEncoder.encodeToString(bytes)
+
+  def decodeHex(hex: String): Array[Byte] = {
+
+    // seq size should be
+    def loop(seq: Vector[Char], bytes: Vector[Byte]): Vector[Byte] = {
+      seq.splitAt(2) match {
+        case (Vector(), _) => bytes
+        case (Vector(c1, c2), t) =>
+          loop(t,
+               bytes :+ ((Integer.parseInt(c1.toString, 16) << 4) | Integer.parseInt(c2.toString,
+                                                                                     16)).toByte)
+      }
+    }
+
+    loop(hex.toVector, Vector.empty).toArray
+  }
+
+  def decodeBase64(base64: String): Array[Byte] = java.util.Base64.getDecoder.decode(base64)
 }
 
 object BytesUtil extends BytesUtil

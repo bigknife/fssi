@@ -4,21 +4,30 @@ package json
 
 import types._
 import io.circe._
+import io.circe.syntax._
+import implicits._
 
 trait AccountCodec {
+  implicit val accountIDEncoder: Encoder[Account.ID] = (a: Account.ID) => a.value.asJson
+  implicit val accountIDDecoder: Decoder[Account.ID] = (h: HCursor) => {
+    for {
+      value <- h.as[HexString]
+    } yield Account.ID(value)
+  }
+
   implicit val accountEncoder: Encoder[Account] = (a: Account) => {
     Json.obj(
-      "publicKey" -> Json.fromString(a.publicKey.toString),
-      "encryptedPrivateKey" -> Json.fromString(a.encryptedPrivateKey.toString),
-      "iv" -> Json.fromString(a.iv.toString)
+      "publicKey" -> a.publicKey.asJson,
+      "encryptedPrivateKey" -> a.encryptedPrivateKey.asJson,
+      "iv" -> a.iv.asJson
     )
   }
 
   implicit val accountDecoder: Decoder[Account] = (c: HCursor) => {
     for {
-      publicKey <- c.get[String]("publicKey")
-      encryptedPrivateKey <- c.get[String]("encryptedPrivateKey")
-      iv <- c.get[String]("iv")
-    } yield Account(HexString.decode(publicKey), HexString.decode(encryptedPrivateKey), HexString.decode(iv))
+      publicKey <- c.get[HexString]("publicKey")
+      encryptedPrivateKey <- c.get[HexString]("encryptedPrivateKey")
+      iv <- c.get[HexString]("iv")
+    } yield Account(publicKey, encryptedPrivateKey, iv)
   }
 }
