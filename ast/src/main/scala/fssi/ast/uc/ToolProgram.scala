@@ -6,8 +6,8 @@ import types._
 import types.syntax._
 import bigknife.sop._
 import bigknife.sop.implicits._
-
 import java.io.File
+import java.nio.file.Path
 
 trait ToolProgram[F[_]] {
   val model: components.Model[F]
@@ -39,6 +39,21 @@ trait ToolProgram[F[_]] {
       _            <- contractDataStore.initialize(root)
       genesisBlock <- blockService.createGenesisBlock(chainID)
       _            <- blockStore.saveBlock(genesisBlock)
+    } yield ()
+  }
+
+  /***
+    * compile smart contract
+    * @param sourceDir path to read contract source code
+    * @param destDir path to store contract jar
+    */
+  def compileContract(sourceDir: Path, destDir: Path, format: OutputFormat): SP[F, Unit] = {
+    for {
+      classPathEither ← contractService.compileContractSourceCode(sourceDir)
+      classPath       ← err.either(classPathEither)
+      _               ← contractService.checkDeterministicOfClass(classPath)
+      bytesValue      ← contractService.zipContract(classPath)
+      _               ← contractService.outputZipFile(bytesValue, destDir, format)
     } yield ()
   }
 }

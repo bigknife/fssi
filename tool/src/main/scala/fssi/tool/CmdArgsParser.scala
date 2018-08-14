@@ -3,6 +3,7 @@ package tool
 
 import scopt._
 import CmdArgs._
+import fssi.types.OutputFormat
 
 object CmdArgsParser extends OptionParser[CmdArgs]("fssitool") {
 
@@ -31,5 +32,26 @@ object CmdArgsParser extends OptionParser[CmdArgs]("fssitool") {
         .abbr("id")
         .required()
         .action((x, c) => c.asInstanceOf[CreateChainArgs].copy(chainID = x))
+    )
+
+  cmd("CompileContract")
+    .text("Compile smart contract")
+    .children(
+      opt[java.io.File]("source-code")
+        .abbr("f")
+        .required()
+        .validate(f ⇒
+          if (f.exists() && f.isDirectory) Right(()) else Left(s"dir ${f.getPath} not found"))
+        .action((f, c) ⇒ c.asInstanceOf[CompileContractArgs].copy(projectDir = f)),
+      opt[java.io.File]("output")
+        .abbr("o")
+        .required()
+        .validate(f ⇒
+          if (f.exists() && f.isDirectory) Right(()) else Left(s"dir ${f.getPath} not found"))
+        .action((f, c) ⇒ c.asInstanceOf[CompileContractArgs].copy(targetDir = f)),
+      opt[String]("format")
+        .abbr("t")
+        .optional()
+        .action((t, c) ⇒ c.asInstanceOf[CompileContractArgs].copy(outputFormat = OutputFormat(t)))
     )
 }

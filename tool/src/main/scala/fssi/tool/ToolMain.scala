@@ -13,7 +13,9 @@ object ToolMain extends App {
       result match {
         case CreateAccountArgs(password)       => createAccount(password)
         case CreateChainArgs(dataDir, chainID) => createChain(dataDir, chainID)
-        case _                                 =>
+        case CompileContractArgs(projectDir, targetDir, format) =>
+          compileContract(projectDir, targetDir, format)
+        case _ =>
       }
     case None =>
   }
