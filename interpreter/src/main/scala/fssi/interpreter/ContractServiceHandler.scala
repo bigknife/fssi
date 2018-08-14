@@ -60,7 +60,7 @@ class ContractServiceHandler extends ContractService.Handler[Stack] {
                              targetDir: Path,
                              format: OutputFormat): Stack[Unit] = Stack {
     def writeBytes(f: Array[Byte]): Unit =
-      better.files.File(targetDir.toString).outputStream.map(os ⇒ os.write(f))
+      better.files.File(targetDir.toString).outputStream.map(os ⇒ os.write(f)).map(_=> ())
 
     format match {
       case Jar    ⇒ writeBytes(bytesValue.value)

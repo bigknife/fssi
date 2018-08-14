@@ -69,15 +69,15 @@ trait Compiler {
           Left(diagnosticCollector.getDiagnostics.asScala.toVector.map(_.getMessage(null)))
       }
     }
+  }
 
-    def findAllJavaFiles(src: Path): Vector[String] = {
-      def findJavaFileByDir(dir: File, accFiles: Vector[String]): Vector[String] = dir match {
-        case f if f.isFile && f.getAbsolutePath.endsWith(".java") ⇒ accFiles :+ dir.getAbsolutePath
-        case f if f.isFile                                        ⇒ accFiles
-        case d                                                    ⇒ d.listFiles.toVector.foldLeft(accFiles)((f, v) ⇒ findJavaFileByDir(v, f))
-      }
-      findJavaFileByDir(src.toFile, Vector.empty)
+ private def findAllJavaFiles(src: Path): Vector[String] = {
+    def findJavaFileByDir(dir: File, accFiles: Vector[String]): Vector[String] = dir match {
+      case f if f.isFile && f.getAbsolutePath.endsWith(".java") ⇒ accFiles :+ dir.getAbsolutePath
+      case f if f.isFile                                        ⇒ accFiles
+      case d                                                    ⇒ d.listFiles.toVector.foldLeft(accFiles)((f, v) ⇒ findJavaFileByDir(v, f))
     }
+    findJavaFileByDir(src.toFile, Vector.empty)
   }
 
   /**

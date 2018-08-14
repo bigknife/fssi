@@ -23,12 +23,12 @@ class CheckingClassLoader(val path: Path, val track: CheckingClassLoader.ClassCh
         val clazz = getClass.getClassLoader.loadClass(name)
         cache.put(name, clazz)
         val classReader       = new ClassReader(clazz.getName)
-        val classCheckVisitor = CheckingClassLoader.ClassCheckingVisitor(null, this)
+        val classCheckVisitor = CheckingClassLoader.ClassCheckVisitor(null, this)
         classReader.accept(classCheckVisitor, ClassReader.SKIP_DEBUG)
         clazz
       }
     } catch {
-      case Throwable ⇒
+      case t:Throwable ⇒
         cache.put(name, null)
         val absFile = Paths.get(path.toString, name.replaceAll("\\.", "/") + ".class").toFile
         if (!absFile.canRead) {
@@ -37,7 +37,7 @@ class CheckingClassLoader(val path: Path, val track: CheckingClassLoader.ClassCh
         } else {
           val input             = new FileInputStream(absFile)
           val classWriter       = new ClassWriter(0)
-          val classCheckVisitor = CheckingClassLoader.ClassCheckingVisitor(classWriter, this, true)
+          val classCheckVisitor = CheckingClassLoader.ClassCheckVisitor(classWriter, this, needCheckMethod = true)
           val classReader       = new ClassReader(input)
           classReader.accept(classCheckVisitor, ClassReader.SKIP_DEBUG)
           null
@@ -100,7 +100,7 @@ object CheckingClassLoader {
           val superClass = NameUtils.innerNameToClassName(superName)
           if (!visitedClasses.contains(superClass)) {
             visitedClasses += superClass
-            checkClassLoader.findClass(superClass)
+            checkClassLoader.findClass(superClass);()
           }
         }
       }
