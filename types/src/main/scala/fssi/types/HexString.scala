@@ -9,6 +9,8 @@ case class HexString(bytes: Array[Byte]) {
   }
 
   def noPrefix: String = BytesUtil.toHex(bytes)
+
+  def toBytesValue: BytesValue = BytesValue(bytes)
 }
 
 object HexString {

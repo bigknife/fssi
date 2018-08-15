@@ -58,7 +58,12 @@ object CmdArgsParser extends OptionParser[CmdArgs]("fssitool") {
             .text("payee's account id, the hex string of it's public key")
             .action((x, c) =>
               c.asInstanceOf[CreateTransferTransactionArgs]
-                .copy(payee = Account.ID(HexString.decode(x))))
+                .copy(payee = Account.ID(HexString.decode(x)))),
+          opt[String]("token")
+            .abbr("t")
+            .required()
+            .text("amount to be transfered, in form of 'number' + 'unit', eg. 100Sweet. ")
+            .action((x, c) => c.asInstanceOf[CreateTransferTransactionArgs].copy(token = Token.parse(x)))
         )
     )
 }

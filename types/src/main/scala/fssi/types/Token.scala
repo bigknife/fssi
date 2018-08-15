@@ -26,4 +26,10 @@ object Token {
 
   // build with sweet
   def tokenWithBaseUnit(amount: Long): Token = Token(amount, Unit.Sweet)
+
+  private val TokenMatcher = """^(\\d+)(Sweet)""".r
+  def parse(litteral: String): Token = litteral match {
+    case TokenMatcher(amount, tokenUnit) => Token(amount.toInt, Unit(tokenUnit))
+    case _ => Token.Zero
+  }
 }

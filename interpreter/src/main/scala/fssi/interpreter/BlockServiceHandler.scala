@@ -38,8 +38,8 @@ class BlockServiceHandler extends BlockService.Handler[Stack] {
   private def bytesToHashForTransaction(transaction: Transaction): Array[Byte] = transaction match {
     case x: Transaction.Transfer =>
       x.id.value.getBytes("utf-8") ++
-        x.from.value.bytes ++
-        x.to.value.bytes ++
+        x.payer.value.bytes ++
+        x.payee.value.bytes ++
         x.token.amount.toByteArray ++ x.token.tokenUnit.toString.getBytes("utf-8") ++
         x.signature.value.bytes ++
         BigInt(x.timestamp).toByteArray

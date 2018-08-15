@@ -25,14 +25,16 @@ object CmdArgs {
   case class CreateTransferTransactionArgs(
     accountFile: File,
     password: Array[Byte],
-    payee: Account.ID
+    payee: Account.ID,
+    token: Token
   ) extends CmdArgs
 
   object CreateTransferTransactionArgs {
     def empty: CreateTransferTransactionArgs = CreateTransferTransactionArgs(
       accountFile = new File(""),
       password = Array.emptyByteArray,
-      payee = Account.ID(HexString.empty)
+      payee = Account.ID(HexString.empty),
+      token = Token.Zero
     )
   }
 }
