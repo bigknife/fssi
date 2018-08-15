@@ -7,6 +7,7 @@ import fssi.utils.BytesValue.Converter
 
 trait BytesValue {
   def bytes: Array[Byte]
+  def value: Array[Byte] = bytes
 
   def hex: String        = bytes.map("%02x" format _).mkString("")
   def utf8String: String = new String(bytes, "utf-8")
@@ -85,6 +86,10 @@ object BytesValue {
   object converters {
     implicit val toIntConverter: Converter[Int] =
       Converter.summon(bv => ByteBuffer.wrap(bv.bytes).getInt)
+  }
+
+  trait Syntax {
+    implicit def arrayBytesToBytesValue(value: Array[Byte]): BytesValue = BytesValue(value)
   }
 
 }

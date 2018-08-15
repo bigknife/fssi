@@ -26,6 +26,7 @@ lazy val pJsonRpc = jsonrpc()
 
 lazy val pTool = tool()
   .dependsOn(pInterperter)
+  .dependsOn(pJsonRpc)
   .settings(
     mainClass in assembly := Some("fssi.tool.ToolMain"),
     assemblyMergeStrategy in assembly := {
@@ -40,7 +41,6 @@ lazy val pTool = tool()
     assemblyJarName in assembly := s"${name.value}",
     test in assembly := {}
   )
-
 
 lazy val pCoreNode = coreNode()
   .dependsOn(pInterperter)

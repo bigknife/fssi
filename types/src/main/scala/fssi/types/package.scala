@@ -1,5 +1,7 @@
 package fssi
 
+import utils._
+
 package object types {
   type TokenUnit = Token.Unit
   type UserContract = Contract.UserContract

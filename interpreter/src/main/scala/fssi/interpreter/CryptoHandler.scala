@@ -1,13 +1,11 @@
 package fssi
 package interpreter
 
-import types._
+import types._, exception._
+import utils._
 import ast._
 
-import java.security._
-import javax.crypto._
-import javax.crypto.spec._
-import org.bouncycastle.jce._
+import scala.util._
 
 /**
   * CryptoHandler uses ECDSA
@@ -17,20 +15,8 @@ import org.bouncycastle.jce._
   */
 class CryptoHandler extends Crypto.Handler[Stack] {
 
-  // keypair algorithm
-  private val KP_ALGO              = "ECDSA"
-  private val EC_SPEC              = "prime256v1"
-  private val SEC_KEY_FACTORY_ALGO = "desede"
-  private val CIPHER_ALGO          = "desede/CBC/PKCS5Padding"
-
-  // register bcprovider
-  Security.addProvider(new provider.BouncyCastleProvider())
-
   override def createKeyPair(): Stack[(BytesValue, BytesValue)] = Stack { setting =>
-    val ecSpec = ECNamedCurveTable.getParameterSpec(EC_SPEC)
-    val g      = KeyPairGenerator.getInstance(KP_ALGO, "BC")
-    g.initialize(ecSpec, new SecureRandom())
-    val kp = g.generateKeyPair()
+    val kp = crypto.generateECKeyPair()
     (BytesValue(kp.getPublic.getEncoded), BytesValue(kp.getPrivate.getEncoded))
   }
 
@@ -53,15 +39,28 @@ class CryptoHandler extends Crypto.Handler[Stack] {
                                     password: BytesValue): Stack[BytesValue] = Stack { setting =>
     // ensure the password is 24b length
     val ensuredPass = ensure24Bytes(password)
+    BytesValue(crypto.des3cbcEncrypt(privateKey.value, ensuredPass.value, iv.value))
+  }
 
-    val spec       = new DESedeKeySpec(ensuredPass.value)
-    val keyFactory = SecretKeyFactory.getInstance(SEC_KEY_FACTORY_ALGO)
-    val desKey     = keyFactory.generateSecret(spec)
-    val cipher     = Cipher.getInstance(CIPHER_ALGO)
-    val ivSpec     = new IvParameterSpec(iv.value)
-    cipher.init(Cipher.ENCRYPT_MODE, desKey, ivSpec)
+  override def desDecryptPrivateKey(
+      encryptedPrivateKey: BytesValue,
+      iv: BytesValue,
+      password: BytesValue): Stack[Either[FSSIException, BytesValue]] = Stack { setting =>
+    Try {
+      val ensuredPass = ensure24Bytes(password)
+      BytesValue(crypto.des3cbcDecrypt(encryptedPrivateKey.value, ensuredPass.value, iv.value))
+    }.toEither.left.map(x => new FSSIException("decrypt private key faield", Some(x)))
+  }
 
-    BytesValue(cipher.doFinal(privateKey.value))
+  override def makeSignature(source: BytesValue, privateKey: BytesValue): Stack[Signature] = Stack {
+    setting =>
+      Signature(
+        HexString(
+          crypto.makeSignature(
+            source = source.value,
+            priv = crypto.rebuildECPrivateKey(privateKey.value)
+          )
+        ))
   }
 
   private def ensure24Bytes(x: BytesValue): BytesValue = x match {

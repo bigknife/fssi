@@ -30,13 +30,13 @@ object Transaction {
     */
   case class Transfer(
       id: Transaction.ID,
-      from: Account.ID,
-      to: Account.ID,
+      payer: Account.ID,
+      payee: Account.ID,
       token: Token,
       signature: Signature,
       timestamp: Long
   ) extends Transaction {
-    val sender: Account.ID = from
+    val sender: Account.ID = payer
   }
 
   /**
