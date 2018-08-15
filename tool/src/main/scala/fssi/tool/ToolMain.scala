@@ -13,7 +13,9 @@ object ToolMain extends App {
       result match {
         case CreateAccountArgs(password)       => createAccount(password)
         case CreateChainArgs(dataDir, chainID) => createChain(dataDir, chainID)
-        case _                                 =>
+        case CreateTransferTransactionArgs(accountFile, password, payee) =>
+          println(s"transfer to $payee")
+        case _ =>
       }
     case None =>
   }
