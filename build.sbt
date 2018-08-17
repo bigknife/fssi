@@ -4,7 +4,7 @@ coverageExcludedFiles in ThisBuild := ".*macro.*"
 parallelExecution in ThisBuild := false
 fork in ThisBuild := true
 scalaVersion in ThisBuild := "2.12.4"
-coverageEnabled in ThisBuild := true
+coverageEnabled in (Test, test) := true
 
 // utils
 lazy val pUtils = utils()
