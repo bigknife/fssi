@@ -7,6 +7,9 @@ import com.typesafe.config._
 
 import scala.collection.JavaConverters._
 
+/** read fssi.conf
+  * @see config-sample.conf
+  */
 case class ConfigReader(conf: java.io.File) {
   lazy val config: Config = ConfigFactory.parseFile(conf)
 
@@ -40,22 +43,23 @@ case class ConfigReader(conf: java.io.File) {
                          .map(_.bytes)
                          .map(NodeID.apply): _*)
 
-    val quorumsConfig = config.getConfig("core-node.quorums")
+    val quorumsConfig = config.getConfig("core-node.scp.quorums")
     if (quorumsConfig.hasPath("innerSets")) {
       // nest
-      val simple = configToSimpleQuorumSet(quorumsConfig)
+      val simple    = configToSimpleQuorumSet(quorumsConfig)
       val innerSets = quorumsConfig.getConfigList("innerSets").asScala
       if (innerSets.nonEmpty) {
-        innerSets.foldLeft(simple) {(acc, n) =>
+        innerSets.foldLeft(simple) { (acc, n) =>
           val qs = configToSimpleQuorumSet(n).asInstanceOf[QuorumSet.Simple]
           acc.nest(qs.threshold, qs.validators.toSeq: _*)
         }
-      }
-      else simple
+      } else simple
     } else {
       // simple
       configToSimpleQuorumSet(quorumsConfig)
     }
   }
+
+  def readMaxTimeoutSeconds(): Int = config.getInt("core-node.scp.maxTimeoutSeconds")
 
 }

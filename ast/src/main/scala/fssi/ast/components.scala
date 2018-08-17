@@ -21,6 +21,7 @@ object components {
     val contractStore: ContractStore[F]
     val contractDataStore: ContractDataStore[F]
     val transactionService: TransactionService[F]
+    val consensusEngine: ConsensusEngine[F]
     val accountStore: AccountStore[F]
   }
 }
