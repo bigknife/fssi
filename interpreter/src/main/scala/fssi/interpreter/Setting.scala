@@ -3,6 +3,7 @@ package interpreter
 
 import types._
 import java.io._
+import bigknife.scalap.world.Connect
 
 sealed trait Setting
 
@@ -26,7 +27,8 @@ object Setting {
 
   /** setting for running core node
     */
-  case class CoreNodeSetting(workingDir: File, password: Array[Byte]) extends P2PNodeSetting {
+  case class CoreNodeSetting(workingDir: File, password: Array[Byte], consensusConnect: Connect)
+      extends P2PNodeSetting {
     def configFile: File = new File(workingDir, "fssi.conf")
   }
 

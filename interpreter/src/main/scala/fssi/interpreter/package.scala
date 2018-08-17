@@ -30,6 +30,7 @@ package object interpreter {
       with AccountStoreHandler.Implicits
       with TransactionServiceHandler.Implicits
       with LogServiceHandler.Implicits
+      with ConsensusEngineHandler.Implicits
       with bigknife.sop.effect.error.ErrorMInstance
 
   object runner {
