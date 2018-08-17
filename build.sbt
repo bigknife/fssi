@@ -32,6 +32,7 @@ lazy val pTool = tool()
     assemblyMergeStrategy in assembly := {
       case "module-info.class"          => MergeStrategy.discard
       case PathList("META-INF", xs @ _) => MergeStrategy.discard
+      case "config-sample.conf" => MergeStrategy.first
       case x =>
         val oldStrategy = (assemblyMergeStrategy in assembly).value
         oldStrategy(x)

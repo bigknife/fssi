@@ -1,11 +1,13 @@
 package fssi
 package interpreter
 
-import types._, exception._
-import utils._, trie._
+import types._
+import exception._
+import utils._
+import trie._
 import ast._
-
 import java.io._
+import java.nio.charset.Charset
 
 class ChainStoreHandler extends ChainStore.Handler[Stack] {
 
@@ -38,6 +40,14 @@ class ChainStoreHandler extends ChainStore.Handler[Stack] {
         }
       }
     }
+
+  override def createDefaultConfigFile(chainRoot: File): Stack[File] = Stack {setting =>
+    import better.files.{File => BFile, _}
+    val str = Resource.getAsString("config-sample.conf")(Charset.forName("utf-8"))
+    val f = new File(chainRoot, "fssi.conf")
+    BFile(f.toPath).overwrite(str)
+    f
+  }
 }
 
 object ChainStoreHandler {

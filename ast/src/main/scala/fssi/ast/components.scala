@@ -10,6 +10,7 @@ object components {
   @sps trait Model[F[_]] {
 
     val err: ErrorM[F]
+    val log: LogService[F]
 
     val crypto: Crypto[F]
     val network: Network[F]
