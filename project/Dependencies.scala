@@ -162,7 +162,7 @@ object Dependencies {
       ).map(_.libraryDependencies)
     }
 
-    lazy val scapap = {
+    lazy val scalap = {
       Seq(
         Dpd("bigknife", "scalap", versions.scalap)
       ).map(_.libraryDependencies)
