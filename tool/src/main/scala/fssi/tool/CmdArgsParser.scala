@@ -1,6 +1,8 @@
 package fssi
 package tool
 
+import java.io.File
+
 import scopt._
 import CmdArgs._
 import fssi.types.OutputFormat
@@ -36,6 +38,7 @@ object CmdArgsParser extends OptionParser[CmdArgs]("fssitool") {
 
   cmd("CompileContract")
     .text("Compile smart contract")
+    .action((_, _) ⇒ CompileContractArgs(new File("."), new File(".")))
     .children(
       opt[java.io.File]("source-code")
         .abbr("f")
@@ -46,8 +49,6 @@ object CmdArgsParser extends OptionParser[CmdArgs]("fssitool") {
       opt[java.io.File]("output")
         .abbr("o")
         .required()
-        .validate(f ⇒
-          if (f.exists() && f.isDirectory) Right(()) else Left(s"dir ${f.getPath} not found"))
         .action((f, c) ⇒ c.asInstanceOf[CompileContractArgs].copy(targetDir = f)),
       opt[String]("format")
         .abbr("t")

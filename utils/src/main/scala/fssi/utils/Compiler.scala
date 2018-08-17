@@ -36,11 +36,10 @@ trait Compiler {
         classPath = libPath.toFile
           .list((dir: File, name: String) ⇒ name.endsWith(".jar"))
           .foldLeft(classPath) { (acc, n) ⇒
-            classPath + ":" + Paths.get(libPath.toString, n)
+            acc + ":" + Paths.get(libPath.toString, n)
           }
       }
-      // TODO: to ensure class path for lib class
-      val options             = Vector("-d", s"${targetDir.toFile.getAbsolutePath}", "-classPath", classPath)
+      val options             = Vector("-d", s"${targetDir.toFile.getAbsolutePath}", "-classpath", classPath)
       val diagnosticCollector = new DiagnosticCollector[JavaFileObject]
       val compilationTask = javaCompiler.getTask(
         null,
@@ -71,7 +70,7 @@ trait Compiler {
     }
   }
 
- private def findAllJavaFiles(src: Path): Vector[String] = {
+  private def findAllJavaFiles(src: Path): Vector[String] = {
     def findJavaFileByDir(dir: File, accFiles: Vector[String]): Vector[String] = dir match {
       case f if f.isFile && f.getAbsolutePath.endsWith(".java") ⇒ accFiles :+ dir.getAbsolutePath
       case f if f.isFile                                        ⇒ accFiles
@@ -94,10 +93,10 @@ trait Compiler {
         .continually(reader.readLine())
         .takeWhile(_ != null)
         .foldLeft(Vector.empty[String])((acc, n) ⇒ acc :+ n)
-      if (logger.isInfoEnabled()) lines.foreach(logger.info)
       val track            = CheckingClassLoader.ClassCheckingStatus()
       val checkClassLoader = new CheckingClassLoader(classFilePath, track)
-      lines.map(_.split(" = ")(1).trim).foreach { x ⇒
+      lines.map(_.split("\\s*=\\s*")(1).trim).foreach { x ⇒
+        if (logger.isInfoEnabled()) logger.info(s"smart contract exposes class $x")
         x.split("#") match {
           case Array(c, m) ⇒ checkClassLoader.findClass(c)
           case Array(c)    ⇒ checkClassLoader.findClass(c)

@@ -28,8 +28,9 @@ trait CompileContractHandler {
                                                 format),
                     setting)
       .unsafeRunSync() match {
-      case Right(_) ⇒ logger.info("compile contract finished")
-      case Left(e)  ⇒ logger.error(e.getMessage)
+      case Right(_) ⇒
+        logger.info(s"compile contract finished,please checkout file ${destDir.toString}")
+      case Left(e) ⇒ logger.error(e.getMessage, e)
     }
   }
 }

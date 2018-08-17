@@ -1,8 +1,8 @@
 package fssi.interpreter
 
 import java.io._
-import java.nio.file.attribute.BasicFileAttributes
 import java.nio.file._
+import java.nio.file.attribute.BasicFileAttributes
 import java.util.zip.{ZipEntry, ZipOutputStream}
 
 import fssi.ast.ContractService
@@ -51,21 +51,23 @@ class ContractServiceHandler extends ContractService.Handler[Stack] {
       }
     }
     Files.walkFileTree(classFilePath, FV)
-    val array = output.toByteArray
-    zipOut.flush(); output.flush(); zipOut.close(); output.close()
+    zipOut.flush(); output.flush(); zipOut.close()
+    val array = output.toByteArray; output.close()
     BytesValue(array)
   }
 
   override def outputZipFile(bytesValue: BytesValue,
                              targetDir: Path,
                              format: OutputFormat): Stack[Unit] = Stack {
-    def writeBytes(f: Array[Byte]): Unit =
-      better.files.File(targetDir.toString).outputStream.map(os ⇒ os.write(f)).map(_=> ())
+    def write(bytes: Array[Byte]): Unit = {
+      better.files.File(targetDir.toString).outputStream.map(os ⇒ os.write(bytes)).get()
+    }
 
+    if (!targetDir.toFile.exists()) targetDir.toFile.createNewFile()
     format match {
-      case Jar    ⇒ writeBytes(bytesValue.value)
-      case Hex    ⇒ writeBytes(bytesValue.toHexString.bytes)
-      case Base64 ⇒ writeBytes(bytesValue.toBase64String.bytes)
+      case Jar    ⇒ write(bytesValue.value)
+      case Hex    ⇒ write(bytesValue.toHexString.toString().getBytes("utf-8"))
+      case Base64 ⇒ write(bytesValue.toBase64String.toString().getBytes("utf-8"))
     }
   }
 }

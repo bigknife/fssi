@@ -45,15 +45,16 @@ trait ToolProgram[F[_]] {
   /***
     * compile smart contract
     * @param sourceDir path to read contract source code
-    * @param destDir path to store contract jar
+    * @param destDir path to store contract zip
     */
   def compileContract(sourceDir: Path, destDir: Path, format: OutputFormat): SP[F, Unit] = {
     for {
-      classPathEither ← contractService.compileContractSourceCode(sourceDir)
-      classPath       ← err.either(classPathEither)
-      _               ← contractService.checkDeterministicOfClass(classPath)
-      bytesValue      ← contractService.zipContract(classPath)
-      _               ← contractService.outputZipFile(bytesValue, destDir, format)
+      classPathEither   ← contractService.compileContractSourceCode(sourceDir)
+      classPath         ← err.either(classPathEither)
+      determinismEither ← contractService.checkDeterministicOfClass(classPath)
+      _                 ← err.either(determinismEither)
+      bytesValue        ← contractService.zipContract(classPath)
+      _                 ← contractService.outputZipFile(bytesValue, destDir, format)
     } yield ()
   }
 }
