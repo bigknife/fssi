@@ -13,7 +13,7 @@ class CryptoHandlerTest extends FunSuite with GivenWhenThen {
 
     val kp = crypto
       .createKeyPair()
-      .map(x => (x._1.toHexString, x._2.toHexString))
+      .map(x => (x._1.hex, x._2.hex))
       .run(setting)
       .unsafeRunSync()
 
@@ -23,7 +23,7 @@ class CryptoHandlerTest extends FunSuite with GivenWhenThen {
   test("create iv fork des") {
     val iv = crypto
       .createIVForDes()
-      .map(_.toHexString)
+      .map(_.hex)
       .run(setting)
       .unsafeRunSync()
 
@@ -36,7 +36,7 @@ class CryptoHandlerTest extends FunSuite with GivenWhenThen {
       .createKeyPair()
       .run(setting)
       .unsafeRunSync()
-    info(s"private key is ${kp._2.toHexString}")
+    info(s"private key is ${kp._2.hex}")
 
     Given("IV")
     val iv = crypto
@@ -52,6 +52,6 @@ class CryptoHandlerTest extends FunSuite with GivenWhenThen {
       .desEncryptPrivateKey(kp._2, iv, password)
       .run(setting)
       .unsafeRunSync
-    info(s"result is ${result.toHexString}")
+    info(s"result is ${result.hex}")
   }
 }
