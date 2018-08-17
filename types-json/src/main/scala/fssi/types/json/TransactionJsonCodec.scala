@@ -113,9 +113,9 @@ trait TransactionJsonCodec {
 
   implicit val transactionJsonDecoder: Decoder[Transaction] = (a: HCursor) => {
     a.get[String]("type") match {
-      case Right("Transfer")        => a.get[Transaction.Transfer]("body")
-      case Right("Publishcontract") => a.get[Transaction.PublishContract]("body")
-      case Right("RunContract")     => a.get[Transaction.RunContract]("body")
+      case Right("Transfer")        => a.get[Transaction.Transfer]("transaction")
+      case Right("Publishcontract") => a.get[Transaction.PublishContract]("transaction")
+      case Right("RunContract")     => a.get[Transaction.RunContract]("transaction")
       case x =>
         Left(
           DecodingFailure(

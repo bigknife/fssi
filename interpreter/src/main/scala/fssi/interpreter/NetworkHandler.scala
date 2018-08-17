@@ -36,7 +36,7 @@ class NetworkHandler extends Network.Handler[Stack] {
           .seedMembers(
             configReader
               .readSeeds()
-              .map(_.toString)
+              .map(_.toString())
               .map(x => Node.parseAddr(x))
               .filter(_.isDefined)
               .map(_.get)

@@ -27,11 +27,11 @@ object Setting {
   /** setting for running core node
     */
   case class CoreNodeSetting(workingDir: File, password: Array[Byte]) extends P2PNodeSetting {
-    def configFile: File = new File(workingDir, "core-node.conf")
+    def configFile: File = new File(workingDir, "fssi.conf")
   }
 
   case class EdgeNodeSetting(workingDir: File, password: Array[Byte]) extends P2PNodeSetting {
-    def configFile: File = new File(workingDir, "edge-node.conf")
+    def configFile: File = new File(workingDir, "fssi.conf")
   }
 
   def defaultInstance: Setting = DefaultSetting

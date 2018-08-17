@@ -30,12 +30,12 @@ trait CreateTransferTransactionHandler {
         val request = Request(
           id = transfer.id.value,
           method = "sendTransaction",
-          params = transfer
+          params = transfer: Transaction
         )
         println(showRequest(request))
     }
 
   }
 
-  private def showRequest(request: Request[Transaction.Transfer]): String = request.asJson.spaces2
+  private def showRequest(request: Request[Transaction]): String = request.asJson.spaces2
 }

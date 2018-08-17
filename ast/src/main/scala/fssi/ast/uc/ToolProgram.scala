@@ -34,12 +34,14 @@ trait ToolProgram[F[_]] {
     for {
       createRoot   <- chainStore.createChainRoot(dataDir, chainID)
       root         <- err.either(createRoot)
+      confFile     <- chainStore.createDefaultConfigFile(root)
       _            <- blockStore.initialize(root)
       _            <- tokenStore.initialize(root)
       _            <- contractStore.initialize(root)
       _            <- contractDataStore.initialize(root)
       genesisBlock <- blockService.createGenesisBlock(chainID)
       _            <- blockStore.saveBlock(genesisBlock)
+      _            <- log.info(s"chain initialized, please edit the default config file: $confFile")
     } yield ()
   }
 
