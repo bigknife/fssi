@@ -10,19 +10,19 @@ import bigknife.sop.implicits._
 
 import java.io.File
 
-trait ToolProgram[F[_]] {
-  val model: components.Model[F]
+trait ToolProgram[F[_]] extends BaseProgram[F] {
   import model._
 
   /** Create an account, only a password is needed.
     * NOTE: then password is ensured to be 24Bytes length.
     */
   def createAccount(password: String): SP[F, Account] = {
+    import crypto._
     for {
-      keypair <- crypto.createKeyPair()
+      keypair <- createKeyPair()
       (publicKey, privateKey) = keypair
-      iv <- crypto.createIVForDes()
-      pk <- crypto.desEncryptPrivateKey(privateKey, iv, password = password.getBytes("utf-8"))
+      iv <- createIVForDes()
+      pk <- desEncryptPrivateKey(privateKey, iv, password = password.getBytes("utf-8"))
     } yield Account(HexString(publicKey.value), HexString(pk.value), HexString(iv.value))
   }
 
@@ -31,17 +31,24 @@ trait ToolProgram[F[_]] {
     * @param chainID the chain id
     */
   def createChain(dataDir: File, chainID: String): SP[F, Unit] = {
+    import chainStore._
+    import blockStore._
+    import tokenStore._
+    import contractStore._
+    import blockService._
+    import log._
+
     for {
-      createRoot   <- chainStore.createChainRoot(dataDir, chainID)
+      createRoot   <- createChainRoot(dataDir, chainID)
       root         <- err.either(createRoot)
-      confFile     <- chainStore.createDefaultConfigFile(root)
-      _            <- blockStore.initialize(root)
+      confFile     <- createDefaultConfigFile(root)
+      _            <- initializeBlockStore(root)
       _            <- tokenStore.initialize(root)
       _            <- contractStore.initialize(root)
       _            <- contractDataStore.initialize(root)
-      genesisBlock <- blockService.createGenesisBlock(chainID)
-      _            <- blockStore.saveBlock(genesisBlock)
-      _            <- log.info(s"chain initialized, please edit the default config file: $confFile")
+      genesisBlock <- createGenesisBlock(chainID)
+      _            <- saveBlock(genesisBlock)
+      _            <- info(s"chain initialized, please edit the default config file: $confFile")
     } yield ()
   }
 
@@ -51,18 +58,19 @@ trait ToolProgram[F[_]] {
                                 password: Array[Byte],
                                 payee: Account.ID,
                                 token: Token): SP[F, Transaction.Transfer] = {
+    import accountStore._
+    import crypto._
+    import transactionService._
     for {
-      accountOrFailed <- accountStore.loadAccountFromFile(accountFile)
+      accountOrFailed <- loadAccountFromFile(accountFile)
       account         <- err.either(accountOrFailed)
-      privateKeyOrFailed <- crypto.desDecryptPrivateKey(account.encryptedPrivateKey.toBytesValue,
-                                                        account.iv.toBytesValue,
-                                                        BytesValue(password))
-      privateKey <- err.either(privateKeyOrFailed)
-      transferNotSigned <- transactionService.createUnsignedTransfer(payer = account.id,
-                                                                     payee,
-                                                                     token)
-      unsignedBytes <- transactionService.toBeSingedBytesOfTransfer(transferNotSigned)
-      signature     <- crypto.makeSignature(unsignedBytes, privateKey)
+      privateKeyOrFailed <- desDecryptPrivateKey(account.encryptedPrivateKey.toBytesValue,
+                                                 account.iv.toBytesValue,
+                                                 BytesValue(password))
+      privateKey        <- err.either(privateKeyOrFailed)
+      transferNotSigned <- createUnsignedTransfer(payer = account.id, payee, token)
+      unsignedBytes     <- calculateSingedBytesOfTransfer(transferNotSigned)
+      signature         <- makeSignature(unsignedBytes, privateKey)
     } yield transferNotSigned.copy(signature = signature)
   }
 }

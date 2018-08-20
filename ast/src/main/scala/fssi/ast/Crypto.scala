@@ -42,4 +42,8 @@ import bigknife.sop.implicits._
   /** make a signature for source bytes by using a private key
     */
   def makeSignature(source: BytesValue, privateKey: BytesValue): P[F, Signature]
+
+  /** verify signature
+    */
+  def verifySignature(source: BytesValue, publicKey: BytesValue, signature: Signature): P[F, Boolean]
 }
