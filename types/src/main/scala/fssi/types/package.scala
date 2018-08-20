@@ -9,5 +9,5 @@ package object types {
   object syntax extends BytesValue.Syntax
   object implicits extends Transaction.Implicits
       with Contract.Implicits
-  
+
 }
