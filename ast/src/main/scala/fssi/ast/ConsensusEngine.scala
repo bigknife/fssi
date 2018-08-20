@@ -10,4 +10,11 @@ import bigknife.sop.implicits._
   /** initialize consensus engine
     */
   def initialize(account: Account): P[F, Unit]
+
+  /** try to agree a new block 
+    * @param account the consensus procedure initiator
+    * @param previous the previous block, latest determined block
+    * @param agreeing current block, being in consensus procedure
+    */
+  def tryToAgreeBlock(account: Account, previous: Block, agreeing: Block): P[F, Unit]
 }

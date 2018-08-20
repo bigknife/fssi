@@ -63,6 +63,18 @@ class CryptoHandler extends Crypto.Handler[Stack] {
         ))
   }
 
+  /** verify signature
+    */
+  override def verifySignature(source: BytesValue,
+                               publicKey: BytesValue,
+                               signature: Signature): Stack[Boolean] = Stack { setting =>
+    crypto.verifySignature(
+      sign = signature.value.bytes,
+      source = source.value,
+      publ = crypto.rebuildECPublicKey(publicKey.value)
+    )
+  }
+
   private def ensure24Bytes(x: BytesValue): BytesValue = x match {
     case a if a.value.length == 24 => a
     case a if a.value.length > 24  => BytesValue(a.value.slice(0, 24))

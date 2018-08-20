@@ -75,6 +75,8 @@ object BytesValue {
 
   val Empty: BytesValue = SimpleBytesValue(Array.emptyByteArray)
 
+  def empty: BytesValue = Empty
+
   trait Converter[A] {
     def to(bv: BytesValue): A
   }

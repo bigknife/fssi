@@ -6,6 +6,7 @@ import types._
 import interpreter._
 import types.syntax._
 import ast._, uc._
+import utils._
 
 import io.circe._
 import io.circe.syntax._
@@ -17,7 +18,8 @@ import org.slf4j._
 trait StartupHandler extends JsonMessageHandler {
   private val log = LoggerFactory.getLogger(getClass)
 
-  val coreNodeProgram = CoreNodeProgram[components.Model.Op]
+  private val coreNodeProgram                            = CoreNodeProgram[components.Model.Op]
+  private val settingOnce: Once[Setting.CoreNodeSetting] = Once.empty
 
   // message type names can be handled
   private val acceptedTypeNames: Vector[String] = Vector(
@@ -26,6 +28,7 @@ trait StartupHandler extends JsonMessageHandler {
 
   def apply(setting: Setting.CoreNodeSetting): Unit = {
     val node = runner.runIO(coreNodeProgram.startup(this), setting).unsafeRunSync
+    settingOnce := setting
 
     // add shutdown hook to clean resources.
     Runtime.getRuntime.addShutdownHook(new Thread(() => {
@@ -44,18 +47,23 @@ trait StartupHandler extends JsonMessageHandler {
     import JsonMessage._
     jsonMessage.typeName match {
       case TYPE_NAME_TRANSACTION =>
-        val transactionResult =  for {
-          json <- parse(jsonMessage.body)
+        val transactionResult = for {
+          json        <- parse(jsonMessage.body)
           transaction <- json.as[Transaction]
         } yield transaction
 
         transactionResult match {
-          case Left(t) => log.error("transaction json deserialization faield", t)
+          case Left(t)            => log.error("transaction json deserialization faield", t)
           case Right(transaction) =>
             //TODO: handle transaction
             log.debug(s"start handle transaction: $transaction")
+            settingOnce foreach { setting =>
+              runner.runIO(coreNodeProgram.handleTransaction(transaction), setting).unsafeRunSync
+            }
+            log.debug(s"handled transaction: ${transaction.id}")
+
         }
-        
+
       case x => throw new RuntimeException(s"Unsupport TypeName: $x")
     }
   }

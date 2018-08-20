@@ -25,4 +25,14 @@ import bigknife.sop.implicits._
     * be considered to be acted by this account
     */
   def bindAccount(node: Node): P[F, Node]
+
+  /** set node info for current process
+    * @param node a node has been bound an account
+    */
+  def setCurrentNode(node: Node): P[F, Unit]
+
+  /** get node info for current process
+    * @return node with bound account
+    */
+  def getCurrentNode(): P[F, Node]
 }
