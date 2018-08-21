@@ -21,7 +21,18 @@ trait HandlerCommons {
     block.copy(hash = Hash(hashBytes))
   }
 
-    /** serialize transaction to byte array.
+  private[interpreter] def calculateTotalBlockBytes(block: Block): Array[Byte] = {
+    val allBytes = block.previousHash.bytes ++
+      block.height.toByteArray ++
+      block.transactions
+        .foldLeft(Array.emptyByteArray)((acc, n) => acc ++ bytesToHashForTransaction(n)) ++
+      block.chainID.getBytes("utf-8") ++
+      block.hash.bytes
+
+    allBytes
+  }
+
+  /** serialize transaction to byte array.
     * we should guarantee the serialization is determined,
     * for the same transaction, we should get the same byte array.
     */

@@ -18,6 +18,7 @@ trait CoreNodeProgram[F[_]] extends BaseProgram[F] {
     for {
       n1 <- network.startupP2PNode(handler)
       n2 <- network.bindAccount(n1)
+      _ <- network.setCurrentNode(n2)
       _  <- consensusEngine.initialize(n2.account.get)
       //TODO: some other components should be initialized here
     } yield n2
