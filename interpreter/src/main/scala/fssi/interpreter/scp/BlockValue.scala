@@ -8,6 +8,7 @@ import bigknife.scalap.ast.types._
 /** Block Value
   * in order to sperate bytes-calculating from BlockValue types, we
   * set a bytes argument, which will be calcluted outside
+  * @param bytes used to verify this block is legal or not.
   */
 case class BlockValue(block: Block, bytes: Array[Byte] = Array.emptyByteArray) extends Value {
   def compare(that: Value): Int = that match {

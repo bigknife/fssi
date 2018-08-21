@@ -11,8 +11,9 @@ import types._, implicits._
 import ast._
 import java.io._
 import org.slf4j._
+import scala.collection._
 
-class BlockStoreHandler extends BlockStore.Handler[Stack] {
+class BlockStoreHandler extends BlockStore.Handler[Stack] with HandlerCommons {
   private val log = LoggerFactory.getLogger(getClass)
 
   private val blockFileDirName      = "block"
@@ -74,13 +75,25 @@ class BlockStoreHandler extends BlockStore.Handler[Stack] {
   override def appendTransactionToUnDeterminedBlock(determinedBlock: Block,
                                                     transaction: Transaction): Stack[Block] =
     Stack { setting =>
-      /*
-      if (undetermindedBlockRef.get.isEmpty) {
-        
+      // if current undeterminded block is empty,
+      // create a new block from last determined block, update the transaction
+      // or insert the transaction
+      val newBlock = if (undeterminedBlockRef.get.isEmpty) {
+        determinedBlock.copy(
+          previousHash = determinedBlock.hash,
+          height = determinedBlock.height + 1,
+          transactions = immutable.TreeSet(transaction)
+        )
+      } else {
+        val block = undeterminedBlockRef.get.get
+        block.copy(
+          transactions = block.transactions + transaction
+        )
       }
-       */
+      val hashedBlock = hashBlock(newBlock)
+      undeterminedBlockRef.set(Some(hashedBlock))
+      hashedBlock
 
-      ???
     }
 }
 

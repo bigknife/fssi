@@ -58,4 +58,7 @@ package object interpreter {
     */
   val jsonCodecs = types.json.implicits
 
+  // scp types
+  type BlockValue = scp.BlockValue
+  val BlockValue = scp.BlockValue
 }
