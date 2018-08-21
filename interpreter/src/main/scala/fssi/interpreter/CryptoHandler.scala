@@ -83,7 +83,7 @@ class CryptoHandler extends Crypto.Handler[Stack] {
 }
 
 object CryptoHandler {
-  private val instance = new CryptoHandler
+  val instance = new CryptoHandler
   trait Implicits {
     implicit val cryptoHandlerInstance: CryptoHandler = instance
   }

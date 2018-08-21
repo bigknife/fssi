@@ -11,6 +11,11 @@ case class HexString(bytes: Array[Byte]) {
   def noPrefix: String = BytesUtil.toHex(bytes)
 
   def toBytesValue: BytesValue = BytesValue(bytes)
+
+  override def equals(that: Any): Boolean = that match {
+    case HexString(thatBytes) => bytes sameElements thatBytes
+    case _ => false
+  }
 }
 
 object HexString {

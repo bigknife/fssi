@@ -69,7 +69,7 @@ trait ToolProgram[F[_]] extends BaseProgram[F] {
                                                  BytesValue(password))
       privateKey        <- err.either(privateKeyOrFailed)
       transferNotSigned <- createUnsignedTransfer(payer = account.id, payee, token)
-      unsignedBytes     <- calculateSingedBytesOfTransfer(transferNotSigned)
+      unsignedBytes     <- calculateSingedBytesOfTransaction(transferNotSigned)
       signature         <- makeSignature(unsignedBytes, privateKey)
     } yield transferNotSigned.copy(signature = signature)
   }

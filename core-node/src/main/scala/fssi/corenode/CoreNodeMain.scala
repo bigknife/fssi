@@ -2,6 +2,7 @@ package fssi
 package corenode
 
 import interpreter.Setting._
+import interpreter.scp._
 import handler._
 
 /** FSSI CoreNode Main
