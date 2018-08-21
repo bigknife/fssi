@@ -10,4 +10,11 @@ object JsonMessage {
   /** Transaction Json Message
     */
   val TYPE_NAME_TRANSACTION = "transaction"
+
+  /** SCP Message 
+    */
+  val TYPE_NAME_SCP = "scp"
+
+  /** create a scp json message */
+  def scpJsonMessage(body: String): JsonMessage = JsonMessage(TYPE_NAME_SCP, body)
 }
