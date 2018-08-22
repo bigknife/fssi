@@ -1,7 +1,7 @@
 package fssi
 package corenode
 
-import interpreter.Setting._
+import interpreter._, Setting._
 import interpreter.scp._
 import handler._
 
@@ -9,7 +9,9 @@ import handler._
   */
 object CoreNodeMain extends App {
 
-  object consensusConnect extends ConsensusConnect
+  object consensusConnect extends ConsensusConnect {
+    lazy val  setting: Setting = defaultCoreNodeSetting
+  }
 
   val defaultCoreNodeSetting = CoreNodeSetting(
     workingDir = new java.io.File(new java.io.File(System.getProperty("user.home")), ".fssi"),
