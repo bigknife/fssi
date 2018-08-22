@@ -4,6 +4,8 @@ package scp
 
 import bigknife.scalap.world.Connect
 import bigknife.scalap.ast.types._
+import bigknife.scalap.interpreter.{runner => scprunner}
+import bigknife.scalap.ast.usecase.{SCP, component => scpcomponent}
 
 import utils._
 
@@ -12,12 +14,19 @@ import io.circe.syntax._
 import io.circe.parser._
 import io.circe.generic.auto._
 import types.json.implicits._
-import types.JsonMessage
+import types.{JsonMessage, Account, HexString}
+import ast._, uc._
 
 import jsonCodecs._
+import org.slf4j._
 
 trait ConsensusConnect extends Connect with HandlerCommons {
+  private lazy val log = LoggerFactory.getLogger(getClass)
+
   val setting: Setting
+  val scp: SCP[scpcomponent.Model.Op]                       = SCP[scpcomponent.Model.Op]
+  val coreNodeProgram: CoreNodeProgram[components.Model.Op] = CoreNodeProgram[components.Model.Op]
+
   /**
     * try to extract a valid value from a not full validated value
     * @param value value not full validated
@@ -71,6 +80,12 @@ trait ConsensusConnect extends Connect with HandlerCommons {
             )
           }
 
+          //todo: we should verify this transaction can be run, and check
+          //      such as:
+          //              1. for a transfer,  we should ensure the account has enough token
+          //              2. for a publish contract, maybe some checks are mandatory
+          //              3. ...
+
           (exitBadSignature, exitGoodSignature) match {
             case (true, true)  => Value.Validity.MaybeValid
             case (false, true) => Value.Validity.FullyValidated
@@ -112,12 +127,8 @@ trait ConsensusConnect extends Connect with HandlerCommons {
   def broadcastMessage[M <: Message](envelope: Envelope[M]): Unit = {
     // encode envelope to JsonMessage
     // then let network send it
-    val jsonMessage = JsonMessage.scpJsonMessage(envelope.asJson.noSpaces)
-
-    // note: this is a hack op, we dived into NetworkHandler, then found
-    // that broadcastMessage function ignored the setting argument
-    // so, we can provide a DefaultSetting to cheat the invocation.
-    NetworkHandler.instance.broadcastMessage(jsonMessage)(Setting.DefaultSetting).unsafeRunSync
+    val jsonMessage = JsonMessage.scpEnvelopeJsonMessage(envelope.asJson.noSpaces)
+    NetworkHandler.instance.broadcastMessage(jsonMessage)(setting).unsafeRunSync
   }
 
   /**
@@ -126,7 +137,18 @@ trait ConsensusConnect extends Connect with HandlerCommons {
     * @param quorumSet quorum set
     */
   def synchronizeQuorumSet(nodeID: NodeID, quorumSet: QuorumSet): Unit = {
-
+    // encode (nodeID -> quorumSet) to JsonMessage
+    // then let network send it
+    // todo: we need renew qs sync protocol
+    //       now, take it easy, only broadcast local node and it's qs
+    //       other nodes should merge every qss message, then they will
+    //       get all nodes' qs finally.
+    val version     = 0L
+    val qs          = Map(nodeID -> quorumSet)
+    val hash        = QuorumSetSync.hash(version, qs)
+    val qss         = QuorumSetSync(version, qs, hash)
+    val jsonMessage = JsonMessage.scpQsSyncJsonMessage(qss.asJson.noSpaces)
+    NetworkHandler.instance.broadcastMessage(jsonMessage)(setting).unsafeRunSync
   }
 
   /**
@@ -192,7 +214,10 @@ trait ConsensusConnect extends Connect with HandlerCommons {
     * run abandon ballot with counter outside
     * @param counter ballot's counter
     */
-  def runAbandonBallot(nodeID: NodeID, slotIndex: SlotIndex, counter: Int): Unit = ???
+  def runAbandonBallot(nodeID: NodeID, slotIndex: SlotIndex, counter: Int): Unit = {
+    val p = scp.abandonBallot(nodeID, slotIndex, counter)
+    scprunner.runIO(p, unsafeResolveSCPSetting(nodeID, setting)).unsafeRunSync
+  }
 
   /**
     * triggered when value externalized
@@ -200,14 +225,39 @@ trait ConsensusConnect extends Connect with HandlerCommons {
     * @param slotIndex slotIndex
     * @param value value
     */
-  def valueExternalized(nodeID: NodeID, slotIndex: SlotIndex, value: Value): Unit = ???
+  def valueExternalized(nodeID: NodeID, slotIndex: SlotIndex, value: Value): Unit = {
+    value match {
+      case BlockValue(block, _ /*bytes*/ ) =>
+        if (block.height != slotIndex.index)
+          throw new RuntimeException(
+            s"can't accept block of inconsistent height, slotIndex=${slotIndex.index}, " +
+              s"but block height is ${block.height}")
+        else {
+          // persist block into local store.
+          // the logic is defined in CoreNodeProgram
+          log.info(s"to externalize: ${slotIndex.index} -> ${block.hash}")
+          runner
+            .runIO(coreNodeProgram.handleBlockReachedAgreement(Account.ID(HexString(nodeID.bytes)),
+                                                               slotIndex.index,
+                                                               block),
+                   setting)
+            .unsafeRunSync
+          log.info(s"externalized: ${slotIndex.index} -> ${block.hash}")
+        }
+      case _ => throw new RuntimeException(s"can't accept value: $value")
+    }
+  }
 
   /**
     * timeout for next round
     * @param currentRound current round
     * @return timeout milliseconds
     */
-  def timeoutForNextRoundNominating(currentRound: Int): Long = ???
+  def timeoutForNextRoundNominating(currentRound: Int): Long = {
+    // the first ten rounds run every 1seconds, and then linear increasing
+    if (currentRound > 10) (currentRound - 10) * 1000L
+    else 1000L
+  }
 
   /**
     * trigger next round nominating
@@ -224,5 +274,29 @@ trait ConsensusConnect extends Connect with HandlerCommons {
                                  nextRound: Int,
                                  valueToNominate: Value,
                                  previousValue: Value,
-                                 afterMilliSeconds: Long): Unit = ???
+                                 afterMilliSeconds: Long): Unit = {
+    val timer = new java.util.Timer()
+    timer.schedule(
+      new java.util.TimerTask {
+        override def run(): Unit = {
+          log.info("run nominate timer ...")
+          // only re-nominate when slotIndex is currentHeight + 1
+          val currentHeight = runner.runIO(coreNodeProgram.currentHeight(), setting).unsafeRunSync()
+          if (slotIndex.index == (currentHeight + 1)) {
+            SCPExecutionService.submit {
+              val p   = scp.nominate(nodeID, slotIndex, nextRound, valueToNominate, previousValue)
+              val ret = scprunner.runIO(p, unsafeResolveSCPSetting(nodeID, setting) ).unsafeRunSync()
+              log.info(s"nominate result: $ret")
+            }
+            log.info("end and cancel nominate timer ...")
+            timer.cancel()
+          } else {
+            log.info(s"slotIndex[${slotIndex.index}] has been determined, timer cancel!")
+            timer.cancel()
+          }
+        }
+      },
+      afterMilliSeconds
+    )
+  }
 }

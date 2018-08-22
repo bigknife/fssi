@@ -24,14 +24,7 @@ class ConsensusEngineHandler extends ConsensusEngine.Handler[Stack] with Handler
     // only core node need run consensus
     setting match {
       case x: Setting.CoreNodeSetting =>
-        val confReader = ConfigReader(x.configFile)
-        val scpSetting = SCPSetting(
-          localNodeID = NodeID(account.id.value.bytes),
-          quorumSet = confReader.readQuorumSet(),
-          connect = x.consensusConnect,
-          maxTimeoutSeconds = confReader.readMaxTimeoutSeconds,
-          presetQuorumSets = Map.empty
-        )
+        val scpSetting = unsafeResolveSCPSetting(account, x)
         scpRunner.runIO(scp.initialize(), scpSetting).unsafeRunSync
 
       case _ => // nothing to do
@@ -60,13 +53,7 @@ class ConsensusEngineHandler extends ConsensusEngine.Handler[Stack] with Handler
                                previousValue = previousValue)
 
           // invoke scp to nominate `agreeing`
-          val scpSetting = SCPSetting(
-            localNodeID = NodeID(account.id.value.bytes),
-            quorumSet = confReader.readQuorumSet(),
-            connect = x.consensusConnect,
-            maxTimeoutSeconds = confReader.readMaxTimeoutSeconds,
-            presetQuorumSets = Map.empty
-          )
+          val scpSetting = unsafeResolveSCPSetting(account, x)
           val r = bigknife.scalap.interpreter.runner.runIO(p, scpSetting).unsafeRunSync()
           log.info(s"run scp nominate program: $r")
           ()
