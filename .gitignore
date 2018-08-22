@@ -1,6 +1,7 @@
 *
 !/**/
 !*.scala
+!*.conf
 !*.java
 !*.sbt
 !*.txt
