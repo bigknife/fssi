@@ -17,7 +17,7 @@ import types.JsonMessage
 import jsonCodecs._
 
 trait ConsensusConnect extends Connect with HandlerCommons {
-
+  val setting: Setting
   /**
     * try to extract a valid value from a not full validated value
     * @param value value not full validated
@@ -125,7 +125,9 @@ trait ConsensusConnect extends Connect with HandlerCommons {
     * @param nodeID node
     * @param quorumSet quorum set
     */
-  def synchronizeQuorumSet(nodeID: NodeID, quorumSet: QuorumSet): Unit = ???
+  def synchronizeQuorumSet(nodeID: NodeID, quorumSet: QuorumSet): Unit = {
+
+  }
 
   /**
     * verify signature of an envelope
