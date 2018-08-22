@@ -16,10 +16,22 @@ private[uc] trait CoreNodeProgramHelper[F[_]] extends BaseProgram[F] {
     * @return transaction account pair, first is payer, second is payee
     */
   def tempRunTransfer(height: BigInt,
-    transfer: Transaction.Transfer): SP[F, Either[Throwable, Unit]] = {
-
-    ???
-    
+                      transfer: Transaction.Transfer): SP[F, Either[Throwable, Unit]] = {
+    import tokenStore._
+    for {
+      payerCurrentToken <- getCurrentToken(transfer.payer)
+      payeeCurrentToken <- getCurrentToken(transfer.payee)
+      r <- if ((payerCurrentToken - transfer.token).amount >= 0)
+        for {
+          _ <- stageToken(height, transfer.payer, payerCurrentToken - transfer.token)
+          _ <- stageToken(height, transfer.payee, payeeCurrentToken + transfer.token)
+        } yield Right(()): Either[Throwable, Unit]
+      else
+        (Left(new FSSIException(
+          s"payer's token(${payerCurrentToken}) is not enough to pay(${transfer.token})")): Either[
+          Throwable,
+          Unit]).pureSP[F]
+    } yield r
   }
 
   /** run publish contract

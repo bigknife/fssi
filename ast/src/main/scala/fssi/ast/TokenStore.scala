@@ -28,4 +28,12 @@ import java.io._
   /** verify current state of token store
     */
   def verifyTokenStoreState(state: String): P[F, Boolean]
+
+  /** get token of an account
+    */
+  def getCurrentToken(account: Account.ID): P[F, Token]
+
+  /** stage the account's token
+    */
+  def stageToken(height: BigInt, account: Account.ID, token: Token): P[F, Unit]
 }
