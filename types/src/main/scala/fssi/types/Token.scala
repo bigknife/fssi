@@ -5,6 +5,15 @@ package fssi.types
   */
 case class Token(amount: BigInt, tokenUnit: TokenUnit) {
   override def toString: String = s"$amount${tokenUnit.toString}"
+
+  def +(that: Token): Token = {
+    // now, only one unit
+    Token(this.amount + that.amount, tokenUnit)
+  }
+
+  def -(that: Token): Token = {
+    Token(this.amount - that.amount, tokenUnit)
+  }
 }
 
 object Token {
