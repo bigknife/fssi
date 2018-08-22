@@ -16,7 +16,11 @@ private[uc] trait CoreNodeProgramHelper[F[_]] extends BaseProgram[F] {
     * @return transaction account pair, first is payer, second is payee
     */
   def tempRunTransfer(height: BigInt,
-                      transfer: Transaction.Transfer): SP[F, Either[Throwable, Unit]] = ???
+    transfer: Transaction.Transfer): SP[F, Either[Throwable, Unit]] = {
+
+    ???
+    
+  }
 
   /** run publish contract
     */

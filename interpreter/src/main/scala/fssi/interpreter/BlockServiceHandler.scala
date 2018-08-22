@@ -12,6 +12,9 @@ class BlockServiceHandler extends BlockService.Handler[Stack] with HandlerCommon
     val b1 = Block(
       hash = Hash.empty,
       previousHash = Hash.empty,
+      previousTokenState = HexString.empty,
+      previousContractState = HexString.empty,
+      previousContractDataState = HexString.empty,
       height = 0,
       transactions = immutable.TreeSet.empty[Transaction],
       chainID = chainID

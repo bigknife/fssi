@@ -9,7 +9,7 @@ import bigknife.sop.implicits._
 @sp trait ConsensusEngine[F[_]] {
   /** initialize consensus engine
     */
-  def initialize(account: Account): P[F, Unit]
+  def initializeConsensusEngine(account: Account): P[F, Unit]
 
   /** try to agree a new block 
     * @param account the consensus procedure initiator

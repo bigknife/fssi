@@ -35,6 +35,7 @@ trait ToolProgram[F[_]] extends BaseProgram[F] {
     import blockStore._
     import tokenStore._
     import contractStore._
+    import contractDataStore._
     import blockService._
     import log._
 
@@ -43,9 +44,9 @@ trait ToolProgram[F[_]] extends BaseProgram[F] {
       root         <- err.either(createRoot)
       confFile     <- createDefaultConfigFile(root)
       _            <- initializeBlockStore(root)
-      _            <- tokenStore.initialize(root)
-      _            <- contractStore.initialize(root)
-      _            <- contractDataStore.initialize(root)
+      _            <- initializeTokenStore(root)
+      _            <- initializeContractStore(root)
+      _            <- initializeContractDataStore(root)
       genesisBlock <- createGenesisBlock(chainID)
       _            <- saveBlock(genesisBlock)
       _            <- info(s"chain initialized, please edit the default config file: $confFile")

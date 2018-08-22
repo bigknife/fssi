@@ -13,5 +13,19 @@ import java.io._
   /** initialize a data directory to be a contract store
     * @param dataDir directory to save contract.
     */
-  def initialize(dataDir: File): P[F, Unit]
+  def initializeContractStore(dataDir: File): P[F, Unit]
+
+  /** self test for a contract store
+    * @return if the store is sane return true, or false
+    */
+  def testContractStore(): P[F, Boolean]
+
+  /** get current token store state
+    * this state should identify current state of token store
+    */
+  def getTokenStoreState(): P[F, String]
+
+  /** verify current state of contract store
+    */
+  def verifyContractStoreState(state: String): P[F, Boolean]
 }
