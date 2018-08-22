@@ -9,20 +9,32 @@ import bigknife.sop._
 import bigknife.sop.implicits._
 import scala.collection._
 
+import java.io.File
+
 trait CoreNodeProgram[F[_]] extends BaseProgram[F] with CoreNodeProgramHelper[F] {
   import model._
 
   /** Start up a core node.
     * @return node info
     */
-  def startup(handler: JsonMessageHandler): SP[F, Node] =
+  def startup(dataDir: File, handler: JsonMessageHandler): SP[F, Node] = {
+    import network._
+    import consensusEngine._
+    import tokenStore._
+    import contractStore._
+    import contractDataStore._
+
     for {
-      n1 <- network.startupP2PNode(handler)
-      n2 <- network.bindAccount(n1)
-      _  <- network.setCurrentNode(n2)
-      _  <- consensusEngine.initialize(n2.account.get)
+      n1 <- startupP2PNode(handler)
+      n2 <- bindAccount(n1)
+      _  <- setCurrentNode(n2)
+      _  <- initializeConsensusEngine(n2.account.get)
+      _ <- initializeTokenStore(dataDir)
+      _ <- initializeContractStore(dataDir)
+      _ <- initializeContractDataStore(dataDir)
       //TODO: some other components should be initialized here
     } yield n2
+  }
 
   /** Shutdown core node
     */

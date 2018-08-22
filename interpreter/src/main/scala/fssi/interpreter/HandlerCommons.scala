@@ -17,7 +17,11 @@ trait HandlerCommons {
     * the participating fileds include previousHash, height, transactions and chainID
     */
   private[interpreter] def hashBlock(block: Block): Block = {
-    val allBytes = block.previousHash.bytes ++ block.height.toByteArray ++ block.transactions
+    val allBytes = block.previousHash.bytes ++
+      block.previousTokenState.bytes ++
+      block.previousContractState.bytes ++
+      block.previousContractDataState.bytes ++
+      block.height.toByteArray ++ block.transactions
       .foldLeft(Array.emptyByteArray)((acc, n) => acc ++ bytesToHashForTransaction(n)) ++ block.chainID
       .getBytes("utf-8")
     val hashBytes = cryptoUtil.hash(allBytes)
@@ -27,6 +31,9 @@ trait HandlerCommons {
   /** calculate a block bytes, included hash */
   private[interpreter] def calculateTotalBlockBytes(block: Block): Array[Byte] = {
     val allBytes = block.previousHash.bytes ++
+      block.previousTokenState.bytes ++
+      block.previousContractState.bytes ++
+      block.previousContractDataState.bytes ++
       block.height.toByteArray ++
       block.transactions
         .foldLeft(Array.emptyByteArray)((acc, n) => acc ++ bytesToHashForTransaction(n)) ++
@@ -127,8 +134,8 @@ trait HandlerCommons {
   private[interpreter] def resolveSCPSetting(localNodeID: NodeID,
                                              setting: Setting): Option[SCPSetting] = setting match {
     case x: Setting.CoreNodeSetting =>
-      val confReader  = ConfigReader(x.configFile)
-      val qs          = confReader.readQuorumSet()
+      val confReader = ConfigReader(x.configFile)
+      val qs         = confReader.readQuorumSet()
       val scpSetting = SCPSetting(
         localNodeID = localNodeID,
         quorumSet = qs,
@@ -146,8 +153,9 @@ trait HandlerCommons {
   private[interpreter] def unsafeResolveSCPSetting(account: Account, setting: Setting): SCPSetting =
     resolveSCPSetting(NodeID(account.id.value.bytes), setting).get
 
-    /** unsafe operation for resovle SCPSetting from a setting object
+  /** unsafe operation for resovle SCPSetting from a setting object
     */
-  private[interpreter] def unsafeResolveSCPSetting(localNodeID: NodeID, setting: Setting): SCPSetting =
+  private[interpreter] def unsafeResolveSCPSetting(localNodeID: NodeID,
+                                                   setting: Setting): SCPSetting =
     resolveSCPSetting(localNodeID, setting).get
 }

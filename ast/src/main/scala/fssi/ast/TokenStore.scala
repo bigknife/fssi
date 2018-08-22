@@ -13,5 +13,19 @@ import java.io._
   /** initialize a data directory to be a token store
     * @param dataDir directory to save token.
     */
-  def initialize(dataDir: File): P[F, Unit]
+  def initializeTokenStore(dataDir: File): P[F, Unit]
+
+  /** self test for a token store
+    * @return if the store is sane return true, or false
+    */
+  def testTokenStore(): P[F, Boolean]
+
+  /** get current token store state
+    * this state should identify current state of token store
+    */
+  def getTokenStoreState(): P[F, String]
+
+  /** verify current state of token store
+    */
+  def verifyTokenStoreState(state: String): P[F, Boolean]
 }

@@ -20,7 +20,7 @@ class ConsensusEngineHandler extends ConsensusEngine.Handler[Stack] with Handler
 
   /** initialize consensus engine
     */
-  override def initialize(account: Account): Stack[Unit] = Stack { setting =>
+  override def initializeConsensusEngine(account: Account): Stack[Unit] = Stack { setting =>
     // only core node need run consensus
     setting match {
       case x: Setting.CoreNodeSetting =>

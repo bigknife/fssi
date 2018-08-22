@@ -27,7 +27,8 @@ trait StartupHandler extends JsonMessageHandler {
   )
 
   def apply(setting: Setting.CoreNodeSetting): Unit = {
-    val node = runner.runIO(coreNodeProgram.startup(this), setting).unsafeRunSync
+    val node =
+      runner.runIO(coreNodeProgram.startup(setting.workingDir, this), setting).unsafeRunSync
     settingOnce := setting
 
     // add shutdown hook to clean resources.
