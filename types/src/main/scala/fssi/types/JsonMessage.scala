@@ -11,10 +11,18 @@ object JsonMessage {
     */
   val TYPE_NAME_TRANSACTION = "transaction"
 
-  /** SCP Message 
+  /** SCP Envelope Message 
     */
-  val TYPE_NAME_SCP = "scp"
+  val TYPE_NAME_SCP = "scpEnvelope"
+
+  /* SCP QuorumSet Sync Message
+   */
+  val TYPE_NAME_QUORUMSET_SYNC = "qsSync"
 
   /** create a scp json message */
-  def scpJsonMessage(body: String): JsonMessage = JsonMessage(TYPE_NAME_SCP, body)
+  def scpEnvelopeJsonMessage(body: String): JsonMessage = JsonMessage(TYPE_NAME_SCP, body)
+
+  /** create a scp qs sync message
+    */
+  def scpQsSyncJsonMessage(body: String): JsonMessage = JsonMessage(TYPE_NAME_QUORUMSET_SYNC, body)
 }

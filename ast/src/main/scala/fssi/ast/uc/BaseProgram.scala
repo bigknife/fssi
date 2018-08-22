@@ -18,6 +18,6 @@ trait BaseProgram[F[_]] {
       Either.cond(condition, trueValue, falseException)
     )
 
-  def failM[A <: Throwable](condition: Boolean, falseException : => A): SP[F, Unit] =
+  def requireM[A <: Throwable](condition: Boolean, falseException : => A): SP[F, Unit] =
     ifM(condition, (), falseException)
 }
