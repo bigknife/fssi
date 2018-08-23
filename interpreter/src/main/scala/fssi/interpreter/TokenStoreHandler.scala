@@ -22,16 +22,22 @@ class TokenStoreHandler extends TokenStore.Handler[Stack] with LogSupport {
     * @return if the store is sane return true, or false
     */
   override def testTokenStore(block: Block): Stack[Boolean] = Stack { setting =>
-    //todo: should check the trie
-    true
+    tokenTrie
+      .map { trie =>
+        val allEmpty = (block.previousTokenState.isEmpty) && trie.hash.isEmpty
+        val sameHash = trie.hash.isDefined && (block.previousTokenState.bytes sameElements trie.hash.get)
+        allEmpty || sameHash
+      }
+      .toOption
+      .getOrElse(false)
   }
 
   /** get current token store state
     * this state should identify current state of token store
     */
-  override def getTokenStoreState(): Stack[String] = Stack { setting =>
+  override def getTokenStoreState(): Stack[HexString] = Stack { setting =>
     // should use the root hash of the trie
-    ""
+    tokenTrie.map { _.hash }.toOption.flatten.map(HexString(_)).getOrElse(HexString.empty)
   }
 
   /** verify current state of token store

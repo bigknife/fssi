@@ -11,7 +11,12 @@
       <appender-ref ref="COLOR" />
     </logger>
 
+    <logger name="io.scalecube.transport" additivity="false" level="error">
+        <appender-ref ref="COLOR" />
+    </logger>
+
     <root level="warn">
         <appender-ref ref="COLOR"/>
     </root>
+
 </configuration>
