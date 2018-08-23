@@ -13,9 +13,7 @@ import java.io._
 import org.slf4j._
 import scala.collection._
 
-class BlockStoreHandler extends BlockStore.Handler[Stack] with HandlerCommons {
-  private val log = LoggerFactory.getLogger(getClass)
-
+class BlockStoreHandler extends BlockStore.Handler[Stack] with BlockCalSupport with LogSupport {
   private val blockFileDirName      = "block"
   private val blockTrie: Once[Trie] = Once.empty
 

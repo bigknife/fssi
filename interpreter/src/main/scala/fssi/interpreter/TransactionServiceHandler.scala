@@ -5,7 +5,7 @@ import types._
 import utils._
 import ast._
 
-class TransactionServiceHandler extends TransactionService.Handler[Stack] with HandlerCommons {
+class TransactionServiceHandler extends TransactionService.Handler[Stack] with BlockCalSupport with LogSupport {
 
   /** create a transfer object with an empty signature field
     */

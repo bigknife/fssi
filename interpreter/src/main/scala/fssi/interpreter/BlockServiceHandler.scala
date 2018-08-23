@@ -7,7 +7,7 @@ import ast._
 
 import scala.collection._
 
-class BlockServiceHandler extends BlockService.Handler[Stack] with HandlerCommons {
+class BlockServiceHandler extends BlockService.Handler[Stack] with BlockCalSupport {
   override def createGenesisBlock(chainID: String): Stack[Block] = Stack {
     val b1 = Block(
       hash = Hash.empty,

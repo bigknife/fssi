@@ -20,9 +20,7 @@ import ast._, uc._
 import jsonCodecs._
 import org.slf4j._
 
-trait ConsensusConnect extends Connect with HandlerCommons {
-  private lazy val log = LoggerFactory.getLogger(getClass)
-
+trait ConsensusConnect extends Connect with BlockCalSupport with SCPSupport with LogSupport {
   val setting: Setting
   val scp: SCP[scpcomponent.Model.Op]                       = SCP[scpcomponent.Model.Op]
   val coreNodeProgram: CoreNodeProgram[components.Model.Op] = CoreNodeProgram[components.Model.Op]
@@ -285,7 +283,7 @@ trait ConsensusConnect extends Connect with HandlerCommons {
           if (slotIndex.index == (currentHeight + 1)) {
             SCPExecutionService.submit {
               val p   = scp.nominate(nodeID, slotIndex, nextRound, valueToNominate, previousValue)
-              val ret = scprunner.runIO(p, unsafeResolveSCPSetting(nodeID, setting) ).unsafeRunSync()
+              val ret = scprunner.runIO(p, unsafeResolveSCPSetting(nodeID, setting)).unsafeRunSync()
               log.info(s"nominate result: $ret")
             }
             log.info("end and cancel nominate timer ...")

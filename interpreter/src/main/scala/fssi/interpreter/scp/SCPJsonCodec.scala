@@ -15,7 +15,7 @@ import bigknife.scalap.ast.types.{Signature => SCPSignature, Hash => SCPHash, _}
 //import scala.collection._
 import scala.collection.immutable
 
-trait SCPJsonCodec extends HandlerCommons {
+trait SCPJsonCodec extends BlockCalSupport {
   implicit val valueJsonEncoder: Encoder[Value] = {
     case BlockValue(block, _) => block.asJson
     case a                    => a.asHex().asJson
