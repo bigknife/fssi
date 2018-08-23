@@ -18,9 +18,10 @@ class ContractDataStoreHandler extends ContractDataStore.Handler[Stack] {
   }
 
   /** self test for a contract data store
+    * @param block contract data store should be tested on block
     * @return if the store is sane return true, or false
     */
-  override def testContractDataStore(): Stack[Boolean] = Stack { setting =>
+  override def testContractDataStore(block: Block): Stack[Boolean] = Stack { setting =>
     //todo: should check the store
     true
   }

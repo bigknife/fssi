@@ -16,9 +16,10 @@ import java.io._
   def initializeTokenStore(dataDir: File): P[F, Unit]
 
   /** self test for a token store
+    * @param block token store should be tested on block
     * @return if the store is sane return true, or false
     */
-  def testTokenStore(): P[F, Boolean]
+  def testTokenStore(block: Block): P[F, Boolean]
 
   /** get current token store state
     * this state should identify current state of token store

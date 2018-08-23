@@ -18,9 +18,10 @@ class TokenStoreHandler extends TokenStore.Handler[Stack] {
   }
 
   /** self test for a token store
+    * @param block token store should be tested on block
     * @return if the store is sane return true, or false
     */
-  override def testTokenStore(): Stack[Boolean] = Stack { setting =>
+  override def testTokenStore(block: Block): Stack[Boolean] = Stack { setting =>
     //todo: should check the trie
     true
   }

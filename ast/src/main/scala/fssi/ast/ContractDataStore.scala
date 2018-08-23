@@ -16,9 +16,10 @@ import java.io._
   def initializeContractDataStore(dataDir: File): P[F, Unit]
 
   /** self test for a contract data store
+    * @param block contract data store should be tested on block
     * @return if the store is sane return true, or false
     */
-  def testContractDataStore(): P[F, Boolean]
+  def testContractDataStore(block: Block): P[F, Boolean]
 
   /** get current contract data store state
     * this state should identify current state of contract data store
