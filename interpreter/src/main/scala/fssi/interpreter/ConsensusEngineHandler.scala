@@ -14,8 +14,12 @@ import bigknife.scalap.ast.types.{NodeID, SlotIndex}
 import bigknife.scalap.ast.usecase.SCP
 import bigknife.scalap.ast.usecase.component._
 
-class ConsensusEngineHandler extends ConsensusEngine.Handler[Stack] with HandlerCommons {
-  private val log                   = LoggerFactory.getLogger(getClass)
+class ConsensusEngineHandler
+    extends ConsensusEngine.Handler[Stack]
+    with BlockCalSupport
+    with SCPSupport
+    with LogSupport {
+
   private val scp: SCP[SCPModel.Op] = SCP[SCPModel.Op]
 
   /** initialize consensus engine
@@ -54,7 +58,7 @@ class ConsensusEngineHandler extends ConsensusEngine.Handler[Stack] with Handler
 
           // invoke scp to nominate `agreeing`
           val scpSetting = unsafeResolveSCPSetting(account, x)
-          val r = bigknife.scalap.interpreter.runner.runIO(p, scpSetting).unsafeRunSync()
+          val r          = bigknife.scalap.interpreter.runner.runIO(p, scpSetting).unsafeRunSync()
           log.info(s"run scp nominate program: $r")
           ()
 

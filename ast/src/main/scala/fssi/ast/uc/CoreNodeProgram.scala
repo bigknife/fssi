@@ -27,7 +27,9 @@ trait CoreNodeProgram[F[_]] extends BaseProgram[F] with CoreNodeProgramHelper[F]
     import log._
 
     for {
-      block                   <- getLatestDeterminedBlock()
+      block <- getLatestDeterminedBlock()
+      _ <- info(
+        s"startup core node in $dataDir, current block height: ${block.height}, hash: ${block.hash}")
       tokenStoreIsSane        <- testTokenStore(block)
       _                       <- info(s"token store is sane? $tokenStoreIsSane")
       contractStoreIsSane     <- testContractStore(block)
@@ -36,15 +38,18 @@ trait CoreNodeProgram[F[_]] extends BaseProgram[F] with CoreNodeProgramHelper[F]
       _                       <- info(s"contract data store is sane? $contractDataStoreIsSane")
       _ <- requireM(tokenStoreIsSane && contractStoreIsSane && contractDataStoreIsSane,
                     new FSSIException("local stores are not sane"))
-
       n1 <- startupP2PNode(handler)
       n2 <- bindAccount(n1)
       _  <- setCurrentNode(n2)
+      _  <- info(s"node startup and bound acount: $n2")
       _  <- initializeConsensusEngine(n2.account.get)
+      _  <- info("initialized consensus engine")
       _  <- initializeTokenStore(dataDir)
+      _  <- info("initialized token store")
       _  <- initializeContractStore(dataDir)
+      _  <- info("initialized contract stores")
       _  <- initializeContractDataStore(dataDir)
-      //TODO: some other components should be initialized here
+      _  <- info("initialized contract data store")
     } yield n2
   }
 

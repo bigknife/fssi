@@ -7,7 +7,7 @@ import ast._
 
 import java.io._
 
-class TokenStoreHandler extends TokenStore.Handler[Stack] {
+class TokenStoreHandler extends TokenStore.Handler[Stack] with LogSupport {
   private val tokenFileDirName      = "token"
   private val tokenTrie: Once[Trie] = Once.empty
 

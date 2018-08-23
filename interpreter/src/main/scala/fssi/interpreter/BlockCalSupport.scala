@@ -5,12 +5,9 @@ import utils._
 import types._, implicits._
 import ast._
 
-import scala.collection._
-
-import bigknife.scalap.ast.types.{NodeID, SlotIndex}
-import bigknife.scalap.interpreter.{Setting => SCPSetting}
-
-trait HandlerCommons {
+/** calclute Block bytes/hash...
+  */
+trait BlockCalSupport {
 
   /** calculate the hash(sha3-256) of a block
     * then, fill the `hash` field to return the new block.
@@ -129,33 +126,4 @@ trait HandlerCommons {
         BigInt(x.timestamp).toByteArray
   }
 
-  /** try to resovle SCPSetting from a setting object
-    */
-  private[interpreter] def resolveSCPSetting(localNodeID: NodeID,
-                                             setting: Setting): Option[SCPSetting] = setting match {
-    case x: Setting.CoreNodeSetting =>
-      val confReader = ConfigReader(x.configFile)
-      val qs         = confReader.readQuorumSet()
-      val scpSetting = SCPSetting(
-        localNodeID = localNodeID,
-        quorumSet = qs,
-        connect = x.consensusConnect,
-        maxTimeoutSeconds = confReader.readMaxTimeoutSeconds,
-        presetQuorumSets = scala.collection.immutable.Map(localNodeID -> qs)
-      )
-      Some(scpSetting)
-
-    case _ => None // only core node config can be translated into scpsetting
-  }
-
-  /** unsafe operation for resovle SCPSetting from a setting object
-    */
-  private[interpreter] def unsafeResolveSCPSetting(account: Account, setting: Setting): SCPSetting =
-    resolveSCPSetting(NodeID(account.id.value.bytes), setting).get
-
-  /** unsafe operation for resovle SCPSetting from a setting object
-    */
-  private[interpreter] def unsafeResolveSCPSetting(localNodeID: NodeID,
-                                                   setting: Setting): SCPSetting =
-    resolveSCPSetting(localNodeID, setting).get
 }
