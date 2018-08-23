@@ -16,8 +16,9 @@ trait SafeVar[A] { outter =>
 
   protected def safeUpdate(a: => A): Unit = _safeUpdate(a)
 
-  def apply(): Option[A] = a.get()
-  def unsafe(): A        = a.get.get
+  def apply(): Option[A]  = a.get()
+  def unsafe(): A         = a.get.get
+  def toOption: Option[A] = a.get
 
   def :=(a: => A): Unit = safeUpdate(a)
 

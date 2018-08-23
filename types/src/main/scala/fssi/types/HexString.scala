@@ -12,6 +12,8 @@ case class HexString(bytes: Array[Byte]) {
 
   def toBytesValue: BytesValue = BytesValue(bytes)
 
+  def isEmpty: Boolean = bytes.isEmpty
+
   override def equals(that: Any): Boolean = that match {
     case HexString(thatBytes) => bytes sameElements thatBytes
     case _ => false

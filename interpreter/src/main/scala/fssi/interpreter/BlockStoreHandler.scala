@@ -18,7 +18,7 @@ class BlockStoreHandler extends BlockStore.Handler[Stack] with BlockCalSupport w
   private val blockTrie: Once[Trie] = Once.empty
 
   // current block height key in block trie
-  private val KEY_CURRENT_HEIGHT: Array[Byte] = Array(0)
+  private val KEY_CURRENT_HEIGHT: Array[Byte] = "current_height".getBytes
 
   // current undetermined block
   private val undeterminedBlockRef: java.util.concurrent.atomic.AtomicReference[Option[Block]] =
@@ -30,7 +30,8 @@ class BlockStoreHandler extends BlockStore.Handler[Stack] with BlockCalSupport w
   override def initializeBlockStore(dataDir: File): Stack[Unit] = Stack {
     val path = new File(dataDir, blockFileDirName)
     path.mkdirs()
-    blockTrie := Trie.empty(levelDBStore(path))
+    log.debug(s"block trie path: $path")
+    blockTrie := Trie.empty().withStore(levelDBStore(path))
   }
 
   /** save block, before saving, invoker should guarantee that the block is legal
@@ -43,13 +44,13 @@ class BlockStoreHandler extends BlockStore.Handler[Stack] with BlockCalSupport w
     // key is the height of the block
     blockTrie foreach { trie =>
       // update current height
-      trie.store.save(KEY_CURRENT_HEIGHT, block.height.toByteArray)
+      trie.put(KEY_CURRENT_HEIGHT, block.height.toByteArray)
       log.info(s"saved current height: ${block.height}")
 
       // update height -> block
       val key   = block.height.toByteArray
       val value = block.asJson.noSpaces.getBytes("utf-8")
-      trie.store.save(key, value)
+      trie.put(key, value)
       log.info(s"saved block for ${block.height}")
     }
   }

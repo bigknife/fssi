@@ -21,7 +21,9 @@ trait LevelDBStore extends Store {
 
   override def save(key: StoreKey, value: StoreValue): Unit = db.put(key, value)
 
-  override def load(key: StoreKey): Option[StoreValue] = Option(db.get(key))
+  override def load(key: StoreKey): Option[StoreValue] = {
+    Option(db.get(key))
+  }
 
   override def delete(key: StoreKey): Unit = db.delete(key)
 

@@ -7,7 +7,7 @@ trait Trie {
   def hash: Option[Hash]
 
   // store the nodes, key is the hash
-  def store: Store
+  private[trie] def store: Store
 
   def isEmpty: Boolean = hash.isEmpty
 
@@ -30,18 +30,25 @@ object Trie {
   }
 
   def empty(): Trie = SimpleTrie(None, Store.memory())
-  def empty(store: Store): Trie = SimpleTrie(None, store)
+  def empty(store: Store): Trie = {
+    SimpleTrie(None, store)
+  }
 
   object ops {
 
     implicit final class TireOps(trie: Trie)(implicit _serializer: Node.Serializer) {
+      private val rootHashKey = "_________fss.utils.trie.root_________".getBytes("utf-8")
 
       lazy val combinator: NodeCombinator = new NodeCombinator {
         lazy val serializer: Node.Serializer = _serializer
         lazy val store: Store                = trie.store
       }
 
-      def put(key: Key, value: Value): Trie =
+      def put(key: Key, value: Value): Trie = {
+        trie.store.save(key, value)
+        trie
+      }
+      /*
         if (trie.isEmpty) {
           val node = Node.leaf(key, value)
           val hash = node.hash
@@ -66,6 +73,7 @@ object Trie {
           }
 
         }
+        */
       def getNode(key: Key): Option[Node] = {
         val nibbles = Nibble.Sequence(key)
         for {
@@ -75,14 +83,18 @@ object Trie {
           x         <- getNodeFromNode(node, nibbles)
         } yield x
       }
-      def getValue(key: Key): Option[Value] = getNode(key).flatMap {
-        case Branch(_, valueOpt) => valueOpt
-        case Leaf(_, value)      => Some(value)
-        case _                   => None
+      def getValue(key: Key): Option[Value] = {
+        trie.store.load(key)
       }
 
-      def withStore(store: Store): Trie = SimpleTrie(trie.hash, store)
-      def withHash(hash: Hash): Trie    = SimpleTrie(Some(hash), trie.store)
+      def withStore(store: Store): Trie = {
+        val hash = store.load(rootHashKey)
+        SimpleTrie(hash, store)
+      }
+      def withHash(hash: Hash): Trie = {
+        trie.store.save(rootHashKey, hash)
+        SimpleTrie(Some(hash), trie.store)
+      }
 
       private def getNodeFromNode(target: Node, seq: Nibble.Sequence): Option[Node] = target match {
         case Empty => None

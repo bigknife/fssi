@@ -22,16 +22,22 @@ class ContractDataStoreHandler extends ContractDataStore.Handler[Stack] {
     * @return if the store is sane return true, or false
     */
   override def testContractDataStore(block: Block): Stack[Boolean] = Stack { setting =>
-    //todo: should check the store
-    true
+    contractDataTrie
+      .map { trie =>
+        val allEmpty = (block.previousContractDataState.isEmpty) && trie.hash.isEmpty
+        val sameHash = trie.hash.isDefined && (block.previousContractDataState.bytes sameElements trie.hash.get)
+        allEmpty || sameHash
+      }
+      .toOption
+      .getOrElse(false)
   }
 
   /** get current contract data store state
     * this state should identify current state of contract data store
     */
-  override def getContractDataStoreState(): Stack[String] = Stack { setting =>
+  override def getContractDataStoreState(): Stack[HexString] = Stack { setting =>
     //todo: use the root hash of the trie
-    ""
+    contractDataTrie.map { _.hash }.toOption.flatten.map(HexString(_)).getOrElse(HexString.empty)
   }
 
   /** verify current state of contract data store

@@ -24,7 +24,7 @@ import java.io._
   /** get current contract data store state
     * this state should identify current state of contract data store
     */
-  def getContractDataStoreState(): P[F, String]
+  def getContractDataStoreState(): P[F, HexString]
 
   /** verify current state of contract store
     */

@@ -24,7 +24,7 @@ import java.io._
   /** get current token store state
     * this state should identify current state of token store
     */
-  def getTokenStoreState(): P[F, String]
+  def getTokenStoreState(): P[F, HexString]
 
   /** verify current state of contract store
     */

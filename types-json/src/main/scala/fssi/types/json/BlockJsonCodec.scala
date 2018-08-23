@@ -27,9 +27,9 @@ trait BlockJsonCodec {
     for {
       hash                      <- h.get[Hash]("hash")
       previousHash              <- h.get[Hash]("previousHash")
-      previousTokenState        <- h.get[HexString]("previousTokenstate")
-      previousContractState     <- h.get[HexString]("previousContractstate")
-      previousContractDataState <- h.get[HexString]("previousContractdatastate")
+      previousTokenState        <- h.get[HexString]("previousTokenState")
+      previousContractState     <- h.get[HexString]("previousContractState")
+      previousContractDataState <- h.get[HexString]("previousContractDataState")
       height                    <- h.get[BigInt]("height")
       chainID                   <- h.get[String]("chainID")
       transactions              <- h.get[Vector[Transaction]]("transactions")
