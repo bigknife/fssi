@@ -21,9 +21,10 @@ class ContractStoreHandler extends ContractStore.Handler[Stack] {
   }
 
   /** self test for a contract store
+    * @param block contract store should be tested on block
     * @return if the store is sane return true, or false
     */
-  override def testContractStore(): Stack[Boolean] = Stack { setting =>
+  override def testContractStore(block: Block): Stack[Boolean] = Stack { setting =>
     //todo should check the trie
     true
   }

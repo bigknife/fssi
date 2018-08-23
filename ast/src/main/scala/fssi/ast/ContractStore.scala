@@ -16,9 +16,10 @@ import java.io._
   def initializeContractStore(dataDir: File): P[F, Unit]
 
   /** self test for a contract store
+    * @param block contract store should be tested on block
     * @return if the store is sane return true, or false
     */
-  def testContractStore(): P[F, Boolean]
+  def testContractStore(block: Block): P[F, Boolean]
 
   /** get current token store state
     * this state should identify current state of token store
