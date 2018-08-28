@@ -3,7 +3,7 @@ package tool
 
 import java.io._
 
-import fssi.types.OutputFormat
+import fssi.types.CodeFormat
 
 sealed trait CmdArgs
 
@@ -24,7 +24,14 @@ object CmdArgs {
     */
   case class CompileContractArgs(projectDir: File,
                                  targetDir: File,
-                                 outputFormat: OutputFormat = OutputFormat.Jar)
+                                 outputFormat: CodeFormat = CodeFormat.Jar)
+      extends CmdArgs
+
+  case class RunContractArgs(contractFile: File,
+                             qualifiedClass: String,
+                             methodName: String,
+                             parameters: Array[String],
+                             decodeFormat: CodeFormat = CodeFormat.Jar)
       extends CmdArgs
 
 }

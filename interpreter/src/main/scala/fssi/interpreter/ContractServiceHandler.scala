@@ -3,13 +3,17 @@ package fssi.interpreter
 import java.io._
 import java.nio.file._
 import java.nio.file.attribute.BasicFileAttributes
+import java.util.UUID
 import java.util.zip.{ZipEntry, ZipOutputStream}
 
 import fssi.ast.ContractService
-import fssi.types.OutputFormat.{Base64, Hex, Jar}
+import fssi.interpreter.Setting.ToolSetting
+import fssi.types.CodeFormat.{Base64, Hex, Jar}
 import fssi.types._
 import fssi.types.exception._
-import fssi.utils.{Compiler => compiler}
+import fssi.utils.{BytesUtil, ContractClassLoader, FileUtil, Compiler => compiler}
+
+import scala.util.Try
 
 /**
   * Created on 2018/8/14
@@ -58,7 +62,7 @@ class ContractServiceHandler extends ContractService.Handler[Stack] {
 
   override def outputZipFile(bytesValue: BytesValue,
                              targetDir: Path,
-                             format: OutputFormat): Stack[Unit] = Stack {
+                             format: CodeFormat): Stack[Unit] = Stack {
     def write(bytes: Array[Byte]): Unit = {
       better.files.File(targetDir.toString).outputStream.map(os ⇒ os.write(bytes)).get()
     }
@@ -70,6 +74,69 @@ class ContractServiceHandler extends ContractService.Handler[Stack] {
       case Base64 ⇒ write(bytesValue.toBase64String.toString().getBytes("utf-8"))
     }
   }
+
+  override def decodeContractClasses(contractFile: Path,
+                                     decodeFormat: CodeFormat): Stack[BytesValue] = Stack {
+    val bytes = better.files.File(contractFile).byteArray
+    val decodeBytes = decodeFormat match {
+      case Jar    ⇒ bytes
+      case Hex    ⇒ HexString.decode(new String(bytes, "utf-8")).bytes
+      case Base64 ⇒ BytesUtil.decodeBase64(new String(bytes, "utf-8"))
+    }
+    BytesValue(decodeBytes)
+  }
+
+  override def buildContractDir(bytesValue: BytesValue): Stack[Path] = Stack { setting ⇒
+    val rand   = UUID.randomUUID().toString.replace("-", "")
+    val tmpDir = Paths.get(s"${setting.asInstanceOf[ToolSetting].contractTempDir}", rand)
+    tmpDir.toFile.mkdirs()
+    val jarFile = Paths.get(tmpDir.toString, s"$rand.jar")
+    better.files.File(jarFile).writeByteArray(bytesValue.value)
+    better.files.File(jarFile).unzipTo(tmpDir)
+    if (jarFile.toFile.exists()) jarFile.toFile.delete()
+    tmpDir
+  }
+
+  override def checkContractMethod(contractDir: Path,
+                                   className: String,
+                                   methodName: String): Stack[Either[Throwable, Unit]] = Stack {
+    Try {
+      val metaFile = Paths.get(contractDir.toString, "META-INF/contract")
+      val existed = better.files.File(metaFile).lines.toVector.exists { line ⇒
+        line.split("\\s*=\\s*") match {
+          case Array(_, qualifiedMethodName) ⇒
+            qualifiedMethodName.split("#") match {
+              case Array(cn, mn) ⇒ className == cn && methodName == mn
+              case _             ⇒ false
+            }
+          case _ ⇒ false
+        }
+      }
+      if (existed) ()
+      else {
+        FileUtil.deleteDir(contractDir)
+        throw new NoSuchMethodException(s"method $className#$methodName not found")
+      }
+    }.toEither
+  }
+
+  override def invokeContractMethod(contractDir: Path,
+                                    className: String,
+                                    methodName: String,
+                                    parameters: Array[String]): Stack[Either[Throwable, Unit]] =
+    Stack {
+      try {
+        val classLoader = new ContractClassLoader(contractDir)
+        val clazz       = classLoader.findClass(className)
+        val methodArgs  = parameters.map(_ ⇒ classOf[String])
+        val method      = clazz.getMethod(methodName, methodArgs: _*)
+        val instance    = clazz.newInstance()
+        method.invoke(instance, parameters: _*)
+        Right(())
+      } catch {
+        case e: Throwable ⇒ Left(e)
+      } finally FileUtil.deleteDir(contractDir)
+    }
 }
 
 object ContractServiceHandler {

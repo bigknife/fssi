@@ -5,7 +5,7 @@ import java.io.File
 
 import scopt._
 import CmdArgs._
-import fssi.types.OutputFormat
+import fssi.types.CodeFormat
 
 object CmdArgsParser extends OptionParser[CmdArgs]("fssitool") {
 
@@ -42,17 +42,53 @@ object CmdArgsParser extends OptionParser[CmdArgs]("fssitool") {
     .children(
       opt[java.io.File]("source-code")
         .abbr("f")
+        .text("dir of contract source code")
         .required()
         .validate(f ⇒
           if (f.exists() && f.isDirectory) Right(()) else Left(s"dir ${f.getPath} not found"))
         .action((f, c) ⇒ c.asInstanceOf[CompileContractArgs].copy(projectDir = f)),
       opt[java.io.File]("output")
         .abbr("o")
+        .text("dir of compiled contract clazz")
         .required()
         .action((f, c) ⇒ c.asInstanceOf[CompileContractArgs].copy(targetDir = f)),
-      opt[String]("format")
-        .abbr("t")
+      opt[String]("encode-format")
+        .abbr("ef")
+        .text("encode format for compiled contract result,support jar、hex and base64. default jar")
         .optional()
-        .action((t, c) ⇒ c.asInstanceOf[CompileContractArgs].copy(outputFormat = OutputFormat(t)))
+        .action((t, c) ⇒ c.asInstanceOf[CompileContractArgs].copy(outputFormat = CodeFormat(t)))
+    )
+
+  cmd("RunContract")
+    .text("run smart contract")
+    .action((_, _) ⇒ RunContractArgs(new File("."), "", "", Array.empty[String]))
+    .children(
+      opt[java.io.File]("compiled-contract-file")
+        .abbr("ccf")
+        .text("file of compiled contract")
+        .required()
+        .validate(f ⇒
+          if (f.exists() && f.isFile) Right(()) else Left(s"file ${f.getPath} not found"))
+        .action((f, c) ⇒ c.asInstanceOf[RunContractArgs].copy(contractFile = f)),
+      opt[String]("class-name")
+        .abbr("cn")
+        .required()
+        .text("qualified class name expose in contract configuration")
+        .action((n, c) ⇒ c.asInstanceOf[RunContractArgs].copy(qualifiedClass = n)),
+      opt[String]("method-name")
+        .abbr("mn")
+        .required()
+        .text("method name be invoked in class exposed in contract configuration")
+        .action((m, c) ⇒ c.asInstanceOf[RunContractArgs].copy(methodName = m)),
+      opt[String]("parameters")
+        .abbr("p")
+        .text("parameters for invoked method,comma split in multiple sense")
+        .optional()
+        .action((p, c) ⇒ c.asInstanceOf[RunContractArgs].copy(parameters = p.split(","))),
+      opt[String]("decode-format")
+        .abbr("df")
+        .text("contract decode format,support jar、hex and base64. default jar")
+        .optional()
+        .action((df, c) ⇒ c.asInstanceOf[RunContractArgs].copy(decodeFormat = CodeFormat(df)))
     )
 }

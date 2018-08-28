@@ -15,6 +15,8 @@ object ToolMain extends App {
         case CreateChainArgs(dataDir, chainID) => createChain(dataDir, chainID)
         case CompileContractArgs(projectDir, targetDir, format) =>
           compileContract(projectDir, targetDir, format)
+        case RunContractArgs(classesDir, qualifiedClass, methodName, parameters, decodeFormat) ⇒
+          runContract(classesDir, qualifiedClass, methodName, parameters, decodeFormat)
         case _ =>
       }
     case None =>

@@ -51,12 +51,15 @@ object CheckingClassLoader {
     "^Ljava/util/concurrent.*",
     "^Ljava/lang/reflect.*",
     "^Ljava/lang/Thread;",
+    "^Ljava/lang/Class;",
     "^Ljavax/.*",
     "^Lsun/.*",
     "^Ljava/net.*"
   )
 
-  private def isContractInclude(className: String): Boolean = !className.startsWith("java")
+  lazy val allowedClasses = Vector(
+    "^Ljava/lang/Object;"
+  )
 
   case class ClassCheckingStatus() {
 
@@ -73,7 +76,7 @@ object CheckingClassLoader {
     }
 
     def isLegal: Boolean       = errorBuffer.isEmpty
-    def errors: Vector[String] = errorBuffer.toVector
+    def errors: Vector[String] = errorBuffer.distinct.toVector
   }
 
   case class ClassCheckVisitor(visitor: ClassVisitor,
@@ -81,7 +84,8 @@ object CheckingClassLoader {
                                needCheckMethod: Boolean = false)
       extends ClassVisitor(ASM6, visitor) {
     import ClassCheckingVisitor._
-    var currentClassName: String = _
+    var currentClassName: String       = _
+    var currentClassDescriptor: String = _
 
     override def visit(version: Int,
                        access: Int,
@@ -90,16 +94,15 @@ object CheckingClassLoader {
                        superName: String,
                        interfaces: Array[String]): Unit = {
       currentClassName = Type.getObjectType(name).getClassName
+      currentClassDescriptor = Type.getObjectType(name).getDescriptor
       if (visitor != null) visitor.visit(version, access, name, signature, superName, interfaces)
       if (!visitedClasses.contains(currentClassName)) {
         visitedClasses += currentClassName
-        val descOfName = Type.getObjectType(name).getDescriptor
-        val errors     = scala.collection.mutable.ListBuffer.empty[String]
-        forbiddenClasses.find(forbid ⇒ forbid.r.pattern.matcher(descOfName).matches()) match {
-          case Some(_) ⇒ errors += s"class [$currentClassName] is forbidden"
-          case None    ⇒
+        forbiddenClasses.find(forbid ⇒ forbid.r.pattern.matcher(currentClassDescriptor).matches()) match {
+          case Some(_) ⇒
+            checkClassLoader.track.addError(s"class [$currentClassName] is forbidden")
+          case None ⇒
         }
-        checkClassLoader.track.addErrors(errors.toVector)
         if (checkClassLoader.track.isLegal && superName != null) {
           val superClass = Type.getObjectType(superName).getClassName
           if (!visitedClasses.contains(superClass)) {
@@ -116,14 +119,13 @@ object CheckingClassLoader {
                             signature: String,
                             value: Any): FieldVisitor = {
       if (checkClassLoader.track.isLegal) {
-        val errors = scala.collection.mutable.ListBuffer.empty[String]
         forbiddenClasses.find(forbid ⇒ forbid.r.pattern.matcher(descriptor).matches()) match {
           case Some(_) ⇒
-            errors += s"class field [$currentClassName.$name] of type [${Type.getType(descriptor).getClassName}] is forbidden"
+            checkClassLoader.track.addError(
+              s"class field [$currentClassName.$name] of type [${Type.getType(descriptor).getClassName}] is forbidden")
           case None ⇒
         }
-        checkClassLoader.track.addErrors(errors.toVector)
-        if ((ACC_VOLATILE & access) == ACC_VOLATILE && isContractInclude(currentClassName))
+        if ((ACC_VOLATILE & access) == ACC_VOLATILE)
           checkClassLoader.track.addError(
             s"class volatile field [$currentClassName.$name] is forbidden")
       }
@@ -138,19 +140,22 @@ object CheckingClassLoader {
                              descriptor: String,
                              signature: String,
                              exceptions: Array[String]): MethodVisitor = {
-      super.visitMethod(access, name, descriptor, signature, exceptions)
-      if (!currentClassName.startsWith("java")) {
-        if ((access & ACC_SYNCHRONIZED) == ACC_SYNCHRONIZED && isContractInclude(currentClassName))
-          checkClassLoader.track.addError(
-            s"class method [$currentClassName.$name] should not with access 'synchronized'")
+      val methodVisitor = super.visitMethod(access, name, descriptor, signature, exceptions)
+      if ((access & ACC_SYNCHRONIZED) == ACC_SYNCHRONIZED)
+        checkClassLoader.track.addError(
+          s"class method [$currentClassName.$name] should not with access 'synchronized'")
 
-        if ((access & ACC_NATIVE) == ACC_NATIVE && isContractInclude(currentClassName))
-          checkClassLoader.track.addError(
-            s"class method [$currentClassName.$name] should not with access 'native'")
+      if ((access & ACC_NATIVE) == ACC_NATIVE && !currentClassName.startsWith("java.lang.Object"))
+        checkClassLoader.track.addError(
+          s"class method [$currentClassName.$name] should not with access 'native'")
 
-      }
-      MethodCheckingVisitor(currentClassName, name, checkClassLoader)
+      MethodCheckingVisitor(currentClassName,
+                            currentClassDescriptor,
+                            name,
+                            checkClassLoader,
+                            methodVisitor)
     }
+
   }
 
   object ClassCheckingVisitor {
@@ -158,22 +163,44 @@ object CheckingClassLoader {
   }
 
   case class MethodCheckingVisitor(className: String,
+                                   classDescriptor: String,
                                    methodName: String,
-                                   checkingClassLoader: CheckingClassLoader)
-      extends MethodVisitor(ASM6) {
+                                   checkingClassLoader: CheckingClassLoader,
+                                   methodVisitor: MethodVisitor)
+      extends MethodVisitor(ASM6, methodVisitor) {
+
     override def visitTypeInsn(opcode: Int, `type`: String): Unit = {
       super.visitTypeInsn(opcode, `type`)
-      val _type  = Type.getObjectType(`type`)
-      val errors = scala.collection.mutable.ListBuffer.empty[String]
+      val _type = Type.getObjectType(`type`)
       forbiddenClasses.find(forbid ⇒ forbid.r.pattern.matcher(_type.getDescriptor).matches()) match {
         case Some(_) ⇒
-          errors += s"class method [$className.$methodName] local variable of type [${_type.getClassName}] is forbidden"
+          val methodDesc =
+            if (methodName.startsWith("<init>")) "initialize member variable"
+            else if (methodName.startsWith("<clinit>")) "initialize static variable"
+            else s"initialize local variable in method [$className.$methodName]"
+          checkingClassLoader.track.addError(
+            s"$methodDesc of type [${_type.getClassName}] in class [$className] is forbidden")
         case None ⇒
       }
-      checkingClassLoader.track.addErrors(errors.toVector)
     }
 
-    override def visitVarInsn(opcode: Int, `var`: Int): Unit =
-      super.visitVarInsn(opcode, `var`)
+    override def visitMethodInsn(opcode: Int,
+                                 owner: String,
+                                 name: String,
+                                 descriptor: String,
+                                 isInterface: Boolean): Unit = {
+      super.visitMethodInsn(opcode, owner, name, descriptor, isInterface)
+      val allowedOption =
+        allowedClasses.find(allow ⇒ allow.r.pattern.matcher(classDescriptor).matches())
+      if (allowedOption.isEmpty) {
+        val ownerType = Type.getObjectType(owner)
+        forbiddenClasses.find(forbid ⇒ forbid.r.pattern.matcher(ownerType.getDescriptor).matches()) match {
+          case Some(_) ⇒
+            checkingClassLoader.track.addError(
+              s"invoke method [${ownerType.getClassName}.$name] in class [$className] is forbidden")
+          case None ⇒
+        }
+      }
+    }
   }
 }

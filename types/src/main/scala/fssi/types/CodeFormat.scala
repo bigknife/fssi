@@ -3,14 +3,14 @@ package fssi.types
 /**
   * Created on 2018/8/14
   */
-sealed trait OutputFormat
+sealed trait CodeFormat
 
-object OutputFormat {
-  case object Jar    extends OutputFormat
-  case object Hex    extends OutputFormat
-  case object Base64 extends OutputFormat
+object CodeFormat {
+  case object Jar    extends CodeFormat
+  case object Hex    extends CodeFormat
+  case object Base64 extends CodeFormat
 
-  def apply(format: String): OutputFormat = format match {
+  def apply(format: String): CodeFormat = format match {
     case j if Jar.toString.equalsIgnoreCase(j)    ⇒ Jar
     case h if Hex.toString.equalsIgnoreCase(h)    ⇒ Hex
     case b if Base64.toString.equalsIgnoreCase(b) ⇒ Base64
