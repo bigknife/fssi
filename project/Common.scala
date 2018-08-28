@@ -89,6 +89,14 @@ object Common {
           )
     }
 
+    object trie {
+      def apply(): Project =
+        prj("trie", "trie")
+          .settings(
+            libraryDependencies ++= (all.circe)
+          )
+    }
+
     object types {
       def apply(): Project = prj("types", "types")
     }
