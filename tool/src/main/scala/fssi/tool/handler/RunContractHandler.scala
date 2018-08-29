@@ -33,7 +33,7 @@ trait RunContractHandler {
           .runContract(classesDir.toPath, qualifiedClassName, methodName, parameters, decodeFormat),
         setting)
       .unsafeRunSync() match {
-      case Right(_) ⇒ logger.info(s"invoke method $qualifiedClassName#$methodName success")
+      case Right(_) ⇒ logger.info(s"invoke method [$qualifiedClassName#$methodName] success")
       case Left(e)  ⇒ e.printStackTrace()
     }
   }

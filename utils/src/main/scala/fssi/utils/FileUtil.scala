@@ -8,9 +8,10 @@ trait FileUtil {
 
   def deleteDir(dir: java.nio.file.Path): Unit = {
 
-    def deleteFile(file: java.io.File): Unit =
+    def deleteFile(file: java.io.File): Unit = {
       if (file.isDirectory) file.listFiles.foreach(child ⇒ deleteFile(child))
-      else file.delete()
+      file.delete()
+    }
 
     if (dir.toFile.exists()) deleteFile(dir.toFile)
     else ()

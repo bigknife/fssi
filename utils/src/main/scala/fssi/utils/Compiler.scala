@@ -17,7 +17,7 @@ trait Compiler {
   lazy val logger: Logger = LoggerFactory.getLogger(getClass)
 
   /***
-    *
+    * compile source code
     * @param sourceDir project path
     * @param targetDir path to store class file
     * @return class file path or errors
@@ -86,7 +86,7 @@ trait Compiler {
     */
   def checkDeterminism(classFilePath: Path): Either[Vector[String], Unit] = {
     val contract = Paths.get(classFilePath.toString, "META-INF/contract").toFile
-    if (!contract.isFile) Left(Vector("META-INF/contract file not found"))
+    if (!contract.exists() || !contract.isFile) Left(Vector("META-INF/contract file not found"))
     else {
       val reader = new BufferedReader(new FileReader(contract))
       val lines = Iterator
@@ -103,7 +103,7 @@ trait Compiler {
         }
       }
       if (track.isLegal) Right(())
-      else Left(track.errors)
+      else { FileUtil.deleteDir(classFilePath); Left(track.errors) }
     }
   }
 }

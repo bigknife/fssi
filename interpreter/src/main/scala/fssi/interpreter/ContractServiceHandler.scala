@@ -11,7 +11,7 @@ import fssi.interpreter.Setting.ToolSetting
 import fssi.types.CodeFormat.{Base64, Hex, Jar}
 import fssi.types._
 import fssi.types.exception._
-import fssi.utils.{BytesUtil, ContractClassLoader, FileUtil, Compiler => compiler}
+import fssi.utils.{BytesUtil, CheckingClassLoader, FileUtil, Compiler => compiler}
 
 import scala.util.Try
 
@@ -22,8 +22,10 @@ class ContractServiceHandler extends ContractService.Handler[Stack] {
 
   override def compileContractSourceCode(
       sourcePath: Path): Stack[Either[ContractCompileError, Path]] = Stack {
-    val in  = Paths.get(sourcePath.toString, "src")
-    val out = Paths.get(sourcePath.toString, "out")
+    val in      = Paths.get(sourcePath.toString, "src")
+    val out     = Paths.get(sourcePath.toString, "out")
+    val outFile = out.toFile
+    if (outFile.exists()) FileUtil.deleteDir(out)
     out.toFile.mkdirs()
     compiler.compileToNormalClass(in, out).left.map(ContractCompileError)
   }
@@ -56,7 +58,7 @@ class ContractServiceHandler extends ContractService.Handler[Stack] {
     }
     Files.walkFileTree(classFilePath, FV)
     zipOut.flush(); output.flush(); zipOut.close()
-    val array = output.toByteArray; output.close()
+    val array = output.toByteArray; output.close(); FileUtil.deleteDir(classFilePath)
     BytesValue(array)
   }
 
@@ -126,13 +128,19 @@ class ContractServiceHandler extends ContractService.Handler[Stack] {
                                     parameters: Array[String]): Stack[Either[Throwable, Unit]] =
     Stack {
       try {
-        val classLoader = new ContractClassLoader(contractDir)
+        val track       = CheckingClassLoader.ClassCheckingStatus()
+        val classLoader = new CheckingClassLoader(contractDir, track)
         val clazz       = classLoader.findClass(className)
-        val methodArgs  = parameters.map(_ ⇒ classOf[String])
-        val method      = clazz.getMethod(methodName, methodArgs: _*)
-        val instance    = clazz.newInstance()
-        method.invoke(instance, parameters: _*)
-        Right(())
+        if (clazz == null) Left(new ClassNotFoundException(s"can not find class $className"))
+        else {
+          if (track.isLegal) {
+            val methodArgs = parameters.map(_ ⇒ classOf[String])
+            val method     = clazz.getMethod(methodName, methodArgs: _*)
+            val instance   = clazz.newInstance()
+            method.invoke(instance, parameters: _*)
+            Right(())
+          } else Left(ContractCompileError(track.errors))
+        }
       } catch {
         case e: Throwable ⇒ Left(e)
       } finally FileUtil.deleteDir(contractDir)

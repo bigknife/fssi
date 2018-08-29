@@ -29,7 +29,6 @@ class CheckingClassLoader(val path: Path, val track: CheckingClassLoader.ClassCh
       }
     } catch {
       case _: Throwable ⇒
-        cache.put(name, null)
         val classFile = Paths.get(path.toString, name.replaceAll("\\.", "/") + ".class").toFile
         if (!classFile.canRead) {
           track.addError(s"${classFile.getAbsolutePath} can't be read")
@@ -41,7 +40,10 @@ class CheckingClassLoader(val path: Path, val track: CheckingClassLoader.ClassCh
             CheckingClassLoader.ClassCheckVisitor(classWriter, this, needCheckMethod = true)
           val classReader = new ClassReader(input)
           classReader.accept(classCheckVisitor, ClassReader.SKIP_DEBUG)
-          null
+          val bytes = classWriter.toByteArray
+          val clazz = defineClass(name, bytes, 0, bytes.length)
+          cache.put(name, clazz)
+          clazz
         }
     }
 }
