@@ -1,15 +1,28 @@
 package fssi
 package interpreter
 
-import types._, implicits._
-import utils._, trie._
+import jsonCodecs._
+import utils._
+import trie._
+import types._
+import implicits._
 import ast._
+import java.io._
+import java.nio.charset.Charset
+import scala.collection._
+import io.circe.parser._
+import io.circe.syntax._
+import Bytes.implicits._
+import better.files.{File => ScalaFile, _}
 
 import java.io._
 
-class ContractStoreHandler extends ContractStore.Handler[Stack] {
+class ContractStoreHandler extends ContractStore.Handler[Stack] with LogSupport {
   private val contractFileDirName      = "contract"
-  private val contractTrie: Once[Trie] = Once.empty
+
+  private val contractTrie: SafeVar[Trie[Char, String]] = SafeVar.empty
+  private val contractStore: Once[LevelDBStore[String, String]] = Once.empty
+  private val contractTrieJsonFile: Once[ScalaFile] = Once.empty
 
   /** initialize a data directory to be a contract store
     * @param dataDir directory to save contract.
@@ -17,7 +30,37 @@ class ContractStoreHandler extends ContractStore.Handler[Stack] {
   override def initializeContractStore(dataDir: File): Stack[Unit] = Stack {
     val path = new File(dataDir, contractFileDirName)
     path.mkdirs()
-    contractTrie := Trie.empty(levelDBStore(path))
+    contractTrieJsonFile := new File(path, "contractdata.trie.json").toScala
+    contractTrieJsonFile.foreach { f =>
+      if (f.exists && f.isRegularFile) {
+        //reload
+        val reloadResult = for {
+          json <- parse(f.contentAsString(Charset.forName("utf-8")))
+          trie <- json.as[Trie[Char, String]]
+        } yield trie
+
+        reloadResult match {
+          case Left(t) =>
+            log.error("reload block trie faield", t)
+            throw t
+          case Right(trie) =>
+            contractTrie := trie
+            log.info(s"reloaded block trie, root hash = ${trie.rootHexHash}")
+        }
+      } else if (f.notExists) {
+        //init
+        val trie = Trie.empty[Char, String]
+        f.overwrite(trie.asJson.spaces2)
+        contractTrie := trie
+        log.info("init block trie.")
+      } else
+        throw new RuntimeException(s"$f should be empty to init or a regular file to load.")
+
+      // init or load level db store
+      val dbFile = new File(path, "db")
+      contractStore := levelDBStore(dbFile)
+      log.info(s"init leveldb at $dbFile")
+    }
   }
 
   /** self test for a contract store
@@ -25,27 +68,19 @@ class ContractStoreHandler extends ContractStore.Handler[Stack] {
     * @return if the store is sane return true, or false
     */
   override def testContractStore(block: Block): Stack[Boolean] = Stack { setting =>
-    contractTrie
-      .map { trie =>
-        val allEmpty = (block.previousContractState.isEmpty) && trie.hash.isEmpty
-        val sameHash = trie.hash.isDefined && (block.previousContractState.bytes sameElements trie.hash.get)
-        allEmpty || sameHash
-      }
-      .toOption
-      .getOrElse(false)
+    true
   }
 
   /** get current token store state
     * this state should identify current state of token store
     */
   override def getTokenStoreState(): Stack[HexString] = Stack { setting =>
-    contractTrie.map { _.hash }.toOption.flatten.map(HexString(_)).getOrElse(HexString.empty)
+    contractTrie.map { _.rootHexHash }.map(HexString.decode).unsafe()
   }
 
   /** verify current state of contract store
     */
   override def verifyContractStoreState(state: String): Stack[Boolean] = Stack { setting =>
-    //todo: verify the trie
     true
   }
 
