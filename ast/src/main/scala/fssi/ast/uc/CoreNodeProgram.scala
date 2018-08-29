@@ -73,7 +73,7 @@ trait CoreNodeProgram[F[_]] extends BaseProgram[F] with CoreNodeProgramHelper[F]
     for {
       toBeSingedBytes <- calculateSingedBytesOfTransaction(transaction)
       verified <- verifySignature(toBeSingedBytes,
-                                  transaction.publicKeyForVerifing,
+                                  transaction.publicKeyForVerifying,
                                   transaction.signature)
 
       _ <- requireM(

@@ -2,11 +2,14 @@ package fssi.utils
 
 import org.bouncycastle.jcajce.provider.digest.SHA3
 import java.security._
+
 import javax.crypto.spec.{DESedeKeySpec, IvParameterSpec}
 import javax.crypto.{Cipher, SecretKeyFactory}
 import org.bouncycastle.jce.ECNamedCurveTable
 import org.bouncycastle.jce.spec.{ECPrivateKeySpec, ECPublicKeySpec}
 import java.math.BigInteger
+
+import org.bouncycastle.jce.interfaces.{ECPrivateKey, ECPublicKey}
 
 trait CryptoUtil {
   Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider())
@@ -55,6 +58,13 @@ trait CryptoUtil {
     g.initialize(ecSpec, new SecureRandom())
     g.generateKeyPair()
   }
+
+  def getECPublicKey(kp: KeyPair): Array[Byte] =
+    kp.getPublic.asInstanceOf[ECPublicKey].getQ.getEncoded(true)
+
+
+  def getECPrivateKey(kp: KeyPair): Array[Byte] =
+    kp.getPrivate.asInstanceOf[ECPrivateKey].getD.toByteArray
 
   def rebuildECPublicKey(bytesValue: Array[Byte]): PublicKey = {
     val ecSpec  = ECNamedCurveTable.getParameterSpec(ECSpec)

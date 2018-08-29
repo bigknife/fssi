@@ -58,6 +58,7 @@ class ContractStoreHandler extends ContractStore.Handler[Stack] with LogSupport 
 
       // init or load level db store
       val dbFile = new File(path, "db")
+      dbFile.mkdirs()
       contractStore := levelDBStore(dbFile)
       log.info(s"init leveldb at $dbFile")
     }

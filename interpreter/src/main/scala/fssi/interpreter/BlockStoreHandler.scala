@@ -63,6 +63,7 @@ class BlockStoreHandler extends BlockStore.Handler[Stack] with BlockCalSupport w
 
       // init or load level db store
       val dbFile = new File(path, "db")
+      dbFile.mkdirs()
       blockStore := levelDBStore(dbFile)
       log.info(s"init leveldb at $dbFile")
     }
@@ -104,7 +105,7 @@ class BlockStoreHandler extends BlockStore.Handler[Stack] with BlockCalSupport w
         }
         .put(currentHeightKey, blockHashValue)
         .unsafe { trie =>
-          log.info(s"saved blockHashValue = $blockHashValue with key = $currentHeightKey")
+          log.info(s"saved blockHashValue = $blockHashValue with key = ${currentHeightKey.mkString("")}")
           // save trie to json file
           blockTrieJsonFile.foreach { f =>
             f.overwrite(trie.asJson.spaces2)
