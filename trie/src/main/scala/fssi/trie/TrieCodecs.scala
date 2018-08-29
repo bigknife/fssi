@@ -11,102 +11,155 @@ import fssi.utils.BytesUtil
 import scala.reflect.ClassTag
 
 trait TrieCodecs {
-  implicit def slotJsonEncoder[K, V](implicit K: Encoder[K],
-                                     V: Encoder[V],
-                                     BK: Bytes[K],
-                                     BV: Bytes[V]): Encoder[Slot[K, V]] = (x: Slot[K, V]) => {
-    Json.obj("Slot" -> Json.obj(
-               "idx"  -> x.idx.asJson,
-               "data" -> x.data.asJson,
-               "node" -> x.node.asJson
-             ),
-             "hash" -> Json.fromString(x.hexHash))
-  }
-  implicit def nodeJsonEncoder[K, V](implicit K: Encoder[K],
-                                     V: Encoder[V],
-                                     BK: Bytes[K],
-                                     BV: Bytes[V]): Encoder[Node[K, V]] = {
-    case x @ Slot(idx, data, node) => x.asJson
-    case x @ Compact(indexes, data, node) =>
-      Json.obj("Compact" -> Json.obj(
-                 "indexes" -> indexes.asJson,
-                 "data"    -> data.asJson,
-                 "node"    -> node.asJson
+
+  /** Node.Slot json encoder */
+  implicit def trieSlotNodeJsonEncoder[K, V](implicit K: Encoder[K],
+                                             V: Encoder[V],
+                                             BK: Bytes[K],
+                                             BV: Bytes[V]): Encoder[Slot[K, V]] =
+    (x: Slot[K, V]) => {
+      Json.obj("Slot" -> Json.obj(
+                 "idx"  -> x.idx.asJson,
+                 "data" -> x.data.asJson,
+                 "node" -> x.node.asJson
                ),
                "hash" -> Json.fromString(x.hexHash))
-    case x @ Branch(slots) =>
-      Json.obj("Branch" -> Json.obj("slots" -> slots.toVector.map(_._2).asJson),
+    }
+
+  /** Node.Slot json decoder */
+  implicit def trieSlotNodeJsonDecoder[K: ClassTag, V](implicit K: Decoder[K],
+                                                       V: Decoder[V],
+                                                       BK: Bytes[K],
+                                                       BV: Bytes[V]): Decoder[Slot[K, V]] =
+    (a: HCursor) => {
+      val hashCursor = a.downField("hash")
+      val slotCursor = a.downField("Slot")
+      if (hashCursor.failed)
+        Left(DecodingFailure("Slot's hash field not found", List(CursorOp.DownField("hash"))))
+      else if (slotCursor.failed)
+        Left(DecodingFailure("Slot's Slot field not found", List(CursorOp.DownField("Slot"))))
+      else {
+        val slotResult = for {
+          idx  <- slotCursor.get[K]("idx")
+          data <- slotCursor.get[Option[V]]("data")
+          node <- slotCursor.get[Option[Node[K, V]]]("node")
+        } yield Slot(idx, data, node)
+        val hashResult = hashCursor.as[String]
+        for {
+          slot <- slotResult
+          hash <- hashResult
+          verified <- if (BytesUtil.decodeHex(hash) sameElements slot.hash) Right(slot)
+          else Left(DecodingFailure("Slot hash verifying failed", List(CursorOp.Field("hash"))))
+        } yield verified
+      }
+    }
+
+  /** Node.Compact json decoder */
+  implicit def trieCompactNodeJsonEncoder[K, V](implicit K: Encoder[K],
+                                                V: Encoder[V],
+                                                BK: Bytes[K],
+                                                BV: Bytes[V]): Encoder[Compact[K, V]] =
+    (x: Compact[K, V]) =>
+      Json.obj("Compact" -> Json.obj(
+                 "indexes" -> x.indexes.asJson,
+                 "data"    -> x.data.asJson,
+                 "node"    -> x.node.asJson
+               ),
+               "hash" -> Json.fromString(x.hexHash))
+
+  /** Node.Compact json decoder */
+  implicit def trieCompactNodeJsonDecoder[K: ClassTag, V](implicit K: Decoder[K],
+                                                          V: Decoder[V],
+                                                          BK: Bytes[K],
+                                                          BV: Bytes[V]): Decoder[Compact[K, V]] =
+    (a: HCursor) => {
+      val hashCursor    = a.downField("hash")
+      val compactCursor = a.downField("Compact")
+      if (hashCursor.failed)
+        Left(DecodingFailure("Compact's hash field not found", List(CursorOp.DownField("hash"))))
+      else if (compactCursor.failed)
+        Left(
+          DecodingFailure("Compact's Compact field not found", List(CursorOp.DownField("Compact"))))
+      else {
+        val compactResult = for {
+          indexes <- compactCursor.get[Array[K]]("indexes")
+          data    <- compactCursor.get[Option[V]]("data")
+          node    <- compactCursor.get[Option[Node[K, V]]]("node")
+        } yield Compact(indexes, data, node)
+        val hashResult = hashCursor.as[String]
+        for {
+          compact <- compactResult
+          hash    <- hashResult
+          verified <- if (BytesUtil.decodeHex(hash) sameElements compact.hash) Right(compact)
+          else Left(DecodingFailure("Compact hash verifying failed", List(CursorOp.Field("hash"))))
+        } yield verified
+      }
+    }
+
+  /** Node.Branch json decoder */
+  implicit def trieBranchNodeJsonEncoder[K, V](implicit K: Encoder[K],
+                                               V: Encoder[V],
+                                               BK: Bytes[K],
+                                               BV: Bytes[V]): Encoder[Branch[K, V]] =
+    (x: Branch[K, V]) =>
+      Json.obj("Branch" -> Json.obj("slots" -> x.slots.toVector.map(_._2).asJson),
                "hash"   -> Json.fromString(x.hexHash))
-  }
+
+  /** Node.Compact json decoder */
+  implicit def trieBranchNodeJsonDecoder[K: ClassTag, V](implicit K: Decoder[K],
+                                                         V: Decoder[V],
+                                                         BK: Bytes[K],
+                                                         BV: Bytes[V]): Decoder[Branch[K, V]] =
+    (a: HCursor) => {
+      val hashCursor   = a.downField("hash")
+      val branchCursor = a.downField("Branch")
+      if (hashCursor.failed)
+        Left(DecodingFailure("Branch's hash field not found", List(CursorOp.DownField("hash"))))
+      else if (branchCursor.failed)
+        Left(
+          DecodingFailure("Branch's Compact field not found", List(CursorOp.DownField("Compact"))))
+      else {
+        val branchResult = for {
+          slots <- branchCursor.get[Vector[Slot[K, V]]]("slots")
+        } yield Branch(slots.map(x => x.idx -> x).toMap)
+        val hashResult = hashCursor.as[String]
+        for {
+          compact <- branchResult
+          hash    <- hashResult
+          verified <- if (BytesUtil.decodeHex(hash) sameElements compact.hash) Right(compact)
+          else Left(DecodingFailure("Branch hash verifying failed", List(CursorOp.Field("hash"))))
+        } yield verified
+      }
+    }
 
   implicit def trieJsonEncoder[K, V](implicit K: Encoder[K],
                                      V: Encoder[V],
                                      BK: Bytes[K],
                                      BV: Bytes[V]): Encoder[Trie[K, V]] = {
-    case x @ SimpleTrie(root) =>
+    case x @ FssiTrie(root) =>
       Json.obj(
-        "root" -> root.asJson,
-        "hash" -> x.rootHexHash.asJson
-      )
+        "FssiTrie" ->
+          Json.obj(
+            "root" -> root.asJson,
+            "hash" -> x.rootHexHash.asJson
+          ))
   }
 
-  implicit def nodeJsonDecoder[K: ClassTag, V](implicit K: Decoder[K],
-                                     V: Decoder[V],
-                                     BK: Bytes[K],
-                                     BV: Bytes[V]): Decoder[Node[K, V]] =
-    (a: HCursor) => {
-      val sd = a.downField("Slot")
-      val cd = a.downField("Compact")
-      val bd = a.downField("Branch")
-      if (sd.succeeded) {
-        for {
-          idx <- sd.get[K]("idx")
-          data <- sd.get[Option[V]]("data")
-          node <- sd.get[Option[Node[K, V]]]("node")
-          simpleData = Slot(idx, data, node)
-          hash <- a.get[String]("hash")
-          r <- if (simpleData.hash sameElements BytesUtil.decodeHex(hash)) Right(simpleData)
-          else Left(DecodingFailure("Slot Hash Not Consistent", List()))
-        } yield r
-      } else if (cd.succeeded) {
-        for {
-          indexes <- cd.get[Array[K]]("indexes")
-          data    <- cd.get[Option[V]]("data")
-          node <- cd.get[Option[Node[K, V]]]("node")
-          compactData = Compact(indexes, data, node)
-          hash <- cd.get[String]("hash")
-          r <- if (compactData.hash sameElements BytesUtil.decodeHex(hash)) Right(compactData)
-          else Left(DecodingFailure("Compact Hash Not Consistent", List()))
-        } yield r
-      } else if (bd.succeeded) {
-        for {
-          slots <- bd.get[Vector[Slot[K, V]]]("slots")
-          branch = Branch(slots.map(x => x.idx -> x).toMap)
-          hash <- bd.get[String]("hash")
-          r <- if (branch.hash sameElements BytesUtil.decodeHex(hash)) Right(branch)
-          else Left(DecodingFailure("Branch Hash Not Consistent", List()))
-        } yield r
-      } else Left(DecodingFailure("Can't found 'SimpleData' or 'CompactData' or 'Branch'", List()))
-    }
-
-  implicit def nodeJsonDecoder[K: ClassTag, V](implicit K: Decoder[K],
+  implicit def trieJsonDecoder[K: ClassTag, V](implicit K: Decoder[K],
                                                V: Decoder[V],
                                                BK: Bytes[K],
-                                               BV: Bytes[V]): Decoder[Trie[K, V]] = (a: HCursor) => {
-    for {
-      root <- a.get[Option[Node[K, V]]]("root")
-      st = SimpleTrie(root)
-      hash <- a.get[String]("hash")
-    } yield st
-  }
-  /*
+                                               BV: Bytes[V]): Decoder[Trie[K, V]] =
+    (a: HCursor) => {
+      val fssiTrie = a.downField("FssiTrie")
+      if (fssiTrie.succeeded) {
+        for {
+          root <- fssiTrie.get[Option[Node[K, V]]]("root")
+          trie = FssiTrie(root)
+          hash <- fssiTrie.get[String]("hash")
+          verified <- if (BytesUtil.decodeHex(hash) sameElements trie.rootHash) Right(trie)
+          else Left(DecodingFailure("FssiTrie hash verifying failed", List(CursorOp.Field("hash"))))
+        } yield verified
+      } else Left(DecodingFailure("FssiTrie field not found", List(CursorOp.Field("FssiTrie"))))
+    }
 
-  implicit def trieJsonEncoder[A](implicit E: Encoder[A]): Encoder[Trie[A]] = {
-    case x @ SimpleTrie(root) =>
-      Json.obj(
-        "root" -> root.asJson,
-        "hash" -> x.rootHexHash.asJson
-      )
-  }
- */
 }

@@ -21,6 +21,7 @@ lazy val pAst = ast()
 lazy val pInterperter = interpreter()
   .dependsOn(pAst)
   .dependsOn(pTypesJson)
+  .dependsOn(pTrie)
 
 lazy val pJsonRpc = jsonrpc()
 
