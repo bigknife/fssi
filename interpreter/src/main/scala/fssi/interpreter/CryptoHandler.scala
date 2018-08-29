@@ -13,11 +13,11 @@ import scala.util._
   *      ref: http://www.bouncycastle.org/wiki/display/JA1/Elliptic+Curve+Key+Pair+Generation+and+Key+Factories
   *           http://www.bouncycastle.org/wiki/pages/viewpage.action?pageId=362269
   */
-class CryptoHandler extends Crypto.Handler[Stack] {
+class CryptoHandler extends Crypto.Handler[Stack] with LogSupport {
 
   override def createKeyPair(): Stack[(BytesValue, BytesValue)] = Stack { setting =>
     val kp = crypto.generateECKeyPair()
-    (BytesValue(kp.getPublic.getEncoded), BytesValue(kp.getPrivate.getEncoded))
+    (BytesValue(crypto.getECPublicKey(kp)), BytesValue(crypto.getECPrivateKey(kp)))
   }
 
   override def createIVForDes(): Stack[BytesValue] = Stack { setting =>
@@ -68,11 +68,18 @@ class CryptoHandler extends Crypto.Handler[Stack] {
   override def verifySignature(source: BytesValue,
                                publicKey: BytesValue,
                                signature: Signature): Stack[Boolean] = Stack { setting =>
-    crypto.verifySignature(
-      sign = signature.value.bytes,
-      source = source.value,
-      publ = crypto.rebuildECPublicKey(publicKey.value)
-    )
+    scala.util.Try {
+      crypto.verifySignature(
+        sign = signature.value.bytes,
+        source = source.value,
+        publ = crypto.rebuildECPublicKey(publicKey.value)
+      )
+    }.toEither match {
+      case Left(t) =>
+        log.error("verify signature faield", t)
+        false
+      case Right(x) => x
+    }
   }
 
   private def ensure24Bytes(x: BytesValue): BytesValue = x match {

@@ -27,7 +27,7 @@ sealed trait Transaction {
     *  signature, so "sender" field is the public key which should be
     *  used to verify this transaction.
     */
-  def publicKeyForVerifing: BytesValue = BytesValue(sender.value.bytes)
+  def publicKeyForVerifying: BytesValue = BytesValue(sender.value.bytes)
 }
 
 object Transaction {
