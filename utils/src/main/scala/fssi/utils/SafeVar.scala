@@ -16,9 +16,11 @@ trait SafeVar[A] { outter =>
 
   protected def safeUpdate(a: => A): Unit = _safeUpdate(a)
 
-  def apply(): Option[A]  = a.get()
-  def unsafe(): A         = a.get.get
-  def toOption: Option[A] = a.get
+  def apply(): Option[A]          = a.get()
+  def unsafe(): A                 = a.get.get
+  def value: A                    = unsafe()
+  def toOption: Option[A]         = a.get
+  def getOrElse(default: => A): A = toOption.getOrElse(default)
 
   def :=(a: => A): Unit = safeUpdate(a)
 
@@ -33,4 +35,21 @@ trait SafeVar[A] { outter =>
   }
 
   def reset(): Unit = a.set(None)
+
+  def updated(f: A => A): this.type = {
+    if (a.get().isEmpty) this
+    else {
+      safeUpdate(f(value))
+      this
+    }
+  }
+}
+
+object SafeVar {
+  def empty[A]: SafeVar[A] = new SafeVar[A] {}
+  def apply[A](a: => A): SafeVar[A] = {
+    val i = empty[A]
+    i := a
+    i
+  }
 }

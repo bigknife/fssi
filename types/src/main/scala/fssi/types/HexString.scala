@@ -4,7 +4,7 @@ package types
 import utils._
 
 case class HexString(bytes: Array[Byte]) {
-  override def toString(): String = {
+  override def toString: String = {
     "0x" + noPrefix
   }
 

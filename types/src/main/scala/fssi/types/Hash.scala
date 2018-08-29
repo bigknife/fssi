@@ -8,7 +8,7 @@ import utils._
   * represented by a hexstring
   */
 case class Hash(value: HexString) {
-  override def toString(): String = value.toString
+  override def toString: String = value.toString
   def bytes: Array[Byte] = value.bytes
 
   def toBytesValue: BytesValue = value.toBytesValue

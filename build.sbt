@@ -81,3 +81,5 @@ lazy val pEdgeNode = edgeNode()
     assemblyJarName in assembly := s"${name.value}",
     test in assembly := {}
   )
+
+addCommandAlias("assemblyAll", ";project tool;clean;assembly;project coreNode;clean;assembly;project edgeNode;clean;assembly")
