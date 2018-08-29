@@ -5,10 +5,10 @@ import org.scalatest._
 import Trie._, Node._
 import io.circe._
 import io.circe.syntax._
-import io.circe.generic.auto._
+import io.circe.parser._
 
 class TrieSpec extends FunSuite {
-  object implicits extends Bytes.Implicits with TrieCodecs with Bytes.Syntax
+  object implicits extends Bytes.Implicits with TrieCodecs with Bytes.Syntax with generic.AutoDerivation
   import implicits._
 
   test("trie spec") {
@@ -22,10 +22,13 @@ class TrieSpec extends FunSuite {
     val t2 = t1.put("hello".getBytes(), "GoodBoy")
     val t3 = t2.put("h".getBytes(), "Shit")
 
+
     info(s"$t1")
     info(s"$t2")
     info(s"$t3")
     info(s"${t3.asJson}")
+
+
 
 
     val node = Node(Array('h'), "hi")
@@ -66,5 +69,17 @@ class TrieSpec extends FunSuite {
     info(s"${node5.hexHash}")
     info(s"${node6.hexHash}")
     info(s"${node6.asJson}")
+
+
+    val t4 = t3.put("Go".getBytes(), "Hola")
+    val jsonString = t4.asJson.spaces2
+    info(jsonString)
+    val jsonEi = parse(jsonString)
+    val t41 = for {
+      json <- jsonEi
+      t41 <- json.as[Trie[Byte, String]]
+    } yield t41
+    info(s"$t41")
+
   }
 }

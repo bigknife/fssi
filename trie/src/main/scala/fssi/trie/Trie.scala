@@ -12,7 +12,7 @@ sealed trait Trie[K, V] {
 
 object Trie {
 
-  case class SimpleTrie[K: ClassTag, V](root: Option[Node[K, V]]) extends Trie[K, V] {
+  case class FssiTrie[K: ClassTag, V](root: Option[Node[K, V]]) extends Trie[K, V] {
     override def put(key: Array[K], data: V): Trie[K, V] = {
       copy(root = root.map(_.put(key, data)).orElse(Some(Node(key, data))))
     }
@@ -24,10 +24,10 @@ object Trie {
     def rootHash(implicit BK: Bytes[K], BV: Bytes[V]): Array[Byte] = root.map(_.hash).getOrElse(Array.emptyByteArray)
   }
 
-  def apply[K: ClassTag, V](implicit EK: Bytes[K], EV: Bytes[V]): Trie[K, V] = SimpleTrie[K, V](None)
+  def apply[K: ClassTag, V](implicit EK: Bytes[K], EV: Bytes[V]): Trie[K, V] = FssiTrie[K, V](None)
   def empty[K: ClassTag, V](implicit EK: Bytes[K], EV: Bytes[V]): Trie[K,V]   = apply[K, V]
   def apply[K: ClassTag, V](key: Array[K], data: V)(implicit EK: Bytes[K], EV: Bytes[V]): Trie[K, V] =
-    SimpleTrie(Some(Node(key, data)))
-  def apply[K: ClassTag,V](node: Node[K, V])(implicit EK: Bytes[K], EV:Bytes[V]): Trie[K, V] = SimpleTrie(Some(node))
+    FssiTrie(Some(Node(key, data)))
+  def apply[K: ClassTag,V](node: Node[K, V])(implicit EK: Bytes[K], EV:Bytes[V]): Trie[K, V] = FssiTrie(Some(node))
 
 }
