@@ -29,4 +29,12 @@ import java.io._
   /** verify current state of contract store
     */
   def verifyContractStoreState(state: String): P[F, Boolean]
+
+  /** commit staged contract 
+    */
+  def commitStagedContract(height: BigInt): P[F, Unit]
+
+  /** roolback staged contract 
+    */
+  def rollbackStagedContract(height: BigInt): P[F, Unit]
 }

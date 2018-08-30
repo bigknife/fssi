@@ -75,14 +75,16 @@ trait CoreNodeProgram[F[_]] extends BaseProgram[F] with CoreNodeProgramHelper[F]
       verified <- verifySignature(toBeSingedBytes,
                                   transaction.publicKeyForVerifying,
                                   transaction.signature)
+      _ <- log.info(s"transaction(${transaction.id}) verified: $verified")
 
       _ <- requireM(
         verified,
         new FSSIException(s"Transaction of id=${transaction.id} signature can't be verified"))
       determinedBlock    <- getLatestDeterminedBlock()
-      undetermindedBlock <- appendTransactionToUnDeterminedBlock(determinedBlock, transaction)
+      undeterminedBlock <- appendTransactionToUnDeterminedBlock(determinedBlock, transaction)
       node               <- network.getCurrentNode()
-      _                  <- tryToAgreeBlock(node.account.get, determinedBlock, undetermindedBlock)
+      _ <- log.info("try to agree block...")
+      _                  <- tryToAgreeBlock(node.account.get, undeterminedBlock, undeterminedBlock)
     } yield ()
   }
 
