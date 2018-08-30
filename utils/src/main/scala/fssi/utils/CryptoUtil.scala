@@ -101,4 +101,10 @@ trait CryptoUtil {
     cipher.doFinal(source)
   }
 
+  def ensure24Bytes(x: BytesValue): BytesValue = x match {
+    case a if a.value.length == 24 => a
+    case a if a.value.length > 24  => BytesValue(a.value.slice(0, 24))
+    case a                         => BytesValue(java.nio.ByteBuffer.allocate(24).put(a.value).array)
+  }
+
 }

@@ -38,7 +38,7 @@ case class ConsensusConnect(getSetting: () => Setting.CoreNodeSetting)
   val scp: SCP[scpcomponent.Model.Op]                       = SCP[scpcomponent.Model.Op]
   val coreNodeProgram: CoreNodeProgram[components.Model.Op] = CoreNodeProgram[components.Model.Op]
 
-  private val nominatingCounters: SafeVar[Map[SlotIndex, Int]] = SafeVar.empty
+  private val nominatingCounters: SafeVar[Map[SlotIndex, Int]] = SafeVar(Map.empty)
 
   /**
     * try to extract a valid value from a not full validated value
@@ -126,10 +126,14 @@ case class ConsensusConnect(getSetting: () => Setting.CoreNodeSetting)
     // and it's determined that node's bound account is not empty.
     val boundAccount = node.account.get
 
+    val privateKey = crypto.des3cbcDecrypt(boundAccount.encryptedPrivateKey.bytes,
+                                           crypto.ensure24Bytes(BytesValue(setting.password)).bytes,
+                                           boundAccount.iv.bytes)
+
     Signature(
       crypto.makeSignature(
         source = bytes,
-        priv = crypto.rebuildECPrivateKey(boundAccount.encryptedPrivateKey.bytes)
+        priv = crypto.rebuildECPrivateKey(privateKey)
       ))
   }
 
@@ -177,6 +181,10 @@ case class ConsensusConnect(getSetting: () => Setting.CoreNodeSetting)
       case x: Statement.Commit      => x.bytes
       case x: Statement.Externalize => x.bytes
     }
+
+    val md5 = crypto.hash(source).map("%02x" format _).mkString("")
+    log.info(s"when verifying: md5 = $md5")
+
     crypto.verifySignature(
       sign = envelope.signature.bytes,
       source = source,

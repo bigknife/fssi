@@ -38,7 +38,7 @@ class CryptoHandler extends Crypto.Handler[Stack] with LogSupport {
                                     iv: BytesValue,
                                     password: BytesValue): Stack[BytesValue] = Stack { setting =>
     // ensure the password is 24b length
-    val ensuredPass = ensure24Bytes(password)
+    val ensuredPass = crypto.ensure24Bytes(password)
     BytesValue(crypto.des3cbcEncrypt(privateKey.value, ensuredPass.value, iv.value))
   }
 
@@ -47,7 +47,7 @@ class CryptoHandler extends Crypto.Handler[Stack] with LogSupport {
       iv: BytesValue,
       password: BytesValue): Stack[Either[FSSIException, BytesValue]] = Stack { setting =>
     Try {
-      val ensuredPass = ensure24Bytes(password)
+      val ensuredPass = crypto.ensure24Bytes(password)
       BytesValue(crypto.des3cbcDecrypt(encryptedPrivateKey.value, ensuredPass.value, iv.value))
     }.toEither.left.map(x => new FSSIException("decrypt private key faield", Some(x)))
   }
@@ -80,12 +80,6 @@ class CryptoHandler extends Crypto.Handler[Stack] with LogSupport {
         false
       case Right(x) => x
     }
-  }
-
-  private def ensure24Bytes(x: BytesValue): BytesValue = x match {
-    case a if a.value.length == 24 => a
-    case a if a.value.length > 24  => BytesValue(a.value.slice(0, 24))
-    case a                         => BytesValue(java.nio.ByteBuffer.allocate(24).put(a.value).array)
   }
 }
 
