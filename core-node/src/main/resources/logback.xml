@@ -14,7 +14,7 @@
         <appender-ref ref="COLOR" />
     </logger>
 
-    <logger name="fssi" additivity="false" level="debug">
+    <logger name="fssi" additivity="false" level="info">
       <appender-ref ref="COLOR" />
     </logger>
 

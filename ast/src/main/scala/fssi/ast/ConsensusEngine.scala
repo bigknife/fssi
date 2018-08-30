@@ -17,4 +17,8 @@ import bigknife.sop.implicits._
     * @param agreeing current block, being in consensus procedure
     */
   def tryToAgreeBlock(account: Account, previous: Block, agreeing: Block): P[F, Unit]
+
+  /** handle consensus-special message
+    */
+  def handleConsensusAuxMessage(account: Account, auxMessage: ConsensusAuxMessage): P[F, Unit]
 }

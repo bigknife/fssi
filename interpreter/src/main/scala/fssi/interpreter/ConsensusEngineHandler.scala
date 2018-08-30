@@ -1,18 +1,18 @@
 package fssi
 package interpreter
 
-import types._, exception._
+import types._
+import exception._
 import ast._
 import org.slf4j._
-
 import bigknife.scalap.ast.types.{NodeID, SlotIndex}
-import bigknife.scalap.interpreter.{runner => scpRunner, Setting => SCPSetting, _}
+import bigknife.scalap.interpreter.{Setting => SCPSetting, runner => scpRunner, _}
 import bigknife.scalap.ast.usecase.SCP
 import bigknife.scalap.ast.usecase.component.{Model => SCPModel, _}
-
 import bigknife.scalap.ast.types.{NodeID, SlotIndex}
 import bigknife.scalap.ast.usecase.SCP
 import bigknife.scalap.ast.usecase.component._
+import fssi.interpreter.scp.{QuorumSetSyncMessage, SCPEnvelopeMessage}
 
 class ConsensusEngineHandler
     extends ConsensusEngine.Handler[Stack]
@@ -63,6 +63,36 @@ class ConsensusEngineHandler
         case _ => //nothhing todo
       }
     }
+
+  /** handle consensus-special message
+    */
+  override def handleConsensusAuxMessage(account: Account,
+                                         auxMessage: ConsensusAuxMessage): Stack[Unit] = Stack {
+    setting =>
+      setting match {
+        case x: Setting.CoreNodeSetting =>
+          val scpSetting = unsafeResolveSCPSetting(account, x)
+          auxMessage match {
+            case QuorumSetSyncMessage(quorumSetSync) =>
+              quorumSetSync.registeredQuorumSets.foreach {
+                case (nodeId, qss) =>
+                  log.debug(s"handle consensus quorum set sync message: ($nodeId -> $qss)")
+                  scpRunner.runIO(scp.cacheQuorumSet(qss), scpSetting).unsafeRunSync
+              }
+            case SCPEnvelopeMessage(envelope) =>
+              log.debug(s"handling scp envelope: $envelope")
+              scpRunner
+                .runIO(scp.processEnvelope(NodeID(account.publicKey.bytes), envelope),
+                       scpSetting)
+                .unsafeRunSync
+              log.debug(s"handled scp envelope: $envelope")
+            case _ => //impossible
+          }
+
+        case _ => //nothing to do
+      }
+
+  }
 }
 
 object ConsensusEngineHandler {

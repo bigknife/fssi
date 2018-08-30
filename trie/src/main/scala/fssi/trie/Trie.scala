@@ -7,15 +7,22 @@ import scala.reflect.ClassTag
 sealed trait Trie[K, V] {
   def put(key: Array[K], data: V): Trie[K, V]
   def get(key: Array[K]): Option[V]
+
   def rootHash(implicit BK: Bytes[K], BV: Bytes[V]): Array[Byte]
   def rootHexHash(implicit BK: Bytes[K], BV: Bytes[V]): String = s"0x${rootHash.map("%02x" format _).mkString("")}"
   def unsafe(f: Trie[K, V] => Unit): Trie[K, V]
   def unsafe(f: => Unit): Trie[K, V]
+
+  def isEmpty: Boolean
+  def nonEmpty: Boolean = !isEmpty
+  def isDefined: Boolean = !isEmpty
 }
 
 object Trie {
 
   case class FssiTrie[K: ClassTag, V](root: Option[Node[K, V]])(implicit BK: Bytes[K], BV: Bytes[V]) extends Trie[K, V] {
+    override def isEmpty: Boolean = root.isEmpty
+
     override def put(key: Array[K], data: V): Trie[K, V] = {
       copy(root = root.map(_.put(key, data)).orElse(Some(Node(key, data))))
     }

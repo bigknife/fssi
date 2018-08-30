@@ -57,7 +57,7 @@ class NetworkHandler extends Network.Handler[Stack] {
               logger.debug("handled json message by gossiping")
             } match {
               case scala.util.Success(_) =>
-                logger.info(s"Gossip message handled successfully")
+                logger.debug(s"Gossip message handled successfully")
               case scala.util.Failure(t) =>
                 logger.error(s"Gossip message handled failed", t)
             }
