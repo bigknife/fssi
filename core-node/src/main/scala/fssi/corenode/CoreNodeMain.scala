@@ -9,17 +9,15 @@ import handler._
   */
 object CoreNodeMain extends App {
 
-  object consensusConnect extends ConsensusConnect {
-    lazy val  setting: Setting = defaultCoreNodeSetting
-  }
-
-  val defaultCoreNodeSetting = CoreNodeSetting(
+  val defaultCoreNodeSetting: CoreNodeSetting = CoreNodeSetting(
     workingDir = new java.io.File(new java.io.File(System.getProperty("user.home")), ".fssi"),
     password = Array.emptyByteArray,
-    consensusConnect = consensusConnect
+    consensusConnect = ConsensusConnect.DuckConnect
   )
   CoreNodeSettingParser.parse(args, defaultCoreNodeSetting) match {
-    case Some(setting) => startup(setting)
+    case Some(setting) =>
+      lazy val newSetting: Setting.CoreNodeSetting = setting.copy(consensusConnect = ConsensusConnect(getSetting = () => newSetting))
+      startup(newSetting)
     case _ =>
   }
 }

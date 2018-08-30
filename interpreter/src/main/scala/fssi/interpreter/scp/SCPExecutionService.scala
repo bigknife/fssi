@@ -6,8 +6,7 @@ import org.slf4j._
 import java.util.concurrent._
 import scala.util._
 
-sealed trait SCPExecutionService {
-  private val log = LoggerFactory.getLogger(getClass)
+sealed trait SCPExecutionService extends LogSupport{
 
   private val tc: ThreadFactory = new ThreadFactory {
     override def newThread(r: Runnable): Thread = {

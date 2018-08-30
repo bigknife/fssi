@@ -44,8 +44,6 @@ class ConsensusEngineHandler
     Stack { setting =>
       setting match {
         case x: Setting.CoreNodeSetting =>
-          val confReader = ConfigReader(x.configFile)
-
           val nodeID        = NodeID(account.id.value.bytes)
           val value         = BlockValue(agreeing, calculateTotalBlockBytes(agreeing))
           val previousValue = BlockValue(previous, calculateTotalBlockBytes(previous))

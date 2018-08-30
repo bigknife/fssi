@@ -17,20 +17,22 @@ trait SCPSupport {
   /** try to resovle SCPSetting from a setting object
     */
   private[interpreter] def resolveSCPSetting(localNodeID: NodeID,
-                                             setting: Setting): Option[SCPSetting] = setting match {
-    case x: Setting.CoreNodeSetting =>
-      val confReader = ConfigReader(x.configFile)
-      val qs         = confReader.readQuorumSet()
-      val scpSetting = SCPSetting(
-        localNodeID = localNodeID,
-        quorumSet = qs,
-        connect = x.consensusConnect,
-        maxTimeoutSeconds = confReader.readMaxTimeoutSeconds,
-        presetQuorumSets = scala.collection.immutable.Map(localNodeID -> qs)
-      )
-      Some(scpSetting)
+                                             setting: Setting): Option[SCPSetting] = {
+    require(setting != null, "SCPSupport should not be null!!!")
+    setting match {
+      case x: Setting.CoreNodeSetting =>
+        val qs = x.configReader.coreNode.scp.quorumSet
+        val scpSetting = SCPSetting(
+          localNodeID = localNodeID,
+          quorumSet = qs,
+          connect = x.consensusConnect,
+          maxTimeoutSeconds = x.configReader.coreNode.scp.maxTimeoutSeconds,
+          presetQuorumSets = scala.collection.immutable.Map(localNodeID -> qs)
+        )
+        Some(scpSetting)
 
-    case _ => None // only core node config can be translated into scpsetting
+      case _ => None // only core node config can be translated into scpsetting
+    }
   }
 
   /** unsafe operation for resovle SCPSetting from a setting object
@@ -41,6 +43,9 @@ trait SCPSupport {
   /** unsafe operation for resovle SCPSetting from a setting object
     */
   private[interpreter] def unsafeResolveSCPSetting(localNodeID: NodeID,
-                                                   setting: Setting): SCPSetting =
-    resolveSCPSetting(localNodeID, setting).get
+                                                   setting: Setting): SCPSetting = {
+    val resolved = resolveSCPSetting(localNodeID, setting)
+    resolved.get
+  }
+
 }
