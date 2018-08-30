@@ -304,6 +304,9 @@ case class ConsensusConnect(getSetting: () => Setting.CoreNodeSetting)
     if (currentNominatingTimes > setting.configReader.coreNode.scp.maxNominatingTimes) {
       log.info(s"current nominating times($currentNominatingTimes) is over($maxNominatingTimes)")
     } else {
+      nominatingCounters.updated { map =>
+        map + (slotIndex -> (currentNominatingTimes + 1))
+      }
       val timer = new java.util.Timer()
       timer.schedule(
         new java.util.TimerTask {
