@@ -7,6 +7,13 @@
         </encoder>
     </appender>
 
+    <logger name="scalap" additivity="false" level="debug">
+        <appender-ref ref="COLOR" />
+    </logger>
+    <logger name="bigknife.scalap" additivity="false" level="debug">
+        <appender-ref ref="COLOR" />
+    </logger>
+
     <logger name="fssi" additivity="false" level="debug">
       <appender-ref ref="COLOR" />
     </logger>

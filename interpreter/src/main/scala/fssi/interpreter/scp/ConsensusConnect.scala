@@ -20,10 +20,25 @@ import ast._, uc._
 import jsonCodecs._
 import org.slf4j._
 
-trait ConsensusConnect extends Connect with BlockCalSupport with SCPSupport with LogSupport {
-  val setting: Setting
+/** To solve Recursive-Dependency problem.
+  * ConsensusConnect needs CoreNodeSetting, and CoreNodeSetting needs ConsensusConnect, so they are dependent on each
+  * other recursively.
+  * To solve this problem, we use lazy-init to delay the dependency-resolving.
+  *
+  * @param getSetting lazily to get CoreNodeSetting.
+  */
+case class ConsensusConnect(getSetting: () => Setting.CoreNodeSetting)
+    extends Connect
+    with BlockCalSupport
+    with SCPSupport
+    with LogSupport {
+
+  lazy val setting: Setting.CoreNodeSetting = getSetting()
+
   val scp: SCP[scpcomponent.Model.Op]                       = SCP[scpcomponent.Model.Op]
   val coreNodeProgram: CoreNodeProgram[components.Model.Op] = CoreNodeProgram[components.Model.Op]
+
+  private val nominatingCounters: SafeVar[Map[SlotIndex, Int]] = SafeVar.empty
 
   /**
     * try to extract a valid value from a not full validated value
@@ -252,6 +267,7 @@ trait ConsensusConnect extends Connect with BlockCalSupport with SCPSupport with
     * @return timeout milliseconds
     */
   def timeoutForNextRoundNominating(currentRound: Int): Long = {
+    // todo: maybe a linear variation
     // the first ten rounds run every 1seconds, and then linear increasing
     if (currentRound > 10) (currentRound - 10) * 1000L
     else 1000L
@@ -273,28 +289,59 @@ trait ConsensusConnect extends Connect with BlockCalSupport with SCPSupport with
                                  valueToNominate: Value,
                                  previousValue: Value,
                                  afterMilliSeconds: Long): Unit = {
-    val timer = new java.util.Timer()
-    timer.schedule(
-      new java.util.TimerTask {
-        override def run(): Unit = {
-          log.info("run nominate timer ...")
-          // only re-nominate when slotIndex is currentHeight + 1
-          val currentHeight = runner.runIO(coreNodeProgram.currentHeight(), setting).unsafeRunSync()
-          if (slotIndex.index == (currentHeight + 1)) {
-            SCPExecutionService.submit {
-              val p   = scp.nominate(nodeID, slotIndex, nextRound, valueToNominate, previousValue)
-              val ret = scprunner.runIO(p, unsafeResolveSCPSetting(nodeID, setting)).unsafeRunSync()
-              log.info(s"nominate result: $ret")
+    // if the counter of the slotIndex is over threshold, DO NOT start a timer,
+    // means, don't nominate any more
+    val maxNominatingTimes     = setting.configReader.coreNode.scp.maxNominatingTimes
+    val currentNominatingTimes = nominatingCounters.map(_.getOrElse(slotIndex, 0)).unsafe()
+    if (currentNominatingTimes > setting.configReader.coreNode.scp.maxNominatingTimes) {
+      log.info(s"current nominating times($currentNominatingTimes) is over($maxNominatingTimes)")
+    } else {
+      val timer = new java.util.Timer()
+      timer.schedule(
+        new java.util.TimerTask {
+          override def run(): Unit = {
+            log.info("run nominate timer ...")
+            // only re-nominate when slotIndex is currentHeight + 1
+            val currentHeight =
+              runner.runIO(coreNodeProgram.currentHeight(), setting).unsafeRunSync()
+            if (slotIndex.index == (currentHeight + 1)) {
+              SCPExecutionService.submit {
+                val p = scp.nominate(nodeID, slotIndex, nextRound, valueToNominate, previousValue)
+                val ret =
+                  scprunner.runIO(p, unsafeResolveSCPSetting(nodeID, setting)).unsafeRunSync()
+                log.info(s"nominate result: $ret")
+              }
+              log.info("end and cancel nominate timer ...")
+              timer.cancel()
+            } else {
+              log.info(s"slotIndex[${slotIndex.index}] has been determined, timer cancel!")
+              timer.cancel()
             }
-            log.info("end and cancel nominate timer ...")
-            timer.cancel()
-          } else {
-            log.info(s"slotIndex[${slotIndex.index}] has been determined, timer cancel!")
-            timer.cancel()
           }
-        }
-      },
-      afterMilliSeconds
-    )
+        },
+        afterMilliSeconds
+      )
+    }
+  }
+}
+
+object ConsensusConnect {
+  val DuckConnect: Connect = new Connect {
+    override def extractValidValue(value: Value): Option[Value]                              = ???
+    override def validateValue(value: Value): Value.Validity                                 = ???
+    override def signData(bytes: Array[Byte], nodeID: NodeID): Signature                     = ???
+    override def broadcastMessage[M <: Message](envelope: Envelope[M]): Unit                 = ???
+    override def synchronizeQuorumSet(nodeID: NodeID, quorumSet: QuorumSet): Unit            = ???
+    override def verifySignature[M <: Message](envelope: Envelope[M]): Boolean               = ???
+    override def combineValues(valueSet: ValueSet): Value                                    = ???
+    override def runAbandonBallot(nodeID: NodeID, slotIndex: SlotIndex, counter: Int): Unit  = ???
+    override def valueExternalized(nodeID: NodeID, slotIndex: SlotIndex, value: Value): Unit = ???
+    override def timeoutForNextRoundNominating(currentRound: Int): Long                      = ???
+    override def triggerNextRoundNominating(nodeID: NodeID,
+                                            slotIndex: SlotIndex,
+                                            nextRound: Int,
+                                            valueToNominate: Value,
+                                            previousValue: Value,
+                                            afterMilliSeconds: Long): Unit = ???
   }
 }
