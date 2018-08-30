@@ -52,7 +52,7 @@ object Dependencies {
       val leveldb = "1.8"
 
       // scalap
-      val scalap = "0.1.9_BETA"
+      val scalap = "0.1.10_BETA"
 
       val nettyNative = "4.1.25.Final"
 

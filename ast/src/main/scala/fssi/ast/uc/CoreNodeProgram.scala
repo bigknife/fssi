@@ -165,6 +165,14 @@ trait CoreNodeProgram[F[_]] extends BaseProgram[F] with CoreNodeProgramHelper[F]
     */
   def currentHeight(): SP[F, BigInt] = blockStore.getLatestDeterminedBlock().map(_.height)
 
+  /** handle consensus aux message
+    */
+  def handleConsensusAuxMessage(auxMessage: ConsensusAuxMessage): SP[F, Unit] =
+    for {
+      node <- network.getCurrentNode()
+      _    <- consensusEngine.handleConsensusAuxMessage(node.account.get, auxMessage)
+    } yield ()
+
 }
 object CoreNodeProgram {
   def apply[F[_]](implicit M: components.Model[F]): CoreNodeProgram[F] = new CoreNodeProgram[F] {

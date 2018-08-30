@@ -112,9 +112,9 @@ trait SCPJsonCodec extends BlockCalSupport {
     case x: Statement.Prepare     => x.asJson
   }
 
-  implicit val signatureJsonEncoder: Encoder[SCPSignature] = (a: SCPSignature) => a.asHex().asJson
+  implicit val scpSignatureJsonEncoder: Encoder[SCPSignature] = (a: SCPSignature) => a.asHex().asJson
 
-  implicit val signatureJsonDecoder: Decoder[SCPSignature] = (c: HCursor) =>
+  implicit val scpSignatureJsonDecoder: Decoder[SCPSignature] = (c: HCursor) =>
     for {
       x <- c.value.as[String]
     } yield SCPSignature(BytesValue.decodeHex(x).bytes)

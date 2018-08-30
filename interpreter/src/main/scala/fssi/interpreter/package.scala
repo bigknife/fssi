@@ -61,6 +61,7 @@ package object interpreter {
   object jsonCodecs
       extends types.json.AllTypesJsonCodec
       with trie.TrieCodecs
+      with scp.SCPJsonCodec
       with io.circe.generic.AutoDerivation
 
   // scp types

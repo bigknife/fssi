@@ -165,7 +165,15 @@ case class ConsensusConnect(getSetting: () => Setting.CoreNodeSetting)
     val hash        = QuorumSetSync.hash(version, qs)
     val qss         = QuorumSetSync(version, qs, hash)
     val jsonMessage = JsonMessage.scpQsSyncJsonMessage(qss.asJson.noSpaces)
-    NetworkHandler.instance.broadcastMessage(jsonMessage)(setting).unsafeRunSync
+
+    new java.util.Timer().scheduleAtFixedRate(new java.util.TimerTask {
+      override def run(): Unit = {
+        NetworkHandler.instance.broadcastMessage(jsonMessage)(setting).unsafeRunSync
+        log.debug("broadcast scp quorum set sync message")
+      }
+
+    }, 5000, 5000)
+
   }
 
   /**
@@ -181,9 +189,6 @@ case class ConsensusConnect(getSetting: () => Setting.CoreNodeSetting)
       case x: Statement.Commit      => x.bytes
       case x: Statement.Externalize => x.bytes
     }
-
-    val md5 = crypto.hash(source).map("%02x" format _).mkString("")
-    log.info(s"when verifying: md5 = $md5")
 
     crypto.verifySignature(
       sign = envelope.signature.bytes,
@@ -214,9 +219,9 @@ case class ConsensusConnect(getSetting: () => Setting.CoreNodeSetting)
           else ()
 
           // if found chainID not consistent, throw exception
-          if (accBlock.block.chainID != nBlock.block.height)
+          if (accBlock.block.chainID != nBlock.block.chainID)
             throw new RuntimeException(s"scp value set were not consistent," +
-              s" found chainId = ${accBlock.block.height}, ${nBlock.block.height} at the same time")
+              s" found chainId = ${accBlock.block.chainID}, ${nBlock.block.chainID} at the same time")
           else ()
 
           // combine transactions
@@ -256,7 +261,7 @@ case class ConsensusConnect(getSetting: () => Setting.CoreNodeSetting)
         else {
           // persist block into local store.
           // the logic is defined in CoreNodeProgram
-          log.info(s"to externalize: ${slotIndex.index} -> ${block.hash}")
+          log.debug(s"to externalize: ${slotIndex.index} -> ${block.hash}")
           runner
             .runIO(coreNodeProgram.handleBlockReachedAgreement(Account.ID(HexString(nodeID.bytes)),
                                                                slotIndex.index,
