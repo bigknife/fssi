@@ -82,6 +82,16 @@ class ContractDataStoreHandler extends ContractDataStore.Handler[Stack] with Log
   override def verifyContractDataStoreState(state: String): Stack[Boolean] = Stack { setting =>
     true
   }
+
+    /** commit staged tokens
+    */
+  override def commitStagedContractData(height: BigInt): Stack[Unit] = Stack { setting =>
+    }
+
+  /** rollback staged tokens
+    */
+  override def rollbackStagedContractData(height: BigInt): Stack[Unit] = Stack { setting =>
+    }
 }
 
 object ContractDataStoreHandler {

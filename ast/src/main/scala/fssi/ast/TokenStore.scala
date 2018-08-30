@@ -37,4 +37,12 @@ import java.io._
   /** stage the account's token
     */
   def stageToken(height: BigInt, account: Account.ID, token: Token): P[F, Unit]
+
+  /** commit staged tokens
+    */
+  def commitStagedToken(height: BigInt): P[F, Unit]
+
+  /** rollback staged tokens
+    */
+  def rollbackStagedToken(height: BigInt): P[F, Unit]
 }

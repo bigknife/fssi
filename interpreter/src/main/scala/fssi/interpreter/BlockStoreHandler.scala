@@ -26,6 +26,7 @@ class BlockStoreHandler extends BlockStore.Handler[Stack] with BlockCalSupport w
     : Array[Char] = HexString("current_height".getBytes).noPrefix.toCharArray
 
   // current undetermined block
+  // todo: when reached agreement, clear this undetermined block
   private val undeterminedBlockRef: java.util.concurrent.atomic.AtomicReference[Option[Block]] =
     new java.util.concurrent.atomic.AtomicReference(None)
 

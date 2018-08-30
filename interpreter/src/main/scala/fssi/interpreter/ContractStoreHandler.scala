@@ -18,11 +18,11 @@ import better.files.{File => ScalaFile, _}
 import java.io._
 
 class ContractStoreHandler extends ContractStore.Handler[Stack] with LogSupport {
-  private val contractFileDirName      = "contract"
+  private val contractFileDirName = "contract"
 
-  private val contractTrie: SafeVar[Trie[Char, String]] = SafeVar.empty
+  private val contractTrie: SafeVar[Trie[Char, String]]         = SafeVar.empty
   private val contractStore: Once[LevelDBStore[String, String]] = Once.empty
-  private val contractTrieJsonFile: Once[ScalaFile] = Once.empty
+  private val contractTrieJsonFile: Once[ScalaFile]             = Once.empty
 
   /** initialize a data directory to be a contract store
     * @param dataDir directory to save contract.
@@ -84,6 +84,16 @@ class ContractStoreHandler extends ContractStore.Handler[Stack] with LogSupport 
   override def verifyContractStoreState(state: String): Stack[Boolean] = Stack { setting =>
     true
   }
+
+  /** commit staged tokens
+    */
+  override def commitStagedContract(height: BigInt): Stack[Unit] = Stack { setting =>
+    }
+
+  /** rollback staged tokens
+    */
+  override def rollbackStagedContract(height: BigInt): Stack[Unit] = Stack { setting =>
+    }
 
 }
 

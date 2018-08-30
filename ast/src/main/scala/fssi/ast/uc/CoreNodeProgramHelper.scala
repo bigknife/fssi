@@ -27,8 +27,9 @@ private[uc] trait CoreNodeProgramHelper[F[_]] extends BaseProgram[F] {
           _ <- stageToken(height, transfer.payee, payeeCurrentToken + transfer.token)
         } yield Right(()): Either[Throwable, Unit]
       else
-        (Left(new FSSIException(
-          s"payer's token(${payerCurrentToken}) is not enough to pay(${transfer.token})")): Either[
+        (Left(
+          new FSSIException(
+            s"payer's token($payerCurrentToken) is not enough to pay(${transfer.token})")): Either[
           Throwable,
           Unit]).pureSP[F]
     } yield r
@@ -45,6 +46,36 @@ private[uc] trait CoreNodeProgramHelper[F[_]] extends BaseProgram[F] {
   def tempRunRunContract(height: BigInt,
                          runContract: Transaction.RunContract): SP[F, Either[Throwable, Unit]] = ???
 
-  def commit(height: BigInt): SP[F, Unit]   = ???
-  def rollback(height: BigInt): SP[F, Unit] = ???
+  def commit(height: BigInt): SP[F, Unit] = {
+    import tokenStore._
+    import contractDataStore._
+    import contractStore._
+    import log._
+
+    for {
+      _ <- commitStagedToken(height)
+      _ <- info(s"commit staged token of block($height)")
+      _ <- commitStagedContract(height)
+      _ <- info(s"commit staged contract of block($height)")
+      _ <- commitStagedContractData(height)
+      _ <- info(s"commit staged contract data of block($height)")
+    } yield ()
+
+  }
+
+  def rollback(height: BigInt): SP[F, Unit] = {
+    import tokenStore._
+    import contractDataStore._
+    import contractStore._
+    import log._
+
+    for {
+      _ <- rollbackStagedToken(height)
+      _ <- info(s"rollback staged token of block($height)")
+      _ <- rollbackStagedContract(height)
+      _ <- info(s"rollback staged contract of block($height)")
+      _ <- rollbackStagedContractData(height)
+      _ <- info(s"rollback staged contract data of block($height)")
+    } yield ()
+  }
 }

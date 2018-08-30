@@ -252,6 +252,13 @@ case class ConsensusConnect(getSetting: () => Setting.CoreNodeSetting)
     * @param value value
     */
   def valueExternalized(nodeID: NodeID, slotIndex: SlotIndex, value: Value): Unit = {
+
+    // stop nominating for slotIndex
+    nominatingCounters.updated {x =>
+      x + (slotIndex -> -1)
+    }
+    log.debug(s"set nominating counter to -1 for slot($slotIndex)")
+
     value match {
       case BlockValue(block, _ /*bytes*/ ) =>
         if (block.height != slotIndex.index)
@@ -302,13 +309,22 @@ case class ConsensusConnect(getSetting: () => Setting.CoreNodeSetting)
                                  valueToNominate: Value,
                                  previousValue: Value,
                                  afterMilliSeconds: Long): Unit = {
+    // if current nominating process is stopped(because of reaching agreement), don't trigger next round
+    // we use the counter == -1 to represent this situation
+    // and it new slotIndex has come , remove other counters.
+
     // if the counter of the slotIndex is over threshold, DO NOT start a timer,
     // means, don't nominate any more
     val maxNominatingTimes     = setting.configReader.coreNode.scp.maxNominatingTimes
     val currentNominatingTimes = nominatingCounters.map(_.getOrElse(slotIndex, 0)).unsafe()
     if (currentNominatingTimes > setting.configReader.coreNode.scp.maxNominatingTimes) {
       log.info(s"current nominating times($currentNominatingTimes) is over($maxNominatingTimes)")
-    } else {
+    }
+    else if (currentNominatingTimes == -1) {
+      // means current slotIndex has reached to agreement.
+      log.info(s"current slot ($slotIndex) reached to agreement")
+    }
+    else {
       nominatingCounters.updated { map =>
         map + (slotIndex -> (currentNominatingTimes + 1))
       }

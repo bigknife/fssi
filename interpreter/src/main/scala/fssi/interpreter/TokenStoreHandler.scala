@@ -26,12 +26,13 @@ import better.files.{File => ScalaFile, _}
 
 import java.io._
 
-
 class TokenStoreHandler extends TokenStore.Handler[Stack] with LogSupport {
-  private val tokenFileDirName                       = "token"
-  private val tokenTrie: SafeVar[Trie[Char, String]] = SafeVar.empty
-  private val tokenStore: Once[LevelDBStore[String, String]] = Once.empty
-  private val tokenTrieJsonFile: Once[ScalaFile] = Once.empty
+  private val tokenFileDirName                                         = "token"
+  private val tokenTrie: SafeVar[Trie[Char, String]]                   = SafeVar.empty
+  private val tokenStore: Once[LevelDBStore[String, String]]           = Once.empty
+  private val tokenTrieJsonFile: Once[ScalaFile]                       = Once.empty
+  private val tokenStage: SafeVar[Map[BigInt, Map[Account.ID, Token]]] = SafeVar(Map.empty)
+
   override def initializeTokenStore(dataDir: File): Stack[Unit] = Stack { setting =>
     val path = new File(dataDir, tokenFileDirName)
     path.mkdirs()
@@ -65,6 +66,7 @@ class TokenStoreHandler extends TokenStore.Handler[Stack] with LogSupport {
 
       // init or load level db store
       val dbFile = new File(path, "db")
+      dbFile.mkdirs()
       tokenStore := levelDBStore(dbFile)
       log.info(s"init leveldb at $dbFile")
     }
@@ -96,6 +98,60 @@ class TokenStoreHandler extends TokenStore.Handler[Stack] with LogSupport {
       .map(HexString(_))
       .map(_ == HexString.decode(state))
       .getOrElse(default = false)
+  }
+
+  override def getCurrentToken(account: Account.ID): Stack[Token] = Stack { setting =>
+    // accountId -> tokenHash -> token
+    val accountIdKey = account.value.noPrefix.toCharArray
+    tokenTrie
+      .map { trie =>
+        trie
+          .get(accountIdKey)
+          .map(tokenHash =>
+            tokenStore.map(_.load(tokenHash).getOrElse(Token.Zero.toString)).unsafe())
+          .map(x => Token.parse(x))
+          .getOrElse(Token.Zero)
+      }
+      .getOrElse(Token.Zero)
+  }
+
+  /** stage the account's token
+    */
+  override def stageToken(height: BigInt, account: Account.ID, token: Token): Stack[Unit] = Stack {
+    setting =>
+      tokenStage.updated { x =>
+        val m: Map[Account.ID, Token] = x.getOrElse(height, Map.empty)
+        x + (height -> (m + (account -> token)))
+      }
+  }
+
+  /** commit staged tokens
+    */
+  override def commitStagedToken(height: BigInt): Stack[Unit] = Stack { setting =>
+    val tokenMap: Map[Account.ID, Token] =
+      tokenStage.map(_.getOrElse(height, Map.empty[Account.ID, Token])).value
+    // write to the trie and store
+    tokenTrie.updated { trie =>
+      tokenMap.foldLeft(trie) { (acc, n) =>
+        val k     = n._1.value.noPrefix.toCharArray
+        val v     = n._2.toString
+        val vHash = BytesUtil.toHex(crypto.hash(v.getBytes("utf-8")))
+
+        // vHash -> v saved to store
+        tokenStore.foreach { store =>
+          store.save(vHash, v)
+        }
+        acc.put(k, vHash)
+      }
+    }
+  }
+
+  /** rollback staged tokens
+    */
+  override def rollbackStagedToken(height: BigInt): Stack[Unit] = Stack { setting =>
+    tokenStage.updated { stage =>
+      stage.filterKeys(_ != height)
+    }
   }
 }
 
