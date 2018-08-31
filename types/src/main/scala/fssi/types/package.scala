@@ -1,5 +1,7 @@
 package fssi
 
+import utils._
+
 package object types {
   type TokenUnit = Token.Unit
   type UserContract = Contract.UserContract
@@ -7,5 +9,5 @@ package object types {
   object syntax extends BytesValue.Syntax
   object implicits extends Transaction.Implicits
       with Contract.Implicits
-  
+
 }

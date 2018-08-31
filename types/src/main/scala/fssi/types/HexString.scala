@@ -4,11 +4,20 @@ package types
 import utils._
 
 case class HexString(bytes: Array[Byte]) {
-  override def toString(): String = {
+  override def toString: String = {
     "0x" + noPrefix
   }
 
   def noPrefix: String = BytesUtil.toHex(bytes)
+
+  def toBytesValue: BytesValue = BytesValue(bytes)
+
+  def isEmpty: Boolean = bytes.isEmpty
+
+  override def equals(that: Any): Boolean = that match {
+    case HexString(thatBytes) => bytes sameElements thatBytes
+    case _ => false
+  }
 }
 
 object HexString {

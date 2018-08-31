@@ -5,6 +5,15 @@ package fssi.types
   */
 case class Token(amount: BigInt, tokenUnit: TokenUnit) {
   override def toString: String = s"$amount${tokenUnit.toString}"
+
+  def +(that: Token): Token = {
+    // now, only one unit
+    Token(this.amount + that.amount, tokenUnit)
+  }
+
+  def -(that: Token): Token = {
+    Token(this.amount - that.amount, tokenUnit)
+  }
 }
 
 object Token {
@@ -26,4 +35,10 @@ object Token {
 
   // build with sweet
   def tokenWithBaseUnit(amount: Long): Token = Token(amount, Unit.Sweet)
+
+  private val TokenMatcher = """^(\\d+)(Sweet)""".r
+  def parse(litteral: String): Token = litteral match {
+    case TokenMatcher(amount, tokenUnit) => Token(amount.toInt, Unit(tokenUnit))
+    case _ => Token.Zero
+  }
 }

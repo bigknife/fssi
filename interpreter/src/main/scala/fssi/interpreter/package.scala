@@ -1,10 +1,10 @@
 package fssi
 
-import utils.trie._
-
 import cats.data.Kleisli
 import cats.effect.IO
 import java.io._
+
+import fssi.trie.Bytes
 
 package object interpreter {
   type Stack[A] = Kleisli[IO, Setting, A]
@@ -28,6 +28,10 @@ package object interpreter {
       with ContractDataStoreHandler.Implicits
       with ChainStoreHandler.Implicits
       with ContractServiceHandler.Implicits
+      with AccountStoreHandler.Implicits
+      with TransactionServiceHandler.Implicits
+      with LogServiceHandler.Implicits
+      with ConsensusEngineHandler.Implicits
       with bigknife.sop.effect.error.ErrorMInstance
 
   object runner {
@@ -46,13 +50,22 @@ package object interpreter {
   /** a store based leveldb, used for utils.trie
     */
   object levelDBStore {
-    def apply(path: File): Store = new LevelDBStore {
+    def apply[K, V](path: File)(implicit EK: Bytes[K], EV: Bytes[V]): LevelDBStore[K, V] = new LevelDBStore[K, V] {
       override val dbFile: File = path
+      override implicit val BK: Bytes[K] = EK
+      override implicit val BV: Bytes[V] = EV
     }
   }
 
   /** json codecs
     */
-  val jsonCodecs = types.json.implicits
+  object jsonCodecs
+      extends types.json.AllTypesJsonCodec
+      with trie.TrieCodecs
+      with scp.SCPJsonCodec
+      with io.circe.generic.AutoDerivation
 
+  // scp types
+  type BlockValue = scp.BlockValue
+  val BlockValue: scp.BlockValue.type = scp.BlockValue
 }

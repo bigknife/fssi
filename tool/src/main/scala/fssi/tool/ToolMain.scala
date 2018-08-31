@@ -22,6 +22,8 @@ object ToolMain extends App {
                       methodName,
                       parameters.map(PrimaryParameter(_)),
                       decodeFormat)
+        case CreateTransferTransactionArgs(accountFile, password, payee, token) =>
+          createTransferTransaction(accountFile, password, payee, token)
         case _ =>
       }
     case None =>

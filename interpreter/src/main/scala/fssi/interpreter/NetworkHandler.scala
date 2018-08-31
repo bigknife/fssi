@@ -13,6 +13,7 @@ import java.io._
 class NetworkHandler extends Network.Handler[Stack] {
   val clusterOnce: Once[Cluster]  = Once.empty
   val clientOnce: Once[Transport] = Once.empty
+  val currentNode: Once[Node]     = Once.empty
 
   val logger: Logger = LoggerFactory.getLogger(getClass)
 
@@ -22,11 +23,8 @@ class NetworkHandler extends Network.Handler[Stack] {
     setting match {
       case x: Setting.P2PNodeSetting =>
         x.workingDir.mkdirs()
-
-        val configReader = ConfigReader(x.configFile)
-
-        val host = configReader.readHost()
-        val port = configReader.readPort()
+        val host = x.configReader.p2p.host
+        val port = x.configReader.p2p.port
 
         val config = ClusterConfig
           .builder()
@@ -34,9 +32,8 @@ class NetworkHandler extends Network.Handler[Stack] {
           .listenAddress(host)
           .portAutoIncrement(false)
           .seedMembers(
-            configReader
-              .readSeeds()
-              .map(_.toString)
+            x.configReader.p2p.seeds
+              .map(_.toString())
               .map(x => Node.parseAddr(x))
               .filter(_.isDefined)
               .map(_.get)
@@ -60,7 +57,7 @@ class NetworkHandler extends Network.Handler[Stack] {
               logger.debug("handled json message by gossiping")
             } match {
               case scala.util.Success(_) =>
-                logger.info(s"Gossip message handled successfully")
+                logger.debug(s"Gossip message handled successfully")
               case scala.util.Failure(t) =>
                 logger.error(s"Gossip message handled failed", t)
             }
@@ -98,8 +95,7 @@ class NetworkHandler extends Network.Handler[Stack] {
       case x: Setting.P2PNodeSetting =>
         // Read account in the config file.
         x.workingDir.mkdirs()
-        val configReader = ConfigReader(x.configFile)
-        val account      = configReader.readCoreNodeAccount()
+        val account = x.configReader.p2p.bindAccount
         node.copy(account = Some(account))
 
       case _ => throw new RuntimeException("CoreNodesetting needed here!")
@@ -121,6 +117,20 @@ class NetworkHandler extends Network.Handler[Stack] {
       cluster.spreadGossip(Message.fromData(message))
       ()
     }
+  }
+
+  /** set node info for current process
+    * @param node a node has been bound an account
+    */
+  override def setCurrentNode(node: Node): Stack[Unit] = Stack { setting =>
+    currentNode := node
+  }
+
+  /** get node info for current process
+    * @return node with bound account
+    */
+  override def getCurrentNode(): Stack[Node] = Stack { setting =>
+    currentNode.unsafe
   }
 
   private def printMembers(): Unit = {

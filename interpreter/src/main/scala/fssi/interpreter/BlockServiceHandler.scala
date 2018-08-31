@@ -7,11 +7,14 @@ import ast._
 
 import scala.collection._
 
-class BlockServiceHandler extends BlockService.Handler[Stack] {
+class BlockServiceHandler extends BlockService.Handler[Stack] with BlockCalSupport {
   override def createGenesisBlock(chainID: String): Stack[Block] = Stack {
     val b1 = Block(
       hash = Hash.empty,
       previousHash = Hash.empty,
+      previousTokenState = HexString.empty,
+      previousContractState = HexString.empty,
+      previousContractDataState = HexString.empty,
       height = 0,
       transactions = immutable.TreeSet.empty[Transaction],
       chainID = chainID
@@ -19,16 +22,13 @@ class BlockServiceHandler extends BlockService.Handler[Stack] {
     hashBlock(b1)
   }
 
-  /** calculate the hash(sha3-256) of a block
-    * then, fill the `hash` field to return the new block.
-    * the participating fileds include previousHash, height, transactions and chainID
+  /** check the hash of a block is corrent or not
+    * @param block block to be verified, the hash should calclute correctly
+    * @return if correct return true, or false.
     */
-  private def hashBlock(block: Block): Block = {
-    val allBytes = block.previousHash.bytes ++ block.height.toByteArray ++ block.transactions
-      .foldLeft(Array.emptyByteArray)((acc, n) => acc ++ bytesToHashForTransaction(n)) ++ block.chainID
-      .getBytes("utf-8")
-    val hashBytes = cryptoUtil.hash(allBytes)
-    block.copy(hash = Hash(hashBytes))
+  override def verifyBlockHash(block: Block): Stack[Boolean] = Stack { setting =>
+    val nb = hashBlock(block)
+    nb.hash == block.hash
   }
 
   /** serialize transaction to byte array.
@@ -75,7 +75,6 @@ class BlockServiceHandler extends BlockService.Handler[Stack] {
         x.signature.value.bytes ++
         BigInt(x.timestamp).toByteArray
   }
-
 }
 
 object BlockServiceHandler {

@@ -10,24 +10,28 @@ import ast._, uc._
 import io.circe._
 import io.circe.syntax._
 import json.implicits._
+import org.slf4j._
 
 import bigknife.jsonrpc._
 
 trait StartupHandler extends JsonMessageHandler {
   val edgeNodeProgram = EdgeNodeProgram[components.Model.Op]
 
+  private lazy val log = LoggerFactory.getLogger(getClass)
+
   def apply(setting: Setting.EdgeNodeSetting): Unit = {
     val node = runner.runIO(edgeNodeProgram.startup(this), setting).unsafeRunSync
 
     // json rpc server
-    val configReader = ConfigReader(setting.configFile)
     server.run(
       name = "edge",
       version = "v1",
       resource = jsonrpcResource(setting, edgeNodeProgram),
-      host = configReader.readJsonRpcHost(),
-      port = configReader.readJsonRpcPort()
+      host = setting.configReader.edgeNode.jsonRpc.host,
+      port = setting.configReader.edgeNode.jsonRpc.port
     )
+    log.info(s"edge node jsonrpc server startup: " +
+      s"http://${setting.configReader.edgeNode.jsonRpc.host}:${setting.configReader.edgeNode.jsonRpc.port}/jsonrpc/edge/v1")
 
     // add shutdown hook to clean resources.
     Runtime.getRuntime.addShutdownHook(new Thread(() => {
@@ -44,7 +48,7 @@ trait StartupHandler extends JsonMessageHandler {
   }
 
   def handle(jsonMessage: JsonMessage): Unit = {
-    println(s"Got JsonMessage: $jsonMessage")
+    throw new RuntimeException("EdgeNode SHOULD NOT Handle any json message")
   }
 
 }

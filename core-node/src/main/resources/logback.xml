@@ -7,11 +7,23 @@
         </encoder>
     </appender>
 
-    <logger name="fssi" additivity="false" level="debug">
+    <logger name="scalap" additivity="false" level="debug">
+        <appender-ref ref="COLOR" />
+    </logger>
+    <logger name="bigknife.scalap" additivity="false" level="debug">
+        <appender-ref ref="COLOR" />
+    </logger>
+
+    <logger name="fssi" additivity="false" level="info">
       <appender-ref ref="COLOR" />
+    </logger>
+
+    <logger name="io.scalecube.transport" additivity="false" level="error">
+        <appender-ref ref="COLOR" />
     </logger>
 
     <root level="warn">
         <appender-ref ref="COLOR"/>
     </root>
+
 </configuration>

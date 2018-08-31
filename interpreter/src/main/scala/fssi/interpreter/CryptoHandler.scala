@@ -1,13 +1,11 @@
 package fssi
 package interpreter
 
-import types._
+import types._, exception._
+import utils._
 import ast._
 
-import java.security._
-import javax.crypto._
-import javax.crypto.spec._
-import org.bouncycastle.jce._
+import scala.util._
 
 /**
   * CryptoHandler uses ECDSA
@@ -15,23 +13,11 @@ import org.bouncycastle.jce._
   *      ref: http://www.bouncycastle.org/wiki/display/JA1/Elliptic+Curve+Key+Pair+Generation+and+Key+Factories
   *           http://www.bouncycastle.org/wiki/pages/viewpage.action?pageId=362269
   */
-class CryptoHandler extends Crypto.Handler[Stack] {
-
-  // keypair algorithm
-  private val KP_ALGO              = "ECDSA"
-  private val EC_SPEC              = "prime256v1"
-  private val SEC_KEY_FACTORY_ALGO = "desede"
-  private val CIPHER_ALGO          = "desede/CBC/PKCS5Padding"
-
-  // register bcprovider
-  Security.addProvider(new provider.BouncyCastleProvider())
+class CryptoHandler extends Crypto.Handler[Stack] with LogSupport {
 
   override def createKeyPair(): Stack[(BytesValue, BytesValue)] = Stack { setting =>
-    val ecSpec = ECNamedCurveTable.getParameterSpec(EC_SPEC)
-    val g      = KeyPairGenerator.getInstance(KP_ALGO, "BC")
-    g.initialize(ecSpec, new SecureRandom())
-    val kp = g.generateKeyPair()
-    (BytesValue(kp.getPublic.getEncoded), BytesValue(kp.getPrivate.getEncoded))
+    val kp = crypto.generateECKeyPair()
+    (BytesValue(crypto.getECPublicKey(kp)), BytesValue(crypto.getECPrivateKey(kp)))
   }
 
   override def createIVForDes(): Stack[BytesValue] = Stack { setting =>
@@ -52,27 +38,53 @@ class CryptoHandler extends Crypto.Handler[Stack] {
                                     iv: BytesValue,
                                     password: BytesValue): Stack[BytesValue] = Stack { setting =>
     // ensure the password is 24b length
-    val ensuredPass = ensure24Bytes(password)
-
-    val spec       = new DESedeKeySpec(ensuredPass.value)
-    val keyFactory = SecretKeyFactory.getInstance(SEC_KEY_FACTORY_ALGO)
-    val desKey     = keyFactory.generateSecret(spec)
-    val cipher     = Cipher.getInstance(CIPHER_ALGO)
-    val ivSpec     = new IvParameterSpec(iv.value)
-    cipher.init(Cipher.ENCRYPT_MODE, desKey, ivSpec)
-
-    BytesValue(cipher.doFinal(privateKey.value))
+    val ensuredPass = crypto.ensure24Bytes(password)
+    BytesValue(crypto.des3cbcEncrypt(privateKey.value, ensuredPass.value, iv.value))
   }
 
-  private def ensure24Bytes(x: BytesValue): BytesValue = x match {
-    case a if a.value.length == 24 => a
-    case a if a.value.length > 24  => BytesValue(a.value.slice(0, 24))
-    case a                         => BytesValue(java.nio.ByteBuffer.allocate(24).put(a.value).array)
+  override def desDecryptPrivateKey(
+      encryptedPrivateKey: BytesValue,
+      iv: BytesValue,
+      password: BytesValue): Stack[Either[FSSIException, BytesValue]] = Stack { setting =>
+    Try {
+      val ensuredPass = crypto.ensure24Bytes(password)
+      BytesValue(crypto.des3cbcDecrypt(encryptedPrivateKey.value, ensuredPass.value, iv.value))
+    }.toEither.left.map(x => new FSSIException("decrypt private key faield", Some(x)))
+  }
+
+  override def makeSignature(source: BytesValue, privateKey: BytesValue): Stack[Signature] = Stack {
+    setting =>
+      Signature(
+        HexString(
+          crypto.makeSignature(
+            source = source.value,
+            priv = crypto.rebuildECPrivateKey(privateKey.value)
+          )
+        ))
+  }
+
+  /** verify signature
+    */
+  override def verifySignature(source: BytesValue,
+                               publicKey: BytesValue,
+                               signature: Signature): Stack[Boolean] = Stack { setting =>
+    scala.util.Try {
+      crypto.verifySignature(
+        sign = signature.value.bytes,
+        source = source.value,
+        publ = crypto.rebuildECPublicKey(publicKey.value)
+      )
+    }.toEither match {
+      case Left(t) =>
+        log.error("verify signature faield", t)
+        false
+      case Right(x) => x
+    }
   }
 }
 
 object CryptoHandler {
-  private val instance = new CryptoHandler
+  val instance = new CryptoHandler
   trait Implicits {
     implicit val cryptoHandlerInstance: CryptoHandler = instance
   }

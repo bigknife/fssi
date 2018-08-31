@@ -52,7 +52,7 @@ object Dependencies {
       val leveldb = "1.8"
 
       // scalap
-      val scalap = "0.1.8_BETA"
+      val scalap = "0.1.10_BETA"
 
       val nettyNative = "4.1.25.Final"
 
@@ -162,7 +162,7 @@ object Dependencies {
       ).map(_.libraryDependencies)
     }
 
-    lazy val scapap = {
+    lazy val scalap = {
       Seq(
         Dpd("bigknife", "scalap", versions.scalap)
       ).map(_.libraryDependencies)

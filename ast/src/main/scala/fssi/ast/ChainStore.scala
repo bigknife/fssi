@@ -14,4 +14,8 @@ import java.io._
     * @param dataDir directory to save token.
     */
   def createChainRoot(dataDir: File, chainID: String): P[F, Either[FSSIException, File]]
+
+  /** create a default config file for core node
+    */
+  def createDefaultConfigFile(chainRoot: File): P[F, File]
 }

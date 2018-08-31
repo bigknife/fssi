@@ -13,6 +13,9 @@ import scala.collection._
 case class Block(
   hash: Hash,
   previousHash: Hash,
+  previousTokenState: HexString,
+  previousContractState: HexString,
+  previousContractDataState: HexString,
   height: BigInt,
   transactions: immutable.TreeSet[Transaction],
   chainID: String

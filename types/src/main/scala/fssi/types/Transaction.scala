@@ -1,4 +1,7 @@
-package fssi.types
+package fssi
+package types
+
+import utils._
 
 /**
   * Transaction is the activities happened on the chain, such as:
@@ -19,6 +22,12 @@ sealed trait Transaction {
   def sender: Account.ID
   def signature: Signature
   def timestamp: Long
+
+  /** every transaction should use sender's private key to make the
+    *  signature, so "sender" field is the public key which should be
+    *  used to verify this transaction.
+    */
+  def publicKeyForVerifying: BytesValue = BytesValue(sender.value.bytes)
 }
 
 object Transaction {
@@ -30,13 +39,13 @@ object Transaction {
     */
   case class Transfer(
       id: Transaction.ID,
-      from: Account.ID,
-      to: Account.ID,
+      payer: Account.ID,
+      payee: Account.ID,
       token: Token,
       signature: Signature,
       timestamp: Long
   ) extends Transaction {
-    val sender: Account.ID = from
+    val sender: Account.ID = payer
   }
 
   /**

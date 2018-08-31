@@ -10,6 +10,7 @@ object components {
   @sps trait Model[F[_]] {
 
     val err: ErrorM[F]
+    val log: LogService[F]
 
     val crypto: Crypto[F]
     val network: Network[F]
@@ -20,5 +21,8 @@ object components {
     val contractStore: ContractStore[F]
     val contractDataStore: ContractDataStore[F]
     val contractService: ContractService[F]
+    val transactionService: TransactionService[F]
+    val consensusEngine: ConsensusEngine[F]
+    val accountStore: AccountStore[F]
   }
 }

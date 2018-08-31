@@ -90,6 +90,14 @@ object Common {
           )
     }
 
+    object trie {
+      def apply(): Project =
+        prj("trie", "trie")
+          .settings(
+            libraryDependencies ++= (all.circe)
+          )
+    }
+
     object types {
       def apply(): Project = prj("types", "types")
     }
@@ -124,6 +132,8 @@ object Common {
             libraryDependencies ++= all.scapap,
             libraryDependencies ++= all.config,
             libraryDependencies ++= all.asm
+            libraryDependencies ++= all.scalap,
+            libraryDependencies ++= all.config
           )
     }
 

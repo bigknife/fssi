@@ -1,13 +1,16 @@
 package fssi
 package interpreter
 
-import utils.trie._
 import java.io._
+import trie._
 
 /** store based on leveldb
   *
   */
-trait LevelDBStore extends Store {
+trait LevelDBStore[K, V] {
+  implicit val BK: Bytes[K]
+  implicit val BV: Bytes[V]
+
   import org.iq80.leveldb._
   val dbFile: File
 
@@ -19,11 +22,13 @@ trait LevelDBStore extends Store {
     org.fusesource.leveldbjni.JniDBFactory.factory.open(dbFile, options)
   }
 
-  override def save(key: StoreKey, value: StoreValue): Unit = db.put(key, value)
+  def save(key: K, value: V): Unit = db.put(BK.determinedBytes(key), BV.determinedBytes(value))
 
-  override def load(key: StoreKey): Option[StoreValue] = Option(db.get(key))
+  def load(key: K): Option[V] = {
+    Option(db.get(BK.determinedBytes(key))).map(BV.to)
+  }
 
-  override def delete(key: StoreKey): Unit = db.delete(key)
+  def delete(key: K): Unit = db.delete(BK.determinedBytes(key))
 
-  override def shutdown(): Unit = db.close()
+  def shutdown(): Unit = db.close()
 }

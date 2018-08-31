@@ -3,6 +3,7 @@ package ast
 package uc
 
 import types._
+import utils._
 import types.syntax._
 import bigknife.sop._
 import bigknife.sop.implicits._
@@ -11,20 +12,20 @@ import java.nio.file.Path
 
 import fssi.types.Contract.Parameter
 
-trait ToolProgram[F[_]] {
-  val model: components.Model[F]
+trait ToolProgram[F[_]] extends BaseProgram[F] {
   import model._
 
   /** Create an account, only a password is needed.
     * NOTE: then password is ensured to be 24Bytes length.
     */
   def createAccount(password: String): SP[F, Account] = {
+    import crypto._
     for {
-      keypair <- crypto.createKeyPair()
+      keypair <- createKeyPair()
       (publicKey, privateKey) = keypair
-      iv <- crypto.createIVForDes()
-      pk <- crypto.desEncryptPrivateKey(privateKey, iv, password = password.getBytes("utf-8"))
-    } yield Account(publicKey.toHexString, pk.toHexString, iv.toHexString)
+      iv <- createIVForDes()
+      pk <- desEncryptPrivateKey(privateKey, iv, password = password.getBytes("utf-8"))
+    } yield Account(HexString(publicKey.value), HexString(pk.value), HexString(iv.value))
   }
 
   /** Create a chain
@@ -32,15 +33,25 @@ trait ToolProgram[F[_]] {
     * @param chainID the chain id
     */
   def createChain(dataDir: File, chainID: String): SP[F, Unit] = {
+    import chainStore._
+    import blockStore._
+    import tokenStore._
+    import contractStore._
+    import contractDataStore._
+    import blockService._
+    import log._
+
     for {
-      createRoot   <- chainStore.createChainRoot(dataDir, chainID)
+      createRoot   <- createChainRoot(dataDir, chainID)
       root         <- err.either(createRoot)
-      _            <- blockStore.initialize(root)
-      _            <- tokenStore.initialize(root)
-      _            <- contractStore.initialize(root)
-      _            <- contractDataStore.initialize(root)
-      genesisBlock <- blockService.createGenesisBlock(chainID)
-      _            <- blockStore.saveBlock(genesisBlock)
+      confFile     <- createDefaultConfigFile(root)
+      _            <- initializeBlockStore(root)
+      _            <- initializeTokenStore(root)
+      _            <- initializeContractStore(root)
+      _            <- initializeContractDataStore(root)
+      genesisBlock <- createGenesisBlock(chainID)
+      _            <- saveBlock(genesisBlock)
+      _            <- info(s"chain initialized, please edit the default config file: $confFile")
     } yield ()
   }
 
@@ -88,6 +99,27 @@ trait ToolProgram[F[_]] {
                                                            parameters)
       _ <- err.either(invokeEither)
     } yield ()
+    
+  /** Create a transfer transaction json rpc protocol
+    */
+  def createTransferTransaction(accountFile: File,
+                                password: Array[Byte],
+                                payee: Account.ID,
+                                token: Token): SP[F, Transaction.Transfer] = {
+    import accountStore._
+    import crypto._
+    import transactionService._
+    for {
+      accountOrFailed <- loadAccountFromFile(accountFile)
+      account         <- err.either(accountOrFailed)
+      privateKeyOrFailed <- desDecryptPrivateKey(account.encryptedPrivateKey.toBytesValue,
+                                                 account.iv.toBytesValue,
+                                                 BytesValue(password))
+      privateKey        <- err.either(privateKeyOrFailed)
+      transferNotSigned <- createUnsignedTransfer(payer = account.id, payee, token)
+      unsignedBytes     <- calculateSingedBytesOfTransaction(transferNotSigned)
+      signature         <- makeSignature(unsignedBytes, privateKey)
+    } yield transferNotSigned.copy(signature = signature)
   }
 }
 
