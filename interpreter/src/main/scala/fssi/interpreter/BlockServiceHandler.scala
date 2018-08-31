@@ -57,7 +57,8 @@ class BlockServiceHandler extends BlockService.Handler[Stack] {
         BigInt(x.timestamp).toByteArray
 
     case x: Transaction.RunContract =>
-      import Contract.Parameter._
+      import Contract.Parameter.PrimaryParameter._
+      import Contract.Parameter.ReferenceParameter._
       def bytesOfParam(p: Contract.Parameter): Array[Byte] = p match {
         case PString(x)     => x.getBytes("utf-8")
         case PBigDecimal(x) => x.toString.getBytes("")

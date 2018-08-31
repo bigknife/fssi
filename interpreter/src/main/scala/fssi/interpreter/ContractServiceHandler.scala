@@ -1,4 +1,5 @@
-package fssi.interpreter
+package fssi
+package interpreter
 
 import java.io._
 import java.nio.file._
@@ -6,12 +7,16 @@ import java.nio.file.attribute.BasicFileAttributes
 import java.util.UUID
 import java.util.zip.{ZipEntry, ZipOutputStream}
 
+import fssi.interpreter.infr.{Compiler => compiler}
 import fssi.ast.ContractService
 import fssi.interpreter.Setting.ToolSetting
+import fssi.interpreter.infr.CheckingClassLoader
 import fssi.types.CodeFormat.{Base64, Hex, Jar}
+import fssi.types.Contract.Parameter
+import fssi.types.Contract.Parameter.PrimaryParameter
 import fssi.types._
 import fssi.types.exception._
-import fssi.utils.{BytesUtil, CheckingClassLoader, FileUtil, Compiler => compiler}
+import fssi.utils.{BytesUtil, FileUtil}
 
 import scala.util.Try
 
@@ -101,43 +106,61 @@ class ContractServiceHandler extends ContractService.Handler[Stack] {
 
   override def checkContractMethod(contractDir: Path,
                                    className: String,
-                                   methodName: String): Stack[Either[Throwable, Unit]] = Stack {
-    Try {
-      val metaFile = Paths.get(contractDir.toString, "META-INF/contract")
-      val existed = better.files.File(metaFile).lines.toVector.exists { line ⇒
-        line.split("\\s*=\\s*") match {
-          case Array(_, qualifiedMethodName) ⇒
-            qualifiedMethodName.split("#") match {
-              case Array(cn, mn) ⇒ className == cn && methodName == mn
-              case _             ⇒ false
-            }
-          case _ ⇒ false
+                                   methodName: String,
+                                   parameters: Array[Parameter]): Stack[Either[Throwable, Unit]] =
+    Stack {
+      Try {
+        val metaFile = Paths.get(contractDir.toString, "META-INF/contract")
+        val existed = better.files.File(metaFile).lines.toVector.exists { line ⇒
+          line.split("\\s*=\\s*") match {
+            case Array(_, qualifiedMethodName) ⇒
+              qualifiedMethodName.split("#") match {
+                case Array(clazz, method) ⇒
+                  val leftIndex  = method.indexOf("(")
+                  val rightIndex = method.lastIndexOf(")")
+                  if (leftIndex < 0 || rightIndex < 0)
+                    throw new IllegalArgumentException(s"smart contract invalid: $line")
+                  else {
+                    val methodName = method.substring(0, leftIndex)
+                    val args =
+                      method.substring(leftIndex + 1, rightIndex).split(",").filter(_.nonEmpty)
+                    clazz == className && methodName == methodName && (args sameElements parameters
+                      .map(_.`type`.`type`.getSimpleName))
+                  }
+                case _ ⇒ false
+              }
+            case _ ⇒ false
+          }
         }
-      }
-      if (existed) ()
-      else {
-        FileUtil.deleteDir(contractDir)
-        throw new NoSuchMethodException(s"method $className#$methodName not found")
-      }
-    }.toEither
-  }
+        if (existed) ()
+        else {
+          FileUtil.deleteDir(contractDir)
+          throw new NoSuchMethodException(
+            s"contract method [$className#$methodName(${parameters.map(_.`type`.`type`.getSimpleName).mkString(",")})] not found")
+        }
+      }.toEither
+    }
 
   override def invokeContractMethod(contractDir: Path,
                                     className: String,
                                     methodName: String,
-                                    parameters: Array[String]): Stack[Either[Throwable, Unit]] =
+                                    parameters: Array[Parameter]): Stack[Either[Throwable, Unit]] =
     Stack {
       try {
         val track       = CheckingClassLoader.ClassCheckingStatus()
         val classLoader = new CheckingClassLoader(contractDir, track)
-        val clazz       = classLoader.findClass(className)
-        if (clazz == null) Left(new ClassNotFoundException(s"can not find class $className"))
+        val clazz =
+          classLoader.findClassMethod(className, methodName, parameters.map(_.`type`.`type`))
+        if (clazz == null)
+          Left(new ClassNotFoundException(
+            s"can not find class method [$className#$methodName(${parameters.map(_.`type`.`type`.getSimpleName).mkString(",")})]"))
         else {
           if (track.isLegal) {
-            val methodArgs = parameters.map(_ ⇒ classOf[String])
-            val method     = clazz.getMethod(methodName, methodArgs: _*)
-            val instance   = clazz.newInstance()
-            method.invoke(instance, parameters: _*)
+            val method   = clazz.getMethod(methodName, parameters.map(_.`type`.`type`): _*)
+            val instance = clazz.newInstance()
+            method.invoke(
+              instance,
+              parameters.map(_.asInstanceOf[PrimaryParameter].value.asInstanceOf[AnyRef]): _*)
             Right(())
           } else Left(ContractCompileError(track.errors))
         }

@@ -9,6 +9,8 @@ import bigknife.sop.implicits._
 import java.io.File
 import java.nio.file.Path
 
+import fssi.types.Contract.Parameter
+
 trait ToolProgram[F[_]] {
   val model: components.Model[F]
   import model._
@@ -49,12 +51,12 @@ trait ToolProgram[F[_]] {
     */
   def compileContract(sourceDir: Path, destDir: Path, format: CodeFormat): SP[F, Unit] = {
     for {
-      classPathEither   ← contractService.compileContractSourceCode(sourceDir)
-      classPath         ← err.either(classPathEither)
-      determinismEither ← contractService.checkDeterministicOfClass(classPath)
-      _                 ← err.either(determinismEither)
-      bytesValue        ← contractService.zipContract(classPath)
-      _                 ← contractService.outputZipFile(bytesValue, destDir, format)
+      classPathEither   <- contractService.compileContractSourceCode(sourceDir)
+      classPath         <- err.either(classPathEither)
+      determinismEither <- contractService.checkDeterministicOfClass(classPath)
+      _                 <- err.either(determinismEither)
+      bytesValue        <- contractService.zipContract(classPath)
+      _                 <- contractService.outputZipFile(bytesValue, destDir, format)
     } yield ()
   }
 
@@ -70,18 +72,21 @@ trait ToolProgram[F[_]] {
   def runContract(classesDir: Path,
                   clazzName: String,
                   methodName: String,
-                  parameters: Array[String],
+                  parameters: Array[Parameter],
                   decodeFormat: CodeFormat): SP[F, Unit] = {
     for {
-      codeBytes   ← contractService.decodeContractClasses(classesDir, decodeFormat)
-      contractDir ← contractService.buildContractDir(codeBytes)
-      checkEither ← contractService.checkContractMethod(contractDir, clazzName, methodName)
-      _           ← err.either(checkEither)
-      invokeEither ← contractService.invokeContractMethod(contractDir,
-                                                          clazzName,
-                                                          methodName,
-                                                          parameters)
-      _ ← err.either(invokeEither)
+      codeBytes   <- contractService.decodeContractClasses(classesDir, decodeFormat)
+      contractDir <- contractService.buildContractDir(codeBytes)
+      checkEither <- contractService.checkContractMethod(contractDir,
+                                                         clazzName,
+                                                         methodName,
+                                                         parameters)
+      _ <- err.either(checkEither)
+      invokeEither <- contractService.invokeContractMethod(contractDir,
+                                                           clazzName,
+                                                           methodName,
+                                                           parameters)
+      _ <- err.either(invokeEither)
     } yield ()
   }
 }

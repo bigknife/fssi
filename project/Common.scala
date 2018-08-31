@@ -86,7 +86,7 @@ object Common {
       def apply(): Project =
         prj("utils", "utils")
           .settings(
-            libraryDependencies ++= all.bcprov ++ all.asm
+            libraryDependencies ++= all.bcprov
           )
     }
 
@@ -122,7 +122,8 @@ object Common {
             libraryDependencies ++= all.betterfiles,
             libraryDependencies ++= all.leveldb,
             libraryDependencies ++= all.scapap,
-            libraryDependencies ++= all.config
+            libraryDependencies ++= all.config,
+            libraryDependencies ++= all.asm
           )
     }
 

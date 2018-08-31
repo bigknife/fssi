@@ -4,6 +4,7 @@ package tool
 import java.io._
 
 import fssi.types.CodeFormat
+import fssi.types.Contract.Parameter.PrimaryParameter
 
 sealed trait CmdArgs
 

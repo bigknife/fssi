@@ -1,4 +1,4 @@
-package fssi.utils
+package fssi.interpreter.infr
 
 import java.io.FileInputStream
 import java.nio.file.{Path, Paths}
@@ -16,19 +16,25 @@ class CheckingClassLoader(val path: Path, val track: CheckingClassLoader.ClassCh
   private lazy val cache: scala.collection.mutable.Map[String, Class[_]] =
     scala.collection.mutable.Map.empty
 
-  override def findClass(name: String): Class[_] =
+  def findClassMethod(name: String, methodName: String, parameterTypes: Array[Class[_]]): Class[_] =
     try {
-      if (cache.contains(name)) cache(name)
+      if (cache.contains(name) && methodName.isEmpty) cache(name)
       else {
         val clazz = getClass.getClassLoader.loadClass(name)
         cache.put(name, clazz)
-        val classReader       = new ClassReader(clazz.getName)
-        val classCheckVisitor = CheckingClassLoader.ClassCheckVisitor(null, this)
+        val classReader = new ClassReader(clazz.getName)
+        val classCheckVisitor =
+          CheckingClassLoader.ClassMethodCheckVisitor(null,
+                                                      this,
+                                                      name,
+                                                      methodName,
+                                                      parameterTypes.map(_.getName),
+                                                      checkMethod = methodName.nonEmpty)
         classReader.accept(classCheckVisitor, ClassReader.SKIP_DEBUG)
         clazz
       }
     } catch {
-      case _: Throwable ⇒
+      case _: Throwable =>
         val classFile = Paths.get(path.toString, name.replaceAll("\\.", "/") + ".class").toFile
         if (!classFile.canRead) {
           track.addError(s"${classFile.getAbsolutePath} can't be read")
@@ -37,13 +43,20 @@ class CheckingClassLoader(val path: Path, val track: CheckingClassLoader.ClassCh
           val input       = new FileInputStream(classFile)
           val classWriter = new ClassWriter(0)
           val classCheckVisitor =
-            CheckingClassLoader.ClassCheckVisitor(classWriter, this, needCheckMethod = true)
+            CheckingClassLoader.ClassMethodCheckVisitor(classWriter,
+                                                        this,
+                                                        name,
+                                                        methodName,
+                                                        parameterTypes.map(_.getName),
+                                                        checkMethod = methodName.nonEmpty)
           val classReader = new ClassReader(input)
           classReader.accept(classCheckVisitor, ClassReader.SKIP_DEBUG)
           val bytes = classWriter.toByteArray
-          val clazz = defineClass(name, bytes, 0, bytes.length)
-          cache.put(name, clazz)
-          clazz
+          if (!cache.contains(name)) {
+            val clazz = defineClass(name, bytes, 0, bytes.length)
+            cache.put(name, clazz)
+            clazz
+          } else cache(name)
         }
     }
 }
@@ -81,13 +94,17 @@ object CheckingClassLoader {
     def errors: Vector[String] = errorBuffer.distinct.toVector
   }
 
-  case class ClassCheckVisitor(visitor: ClassVisitor,
-                               checkClassLoader: CheckingClassLoader,
-                               needCheckMethod: Boolean = false)
+  case class ClassMethodCheckVisitor(visitor: ClassVisitor,
+                                     checkClassLoader: CheckingClassLoader,
+                                     contractClassName: String,
+                                     methodName: String,
+                                     parameterTypes: Array[String],
+                                     checkMethod: Boolean = false)
       extends ClassVisitor(ASM6, visitor) {
     import ClassCheckingVisitor._
     var currentClassName: String       = _
     var currentClassDescriptor: String = _
+    var contractMethodExited: Boolean  = false
 
     override def visit(version: Int,
                        access: Int,
@@ -100,16 +117,16 @@ object CheckingClassLoader {
       if (visitor != null) visitor.visit(version, access, name, signature, superName, interfaces)
       if (!visitedClasses.contains(currentClassName)) {
         visitedClasses += currentClassName
-        forbiddenClasses.find(forbid ⇒ forbid.r.pattern.matcher(currentClassDescriptor).matches()) match {
-          case Some(_) ⇒
+        forbiddenClasses.find(forbid => forbid.r.pattern.matcher(currentClassDescriptor).matches()) match {
+          case Some(_) =>
             checkClassLoader.track.addError(s"class [$currentClassName] is forbidden")
-          case None ⇒
+          case None =>
         }
         if (checkClassLoader.track.isLegal && superName != null) {
           val superClass = Type.getObjectType(superName).getClassName
           if (!visitedClasses.contains(superClass)) {
             visitedClasses += superClass
-            checkClassLoader.findClass(superClass); ()
+            checkClassLoader.findClassMethod(superClass, "", Array.empty); ()
           }
         }
       }
@@ -121,11 +138,11 @@ object CheckingClassLoader {
                             signature: String,
                             value: Any): FieldVisitor = {
       if (checkClassLoader.track.isLegal) {
-        forbiddenClasses.find(forbid ⇒ forbid.r.pattern.matcher(descriptor).matches()) match {
-          case Some(_) ⇒
+        forbiddenClasses.find(forbid => forbid.r.pattern.matcher(descriptor).matches()) match {
+          case Some(_) =>
             checkClassLoader.track.addError(
               s"class field [$currentClassName.$name] of type [${Type.getType(descriptor).getClassName}] is forbidden")
-          case None ⇒
+          case None =>
         }
         if ((ACC_VOLATILE & access) == ACC_VOLATILE)
           checkClassLoader.track.addError(
@@ -151,11 +168,24 @@ object CheckingClassLoader {
         checkClassLoader.track.addError(
           s"class method [$currentClassName.$name] should not with access 'native'")
 
+      val argTypes = Type.getMethodType(descriptor).getArgumentTypes.map(_.getClassName)
+      if (checkMethod && contractClassName == currentClassName && methodName == name && (argTypes sameElements parameterTypes)) {
+        contractMethodExited = true
+      }
+
       MethodCheckingVisitor(currentClassName,
                             currentClassDescriptor,
                             name,
                             checkClassLoader,
                             methodVisitor)
+    }
+
+    override def visitEnd(): Unit = {
+      super.visitEnd()
+      if (checkMethod && currentClassName == contractClassName && !contractMethodExited) {
+        checkClassLoader.track.addError(
+          s"contract method [$contractClassName#$methodName(${parameterTypes.mkString(",")})] not found")
+      }
     }
 
   }
@@ -171,18 +201,20 @@ object CheckingClassLoader {
                                    methodVisitor: MethodVisitor)
       extends MethodVisitor(ASM6, methodVisitor) {
 
+    var contractMethodExisted: Boolean = false
+
     override def visitTypeInsn(opcode: Int, `type`: String): Unit = {
       super.visitTypeInsn(opcode, `type`)
       val _type = Type.getObjectType(`type`)
-      forbiddenClasses.find(forbid ⇒ forbid.r.pattern.matcher(_type.getDescriptor).matches()) match {
-        case Some(_) ⇒
+      forbiddenClasses.find(forbid => forbid.r.pattern.matcher(_type.getDescriptor).matches()) match {
+        case Some(_) =>
           val methodDesc =
             if (methodName.startsWith("<init>")) "initialize member variable"
             else if (methodName.startsWith("<clinit>")) "initialize static variable"
             else s"initialize local variable in method [$className.$methodName]"
           checkingClassLoader.track.addError(
             s"$methodDesc of type [${_type.getClassName}] in class [$className] is forbidden")
-        case None ⇒
+        case None =>
       }
     }
 
@@ -193,14 +225,14 @@ object CheckingClassLoader {
                                  isInterface: Boolean): Unit = {
       super.visitMethodInsn(opcode, owner, name, descriptor, isInterface)
       val allowedOption =
-        allowedClasses.find(allow ⇒ allow.r.pattern.matcher(classDescriptor).matches())
+        allowedClasses.find(allow => allow.r.pattern.matcher(classDescriptor).matches())
       if (allowedOption.isEmpty) {
         val ownerType = Type.getObjectType(owner)
-        forbiddenClasses.find(forbid ⇒ forbid.r.pattern.matcher(ownerType.getDescriptor).matches()) match {
-          case Some(_) ⇒
+        forbiddenClasses.find(forbid => forbid.r.pattern.matcher(ownerType.getDescriptor).matches()) match {
+          case Some(_) =>
             checkingClassLoader.track.addError(
               s"invoke method [${ownerType.getClassName}.$name] in class [$className] is forbidden")
-          case None ⇒
+          case None =>
         }
       }
     }

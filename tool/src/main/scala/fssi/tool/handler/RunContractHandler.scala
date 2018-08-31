@@ -10,6 +10,8 @@ import uc._
 import fssi.interpreter.Setting.ToolSetting
 import fssi.interpreter.runner
 import fssi.types.CodeFormat
+import fssi.types.Contract.Parameter
+import fssi.types.Contract.Parameter.PrimaryParameter
 import org.slf4j.{Logger, LoggerFactory}
 
 /**
@@ -25,7 +27,7 @@ trait RunContractHandler {
   def apply(classesDir: File,
             qualifiedClassName: String,
             methodName: String,
-            parameters: Array[String],
+            parameters: Array[Parameter],
             decodeFormat: CodeFormat): Unit = {
     runner
       .runIOAttempt(
@@ -33,8 +35,10 @@ trait RunContractHandler {
           .runContract(classesDir.toPath, qualifiedClassName, methodName, parameters, decodeFormat),
         setting)
       .unsafeRunSync() match {
-      case Right(_) ⇒ logger.info(s"invoke method [$qualifiedClassName#$methodName] success")
-      case Left(e)  ⇒ e.printStackTrace()
+      case Right(_) ⇒
+        logger.info(
+          s"invoke method [$qualifiedClassName#$methodName(${parameters.map(p => p.`type`.`type`.getSimpleName).mkString(",")})] success")
+      case Left(e) ⇒ e.printStackTrace()
     }
   }
 }

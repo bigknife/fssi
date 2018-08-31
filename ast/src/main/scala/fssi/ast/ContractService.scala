@@ -6,6 +6,7 @@ import implicits._
 import java.io._
 import java.nio.file.Path
 
+import fssi.types.Contract.Parameter
 import fssi.types._
 import fssi.types.exception.ContractCompileError
 
@@ -60,10 +61,12 @@ import fssi.types.exception.ContractCompileError
     * @param contractDir dir of tmp contract
     * @param className class name
     * @param methodName method name
+    * @param parameters parameters for method
     */
   def checkContractMethod(contractDir: Path,
                           className: String,
-                          methodName: String): P[F, Either[Throwable, Unit]]
+                          methodName: String,
+                          parameters: Array[Parameter]): P[F, Either[Throwable, Unit]]
 
   /***
     * invoke concrete method in concrete class
@@ -75,5 +78,5 @@ import fssi.types.exception.ContractCompileError
   def invokeContractMethod(contractDir: Path,
                            className: String,
                            methodName: String,
-                           parameters: Array[String]): P[F, Either[Throwable, Unit]]
+                           parameters: Array[Parameter]): P[F, Either[Throwable, Unit]]
 }

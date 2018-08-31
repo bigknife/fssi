@@ -1,9 +1,11 @@
-package fssi.utils
+package fssi.interpreter.infr
 
 import java.io.{BufferedReader, File, FileReader}
 import java.nio.file._
 import java.nio.file.attribute.BasicFileAttributes
 
+import fssi.types.Contract.ParameterType
+import fssi.utils.FileUtil
 import javax.tools.{DiagnosticCollector, JavaFileObject, ToolProvider}
 import org.slf4j.{Logger, LoggerFactory}
 
@@ -34,8 +36,8 @@ trait Compiler {
       var classPath       = System.getProperty("java.class.path")
       if (libPath.toFile.isDirectory) {
         classPath = libPath.toFile
-          .list((dir: File, name: String) ⇒ name.endsWith(".jar"))
-          .foldLeft(classPath) { (acc, n) ⇒
+          .list((dir: File, name: String) => name.endsWith(".jar"))
+          .foldLeft(classPath) { (acc, n) =>
             acc + ":" + Paths.get(libPath.toString, n)
           }
       }
@@ -49,7 +51,7 @@ trait Compiler {
         null,
         javaFileManager.getJavaFileObjects(findAllJavaFiles(sourceDir): _*))
       compilationTask.call() match {
-        case _root_.java.lang.Boolean.TRUE ⇒
+        case _root_.java.lang.Boolean.TRUE =>
           object FV extends SimpleFileVisitor[Path] {
             override def visitFile(file: Path, attrs: BasicFileAttributes): FileVisitResult = {
               val metaInf = file.toString.substring(
@@ -64,7 +66,7 @@ trait Compiler {
           Paths.get(targetDir.toString, "META-INF").toFile.mkdirs()
           Files.walkFileTree(Paths.get(sourceDir.toString, "main/resources"), FV)
           Right(targetDir)
-        case _root_.java.lang.Boolean.FALSE ⇒
+        case _root_.java.lang.Boolean.FALSE =>
           Left(diagnosticCollector.getDiagnostics.asScala.toVector.map(_.getMessage(null)))
       }
     }
@@ -72,9 +74,9 @@ trait Compiler {
 
   private def findAllJavaFiles(src: Path): Vector[String] = {
     def findJavaFileByDir(dir: File, accFiles: Vector[String]): Vector[String] = dir match {
-      case f if f.isFile && f.getAbsolutePath.endsWith(".java") ⇒ accFiles :+ dir.getAbsolutePath
-      case f if f.isFile                                        ⇒ accFiles
-      case d                                                    ⇒ d.listFiles.toVector.foldLeft(accFiles)((f, v) ⇒ findJavaFileByDir(v, f))
+      case f if f.isFile && f.getAbsolutePath.endsWith(".java") => accFiles :+ dir.getAbsolutePath
+      case f if f.isFile                                        => accFiles
+      case d                                                    => d.listFiles.toVector.foldLeft(accFiles)((f, v) => findJavaFileByDir(v, f))
     }
     findJavaFileByDir(src.toFile, Vector.empty)
   }
@@ -92,14 +94,25 @@ trait Compiler {
       val lines = Iterator
         .continually(reader.readLine())
         .takeWhile(_ != null)
-        .foldLeft(Vector.empty[String])((acc, n) ⇒ acc :+ n)
+        .foldLeft(Vector.empty[String])((acc, n) => acc :+ n)
       val track            = CheckingClassLoader.ClassCheckingStatus()
       val checkClassLoader = new CheckingClassLoader(classFilePath, track)
-      lines.map(_.split("\\s*=\\s*")(1).trim).foreach { x ⇒
-        if (logger.isInfoEnabled()) logger.info(s"smart contract exposes class $x")
+      lines.map(_.split("\\s*=\\s*")(1).trim).foreach { x =>
+        if (logger.isInfoEnabled()) logger.info(s"smart contract exposes class method [$x]")
         x.split("#") match {
-          case Array(c, m) ⇒ checkClassLoader.findClass(c)
-          case Array(c)    ⇒ checkClassLoader.findClass(c)
+          case Array(clazz, method) =>
+            val leftIndex  = method.indexOf("(")
+            val rightIndex = method.lastIndexOf(")")
+            if (leftIndex < 0 || rightIndex < 0) track.addError(s"contract descriptor invalid: $x")
+            else {
+              val methodName = method.substring(0, leftIndex)
+              val parameterTypes = method
+                .substring(leftIndex + 1, rightIndex)
+                .split(",")
+                .filter(_.nonEmpty)
+                .map(ParameterType(_))
+              checkClassLoader.findClassMethod(clazz, methodName, parameterTypes.map(_.`type`))
+            }
         }
       }
       if (track.isLegal) Right(())
