@@ -49,18 +49,18 @@ class TokenStoreHandler extends TokenStore.Handler[Stack] with LogSupport {
 
         reloadResult match {
           case Left(t) =>
-            log.error("reload block trie faield", t)
+            log.error("reload token trie faield", t)
             throw t
           case Right(trie) =>
             tokenTrie := trie
-            log.info(s"reloaded block trie, root hash = ${trie.rootHexHash}")
+            log.info(s"reloaded token trie, root hash = ${trie.rootHexHash}")
         }
       } else if (f.notExists) {
         //init
         val trie = Trie.empty[Char, String]
         f.overwrite(trie.asJson.spaces2)
         tokenTrie := trie
-        log.info("init block trie.")
+        log.info("init token trie.")
       } else
         throw new RuntimeException(s"$f should be empty to init or a regular file to load.")
 

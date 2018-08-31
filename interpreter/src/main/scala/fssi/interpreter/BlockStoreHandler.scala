@@ -168,6 +168,17 @@ class BlockStoreHandler extends BlockStore.Handler[Stack] with BlockCalSupport w
       hashedBlock
 
     }
+
+  override def cleanUndeterminedBlock(block: Block): Stack[Unit] = Stack { setting =>
+    val tmp = undeterminedBlockRef.get()
+    if (tmp.isDefined) {
+      val tmpBlock = tmp.get
+      if (tmpBlock.height <= block.height)
+        undeterminedBlockRef.set(None)
+      else ()
+    } else ()
+
+  }
 }
 
 object BlockStoreHandler {

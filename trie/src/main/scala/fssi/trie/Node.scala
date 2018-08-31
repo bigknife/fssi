@@ -40,7 +40,8 @@ object Node {
 
   }
 
-  def branch[K, V](slots: Slot[K, V]*): Branch[K, V] = Branch(slots.map(x => x.idx -> x).toMap)
+  def branch[K: ClassTag, V](slots: Slot[K, V]*): Branch[K, V] =
+    Branch(slots.map(x => x.idx -> x).toMap)
 
   case class Slot[K: ClassTag, V](idx: K, data: Option[V], node: Option[Node[K, V]])
       extends Node[K, V] {
@@ -88,6 +89,8 @@ object Node {
   case class Compact[K: ClassTag, V](indexes: Array[K], data: Option[V], node: Option[Node[K, V]])
       extends Node[K, V] {
 
+    require(indexes.length > 0)
+
     /** put a k-v to the node
       *
       * @return new node contains k-v data and old node
@@ -103,9 +106,15 @@ object Node {
             // key is prefix of indexes
             Compact(prefix, Some(_data), Some(copy(indexes = indexes.drop(prefix.length))))
           } else if (prefix sameElements indexes) {
+            val restKeys = key.drop(prefix.length)
+            val n =
+              if (restKeys.length > 1) Compact(restKeys, Some(_data), None)
+              else Slot(restKeys.head, Some(_data), None)
+            /*
             val n = Compact(key.drop(prefix.length), Some(_data), None)
+             */
             // add n to this node
-            copy(node = node.map(_.put(key.drop(prefix.length), _data)).orElse(Some(n)))
+            copy(node = node.map(_.put(restKeys, _data)).orElse(Some(n)))
           } else {
             val n: Node[K, V] = {
               val k1 = indexes.drop(prefix.length)
@@ -123,8 +132,11 @@ object Node {
             Compact(prefix, None, Some(n))
           }
         } else {
-          val slot1 = Slot(indexes.head, None, Some(copy(indexes = indexes.drop(1))))
-          val slot2 = Slot(key.head, None, Some(Compact(key.drop(1), Some(_data), None)))
+          val restKeys1 = indexes.drop(1)
+          // output should be a branch
+          // turn compact to a slot
+          val slot1: Slot[K, V] = compactToSlot(this)
+          val slot2: Slot[K, V] = compactToSlot(Compact(key, Some(_data), None))
           Branch(Map(slot1.idx -> slot1, slot2.idx -> slot2))
         }
       }
@@ -153,13 +165,45 @@ object Node {
       else s"Compact(${indexes.map(_.toString).mkString(",")} -> $data))"
   }
 
-  case class Branch[K, V](slots: Map[K, Slot[K, V]]) extends Node[K, V] {
+  case class Branch[K: ClassTag, V](slots: Map[K, Slot[K, V]]) extends Node[K, V] {
 
     /** put a k-v to the node
       *
       * @return new node contains k-v data and old node
       */
-    override def put(key: Array[K], data: V): Node[K, V] = ???
+    override def put(key: Array[K], data: V): Node[K, V] = {
+      require(key.length > 0)
+      val head = key.head
+      if (slots.contains(head)) {
+        val slot = slots(head)
+        if (key.length == 1) {
+          val newSlot = slot.copy(data = Some(data))
+          copy(slots = slots + (head -> newSlot))
+        } else {
+          val restKeys = key.drop(1)
+          val n =
+            if (restKeys.length > 1) Compact(restKeys, Some(data), None)
+            else Slot(restKeys.head, Some(data), None)
+          val newSlotNode = slot.node
+            .map(_.put(restKeys, data))
+            .getOrElse(n)
+          val newSlot = slot.copy(node = Some(newSlotNode))
+          copy(slots = slots + (head -> newSlot))
+        }
+      } else {
+        if (key.length == 1) {
+          val slot = Slot(head, Some(data), None)
+          copy(slots = slots + (head -> slot))
+        } else {
+          val restKeys = key.drop(0)
+          val n =
+            if (restKeys.length > 1) Compact(key.drop(0), Some(data), None)
+            else Slot(restKeys.head, Some(data), None)
+          val slot = Slot(head, None, Some(n))
+          copy(slots = slots + (head -> slot))
+        }
+      }
+    }
 
     /** get a value with key from node
       *
@@ -192,6 +236,12 @@ object Node {
         else acc
       } else acc
     loop(k1, k2, Array.empty[K])
+  }
+
+  def compactToSlot[K: ClassTag, V](compact: Compact[K, V]): Slot[K, V] = compact.indexes.toList match {
+    case h :: Nil => Slot(h, compact.data, compact.node)
+    case h :: t => Slot(h, None, Some(compact.copy(indexes = t.toArray)))
+    case _ => throw new RuntimeException("compact indexes should not be nil") // impossible
   }
 
 }

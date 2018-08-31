@@ -46,13 +46,17 @@ private[uc] trait CoreNodeProgramHelper[F[_]] extends BaseProgram[F] {
   def tempRunRunContract(height: BigInt,
                          runContract: Transaction.RunContract): SP[F, Either[Throwable, Unit]] = ???
 
-  def commit(height: BigInt): SP[F, Unit] = {
+  def commit(block: Block): SP[F, Unit] = {
     import tokenStore._
     import contractDataStore._
     import contractStore._
+    import blockStore._
     import log._
 
+    val height = block.height
     for {
+      _ <- saveBlock(block)
+      _ <- cleanUndeterminedBlock(block)
       _ <- commitStagedToken(height)
       _ <- info(s"commit staged token of block($height)")
       _ <- commitStagedContract(height)
@@ -63,12 +67,13 @@ private[uc] trait CoreNodeProgramHelper[F[_]] extends BaseProgram[F] {
 
   }
 
-  def rollback(height: BigInt): SP[F, Unit] = {
+  def rollback(block: Block): SP[F, Unit] = {
     import tokenStore._
     import contractDataStore._
     import contractStore._
     import log._
 
+    val height = block.height
     for {
       _ <- rollbackStagedToken(height)
       _ <- info(s"rollback staged token of block($height)")

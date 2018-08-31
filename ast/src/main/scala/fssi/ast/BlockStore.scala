@@ -29,4 +29,9 @@ import java.io._
     * @param determinedBlock the latest determined block which current undetermined block is based on.
     */
   def appendTransactionToUnDeterminedBlock(determinedBlock: Block, transaction: Transaction): P[F, Block]
+
+  /** when some block is agreed, the undetermined block should be cleared, for next block to use it
+    * @param block current reached agreement block
+    */
+  def cleanUndeterminedBlock(block: Block): P[F, Unit]
 }
