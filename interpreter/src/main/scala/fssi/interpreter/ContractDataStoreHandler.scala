@@ -38,18 +38,18 @@ class ContractDataStoreHandler extends ContractDataStore.Handler[Stack] with Log
 
         reloadResult match {
           case Left(t) =>
-            log.error("reload block trie faield", t)
+            log.error("reload contract data trie faield", t)
             throw t
           case Right(trie) =>
             contractDataTrie := trie
-            log.info(s"reloaded block trie, root hash = ${trie.rootHexHash}")
+            log.info(s"reloaded contract data trie, root hash = ${trie.rootHexHash}")
         }
       } else if (f.notExists) {
         //init
         val trie = Trie.empty[Char, String]
         f.overwrite(trie.asJson.spaces2)
         contractDataTrie := trie
-        log.info("init block trie.")
+        log.info("init contract data trie.")
       } else
         throw new RuntimeException(s"$f should be empty to init or a regular file to load.")
 

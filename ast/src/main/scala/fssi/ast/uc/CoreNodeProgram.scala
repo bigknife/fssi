@@ -70,6 +70,7 @@ trait CoreNodeProgram[F[_]] extends BaseProgram[F] with CoreNodeProgramHelper[F]
     import crypto._
     import consensusEngine._
     import network._
+    import log._
     for {
       toBeSingedBytes <- calculateSingedBytesOfTransaction(transaction)
       verified <- verifySignature(toBeSingedBytes,
@@ -80,11 +81,15 @@ trait CoreNodeProgram[F[_]] extends BaseProgram[F] with CoreNodeProgramHelper[F]
       _ <- requireM(
         verified,
         new FSSIException(s"Transaction of id=${transaction.id} signature can't be verified"))
-      determinedBlock    <- getLatestDeterminedBlock()
+      determinedBlock <- getLatestDeterminedBlock()
+      _ <- info(
+        s"found latest block: ${determinedBlock.height},${determinedBlock.hash.value.toString}")
       undeterminedBlock <- appendTransactionToUnDeterminedBlock(determinedBlock, transaction)
-      node               <- network.getCurrentNode()
-      _ <- log.info("try to agree block...")
-      _                  <- tryToAgreeBlock(node.account.get, undeterminedBlock, undeterminedBlock)
+      _ <- info(
+        s"current undetermined block: ${undeterminedBlock.height}, transaction size: ${undeterminedBlock.transactions.size}")
+      node <- network.getCurrentNode()
+
+      _ <- tryToAgreeBlock(node.account.get, undeterminedBlock, undeterminedBlock)
     } yield ()
   }
 
@@ -152,12 +157,12 @@ trait CoreNodeProgram[F[_]] extends BaseProgram[F] with CoreNodeProgramHelper[F]
         case Left(t) =>
           for {
             _ <- info(s"run block(height=${block.height}) transactions failed", Some(t))
-            _ <- rollback(block.height)
+            _ <- rollback(block)
           } yield ()
         case Right(_) =>
           for {
             _ <- info(s"run block(height=${block.height}) transactions successfully")
-            _ <- commit(block.height)
+            _ <- commit(block)
           } yield ()
       }
     } yield ()
