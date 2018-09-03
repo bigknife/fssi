@@ -4,9 +4,11 @@ package uc
 
 import utils._
 import types._, exception._
+import types.implicits._
 import types.syntax._
 import bigknife.sop._
 import bigknife.sop.implicits._
+import Ordered._
 import scala.collection._
 
 private[uc] trait CoreNodeProgramHelper[F[_]] extends BaseProgram[F] {
@@ -39,7 +41,26 @@ private[uc] trait CoreNodeProgramHelper[F[_]] extends BaseProgram[F] {
     */
   def tempRunPublishContract(
       height: BigInt,
-      publishContract: Transaction.PublishContract): SP[F, Either[Throwable, Unit]] = ???
+      publishContract: Transaction.PublishContract): SP[F, Either[Throwable, Unit]] = {
+    // get the owner's token to check if he can afford to publish this contract
+    // if he can afford, save user contract to a temp store reletived to height
+    //
+    import tokenStore._
+    import contractService._
+    import contractStore._
+
+    for {
+      publisherBalance <- getCurrentToken(publishContract.owner)
+      cost             <- measureCostToPublishContract(publishContract)
+      result <- if (publisherBalance < cost)
+        Left(new FSSIException("publisher can't afford to publish a contract")).pureSP[F]
+      else
+        for {
+          gid <- getContractGlobalIdentifiedName(publishContract.contract)
+          _   <- stageContract(height, gid, publishContract.contract)
+        } yield Right(())
+    } yield result
+  }
 
   /** run run contract
     */

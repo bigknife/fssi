@@ -17,6 +17,15 @@ case class Token(amount: BigInt, tokenUnit: TokenUnit) {
 }
 
 object Token {
+  trait Implicits {
+    implicit val tokenOrdering: Ordering[Token] = new Ordering[Token] {
+      def compare(t1: Token, t2: Token): Int = {
+        // todo: consider tokenUnit
+        (t1.amount - t2.amount).toInt
+      }
+    }
+  }
+
   sealed trait Unit
 
   object Unit {

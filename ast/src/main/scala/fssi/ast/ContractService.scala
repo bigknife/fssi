@@ -23,4 +23,10 @@ import java.io._
   /** create a user-contract from a compiled contract file
     */
   def createUserContractFromContractFile(contractFile: File): P[F, Either[FSSIException, Contract.UserContract]]
+
+  def getContractGlobalIdentifiedName(contract: Contract.UserContract): P[F, String]
+
+  def measureCostToTransfer(transferedToken: Token): P[F, Token]
+  def measureCostToPublishContract(publishContract: Transaction.PublishContract): P[F, Token]
+  def measureCostToRunContract(contract: Contract.UserContract): P[F, Token]
 }
