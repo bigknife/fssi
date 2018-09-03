@@ -3,8 +3,7 @@ package types
 
 import utils._
 
-/**
-  * Transaction is the activities happened on the chain, such as:
+/** Transaction is the activities happened on the chain, such as:
   * 1. transfer token to others
   * 2. publish a smart contract
   * 3. run a smart contract
@@ -33,8 +32,7 @@ sealed trait Transaction {
 object Transaction {
   case class ID(value: String)
 
-  /**
-    * Transfer is a kind of Transaction, through which, we can transfer
+  /** Transfer is a kind of Transaction, through which, we can transfer
     * token of our own account to other account.
     */
   case class Transfer(
@@ -48,8 +46,7 @@ object Transaction {
     val sender: Account.ID = payer
   }
 
-  /**
-    * Publishcontract is a kind of Transaction, through which, we can publish
+  /** Publishcontract is a kind of Transaction, through which, we can publish
     * a smart contract onto the chain.
     */
   case class PublishContract(
@@ -62,8 +59,7 @@ object Transaction {
     val sender: Account.ID = owner
   }
 
-  /**
-    * RunContract is a kind of Transaction, through which, we can run a contract
+  /** RunContract is a kind of Transaction, through which, we can run a contract
     * with proper arguments to change the state of the chain
     */
   case class RunContract(
