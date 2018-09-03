@@ -15,8 +15,7 @@ import bigknife.jsonrpc._, Request.implicits._
 
 import java.io._
 
-trait CreateTransferTransactionHandler {
-  val toolProgram = ToolProgram[components.Model.Op]
+trait CreateTransferTransactionHandler extends BaseHandler {
 
   def apply(accountFile: File, password: Array[Byte], payee: Account.ID, token: Token): Unit = {
     val setting: Setting = Setting.ToolSetting()

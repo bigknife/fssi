@@ -11,8 +11,7 @@ import io.circe._
 import io.circe.syntax._
 import json.implicits._
 
-trait CreateAccountHandler {
-  val toolProgram = ToolProgram[components.Model.Op]
+trait CreateAccountHandler extends BaseHandler {
 
   def apply(password: String): Unit = {
     val setting: Setting = Setting.ToolSetting()
