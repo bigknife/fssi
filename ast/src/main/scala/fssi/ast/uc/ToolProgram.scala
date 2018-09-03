@@ -53,6 +53,19 @@ trait ToolProgram[F[_]] extends BaseProgram[F] {
     } yield ()
   }
 
+  /** Compile contract
+    * @param sandboxVersion version of the sandbox for smart contract running on.
+    */
+  def compileContract(projectDirectory: File, output: File, sandboxVersion: String): SP[F, Unit] = {
+    import contractService._
+    for {
+      determinEither <- checkDeterminismOfContractProject(projectDirectory)
+      _              <- err.either(determinEither)
+      compileEither  <- compileContractProject(projectDirectory, sandboxVersion, output)
+      _              <- err.either(compileEither)
+    } yield ()
+  }
+
   /** Create a transfer transaction json rpc protocol
     */
   def createTransferTransaction(accountFile: File,

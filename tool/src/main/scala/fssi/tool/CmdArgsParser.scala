@@ -34,6 +34,26 @@ object CmdArgsParser extends OptionParser[CmdArgs]("fssitool") {
         .action((x, c) => c.asInstanceOf[CreateChainArgs].copy(chainID = x))
     )
 
+  cmd("CompileContract")
+    .text("Compile Smart Contract Project")
+    .action((_, _) => CompileContractArgs())
+    .children(
+      opt[java.io.File]("project-directory")
+        .abbr("pd")
+        .text("smart contract project root path")
+        .required()
+        .action((x, c) => c.asInstanceOf[CompileContractArgs].copy(projectDirectory = x)),
+      opt[java.io.File]("output-file")
+        .abbr("of")
+        .text("the compiled artifact file name, with absolute path")
+        .required()
+        .action((x, c) => c.asInstanceOf[CompileContractArgs].copy(outputFile = x)),
+      opt[String]("sandbox-version")
+        .abbr("sv")
+        .text("supported version of the sandbox on which the smart contract will run, default is '0.0.1'")
+        .action((x, c) => c.asInstanceOf[CompileContractArgs].copy(sandboxVersion = x))
+    )
+
   cmd("CreateTransaction")
     .text("Create Transaction")
     .children(
@@ -63,7 +83,9 @@ object CmdArgsParser extends OptionParser[CmdArgs]("fssitool") {
             .abbr("t")
             .required()
             .text("amount to be transfered, in form of 'number' + 'unit', eg. 100Sweet. ")
-            .action((x, c) => c.asInstanceOf[CreateTransferTransactionArgs].copy(token = Token.parse(x)))
+            .action((x, c) =>
+              c.asInstanceOf[CreateTransferTransactionArgs].copy(token = Token.parse(x)))
         )
     )
+
 }

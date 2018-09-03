@@ -14,10 +14,8 @@ import json.implicits._
 import java.io._
 import org.slf4j._
 
-trait CreateChainHandler {
-  val logger = LoggerFactory.getLogger(getClass)
+trait CreateChainHandler extends BaseHandler {
 
-  val toolProgram = ToolProgram[components.Model.Op]
   val setting: Setting.ToolSetting = Setting.ToolSetting()
 
   def apply(dataDir: File, chainID: String): Unit = {

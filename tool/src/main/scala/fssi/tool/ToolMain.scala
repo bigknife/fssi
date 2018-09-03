@@ -15,6 +15,8 @@ object ToolMain extends App {
         case CreateChainArgs(dataDir, chainID) => createChain(dataDir, chainID)
         case CreateTransferTransactionArgs(accountFile, password, payee, token) =>
           createTransferTransaction(accountFile, password, payee, token)
+        case CompileContractArgs(projectDirectory, outputDirectory, sandboxVersion) =>
+          compileContract(projectDirectory, outputDirectory, sandboxVersion)
         case _ =>
       }
     case None =>

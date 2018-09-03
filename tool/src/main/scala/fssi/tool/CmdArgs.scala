@@ -37,4 +37,12 @@ object CmdArgs {
       token = Token.Zero
     )
   }
+
+  /** Compile Contract Args
+    */
+  case class CompileContractArgs(
+    projectDirectory: File = new File(""),
+    outputFile: File = new File(""),
+    sandboxVersion: String = "0.0.1"
+  ) extends CmdArgs
 }
