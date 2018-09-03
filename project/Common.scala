@@ -131,8 +131,7 @@ object Common {
             libraryDependencies ++= all.betterfiles,
             libraryDependencies ++= all.leveldb,
             libraryDependencies ++= all.scalap,
-            libraryDependencies ++= all.config,
-            libraryDependencies ++= all.asm
+            libraryDependencies ++= all.config
           )
     }
 
@@ -168,6 +167,13 @@ object Common {
           .settings(
             libraryDependencies ++= (all.scopt)
           )
+    }
+
+    object sandBox {
+      def apply(): Project = prj("sandBox", "sand-box")
+        .settings(
+          libraryDependencies ++= all.asm
+        )
     }
 
   }

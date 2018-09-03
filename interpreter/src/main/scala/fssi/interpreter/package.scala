@@ -27,7 +27,6 @@ package object interpreter {
       with ContractStoreHandler.Implicits
       with ContractDataStoreHandler.Implicits
       with ChainStoreHandler.Implicits
-      with ContractServiceHandler.Implicits
       with AccountStoreHandler.Implicits
       with TransactionServiceHandler.Implicits
       with LogServiceHandler.Implicits
@@ -50,11 +49,12 @@ package object interpreter {
   /** a store based leveldb, used for utils.trie
     */
   object levelDBStore {
-    def apply[K, V](path: File)(implicit EK: Bytes[K], EV: Bytes[V]): LevelDBStore[K, V] = new LevelDBStore[K, V] {
-      override val dbFile: File = path
-      override implicit val BK: Bytes[K] = EK
-      override implicit val BV: Bytes[V] = EV
-    }
+    def apply[K, V](path: File)(implicit EK: Bytes[K], EV: Bytes[V]): LevelDBStore[K, V] =
+      new LevelDBStore[K, V] {
+        override val dbFile: File          = path
+        override implicit val BK: Bytes[K] = EK
+        override implicit val BV: Bytes[V] = EV
+      }
   }
 
   /** json codecs
