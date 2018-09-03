@@ -18,6 +18,10 @@ trait ContractJsonCodec {
     case x: PString     => Json.fromString(x.value)
     case x: PBigDecimal => x.value.asJson
     case x: PBool       => Json.fromBoolean(x.value)
+    case x: PInt        => Json.fromInt(x.value)
+    case x: PDouble     => Json.fromDouble(x.value).get
+    case x: PFloat      => Json.fromFloat(x.value).get
+    case x: PLong       => Json.fromLong(x.value)
   }
 
   implicit val contractPrimaryParameterJsonDecoder: Decoder[Contract.Parameter.PrimaryParameter] =

@@ -1,4 +1,6 @@
-package fssi.interpreter.infr
+package fssi
+package interpreter
+package infr
 
 import java.io.{BufferedReader, File, FileReader}
 import java.nio.file._
@@ -11,18 +13,14 @@ import org.slf4j.{Logger, LoggerFactory}
 
 import scala.collection.JavaConverters._
 
-/**
-  * Created on 2018/8/14
-  */
 trait Compiler {
 
   lazy val logger: Logger = LoggerFactory.getLogger(getClass)
 
-  /***
-    * compile source code
+  /** compile contract
     * @param sourceDir project path
     * @param targetDir path to store class file
-    * @return class file path or errors
+    * @return compiled contract path or errors
     */
   def compileToNormalClass(sourceDir: Path, targetDir: Path): Either[Vector[String], Path] = {
     // project dir should exist src/main/java and /src/main/resources subdirectories
@@ -81,8 +79,7 @@ trait Compiler {
     findJavaFileByDir(src.toFile, Vector.empty)
   }
 
-  /**
-    * check class file determinism
+  /** check class file determinism
     * @param classFilePath class file root path
     * @return errors when check failed
     */

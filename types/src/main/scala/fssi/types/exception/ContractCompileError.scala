@@ -1,8 +1,7 @@
-package fssi.types.exception
+package fssi
+package types
+package exception
 
-/**
-  * Created on 2018/8/14
-  */
 case class ContractCompileError(messages: Vector[String])
     extends FSSIException(
       message =

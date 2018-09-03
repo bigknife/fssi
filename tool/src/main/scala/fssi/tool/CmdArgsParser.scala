@@ -91,6 +91,7 @@ object CmdArgsParser extends OptionParser[CmdArgs]("fssitool") {
         .text("contract decode format,support jar、hex and base64. default jar")
         .optional()
         .action((df, c) ⇒ c.asInstanceOf[RunContractArgs].copy(decodeFormat = CodeFormat(df)))
+    )
 
   cmd("CreateTransaction")
     .text("Create Transaction")
@@ -109,7 +110,8 @@ object CmdArgsParser extends OptionParser[CmdArgs]("fssitool") {
             .required()
             .text("payer's account password")
             .action((x, c) =>
-              c.asInstanceOf[CreateTransferTransactionArgs].copy(password = x.getBytes("utf-8"))),
+              c.asInstanceOf[CreateTransferTransactionArgs]
+                .copy(password = x.getBytes("utf-8"))),
           opt[String]("payee-id")
             .abbr("pi")
             .required()
@@ -121,7 +123,8 @@ object CmdArgsParser extends OptionParser[CmdArgs]("fssitool") {
             .abbr("t")
             .required()
             .text("amount to be transfered, in form of 'number' + 'unit', eg. 100Sweet. ")
-            .action((x, c) => c.asInstanceOf[CreateTransferTransactionArgs].copy(token = Token.parse(x)))
+            .action((x, c) =>
+              c.asInstanceOf[CreateTransferTransactionArgs].copy(token = Token.parse(x)))
         )
     )
 }

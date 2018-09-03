@@ -1,4 +1,6 @@
-package fssi.interpreter.infr
+package fssi
+package interpreter
+package infr
 
 import java.io.FileInputStream
 import java.nio.file.{Path, Paths}
@@ -8,9 +10,6 @@ import org.objectweb.asm._
 
 import scala.collection.mutable.ListBuffer
 
-/**
-  * Created on 2018/8/14
-  */
 class CheckingClassLoader(val path: Path, val track: CheckingClassLoader.ClassCheckingStatus)
     extends ClassLoader {
   private lazy val cache: scala.collection.mutable.Map[String, Class[_]] =

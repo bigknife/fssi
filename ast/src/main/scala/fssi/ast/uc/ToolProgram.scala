@@ -55,30 +55,27 @@ trait ToolProgram[F[_]] extends BaseProgram[F] {
     } yield ()
   }
 
-  /***
-    * compile smart contract
+  /** compile smart contract
     * @param sourceDir path to read contract source code
     * @param destDir path to store contract zip
     */
   def compileContract(sourceDir: Path, destDir: Path, format: CodeFormat): SP[F, Unit] = {
     for {
-      classPathEither   <- contractService.compileContractSourceCode(sourceDir)
+      classPathEither   <- contractService.compileContract(sourceDir)
       classPath         <- err.either(classPathEither)
-      determinismEither <- contractService.checkDeterministicOfClass(classPath)
+      determinismEither <- contractService.checkDeterminismOfContract(classPath)
       _                 <- err.either(determinismEither)
       bytesValue        <- contractService.zipContract(classPath)
       _                 <- contractService.outputZipFile(bytesValue, destDir, format)
     } yield ()
   }
 
-  /***
-    * run smart contract
+  /** run smart contract
     * @param classesDir contract classes dir
     * @param clazzName concrete qualified class name
     * @param methodName method name in clazz name
     * @param parameters parameters for method $methodName
     * @param decodeFormat decode format of contract classes
-    * @return
     */
   def runContract(classesDir: Path,
                   clazzName: String,
@@ -86,8 +83,8 @@ trait ToolProgram[F[_]] extends BaseProgram[F] {
                   parameters: Array[Parameter],
                   decodeFormat: CodeFormat): SP[F, Unit] = {
     for {
-      codeBytes   <- contractService.decodeContractClasses(classesDir, decodeFormat)
-      contractDir <- contractService.buildContractDir(codeBytes)
+      codeBytes   <- contractService.decodeContract(classesDir, decodeFormat)
+      contractDir <- contractService.rebuildContract(codeBytes)
       checkEither <- contractService.checkContractMethod(contractDir,
                                                          clazzName,
                                                          methodName,
@@ -99,7 +96,8 @@ trait ToolProgram[F[_]] extends BaseProgram[F] {
                                                            parameters)
       _ <- err.either(invokeEither)
     } yield ()
-    
+  }
+
   /** Create a transfer transaction json rpc protocol
     */
   def createTransferTransaction(accountFile: File,

@@ -3,6 +3,7 @@ import bintray.BintrayKeys._
 import sbt.Keys._
 import sbt._
 
+
 object Common {
 
   // common settings
@@ -129,11 +130,9 @@ object Common {
             libraryDependencies ++= all.scalecube,
             libraryDependencies ++= all.betterfiles,
             libraryDependencies ++= all.leveldb,
-            libraryDependencies ++= all.scapap,
+            libraryDependencies ++= all.scalap,
             libraryDependencies ++= all.config,
             libraryDependencies ++= all.asm
-            libraryDependencies ++= all.scalap,
-            libraryDependencies ++= all.config
           )
     }
 

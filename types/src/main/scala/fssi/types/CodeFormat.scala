@@ -1,8 +1,6 @@
-package fssi.types
+package fssi
+package types
 
-/**
-  * Created on 2018/8/14
-  */
 sealed trait CodeFormat
 
 object CodeFormat {

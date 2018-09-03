@@ -4,7 +4,6 @@ package tool
 import java.io._
 
 import fssi.types.CodeFormat
-import fssi.types.Contract.Parameter.PrimaryParameter
 import types._
 
 sealed trait CmdArgs
@@ -41,10 +40,10 @@ object CmdArgs {
   /** Create Transfer Transaction Arguments
     */
   case class CreateTransferTransactionArgs(
-    accountFile: File,
-    password: Array[Byte],
-    payee: Account.ID,
-    token: Token
+      accountFile: File,
+      password: Array[Byte],
+      payee: Account.ID,
+      token: Token
   ) extends CmdArgs
 
   object CreateTransferTransactionArgs {

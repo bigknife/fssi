@@ -16,30 +16,27 @@ import fssi.types.Contract.Parameter
 import fssi.types.Contract.Parameter.PrimaryParameter
 import fssi.types._
 import fssi.types.exception._
-import fssi.utils.{BytesUtil, FileUtil}
+import fssi.utils.{BytesUtil, BytesValue, FileUtil}
 
 import scala.util.Try
 
-/**
-  * Created on 2018/8/14
-  */
 class ContractServiceHandler extends ContractService.Handler[Stack] {
 
-  override def compileContractSourceCode(
-      sourcePath: Path): Stack[Either[ContractCompileError, Path]] = Stack {
-    val in      = Paths.get(sourcePath.toString, "src")
-    val out     = Paths.get(sourcePath.toString, "out")
-    val outFile = out.toFile
-    if (outFile.exists()) FileUtil.deleteDir(out)
-    out.toFile.mkdirs()
-    compiler.compileToNormalClass(in, out).left.map(ContractCompileError)
-  }
+  override def compileContract(path: Path): Stack[Either[ContractCompileError, Path]] =
+    Stack {
+      val in      = Paths.get(path.toString, "src")
+      val out     = Paths.get(path.toString, "out")
+      val outFile = out.toFile
+      if (outFile.exists()) FileUtil.deleteDir(out)
+      out.toFile.mkdirs()
+      compiler.compileToNormalClass(in, out).left.map(ContractCompileError)
+    }
 
-  override def checkDeterministicOfClass(
-      classFilePath: Path): Stack[Either[ContractCompileError, Unit]] =
-    Stack(compiler.checkDeterminism(classFilePath).left.map(ContractCompileError))
+  override def checkDeterminismOfContract(
+      contractPath: Path): Stack[Either[ContractCompileError, Unit]] =
+    Stack(compiler.checkDeterminism(contractPath).left.map(ContractCompileError))
 
-  override def zipContract(classFilePath: Path): Stack[BytesValue] = Stack {
+  override def zipContract(contractPath: Path): Stack[BytesValue] = Stack {
     val output = new ByteArrayOutputStream()
     val zipOut = new ZipOutputStream(output)
     val buffer = new Array[Byte](1024)
@@ -47,7 +44,7 @@ class ContractServiceHandler extends ContractService.Handler[Stack] {
       override def visitFile(file: Path, attrs: BasicFileAttributes): FileVisitResult = {
         val f = file.toFile
         if (f.isFile && f.canRead) {
-          val entry = new ZipEntry(f.getAbsolutePath.substring(classFilePath.toString.length + 1))
+          val entry = new ZipEntry(f.getAbsolutePath.substring(contractPath.toString.length + 1))
           val input = new BufferedInputStream(new FileInputStream(f))
           zipOut.putNextEntry(entry)
           Iterator
@@ -61,9 +58,9 @@ class ContractServiceHandler extends ContractService.Handler[Stack] {
         FileVisitResult.CONTINUE
       }
     }
-    Files.walkFileTree(classFilePath, FV)
+    Files.walkFileTree(contractPath, FV)
     zipOut.flush(); output.flush(); zipOut.close()
-    val array = output.toByteArray; output.close(); FileUtil.deleteDir(classFilePath)
+    val array = output.toByteArray; output.close(); FileUtil.deleteDir(contractPath)
     BytesValue(array)
   }
 
@@ -77,23 +74,23 @@ class ContractServiceHandler extends ContractService.Handler[Stack] {
     if (!targetDir.toFile.exists()) targetDir.toFile.createNewFile()
     format match {
       case Jar    ⇒ write(bytesValue.value)
-      case Hex    ⇒ write(bytesValue.toHexString.toString().getBytes("utf-8"))
-      case Base64 ⇒ write(bytesValue.toBase64String.toString().getBytes("utf-8"))
+      case Hex    ⇒ write(bytesValue.utf8String.getBytes("utf-8"))
+      case Base64 ⇒ write(bytesValue.base64.getBytes("utf-8"))
     }
   }
 
-  override def decodeContractClasses(contractFile: Path,
-                                     decodeFormat: CodeFormat): Stack[BytesValue] = Stack {
-    val bytes = better.files.File(contractFile).byteArray
-    val decodeBytes = decodeFormat match {
-      case Jar    ⇒ bytes
-      case Hex    ⇒ HexString.decode(new String(bytes, "utf-8")).bytes
-      case Base64 ⇒ BytesUtil.decodeBase64(new String(bytes, "utf-8"))
+  override def decodeContract(contractFile: Path, decodeFormat: CodeFormat): Stack[BytesValue] =
+    Stack {
+      val bytes = better.files.File(contractFile).byteArray
+      val decodeBytes = decodeFormat match {
+        case Jar    ⇒ bytes
+        case Hex    ⇒ HexString.decode(new String(bytes, "utf-8")).bytes
+        case Base64 ⇒ BytesUtil.decodeBase64(new String(bytes, "utf-8"))
+      }
+      BytesValue(decodeBytes)
     }
-    BytesValue(decodeBytes)
-  }
 
-  override def buildContractDir(bytesValue: BytesValue): Stack[Path] = Stack { setting ⇒
+  override def rebuildContract(bytesValue: BytesValue): Stack[Path] = Stack { setting ⇒
     val rand   = UUID.randomUUID().toString.replace("-", "")
     val tmpDir = Paths.get(s"${setting.asInstanceOf[ToolSetting].contractTempDir}", rand)
     tmpDir.toFile.mkdirs()
