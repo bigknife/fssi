@@ -37,4 +37,8 @@ import java.io._
   /** roolback staged contract 
     */
   def rollbackStagedContract(height: BigInt): P[F, Unit]
+
+  /** temp save user's contract
+    */
+  def stageContract(height: BigInt, gid: String, contract: Contract.UserContract): P[F, Unit]
 }
