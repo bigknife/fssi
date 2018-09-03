@@ -63,7 +63,8 @@ trait BlockCalSupport {
         BytesValue(BigInt(publishContract.timestamp).toByteArray)
 
     case runContract: Transaction.RunContract =>
-      import Contract.Parameter._
+      import Contract.Parameter.PrimaryParameter._
+      import Contract.Parameter.ReferenceParameter._
       def parametersToBytesValue(parameter: Contract.Parameter): BytesValue = parameter match {
         case PString(value) => BytesValue(value.getBytes("utf-8"))
         case PBigDecimal(value) =>
@@ -108,7 +109,8 @@ trait BlockCalSupport {
         BigInt(x.timestamp).toByteArray
 
     case x: Transaction.RunContract =>
-      import Contract.Parameter._
+      import Contract.Parameter.PrimaryParameter._
+      import Contract.Parameter.ReferenceParameter._
       def bytesOfParam(p: Contract.Parameter): Array[Byte] = p match {
         case PString(x)     => x.getBytes("utf-8")
         case PBigDecimal(x) => x.toString.getBytes("")

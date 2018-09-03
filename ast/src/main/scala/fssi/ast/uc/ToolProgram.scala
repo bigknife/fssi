@@ -7,8 +7,10 @@ import utils._
 import types.syntax._
 import bigknife.sop._
 import bigknife.sop.implicits._
-
 import java.io.File
+import java.nio.file.Path
+
+import fssi.types.Contract.Parameter
 
 trait ToolProgram[F[_]] extends BaseProgram[F] {
   import model._
@@ -50,6 +52,49 @@ trait ToolProgram[F[_]] extends BaseProgram[F] {
       genesisBlock <- createGenesisBlock(chainID)
       _            <- saveBlock(genesisBlock)
       _            <- info(s"chain initialized, please edit the default config file: $confFile")
+    } yield ()
+  }
+
+  /** compile smart contract
+    * @param sourceDir path to read contract source code
+    * @param destDir path to store contract zip
+    */
+  def compileContract(sourceDir: Path, destDir: Path, format: CodeFormat): SP[F, Unit] = {
+    for {
+      classPathEither   <- contractService.compileContract(sourceDir)
+      classPath         <- err.either(classPathEither)
+      determinismEither <- contractService.checkDeterminismOfContract(classPath)
+      _                 <- err.either(determinismEither)
+      bytesValue        <- contractService.zipContract(classPath)
+      _                 <- contractService.outputZipFile(bytesValue, destDir, format)
+    } yield ()
+  }
+
+  /** run smart contract
+    * @param classesDir contract classes dir
+    * @param clazzName concrete qualified class name
+    * @param methodName method name in clazz name
+    * @param parameters parameters for method $methodName
+    * @param decodeFormat decode format of contract classes
+    */
+  def runContract(classesDir: Path,
+                  clazzName: String,
+                  methodName: String,
+                  parameters: Array[Parameter],
+                  decodeFormat: CodeFormat): SP[F, Unit] = {
+    for {
+      codeBytes   <- contractService.decodeContract(classesDir, decodeFormat)
+      contractDir <- contractService.rebuildContract(codeBytes)
+      checkEither <- contractService.checkContractMethod(contractDir,
+                                                         clazzName,
+                                                         methodName,
+                                                         parameters)
+      _ <- err.either(checkEither)
+      invokeEither <- contractService.invokeContractMethod(contractDir,
+                                                           clazzName,
+                                                           methodName,
+                                                           parameters)
+      _ <- err.either(invokeEither)
     } yield ()
   }
 
