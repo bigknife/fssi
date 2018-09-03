@@ -1,6 +1,7 @@
-import sbt._, Keys._
 import Dependencies._
 import bintray.BintrayKeys._
+import sbt.Keys._
+import sbt._
 
 object Common {
 
@@ -26,11 +27,11 @@ object Common {
         "-language:experimental.macros", // Allow macro definition (besides implementation and application)
         "-language:higherKinds", // Allow higher-kinded types
         "-language:implicitConversions", // Allow definition of implicit functions called views
-        "-unchecked",  // Enable additional warnings where generated code depends on assumptions.
+        "-unchecked", // Enable additional warnings where generated code depends on assumptions.
         "-Xcheckinit", // Wrap field accessors to throw an exception on uninitialized access.
         //"-Xfatal-warnings", // Fail the compilation if there are any warnings.
         "-Xfuture", // Turn on future language features.
-        "-Xlint:adapted-args",              // Warn if an argument list is modified to match the receiver.
+        "-Xlint:adapted-args", // Warn if an argument list is modified to match the receiver.
         "-Xlint:by-name-right-associative", // By-name parameter of right associative operator.
         //"-Xlint:constant", // Evaluation of a constant arithmetic expression results in an error.
         "-Xlint:delayedinit-select", // Selecting member of DelayedInit.
@@ -49,12 +50,12 @@ object Common {
         "-Xlint:unsound-match", // Pattern match may not be typesafe.
         "-Yno-adapted-args", // Do not adapt an argument list (either by inserting () or creating a tuple) to match the receiver.
         "-Ypartial-unification", // Enable partial unification in type constructor inference
-        "-Ywarn-dead-code",      // Warn when dead code is identified.
+        "-Ywarn-dead-code", // Warn when dead code is identified.
         //"-Ywarn-extra-implicit", // Warn when more than one implicit parameter section is defined.
         "-Ywarn-inaccessible", // Warn about inaccessible types in method signatures.
         "-Ywarn-infer-any", // Warn when a type argument is inferred to be `Any`.
         "-Ywarn-nullary-override", // Warn when non-nullary `def f()' overrides nullary `def f'.
-        "-Ywarn-nullary-unit",  // Warn when nullary methods return Unit.
+        "-Ywarn-nullary-unit", // Warn when nullary methods return Unit.
         "-Ywarn-numeric-widen", // Warn when numerics are widened.
         //"-Ywarn-unused:implicits", // Warn if an implicit parameter is unused.
         //"-Ywarn-unused:imports", // Warn if an import selector is not referenced.
@@ -68,12 +69,12 @@ object Common {
     //scalacOptions in (Compile, console) --= Seq("-Ywarn-unused:imports", "-Xfatal-warnings"),
     resolvers += Resolver.sonatypeRepo("releases"),
     addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.4"),
-    addCompilerPlugin("org.scalameta"  % "paradise"        % "3.0.0-M10" cross CrossVersion.full),
+    addCompilerPlugin("org.scalameta" % "paradise" % "3.0.0-M10" cross CrossVersion.full),
     licenses += ("Apache-2.0", url("https://opensource.org/licenses/Apache-2.0")),
     bintrayRepository := "maven",
     libraryDependencies ++= all.scalatest,
     libraryDependencies ++= all.log,
-    scalacOptions in (Compile, console) := Seq()
+    scalacOptions in(Compile, console) := Seq()
   )
 
   object prj {
@@ -85,7 +86,7 @@ object Common {
       def apply(): Project =
         prj("utils", "utils")
           .settings(
-            libraryDependencies ++= (all.bcprov)
+            libraryDependencies ++= all.bcprov
           )
     }
 
@@ -100,6 +101,7 @@ object Common {
     object types {
       def apply(): Project = prj("types", "types")
     }
+
     object typesJson {
       def apply(): Project =
         prj("typesJson", "types-json")
@@ -107,6 +109,7 @@ object Common {
             libraryDependencies ++= all.circe
           )
     }
+
     object ast {
       def apply(): Project =
         prj("ast", "ast")
@@ -126,6 +129,9 @@ object Common {
             libraryDependencies ++= all.scalecube,
             libraryDependencies ++= all.betterfiles,
             libraryDependencies ++= all.leveldb,
+            libraryDependencies ++= all.scapap,
+            libraryDependencies ++= all.config,
+            libraryDependencies ++= all.asm
             libraryDependencies ++= all.scalap,
             libraryDependencies ++= all.config
           )
@@ -164,6 +170,7 @@ object Common {
             libraryDependencies ++= (all.scopt)
           )
     }
+
   }
 
   val defaultShellScript: Seq[String] = defaultShellScript(
@@ -178,9 +185,9 @@ object Common {
 
   def defaultShellScript(opts: Seq[String], javaOpts: Seq[String] = Seq.empty): Seq[String] = {
     val javaOptsString = javaOpts.map(_ + " ").mkString
-    val optsString     = opts.map(_ + " ").mkString
+    val optsString = opts.map(_ + " ").mkString
     Seq("#!/usr/bin/env sh",
-        s"""exec java $optsString -jar $javaOptsString$$JAVA_OPTS "$$0" "$$@"""",
-        "")
+      s"""exec java $optsString -jar $javaOptsString$$JAVA_OPTS "$$0" "$$@"""",
+      "")
   }
 }
