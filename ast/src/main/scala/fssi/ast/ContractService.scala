@@ -18,5 +18,9 @@ import java.io._
     */
   def compileContractProject(rootPath: File,
                              sandboxVersion: String,
-                             outputFile: File): P[F, Either[FSSIException, Unit]]
+    outputFile: File): P[F, Either[FSSIException, Unit]]
+
+  /** create a user-contract from a compiled contract file
+    */
+  def createUserContractFromContractFile(contractFile: File): P[F, Either[FSSIException, Contract.UserContract]]
 }

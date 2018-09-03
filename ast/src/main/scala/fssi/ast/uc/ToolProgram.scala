@@ -87,6 +87,29 @@ trait ToolProgram[F[_]] extends BaseProgram[F] {
       signature         <- makeSignature(unsignedBytes, privateKey)
     } yield transferNotSigned.copy(signature = signature)
   }
+
+  def createPublishContractTransaction(accountFile: File,
+                                       password: Array[Byte],
+                                       contractFile: File): SP[F, Transaction.PublishContract] = {
+    import accountStore._
+    import crypto._
+    import transactionService._
+    import contractService._
+
+    for {
+      accountOrFailed <- loadAccountFromFile(accountFile)
+      account         <- err.either(accountOrFailed)
+      privateKeyOrFailed <- desDecryptPrivateKey(account.encryptedPrivateKey.toBytesValue,
+                                                 account.iv.toBytesValue,
+                                                 BytesValue(password))
+      privateKey               <- err.either(privateKeyOrFailed)
+      userContractOrFailed     <- createUserContractFromContractFile(contractFile)
+      userContract             <- err.either(userContractOrFailed)
+      publishContractNotSigned <- createUnsignedPublishContract(account.id, userContract)
+      unsignedBytes            <- calculateSingedBytesOfTransaction(publishContractNotSigned)
+      signature                <- makeSignature(unsignedBytes, privateKey)
+    } yield publishContractNotSigned.copy(signature = signature)
+  }
 }
 
 object ToolProgram {
