@@ -23,6 +23,7 @@ class Compiler {
   lazy val logger: Logger = LoggerFactory.getLogger(getClass)
 
   /** compile contract
+    *
     * @param rootPath project root path
     * @param outputFile path to store class file
     * @return errors if compiled failed
@@ -66,7 +67,7 @@ class Compiler {
                     s"java version $version not support,correct version must between 6 and 10")))
             }
           }
-          if (result.isLeft && out.exists()) FileUtil.deleteDir(out.toPath)
+          if (out.exists()) FileUtil.deleteDir(out.toPath)
           result
         }
       }
@@ -105,6 +106,7 @@ class Compiler {
       Files.copy(resourceFile.toPath, path)
     }
     val classFiles = findAllFiles(rootPath).filter(_.getAbsolutePath.endsWith(".class"))
+    val buffer     = new Array[Byte](8092)
     val degradeErrors = classFiles.foldLeft(Vector.empty[String]) { (acc, classFile) =>
       if (classFile.canRead) {
         val filePath = Paths.get(targetPath.toString,
@@ -113,15 +115,27 @@ class Compiler {
         if (!file.getParentFile.exists()) file.getParentFile.mkdirs()
         if (!file.exists()) file.createNewFile()
         val fileInputStream = new FileInputStream(classFile)
-        val outputStream    = new FileOutputStream(file, true)
-        val classReader     = new ClassReader(fileInputStream)
-        val classWriter     = new ClassWriter(classReader, 0)
-        val visitor         = DegradeClassVersionVisitor(classWriter)
+        val output          = new ByteArrayOutputStream()
+        Iterator
+          .continually(fileInputStream.read(buffer))
+          .takeWhile(_ != -1)
+          .foreach(read => output.write(buffer, 0, read))
+        output.flush(); fileInputStream.close()
+        val classBuffer  = output.toByteArray; output.close()
+        val outputStream = new FileOutputStream(file, true)
+        val readerConstructor = classOf[ClassReader].getDeclaredConstructor(classOf[Array[Byte]],
+                                                                            classOf[Int],
+                                                                            classOf[Boolean])
+        val accessible = readerConstructor.isAccessible
+        readerConstructor.setAccessible(true)
+        val classReader = readerConstructor.newInstance(classBuffer, Integer.valueOf(0), java.lang.Boolean.valueOf(false))
+        readerConstructor.setAccessible(accessible)
+        val classWriter = new ClassWriter(classReader, 0)
+        val visitor     = DegradeClassVersionVisitor(classWriter)
         classReader.accept(visitor, 0)
         val array = classWriter.toByteArray
         outputStream.write(array, 0, array.length)
-        outputStream.flush(); outputStream.close(); fileInputStream.close()
-        acc
+        outputStream.flush(); outputStream.close(); acc
       } else acc :+ s"class file ${classFile.getAbsolutePath} can not read"
     }
     if (degradeErrors.isEmpty) Right(())
@@ -189,6 +203,7 @@ class Compiler {
   }
 
   /** compile contract project
+    *
     * @param rootPath root path of project
     * @param outputPath compiled classes output path
     */
@@ -212,8 +227,7 @@ class Compiler {
       if (libPath.toFile.isDirectory) {
         classPath = libPath.toFile
           .list((dir: File, name: String) => name.endsWith(".jar"))
-          .foldLeft(classPath) { (acc, n) =>
-            acc + ":" + Paths.get(libPath.toString, n)
+          .foldLeft(classPath) { (acc, n) => acc + ":" + Paths.get(libPath.toString, n)
           }
       }
       val options             = Vector("-d", s"${outputPath.toString}", "-classpath", classPath)
@@ -252,6 +266,7 @@ class Compiler {
   }
 
   /** zip compiled contract
+    *
     * @param outPath compiled contract classes path
     * @param sandBoxVersion sand box version
     * @param outputFile file to store compiled contract
@@ -284,7 +299,7 @@ class Compiler {
           track += s"class file ${classFile.getAbsolutePath} can not read"
       }
       val resourcesDir = Paths.get(outPath.toString, "META-INF").toFile
-      val array        = new Array[Byte](1024)
+      val array        = new Array[Byte](8092)
       resourcesDir.listFiles().foreach { file =>
         val entryPath = file.getAbsolutePath.substring(outPath.toString.length + 1)
         zipOut.putNextEntry(new ZipEntry(entryPath))
