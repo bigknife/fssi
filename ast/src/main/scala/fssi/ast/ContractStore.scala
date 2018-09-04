@@ -37,4 +37,8 @@ import java.io._
   /** roolback staged contract 
     */
   def rollbackStagedContract(height: BigInt): P[F, Unit]
+
+  /** find user contract with gid
+    */
+  def findUserContract(gid: String): P[F, Option[Contract.UserContract]]
 }

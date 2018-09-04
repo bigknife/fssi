@@ -17,12 +17,12 @@ lazy val pTypesJson = typesJson()
 
 lazy val pAst = ast()
   .dependsOn(pTypes)
+  .dependsOn(pContractLib)
 
 lazy val pInterperter = interpreter()
   .dependsOn(pAst)
   .dependsOn(pTypesJson)
   .dependsOn(pTrie)
-  .dependsOn(pContractLib)
 
 lazy val pJsonRpc = jsonrpc()
 

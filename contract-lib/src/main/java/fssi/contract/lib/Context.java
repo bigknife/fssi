@@ -7,15 +7,16 @@ public interface Context {
     /**
      * return a running-time specified kv store
      */
-    public KVStore getKVStore();
+    KVStore kvStore();
 
     /**
      * return a running-time specified sql store
      */
-    public SqlStore getSqlStore();
+    SqlStore sqlStore();
 
     /**
      * return a running-time specified token querier.
      */
-    public TokenQuery tokenQuery();
+    TokenQuery tokenQuery();
+
 }

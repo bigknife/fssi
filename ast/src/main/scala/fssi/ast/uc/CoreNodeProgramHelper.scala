@@ -8,6 +8,7 @@ import types.syntax._
 import bigknife.sop._
 import bigknife.sop.implicits._
 import scala.collection._
+import contract.lib._
 
 private[uc] trait CoreNodeProgramHelper[F[_]] extends BaseProgram[F] {
   import model._
@@ -44,7 +45,25 @@ private[uc] trait CoreNodeProgramHelper[F[_]] extends BaseProgram[F] {
   /** run run contract
     */
   def tempRunRunContract(height: BigInt,
-                         runContract: Transaction.RunContract): SP[F, Either[Throwable, Unit]] = ???
+                         runContract: Transaction.RunContract): SP[F, Either[Throwable, Unit]] = {
+    import contractService._
+    import contractStore._
+    for {
+      gid <- resolveContractGlobalIdentifiedName(runContract.contractName,
+                                                 runContract.contractVersion)
+      contractOpt <- findUserContract(gid)
+      result <- if (contractOpt.isEmpty)
+        Left(new FSSIException(s"Can't find contract: $gid")).pureSP[F]
+      else
+        for {
+          context <- createContractRunningContextInstance(height, runContract)
+          runResult <- invokeContract(contractOpt.get,
+                                      runContract.contractMethod,
+                                      runContract.contractParameter,
+                                      context)
+        } yield runResult
+    } yield result
+  }
 
   def commit(block: Block): SP[F, Unit] = {
     import tokenStore._
