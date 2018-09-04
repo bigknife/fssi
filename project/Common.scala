@@ -141,6 +141,17 @@ object Common {
           )
     }
 
+    object contractLib {
+      def apply(): Project =
+        Project("contractLib", file("contract-lib"))
+          .settings(
+            licenses += ("Apache-2.0", url("https://opensource.org/licenses/Apache-2.0")),
+            bintrayRepository := "fssi",
+            organization := "fssi",
+            version := "0.0.1-beta"
+          )
+    }
+
     object tool {
       def apply(): Project =
         prj("tool", "tool")
