@@ -4,7 +4,7 @@ package visitor
 
 import org.objectweb.asm.{ClassVisitor, Opcodes}
 
-case class DegradeClassMagicVisitor(visitor: ClassVisitor)
+case class DegradeClassVersionVisitor(visitor: ClassVisitor)
     extends ClassVisitor(Opcodes.ASM6, visitor) {
 
   override def visit(version: Int,
@@ -13,12 +13,13 @@ case class DegradeClassMagicVisitor(visitor: ClassVisitor)
                      signature: String,
                      superName: String,
                      interfaces: Array[String]): Unit = {
-    val outerVersion = SandBoxVersion(version).toOuterVersion
-    if (outerVersion.isVersionValid) {
+    val sandboxVersion = SandBoxVersion(version)
+    if (sandboxVersion.isVersionValid) {
+      val outerVersion = sandboxVersion.toOuterVersion
       if (visitor != null)
         visitor.visit(outerVersion.value, access, name, signature, superName, interfaces)
       else
         super.visit(outerVersion.value, access, name, signature, superName, interfaces)
-    }
+    } else throw new IllegalArgumentException(s"class file version $version is not support")
   }
 }

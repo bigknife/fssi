@@ -8,9 +8,10 @@ import org.objectweb.asm._
 case class CheckClassDeterminismVisitor(classLoader: FSSIClassLoader,
                                         visitor: ClassVisitor,
                                         track: scala.collection.mutable.ListBuffer[String],
-                                        contractClass: String,
-                                        contractMethod: String,
-                                        contractMethodParameterTypes: Array[String])
+                                        className: String,
+                                        methodName: String,
+                                        methodParameterTypes: Array[String],
+                                        needCheckMethod: Boolean)
     extends ClassVisitor(Opcodes.ASM6, visitor) {
   import CheckClassDeterminismVisitor._
   import Protocol._
@@ -29,7 +30,12 @@ case class CheckClassDeterminismVisitor(classLoader: FSSIClassLoader,
     if (visitor != null) visitor.visit(version, access, name, signature, superName, interfaces)
     if (!visitedClasses.contains(currentClassName)) {
       visitedClasses += currentClassName
-      forbiddenClasses.find(forbid => forbid.r.pattern.matcher(currentClassDescriptor).matches()) match {
+      forbiddenClasses.find(classDescriptor =>
+        classDescriptor.r.pattern.matcher(currentClassDescriptor).matches()) match {
+        case Some(_) => track += s"class [$currentClassName] is forbidden"
+        case None    =>
+      }
+      forbiddenPackage.find(packName => currentClassName.startsWith(packName)) match {
         case Some(_) => track += s"class [$currentClassName] is forbidden"
         case None    =>
       }
@@ -37,7 +43,7 @@ case class CheckClassDeterminismVisitor(classLoader: FSSIClassLoader,
         val superClass = Type.getObjectType(superName).getClassName
         if (!visitedClasses.contains(superClass)) {
           visitedClasses += superClass
-          classLoader.findClassMethod(superClass, "", Array.empty); ()
+          classLoader.findClass(superClass, "", Array.empty); ()
         }
       }
     }
@@ -77,7 +83,7 @@ case class CheckClassDeterminismVisitor(classLoader: FSSIClassLoader,
       track += s"class method [$currentClassName.$name] should not with access 'native'"
 
     val argTypes = Type.getMethodType(descriptor).getArgumentTypes.map(_.getClassName)
-    if (contractClass == currentClassName && contractMethod == name && (argTypes sameElements contractMethodParameterTypes)) {
+    if (needCheckMethod && className == currentClassName && methodName == name && (argTypes sameElements methodParameterTypes)) {
       contractMethodExited = true
     }
     CheckMethodDeterminismVisitor(methodVisitor,
@@ -89,8 +95,8 @@ case class CheckClassDeterminismVisitor(classLoader: FSSIClassLoader,
 
   override def visitEnd(): Unit = {
     super.visitEnd()
-    if (currentClassName == contractClass && !contractMethodExited) {
-      track += s"contract method [$contractClass#$contractMethod(${contractMethodParameterTypes.mkString(",")})] not found"
+    if (needCheckMethod && currentClassName == className && !contractMethodExited) {
+      track += s"contract method [$className#$methodName(${methodParameterTypes.mkString(",")})] not found"
     }
   }
 }

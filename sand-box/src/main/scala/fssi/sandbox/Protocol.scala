@@ -10,10 +10,15 @@ object Protocol {
     "^Ljava/lang/Class;",
     "^Ljavax/.*",
     "^Lsun/.*",
-    "^Ljava/net.*"
+    "^Ljava/net.*",
+    "^Ljava/sql.*"
   )
 
   lazy val allowedClasses = Vector(
     "^Ljava/lang/Object;"
   )
+
+  lazy val allowedResourceFiles = Vector("contract", "version")
+
+  lazy val forbiddenPackage = Vector("fssi")
 }
