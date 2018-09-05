@@ -128,7 +128,9 @@ class Compiler {
                                                                             classOf[Boolean])
         val accessible = readerConstructor.isAccessible
         readerConstructor.setAccessible(true)
-        val classReader = readerConstructor.newInstance(classBuffer, Integer.valueOf(0), java.lang.Boolean.valueOf(false))
+        val classReader = readerConstructor.newInstance(classBuffer,
+                                                        Integer.valueOf(0),
+                                                        java.lang.Boolean.valueOf(false))
         readerConstructor.setAccessible(accessible)
         val classWriter = new ClassWriter(classReader, 0)
         val visitor     = DegradeClassVersionVisitor(classWriter)
@@ -148,8 +150,9 @@ class Compiler {
       checkClassLoader: FSSIClassLoader): Either[ContractCheckException, Unit] = {
     val classFiles = findAllFiles(rootPath).filter(_.getAbsolutePath.endsWith(".class"))
     classFiles.foreach { file =>
-      val className =
-        file.getAbsolutePath.substring(rootPath.toString.length + 1).replace("/", "\\.")
+      val classFileName =
+        file.getAbsolutePath.substring(rootPath.toString.length + 1).replace("/", ".")
+      val className = classFileName.substring(0, classFileName.lastIndexOf(".class"))
       checkClassLoader.findClassFromClassFile(file, className, "", Array.empty)
     }
     if (track.isEmpty) Right(())
@@ -227,7 +230,8 @@ class Compiler {
       if (libPath.toFile.isDirectory) {
         classPath = libPath.toFile
           .list((dir: File, name: String) => name.endsWith(".jar"))
-          .foldLeft(classPath) { (acc, n) => acc + ":" + Paths.get(libPath.toString, n)
+          .foldLeft(classPath) { (acc, n) =>
+            acc + ":" + Paths.get(libPath.toString, n)
           }
       }
       val options             = Vector("-d", s"${outputPath.toString}", "-classpath", classPath)
