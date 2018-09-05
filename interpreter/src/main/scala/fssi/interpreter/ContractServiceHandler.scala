@@ -25,7 +25,7 @@ class ContractServiceHandler extends ContractService.Handler[Stack] {
     */
   override def checkDeterminismOfContractProject(
       rootPath: File): Stack[Either[FSSIException, Unit]] = Stack { setting =>
-    compiler.checkDeterminism(rootPath.toPath)
+    compiler.checkDeterminism(rootPath)
   }
 
   /** compile smart contract project and output to the target file
