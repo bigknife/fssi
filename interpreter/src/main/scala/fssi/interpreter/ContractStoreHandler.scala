@@ -12,6 +12,7 @@ import java.nio.charset.Charset
 import scala.collection._
 import io.circe.parser._
 import io.circe.syntax._
+import contract.lib._
 import Bytes.implicits._
 import better.files.{File => ScalaFile, _}
 
@@ -95,6 +96,43 @@ class ContractStoreHandler extends ContractStore.Handler[Stack] with LogSupport 
   override def rollbackStagedContract(height: BigInt): Stack[Unit] = Stack { setting =>
     }
 
+  /** find user contract with gid
+    */
+  override def findUserContract(name: UniqueName,
+                                version: Version): Stack[Option[Contract.UserContract]] = Stack {
+    setting =>
+      // in trie, hex(name + version) -> contract-hash -> leveldbstore
+      val gid    = s"${name.value}#${version.value}"
+      val gidKey = HexString(gid.getBytes("utf-8")).noPrefix
+      contractTrie
+        .map { trie =>
+          trie.get(gidKey.toCharArray).map { storeKey =>
+            contractStore.map { store =>
+              store.load(storeKey)
+            }.value
+          }
+        }
+        .value
+        .flatten
+        .flatMap { str =>
+          (for {
+            json     <- parse(str)
+            contract <- json.as[Contract.UserContract]
+          } yield contract).toOption
+        }
+  }
+
+  /** prepare a sql store for running a specified contract
+    */
+  override  def prepareSqlStoreFor(height: BigInt, contract: Contract.UserContract): Stack[SqlStore] = Stack {setting =>
+    new SqlStore {
+      def commit():Unit = ???
+      def rollback(): Unit = ???
+      def executeCommand(sql: String, args: Object*): Int = ???
+      def executeQuery(sql: String, args: Object*): java.util.List[java.util.Map[String,Object]]  = ???
+      def startTransaction(): Unit = ???
+    }
+  }
 }
 
 object ContractStoreHandler {
