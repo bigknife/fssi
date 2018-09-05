@@ -48,21 +48,26 @@ private[uc] trait CoreNodeProgramHelper[F[_]] extends BaseProgram[F] {
                          runContract: Transaction.RunContract): SP[F, Either[Throwable, Unit]] = {
     import contractService._
     import contractStore._
+    import tokenStore._
+
     for {
-      gid <- resolveContractGlobalIdentifiedName(runContract.contractName,
-                                                 runContract.contractVersion)
-      contractOpt <- findUserContract(gid)
-      result <- if (contractOpt.isEmpty)
-        Left(new FSSIException(s"Can't find contract: $gid")).pureSP[F]
+      contractOpt <- findUserContract(runContract.contractName, runContract.contractVersion)
+      x <- if (contractOpt.isEmpty)
+        Left(new FSSIException(
+          s"UserContract(${runContract.contractName.value}#${runContract.contractVersion.value}) not found"))
+          .pureSP[F]
       else
         for {
-          context <- createContractRunningContextInstance(height, runContract)
-          runResult <- invokeContract(contractOpt.get,
-                                      runContract.contractMethod,
-                                      runContract.contractParameter,
-                                      context)
-        } yield runResult
-    } yield result
+          sqlStore   <- prepareSqlStoreFor(height, contractOpt.get)
+          kvStore    <- prepareKeyValueStoreFor(height, contractOpt.get)
+          tokenQuery <- prepareTokenQueryFor(height, contractOpt.get)
+          context    <- createContextInstance(sqlStore, kvStore, tokenQuery)
+          result <- invokeUserContract(context,
+                                       contractOpt.get,
+                                       runContract.contractMethod,
+                                       runContract.contractParameter)
+        } yield result
+    } yield x
   }
 
   def commit(block: Block): SP[F, Unit] = {

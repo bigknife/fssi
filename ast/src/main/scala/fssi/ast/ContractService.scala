@@ -7,7 +7,6 @@ import bigknife.sop._
 import bigknife.sop.macros._
 import bigknife.sop.implicits._
 
-
 import java.io._
 
 @sp trait ContractService[F[_]] {
@@ -22,20 +21,17 @@ import java.io._
                              sandboxVersion: String,
                              outputFile: File): P[F, Either[FSSIException, Unit]]
 
-  /** resolve contract gid
+  /** create a running context for some transaction
     */
-  def resolveContractGlobalIdentifiedName(name: UniqueName, version: Version): P[F, String]
+  def createContextInstance(sqlStore: SqlStore,
+                            kvStore: KVStore,
+                            tokenQuery: TokenQuery): P[F, Context]
 
-  /** create context for a transaction in current block (height)
+  /** invoke a contract
     */
-  def createContractRunningContextInstance(height: BigInt,
-                                           transaction: Transaction.RunContract): P[F, Context]
+  def invokeUserContract(context: Context,
+                         contract: Contract.UserContract,
+                         method: Contract.Method,
+                         params: Contract.Parameter): P[F, Either[Throwable, Unit]]
 
-  /** run smart contract
-    * 
-    */
-  def invokeContract(contract: Contract.UserContract,
-                  method: Contract.Method,
-                  param: Contract.Parameter,
-                  context: Context): P[F, Either[Throwable, Unit]]
 }

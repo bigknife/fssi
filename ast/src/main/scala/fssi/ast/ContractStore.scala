@@ -1,6 +1,7 @@
 package fssi
 package ast
 
+import contract.lib._
 import types._
 import bigknife.sop._
 import bigknife.sop.macros._
@@ -30,15 +31,23 @@ import java.io._
     */
   def verifyContractStoreState(state: String): P[F, Boolean]
 
-  /** commit staged contract 
+  /** commit staged contract
     */
   def commitStagedContract(height: BigInt): P[F, Unit]
 
-  /** roolback staged contract 
+  /** roolback staged contract
     */
   def rollbackStagedContract(height: BigInt): P[F, Unit]
 
   /** find user contract with gid
     */
-  def findUserContract(gid: String): P[F, Option[Contract.UserContract]]
+  def findUserContract(name: UniqueName, version: Version): P[F, Option[Contract.UserContract]]
+
+  /** prepare a sql store for running a specified contract
+    */
+  def prepareSqlStoreFor(height: BigInt, contract: Contract.UserContract): P[F, SqlStore]
+
+  /** prepare a key value store for running a specified contract
+    */
+  def prepareKeyValueStoreFor(height: BigInt, contract: Contract.UserContract): P[F, KVStore]
 }
