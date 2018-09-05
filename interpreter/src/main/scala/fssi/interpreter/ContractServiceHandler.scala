@@ -19,11 +19,13 @@ import java.io._
 
 class ContractServiceHandler extends ContractService.Handler[Stack] {
 
+  val compiler = new fssi.sandbox.Compiler
+
   /** check the smart contract project to see where it is full-deterministic or not
     */
   override def checkDeterminismOfContractProject(
       rootPath: File): Stack[Either[FSSIException, Unit]] = Stack { setting =>
-    ???
+    compiler.checkDeterminism(rootPath.toPath)
   }
 
   /** compile smart contract project and output to the target file
@@ -32,7 +34,7 @@ class ContractServiceHandler extends ContractService.Handler[Stack] {
                                       sandboxVersion: String,
                                       outputFile: File): Stack[Either[FSSIException, Unit]] =
     Stack { setting =>
-      ???
+      compiler.compileContract(rootPath.toPath, sandboxVersion, outputFile)
     }
 }
 
