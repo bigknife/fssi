@@ -1,6 +1,7 @@
 package fssi
 package interpreter
 
+import contract.lib._
 import types._
 import implicits._
 import utils._
@@ -151,6 +152,14 @@ class TokenStoreHandler extends TokenStore.Handler[Stack] with LogSupport {
   override def rollbackStagedToken(height: BigInt): Stack[Unit] = Stack { setting =>
     tokenStage.updated { stage =>
       stage.filterKeys(_ != height)
+    }
+  }
+
+    /** prepare a token query for running a specified contract
+    */
+  override  def prepareTokenQueryFor(height: BigInt, contract: Contract.UserContract): Stack[TokenQuery] = Stack {setting =>
+    new TokenQuery {
+      def getAmount(accountId: String): Long = ???
     }
   }
 }
