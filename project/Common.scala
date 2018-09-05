@@ -172,6 +172,7 @@ object Common {
     object sandBox {
       def apply(): Project = prj("sandBox", "sand-box")
         .settings(
+          libraryDependencies ++= all.betterfiles,
           libraryDependencies ++= all.asm
         )
     }

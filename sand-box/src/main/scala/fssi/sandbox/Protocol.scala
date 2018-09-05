@@ -3,6 +3,8 @@ package sandbox
 
 object Protocol {
 
+  lazy val contractSize: Long = 1024 * 200
+
   lazy val forbiddenClasses = Vector(
     "^Ljava/util/concurrent.*",
     "^Ljava/lang/reflect.*",

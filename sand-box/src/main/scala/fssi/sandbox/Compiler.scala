@@ -30,169 +30,216 @@ class Compiler {
   def compileContract(rootPath: Path,
                       version: String,
                       outputFile: File): Either[ContractCompileException, Unit] = {
-    import Protocol._
-    if (!isProjectStructureValid(rootPath)) {
-      Left(
-        ContractCompileException(
-          Vector("src path should have main/java and main/resources/META-INF subdirectories")))
-    } else {
-      val resources            = Paths.get(rootPath.toString, "src/main/resources/META-INF").toFile
-      val resourceFiles        = resources.listFiles().toVector
-      val inValidContractFiles = isResourceContractFilesInvalid(resources.toPath, resourceFiles)
-      if (inValidContractFiles.nonEmpty) {
-        Left(
-          ContractCompileException(
-            Vector(
-              s"smart contract required files not found: ${inValidContractFiles.mkString(" , ")}")))
-      } else {
-        val inValidFiles = isResourceFilesInValid(resources.toPath, resourceFiles)
-        if (inValidFiles.nonEmpty) {
+    logger.warn(s"compile contract  path: $rootPath")
+    if (rootPath.toFile.exists() && rootPath.toFile.isDirectory) {
+      val out =
+        Paths.get(outputFile.getParent, UUID.randomUUID().toString.replace("-", "")).toFile
+      out.mkdirs()
+      try {
+        import Protocol._
+        if (!isProjectStructureValid(rootPath)) {
           Left(
             ContractCompileException(
-              Vector(s"src/main/resources/META-INF dir only support ${allowedResourceFiles.mkString(
-                "、")} files,but found ${inValidFiles.mkString(" , ")}")))
+              Vector("src path should have main/java and main/resources/META-INF subdirectories")))
         } else {
-          val out =
-            Paths.get(outputFile.getParent, UUID.randomUUID().toString.replace("-", "")).toFile
-          out.mkdirs()
-          val compileEither = compileProject(rootPath, out.toPath)
-          val result = compileEither.flatMap { _ =>
-            SandBoxVersion(version) match {
-              case Some(sandBoxVersion) =>
-                upgradeAndZipContract(out.toPath, sandBoxVersion, outputFile)
-              case None =>
-                Left(
-                  ContractCompileException(Vector(
-                    s"java version $version not support,correct version must between 6 and 10")))
+          val resources            = Paths.get(rootPath.toString, "src/main/resources/META-INF").toFile
+          val resourceFiles        = resources.listFiles().toVector
+          val inValidContractFiles = isResourceContractFilesInvalid(resources.toPath, resourceFiles)
+          if (inValidContractFiles.nonEmpty) {
+            Left(ContractCompileException(Vector(
+              s"smart contract required files not found: ${inValidContractFiles.mkString(" , ")}")))
+          } else {
+            val inValidFiles = isResourceFilesInValid(resources.toPath, resourceFiles)
+            if (inValidFiles.nonEmpty) {
+              Left(
+                ContractCompileException(
+                  Vector(s"src/main/resources/META-INF dir only support ${allowedResourceFiles
+                    .mkString("、")} files,but found ${inValidFiles.mkString(" , ")}")))
+            } else {
+              val compileEither = compileProject(rootPath, out.toPath)
+              compileEither
+                .flatMap { _ =>
+                  val track            = ListBuffer.empty[String]
+                  val targetPath       = out.toPath
+                  val checkClassLoader = new FSSIClassLoader(targetPath, track)
+                  checkContractMethod(targetPath, track, checkClassLoader).left.map(x =>
+                    ContractCompileException(x.messages))
+                }
+                .flatMap { _ =>
+                  SandBoxVersion(version) match {
+                    case Some(sandBoxVersion) =>
+                      upgradeAndZipContract(out.toPath, sandBoxVersion, outputFile).flatMap { _ =>
+                        import Protocol._
+                        if (outputFile.length() > contractSize)
+                          Left(
+                            ContractCompileException(Vector(
+                              s"contract project total size can not exceed $contractSize bytes")))
+                        else Right(())
+                      }
+                    case None =>
+                      Left(ContractCompileException(Vector(
+                        s"java version $version not support,correct version must between 6 and 10")))
+                  }
+                }
             }
           }
-          if (out.exists()) FileUtil.deleteDir(out.toPath)
-          result
         }
+      } catch {
+        case t: Throwable => Left(ContractCompileException(Vector(t.getMessage)))
+      } finally {
+        if (out.exists()) FileUtil.deleteDir(out.toPath)
       }
-    }
+    } else Left(ContractCompileException(Vector("contract project must be a directory")))
   }
 
   /** check contract class file determinism
     *
-    * @param rootPath class file root path
+    * @param contractFile contract jar
     * @return errors when check failed
     */
-  def checkDeterminism(rootPath: Path): Either[ContractCheckException, Unit] = {
-    val track      = scala.collection.mutable.ListBuffer.empty[String]
-    val targetPath = Paths.get(rootPath.getParent.toString, "fssi")
-    if (!targetPath.toFile.exists()) targetPath.toFile.mkdirs()
-    for {
-      _ <- degradeClassVersion(rootPath, targetPath)
-      checkClassLoader = new FSSIClassLoader(targetPath, track)
-      _ <- checkContractMethod(targetPath, track, checkClassLoader)
-      _ <- checkClasses(targetPath, track, checkClassLoader)
-    } yield FileUtil.deleteDir(targetPath)
+  def checkDeterminism(contractFile: File): Either[ContractCheckException, Unit] = {
+    logger.warn(s"check determinism path: ${contractFile.toPath}")
+    if (contractFile.exists() && contractFile.isFile) {
+      val rootPath = Paths.get(contractFile.getParent, "contractRoot")
+      if (rootPath.toFile.exists()) FileUtil.deleteDir(rootPath)
+      rootPath.toFile.mkdirs()
+      try {
+        better.files.File(contractFile.toPath).unzipTo(rootPath)
+        val track      = scala.collection.mutable.ListBuffer.empty[String]
+        val targetPath = Paths.get(rootPath.getParent.toString, "fssi")
+        if (!targetPath.toFile.exists()) targetPath.toFile.mkdirs()
+        for {
+          _ <- degradeClassVersion(rootPath, targetPath)
+          checkClassLoader = new FSSIClassLoader(targetPath, track)
+          _ <- checkContractMethod(rootPath, track, checkClassLoader)
+          _ <- checkClasses(targetPath, track, checkClassLoader)
+        } yield { if (targetPath.toFile.exists()) FileUtil.deleteDir(targetPath) }
+      } catch {
+        case t: Throwable => Left(ContractCheckException(Vector(t.getMessage)))
+      } finally { if (rootPath.toFile.exists()) FileUtil.deleteDir(rootPath) }
+    } else
+      Left(ContractCheckException(Vector("contract must be a file assembled all of class files")))
   }
 
   def degradeClassVersion(rootPath: Path,
                           targetPath: Path): Either[ContractCheckException, Unit] = {
-    val metaInfoPath = Paths.get(targetPath.toString, "META-INF")
-    if (metaInfoPath.toFile.exists()) metaInfoPath.toFile.delete()
-    metaInfoPath.toFile.mkdirs()
-    val rootResourcesPath = Paths.get(rootPath.toString, "META-INF")
-    val resourcesFiles    = findAllFiles(rootResourcesPath)
-    resourcesFiles.foreach { resourceFile =>
-      val path =
-        Paths.get(metaInfoPath.toString,
-                  resourceFile.getAbsolutePath.substring(rootResourcesPath.toString.length + 1))
-      if (path.toFile.exists() && path.toFile.isFile) path.toFile.delete()
-      Files.copy(resourceFile.toPath, path)
+    logger.warn(s"degrade classes path: $rootPath")
+    try {
+      val metaInfoPath = Paths.get(targetPath.toString, "META-INF")
+      if (metaInfoPath.toFile.exists()) metaInfoPath.toFile.delete()
+      metaInfoPath.toFile.mkdirs()
+      val rootResourcesPath = Paths.get(rootPath.toString, "META-INF")
+      val resourcesFiles    = findAllFiles(rootResourcesPath)
+      resourcesFiles.foreach { resourceFile =>
+        val path =
+          Paths.get(metaInfoPath.toString,
+                    resourceFile.getAbsolutePath.substring(rootResourcesPath.toString.length + 1))
+        if (path.toFile.exists() && path.toFile.isFile) path.toFile.delete()
+        Files.copy(resourceFile.toPath, path)
+      }
+      val classFiles = findAllFiles(rootPath).filter(_.getAbsolutePath.endsWith(".class"))
+      val buffer     = new Array[Byte](8092)
+      val degradeErrors = classFiles.foldLeft(Vector.empty[String]) { (acc, classFile) =>
+        if (classFile.canRead) {
+          val filePath =
+            Paths.get(targetPath.toString,
+                      classFile.getAbsolutePath.substring(rootPath.toString.length + 1))
+          val file = filePath.toFile
+          if (!file.getParentFile.exists()) file.getParentFile.mkdirs()
+          if (!file.exists()) file.createNewFile()
+          val fileInputStream = new FileInputStream(classFile)
+          val output          = new ByteArrayOutputStream()
+          Iterator
+            .continually(fileInputStream.read(buffer))
+            .takeWhile(_ != -1)
+            .foreach(read => output.write(buffer, 0, read))
+          output.flush(); fileInputStream.close()
+          val classBuffer  = output.toByteArray; output.close()
+          val outputStream = new FileOutputStream(file, true)
+          val readerConstructor = classOf[ClassReader].getDeclaredConstructor(classOf[Array[Byte]],
+                                                                              classOf[Int],
+                                                                              classOf[Boolean])
+          val accessible = readerConstructor.isAccessible
+          readerConstructor.setAccessible(true)
+          val classReader = readerConstructor.newInstance(classBuffer,
+                                                          Integer.valueOf(0),
+                                                          java.lang.Boolean.valueOf(false))
+          readerConstructor.setAccessible(accessible)
+          val classWriter = new ClassWriter(classReader, 0)
+          val visitor     = DegradeClassVersionVisitor(classWriter)
+          classReader.accept(visitor, 0)
+          val array = classWriter.toByteArray
+          outputStream.write(array, 0, array.length)
+          outputStream.flush(); outputStream.close(); acc
+        } else acc :+ s"class file ${classFile.getAbsolutePath} can not read"
+      }
+      if (degradeErrors.isEmpty) Right(())
+      else Left(ContractCheckException(degradeErrors))
+    } catch {
+      case t: Throwable => Left(ContractCheckException(Vector(t.getMessage)))
     }
-    val classFiles = findAllFiles(rootPath).filter(_.getAbsolutePath.endsWith(".class"))
-    val buffer     = new Array[Byte](8092)
-    val degradeErrors = classFiles.foldLeft(Vector.empty[String]) { (acc, classFile) =>
-      if (classFile.canRead) {
-        val filePath = Paths.get(targetPath.toString,
-                                 classFile.getAbsolutePath.substring(rootPath.toString.length + 1))
-        val file = filePath.toFile
-        if (!file.getParentFile.exists()) file.getParentFile.mkdirs()
-        if (!file.exists()) file.createNewFile()
-        val fileInputStream = new FileInputStream(classFile)
-        val output          = new ByteArrayOutputStream()
-        Iterator
-          .continually(fileInputStream.read(buffer))
-          .takeWhile(_ != -1)
-          .foreach(read => output.write(buffer, 0, read))
-        output.flush(); fileInputStream.close()
-        val classBuffer  = output.toByteArray; output.close()
-        val outputStream = new FileOutputStream(file, true)
-        val readerConstructor = classOf[ClassReader].getDeclaredConstructor(classOf[Array[Byte]],
-                                                                            classOf[Int],
-                                                                            classOf[Boolean])
-        val accessible = readerConstructor.isAccessible
-        readerConstructor.setAccessible(true)
-        val classReader = readerConstructor.newInstance(classBuffer,
-                                                        Integer.valueOf(0),
-                                                        java.lang.Boolean.valueOf(false))
-        readerConstructor.setAccessible(accessible)
-        val classWriter = new ClassWriter(classReader, 0)
-        val visitor     = DegradeClassVersionVisitor(classWriter)
-        classReader.accept(visitor, 0)
-        val array = classWriter.toByteArray
-        outputStream.write(array, 0, array.length)
-        outputStream.flush(); outputStream.close(); acc
-      } else acc :+ s"class file ${classFile.getAbsolutePath} can not read"
-    }
-    if (degradeErrors.isEmpty) Right(())
-    else Left(ContractCheckException(degradeErrors))
   }
 
   private def checkClasses(
       rootPath: Path,
       track: ListBuffer[String],
       checkClassLoader: FSSIClassLoader): Either[ContractCheckException, Unit] = {
-    val classFiles = findAllFiles(rootPath).filter(_.getAbsolutePath.endsWith(".class"))
-    classFiles.foreach { file =>
-      val classFileName =
-        file.getAbsolutePath.substring(rootPath.toString.length + 1).replace("/", ".")
-      val className = classFileName.substring(0, classFileName.lastIndexOf(".class"))
-      checkClassLoader.findClassFromClassFile(file, className, "", Array.empty)
+    logger.warn(s"check classes path: $rootPath")
+    try {
+      val classFiles = findAllFiles(rootPath).filter(_.getAbsolutePath.endsWith(".class"))
+      classFiles.foreach { file =>
+        val classFileName =
+          file.getAbsolutePath.substring(rootPath.toString.length + 1).replace("/", ".")
+        val className = classFileName.substring(0, classFileName.lastIndexOf(".class"))
+        checkClassLoader.findClassFromClassFile(file, className, "", Array.empty)
+      }
+      if (track.isEmpty) Right(())
+      else Left(ContractCheckException(track.toVector))
+    } catch {
+      case t: Throwable => Left(ContractCheckException(Vector(t.getMessage)))
     }
-    if (track.isEmpty) Right(())
-    else Left(ContractCheckException(track.toVector))
   }
 
   private def checkContractMethod(
       rootPath: Path,
       track: ListBuffer[String],
       checkClassLoader: FSSIClassLoader): Either[ContractCheckException, Unit] = {
-    val contract = Paths.get(rootPath.toString, "META-INF/contract").toFile
-    if (!contract.exists() || !contract.isFile)
-      Left(ContractCheckException(Vector("META-INF/contract file not found")))
-    else {
-      val reader = new BufferedReader(new FileReader(contract))
-      val lines = Iterator
-        .continually(reader.readLine())
-        .takeWhile(_ != null)
-        .foldLeft(Vector.empty[String])((acc, n) => acc :+ n)
-      lines.map(_.split("\\s*=\\s*")(1).trim).foreach { x =>
-        if (logger.isInfoEnabled()) logger.info(s"smart contract exposes class method [$x]")
-        x.split("#") match {
-          case Array(clazz, method) =>
-            val leftIndex  = method.indexOf("(")
-            val rightIndex = method.lastIndexOf(")")
-            if (leftIndex < 0 || rightIndex < 0) track += s"contract descriptor invalid: $x"
-            else {
-              val methodName = method.substring(0, leftIndex)
-              val parameterTypes = method
-                .substring(leftIndex + 1, rightIndex)
-                .split(",")
-                .filter(_.nonEmpty)
-                .map(SParameterType(_))
-              checkClassLoader.findClass(clazz, methodName, parameterTypes.map(_.`type`))
-            }
-        }
-      }
-      if (track.isEmpty) Right(())
+    logger.warn(s"check contract method path: $rootPath")
+    try {
+      val contract = Paths.get(rootPath.toString, "META-INF/contract").toFile
+      if (!contract.exists() || !contract.isFile)
+        Left(ContractCheckException(Vector("META-INF/contract file not found")))
       else {
-        FileUtil.deleteDir(rootPath); Left(ContractCheckException(track.toVector))
+        val reader = new BufferedReader(new FileReader(contract))
+        val lines = Iterator
+          .continually(reader.readLine())
+          .takeWhile(_ != null)
+          .foldLeft(Vector.empty[String])((acc, n) => acc :+ n)
+        lines.map(_.split("\\s*=\\s*")(1).trim).foreach { x =>
+          if (logger.isInfoEnabled()) logger.info(s"smart contract exposes class method [$x]")
+          x.split("#") match {
+            case Array(clazz, method) =>
+              val leftIndex  = method.indexOf("(")
+              val rightIndex = method.lastIndexOf(")")
+              if (leftIndex < 0 || rightIndex < 0) track += s"contract descriptor invalid: $x"
+              else {
+                val methodName = method.substring(0, leftIndex)
+                val parameterTypes = method
+                  .substring(leftIndex + 1, rightIndex)
+                  .split(",")
+                  .filter(_.nonEmpty)
+                  .map(SParameterType(_))
+                checkClassLoader.findClass(clazz, methodName, parameterTypes.map(_.`type`))
+              }
+          }
+        }
+        if (track.isEmpty) Right(())
+        else Left(ContractCheckException(track.toVector))
       }
+    } catch {
+      case t: Throwable =>
+        t.printStackTrace()
+        Left(ContractCheckException(Vector(t.getMessage)))
     }
   }
 
@@ -211,6 +258,7 @@ class Compiler {
     */
   private def compileProject(rootPath: Path,
                              outputPath: Path): Either[ContractCompileException, Unit] = {
+    logger.warn(s"compile project path: $rootPath")
     import Protocol._
     val javaFilePath = Paths.get(rootPath.toString, "src/main/java")
     val javaFiles    = findAllFiles(javaFilePath)
@@ -277,6 +325,7 @@ class Compiler {
   private def upgradeAndZipContract(outPath: Path,
                                     sandBoxVersion: SandBoxVersion,
                                     outputFile: File): Either[ContractCompileException, Unit] = {
+    logger.warn(s"upgrade class path: $outPath")
     if (outputFile.exists() && outputFile.isDirectory)
       Left(ContractCompileException(Vector("compiled contract output file can not be a directory")))
     else {
@@ -315,7 +364,6 @@ class Compiler {
         inputStream.close()
       }
       zipOut.flush(); output.flush(); zipOut.close(); output.close()
-      FileUtil.deleteDir(outPath)
       if (track.isEmpty) Right(())
       else {
         if (outputFile.exists() && outputFile.isFile) outputFile.delete()

@@ -13,6 +13,9 @@ case class CheckClassDeterminismVisitor(classLoader: FSSIClassLoader,
                                         methodParameterTypes: Array[String],
                                         needCheckMethod: Boolean)
     extends ClassVisitor(Opcodes.ASM6, visitor) {
+  private[CheckClassDeterminismVisitor] lazy val visitedClasses =
+    scala.collection.mutable.ListBuffer.empty[String]
+
   import CheckClassDeterminismVisitor._
   import Protocol._
   var currentClassName: String       = _
@@ -99,10 +102,4 @@ case class CheckClassDeterminismVisitor(classLoader: FSSIClassLoader,
       track += s"contract method [$className#$methodName(${methodParameterTypes.mkString(",")})] not found"
     }
   }
-}
-
-object CheckClassDeterminismVisitor {
-
-  private[CheckClassDeterminismVisitor] lazy val visitedClasses =
-    scala.collection.mutable.ListBuffer.empty[String]
 }
