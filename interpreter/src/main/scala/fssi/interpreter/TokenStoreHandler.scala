@@ -19,13 +19,14 @@ import implicits._
 import ast._
 import java.io._
 import java.nio.charset.Charset
+
 import scala.collection._
 import io.circe.parser._
 import io.circe.syntax._
 import Bytes.implicits._
 import better.files.{File => ScalaFile, _}
-
 import java.io._
+import java.lang
 
 class TokenStoreHandler extends TokenStore.Handler[Stack] with LogSupport {
   private val tokenFileDirName                                         = "token"
@@ -155,12 +156,39 @@ class TokenStoreHandler extends TokenStore.Handler[Stack] with LogSupport {
     }
   }
 
-    /** prepare a token query for running a specified contract
+  /** prepare a token query for running a specified contract
     */
-  override  def prepareTokenQueryFor(height: BigInt, contract: Contract.UserContract): Stack[TokenQuery] = Stack {setting =>
-    new TokenQuery {
-      def getAmount(accountId: String): Long = ???
-    }
+  override def prepareTokenQueryFor(height: BigInt,
+                                    contract: Contract.UserContract): Stack[TokenQuery] = Stack {
+    setting =>
+      new TokenQuery {
+
+        /**
+          * get amount of an account
+          *
+          * @return token amount, with the base unit.
+          */
+        override def getAmount(accountId: String): lang.Long = {
+          // first check stage, if not found ,check store
+          val aid = Account.ID(HexString.decode(accountId))
+          tokenStage
+            .map { m =>
+              (for {
+                mm <- m.get(height)
+                t  <- mm.get(aid)
+              } yield t).map(_.amount.toLong: java.lang.Long)
+            }
+            .value
+            .orElse(tokenTrie.map(_.get(aid.value.noPrefix.toCharArray)).value.flatMap { vHash =>
+              tokenStore
+                .map(_.load(vHash))
+                .value
+                .map(Token.parse)
+                .map(_.amount.toLong: java.lang.Long)
+            })
+            .getOrElse(0L)
+        }
+      }
   }
 }
 
