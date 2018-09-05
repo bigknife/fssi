@@ -124,14 +124,19 @@ class ContractStoreHandler extends ContractStore.Handler[Stack] with LogSupport 
 
   /** prepare a sql store for running a specified contract
     */
-  override  def prepareSqlStoreFor(height: BigInt, contract: Contract.UserContract): Stack[SqlStore] = Stack {setting =>
-    new SqlStore {
-      def commit():Unit = ???
-      def rollback(): Unit = ???
-      def executeCommand(sql: String, args: Object*): Int = ???
-      def executeQuery(sql: String, args: Object*): java.util.List[java.util.Map[String,Object]]  = ???
-      def startTransaction(): Unit = ???
-    }
+  override def prepareSqlStoreFor(height: BigInt,
+                                  contract: Contract.UserContract): Stack[SqlStore] = Stack {
+    setting =>
+      setting match {
+        case x: Setting.P2PNodeSetting =>
+          val dbPath = new File(new File(x.workingDir, contractFileDirName), contract.name.value)
+          dbPath.mkdirs()
+          val dbUrl = s"jdbc:h2:${dbPath.getAbsolutePath}"
+          new H2SqlStore(dbUrl)
+
+        case _ => throw new RuntimeException("should working in CoreNode or EdgeNode")
+      }
+
   }
 }
 
