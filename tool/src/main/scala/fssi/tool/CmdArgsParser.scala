@@ -71,7 +71,8 @@ object CmdArgsParser extends OptionParser[CmdArgs]("fssitool") {
             .required()
             .text("payer's account password")
             .action((x, c) =>
-              c.asInstanceOf[CreateTransferTransactionArgs].copy(password = x.getBytes("utf-8"))),
+              c.asInstanceOf[CreateTransferTransactionArgs]
+                .copy(password = x.getBytes("utf-8"))),
           opt[String]("payee-id")
             .abbr("pi")
             .required()
@@ -90,25 +91,26 @@ object CmdArgsParser extends OptionParser[CmdArgs]("fssitool") {
         .text("create publish contract transaction")
         .action((_, _) => CreatePublishContractTransactionArgs())
         .children(
-                    opt[java.io.File]("account-file")
+          opt[java.io.File]("account-file")
             .abbr("af")
             .required()
             .text("payer account file created by 'CreateAccount'")
-            .action((f, c) => c.asInstanceOf[CreatePublishContractTransactionArgs].copy(accountFile = f)),
+            .action((f, c) =>
+              c.asInstanceOf[CreatePublishContractTransactionArgs].copy(accountFile = f)),
           opt[String]("password")
             .abbr("p")
             .required()
             .text("payer's account password")
             .action((x, c) =>
-              c.asInstanceOf[CreatePublishContractTransactionArgs].copy(password = x.getBytes("utf-8"))),
+              c.asInstanceOf[CreatePublishContractTransactionArgs]
+                .copy(password = x.getBytes("utf-8"))),
           opt[java.io.File]("contract-file")
             .abbr("cf")
             .required()
             .text("smart contract file")
-            .action((x, c) => c.asInstanceOf[CreatePublishContractTransactionArgs].copy(contractFile = x))
+            .action((x, c) =>
+              c.asInstanceOf[CreatePublishContractTransactionArgs].copy(contractFile = x))
         )
-
     )
-
 
 }
