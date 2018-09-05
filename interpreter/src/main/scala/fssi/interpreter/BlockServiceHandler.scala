@@ -57,8 +57,7 @@ class BlockServiceHandler extends BlockService.Handler[Stack] with BlockCalSuppo
         BigInt(x.timestamp).toByteArray
 
     case x: Transaction.RunContract =>
-      import Contract.Parameter.PrimaryParameter._
-      import Contract.Parameter.ReferenceParameter._
+      import Contract.Parameter._
       def bytesOfParam(p: Contract.Parameter): Array[Byte] = p match {
         case PString(x)     => x.getBytes("utf-8")
         case PBigDecimal(x) => x.toString.getBytes("")

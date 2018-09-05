@@ -2,6 +2,7 @@ package fssi
 package types
 package json
 
+import fssi.types.Contract.Parameter.{PArray, PBigDecimal, PBool, PString}
 import types._
 import types.implicits._
 import utils._
@@ -10,18 +11,12 @@ import io.circe.syntax._
 import implicits._
 
 import scala.collection._
-import fssi.types.Contract.Parameter.PrimaryParameter._
-import fssi.types.Contract.Parameter.ReferenceParameter._
 
 trait ContractJsonCodec {
   implicit val contractPrimaryParameterJsonEncoder: Encoder[Contract.Parameter.PrimaryParameter] = {
     case x: PString     => Json.fromString(x.value)
     case x: PBigDecimal => x.value.asJson
     case x: PBool       => Json.fromBoolean(x.value)
-    case x: PInt        => Json.fromInt(x.value)
-    case x: PDouble     => Json.fromDouble(x.value).get
-    case x: PFloat      => Json.fromFloat(x.value).get
-    case x: PLong       => Json.fromLong(x.value)
   }
 
   implicit val contractPrimaryParameterJsonDecoder: Decoder[Contract.Parameter.PrimaryParameter] =
