@@ -8,7 +8,6 @@ import java.util.UUID
 import java.util.zip.{ZipEntry, ZipOutputStream}
 
 import fssi.sandbox.visitor.{DegradeClassVersionVisitor, UpgradeClassVersionVisitor}
-import fssi.types.Contract.ParameterType
 import fssi.types.exception.{ContractCheckException, ContractCompileException}
 import fssi.utils.FileUtil
 import javax.tools.{DiagnosticCollector, JavaFileObject, ToolProvider}
@@ -185,7 +184,7 @@ class Compiler {
                 .substring(leftIndex + 1, rightIndex)
                 .split(",")
                 .filter(_.nonEmpty)
-                .map(ParameterType(_))
+                .map(SParameterType(_))
               checkClassLoader.findClass(clazz, methodName, parameterTypes.map(_.`type`))
             }
         }
@@ -318,7 +317,10 @@ class Compiler {
       zipOut.flush(); output.flush(); zipOut.close(); output.close()
       FileUtil.deleteDir(outPath)
       if (track.isEmpty) Right(())
-      else Left(ContractCompileException(track.toVector))
+      else {
+        if (outputFile.exists() && outputFile.isFile) outputFile.delete()
+        Left(ContractCompileException(track.toVector))
+      }
     }
   }
 
