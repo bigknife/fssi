@@ -129,7 +129,9 @@ class ContractStoreHandler extends ContractStore.Handler[Stack] with LogSupport 
     setting =>
       setting match {
         case x: Setting.P2PNodeSetting =>
-          val dbPath = new File(new File(x.workingDir, contractFileDirName), contract.name.value)
+          val contractWorkingDir =
+            new File(new File(x.workingDir, contractFileDirName), contract.name.value)
+          val dbPath = new File(contractWorkingDir, "sqlstore")
           dbPath.mkdirs()
           val dbUrl = s"jdbc:h2:${dbPath.getAbsolutePath}"
           new H2SqlStore(dbUrl)
@@ -144,6 +146,32 @@ class ContractStoreHandler extends ContractStore.Handler[Stack] with LogSupport 
     sqlStore match {
       case x: H2SqlStore => x.close()
       case _             => // nothing to do.
+    }
+  }
+
+  /** prepare a key value store for running a specified contract
+    */
+  override def prepareKeyValueStoreFor(height: BigInt,
+                                       contract: Contract.UserContract): Stack[KVStore] = Stack {
+    setting =>
+      setting match {
+        case x: Setting.P2PNodeSetting =>
+          val contractWorkingDir =
+            new File(new File(x.workingDir, contractFileDirName), contract.name.value)
+          val kvPath = new File(contractWorkingDir, "kvstore")
+          kvPath.mkdirs()
+          new LevelDBKVStore(kvPath)
+
+        case _ => throw new RuntimeException("should working in CoreNode or EdgeNode")
+      }
+  }
+
+  /** close a kv store
+    */
+  override def closeKeyValueStore(kvStore: KVStore): Stack[Unit] = Stack { setting =>
+    kvStore match {
+      case x: LevelDBKVStore => x.close()
+      case _ => // nothing to do.
     }
   }
 }
