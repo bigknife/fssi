@@ -136,7 +136,15 @@ class ContractStoreHandler extends ContractStore.Handler[Stack] with LogSupport 
 
         case _ => throw new RuntimeException("should working in CoreNode or EdgeNode")
       }
+  }
 
+  /** close a sql store
+    */
+  override def closeSqlStore(sqlStore: SqlStore): Stack[Unit] = Stack { setting =>
+    sqlStore match {
+      case x: H2SqlStore => x.close()
+      case _             => // nothing to do.
+    }
   }
 }
 

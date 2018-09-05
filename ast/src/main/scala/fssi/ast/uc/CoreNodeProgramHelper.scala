@@ -66,6 +66,7 @@ private[uc] trait CoreNodeProgramHelper[F[_]] extends BaseProgram[F] {
                                        contractOpt.get,
                                        runContract.contractMethod,
                                        runContract.contractParameter)
+          _ <- closeSqlStore(sqlStore)
         } yield result
     } yield x
   }
