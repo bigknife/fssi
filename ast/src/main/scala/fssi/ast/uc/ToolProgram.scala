@@ -7,8 +7,10 @@ import utils._
 import types.syntax._
 import bigknife.sop._
 import bigknife.sop.implicits._
-
 import java.io.File
+import java.nio.file.Path
+
+import fssi.types.Contract.Parameter
 
 trait ToolProgram[F[_]] extends BaseProgram[F] {
   import model._
