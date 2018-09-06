@@ -42,5 +42,7 @@ import java.io._
     */
   def findUserContract(name: UniqueName, version: Version): P[F, Option[Contract.UserContract]]
 
-
+  /** temp save user's contract
+    */
+  def stageContract(height: BigInt, gid: String, contract: Contract.UserContract): P[F, Unit]
 }

@@ -2,6 +2,7 @@ package fssi
 package tool
 
 import java.io._
+
 import types._
 
 sealed trait CmdArgs
@@ -16,33 +17,32 @@ object CmdArgs {
 
   /** CreateChain Arguments
     */
-  case class CreateChainArgs(dataDir: java.io.File, chainID: String) extends CmdArgs
+  case class CreateChainArgs(dataDir: File, chainID: String) extends CmdArgs
 
   case object CreateTransactionArgsPlaceHolder extends CmdArgs
 
   /** Create Transfer Transaction Arguments
     */
   case class CreateTransferTransactionArgs(
-    accountFile: File,
-    password: Array[Byte],
-    payee: Account.ID,
-    token: Token
+      accountFile: File = new File(""),
+      password: Array[Byte] = Array.emptyByteArray,
+      payee: Account.ID = Account.ID(HexString.empty),
+      token: Token = Token.Zero
   ) extends CmdArgs
 
-  object CreateTransferTransactionArgs {
-    def empty: CreateTransferTransactionArgs = CreateTransferTransactionArgs(
-      accountFile = new File(""),
-      password = Array.emptyByteArray,
-      payee = Account.ID(HexString.empty),
-      token = Token.Zero
-    )
-  }
+  /** Create Publish Contract Transaction Arguments
+    */
+  case class CreatePublishContractTransactionArgs(
+      accountFile: File = new File(""),
+      password: Array[Byte] = Array.emptyByteArray,
+      contractFile: File = new File("")
+  ) extends CmdArgs
 
   /** Compile Contract Args
     */
   case class CompileContractArgs(
-    projectDirectory: File = new File(""),
-    outputFile: File = new File(""),
-    sandboxVersion: String = "0.0.1"
+      projectDirectory: File = new File(""),
+      outputFile: File = new File(""),
+      sandboxVersion: String = "0.0.1"
   ) extends CmdArgs
 }

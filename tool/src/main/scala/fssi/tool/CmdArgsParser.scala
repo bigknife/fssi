@@ -59,7 +59,7 @@ object CmdArgsParser extends OptionParser[CmdArgs]("fssitool") {
     .children(
       cmd("transfer")
         .text("create transfer transaction")
-        .action((_, _) => CreateTransferTransactionArgs.empty)
+        .action((_, _) => CreateTransferTransactionArgs())
         .children(
           opt[java.io.File]("account-file")
             .abbr("af")
@@ -71,7 +71,8 @@ object CmdArgsParser extends OptionParser[CmdArgs]("fssitool") {
             .required()
             .text("payer's account password")
             .action((x, c) =>
-              c.asInstanceOf[CreateTransferTransactionArgs].copy(password = x.getBytes("utf-8"))),
+              c.asInstanceOf[CreateTransferTransactionArgs]
+                .copy(password = x.getBytes("utf-8"))),
           opt[String]("payee-id")
             .abbr("pi")
             .required()
@@ -85,6 +86,30 @@ object CmdArgsParser extends OptionParser[CmdArgs]("fssitool") {
             .text("amount to be transfered, in form of 'number' + 'unit', eg. 100Sweet. ")
             .action((x, c) =>
               c.asInstanceOf[CreateTransferTransactionArgs].copy(token = Token.parse(x)))
+        ),
+      cmd("publishContract")
+        .text("create publish contract transaction")
+        .action((_, _) => CreatePublishContractTransactionArgs())
+        .children(
+          opt[java.io.File]("account-file")
+            .abbr("af")
+            .required()
+            .text("payer account file created by 'CreateAccount'")
+            .action((f, c) =>
+              c.asInstanceOf[CreatePublishContractTransactionArgs].copy(accountFile = f)),
+          opt[String]("password")
+            .abbr("p")
+            .required()
+            .text("payer's account password")
+            .action((x, c) =>
+              c.asInstanceOf[CreatePublishContractTransactionArgs]
+                .copy(password = x.getBytes("utf-8"))),
+          opt[java.io.File]("contract-file")
+            .abbr("cf")
+            .required()
+            .text("smart contract file")
+            .action((x, c) =>
+              c.asInstanceOf[CreatePublishContractTransactionArgs].copy(contractFile = x))
         )
     )
 

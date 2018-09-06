@@ -3,6 +3,7 @@ package interpreter
 
 import types._
 import java.io._
+import java.nio.file.{Path, Paths}
 import bigknife.scalap.world.Connect
 
 sealed trait Setting
@@ -15,7 +16,9 @@ object Setting {
 
   /** Setting for command line tool
     */
-  case class ToolSetting() extends Setting
+  case class ToolSetting() extends Setting {
+    def contractTempDir: Path = Paths.get(System.getProperty("user.home"), ".fssi")
+  }
 
   /** P2P node setting
     */

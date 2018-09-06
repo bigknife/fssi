@@ -34,4 +34,7 @@ import java.io._
                          method: Contract.Method,
                          params: Contract.Parameter): P[F, Either[Throwable, Unit]]
 
+  def measureCostToTransfer(transferedToken: Token): P[F, Token]
+  def measureCostToPublishContract(publishContract: Transaction.PublishContract): P[F, Token]
+  def measureCostToRunContract(contract: Contract.UserContract): P[F, Token]
 }

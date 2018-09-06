@@ -1,4 +1,5 @@
-package fssi.types
+package fssi
+package types
 
 import fssi.utils._
 import scala.collection._
