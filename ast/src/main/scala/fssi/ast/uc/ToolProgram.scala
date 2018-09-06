@@ -90,9 +90,12 @@ trait ToolProgram[F[_]] extends BaseProgram[F] {
     } yield transferNotSigned.copy(signature = signature)
   }
 
-  def createPublishContractTransaction(accountFile: File,
-                                       password: Array[Byte],
-                                       contractFile: File): SP[F, Transaction.PublishContract] = {
+  def createPublishContractTransaction(
+      accountFile: File,
+      password: Array[Byte],
+      contractFile: File,
+      contractName: UniqueName,
+      contractVersion: Version): SP[F, Transaction.PublishContract] = {
     import accountStore._
     import crypto._
     import transactionService._
@@ -104,8 +107,11 @@ trait ToolProgram[F[_]] extends BaseProgram[F] {
       privateKeyOrFailed <- desDecryptPrivateKey(account.encryptedPrivateKey.toBytesValue,
                                                  account.iv.toBytesValue,
                                                  BytesValue(password))
-      privateKey               <- err.either(privateKeyOrFailed)
-      userContractOrFailed     <- createUserContractFromContractFile(contractFile)
+      privateKey <- err.either(privateKeyOrFailed)
+      userContractOrFailed <- createUserContractFromContractFile(account,
+                                                                 contractFile,
+                                                                 contractName,
+                                                                 contractVersion)
       userContract             <- err.either(userContractOrFailed)
       publishContractNotSigned <- createUnsignedPublishContract(account.id, userContract)
       unsignedBytes            <- calculateSingedBytesOfTransaction(publishContractNotSigned)

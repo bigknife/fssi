@@ -46,6 +46,15 @@ class ContractServiceHandler extends ContractService.Handler[Stack] {
                                      tokenQuery: TokenQuery): Stack[Context] = Stack { setting =>
     ContractRunningContext(sqlStore, kvStore, tokenQuery)
   }
+
+  override def createUserContractFromContractFile(
+      account: Account,
+      contractFile: File,
+      contractName: UniqueName,
+      contractVersion: Version): Stack[Either[FSSIException, Contract.UserContract]] = Stack {
+    setting =>
+      sandbox.buildContract(account.id, contractFile, contractName, contractVersion)
+  }
 }
 
 object ContractServiceHandler {

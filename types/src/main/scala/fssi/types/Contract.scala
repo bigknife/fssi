@@ -25,11 +25,8 @@ object Contract {
     * there is no parameters info, so override methods can't be considered as a
     *  contract method.
     */
-  case class Method(
-      className: String,
-      methodName: String
-  ) {
-    override def toString(): String = s"$className#$methodName"
+  case class Method(alias: String) {
+    override def toString(): String = alias
   }
 
   /** Contract meta info

@@ -1,6 +1,7 @@
 package fssi
-package types
+package sandbox
 package exception
+import fssi.types.exception.FSSIException
 
 case class ContractCheckException(messages: Vector[String])
     extends FSSIException(

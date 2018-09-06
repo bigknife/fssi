@@ -8,10 +8,10 @@ import java.nio.file.attribute.BasicFileAttributes
 import java.util.UUID
 import java.util.zip.{ZipEntry, ZipOutputStream}
 
+import fssi.sandbox.exception.ContractCompileException
 import fssi.sandbox.loader.FSSIClassLoader
 import fssi.sandbox.visitor.UpgradeClassVersionVisitor
 import fssi.sandbox.types.SandBoxVersion
-import fssi.types.exception.ContractCompileException
 import fssi.utils.FileUtil
 import javax.tools.{DiagnosticCollector, JavaFileObject, ToolProvider}
 import org.objectweb.asm.{ClassReader, ClassWriter}
