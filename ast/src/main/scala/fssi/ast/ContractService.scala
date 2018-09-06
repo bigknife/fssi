@@ -34,7 +34,23 @@ import java.io._
                          method: Contract.Method,
                          params: Contract.Parameter): P[F, Either[Throwable, Unit]]
 
+  /** get user contract gid
+    */
+  def getContractGlobalIdentifiedName(contract: Contract.UserContract): P[F, String]
+
+  /** create a user contract object from a compiled contract file
+    */
+  def createUserContractFromContractFile(contractFile: File): P[F, Either[FSSIException, Contract.UserContract]]
+
+  /** measure transfer cost
+    */
   def measureCostToTransfer(transferedToken: Token): P[F, Token]
+
+  /** measure publish contract cost
+    */
   def measureCostToPublishContract(publishContract: Transaction.PublishContract): P[F, Token]
+
+  /** measure run a contract cost
+    */
   def measureCostToRunContract(contract: Contract.UserContract): P[F, Token]
 }
