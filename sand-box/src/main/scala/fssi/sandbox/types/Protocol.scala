@@ -1,5 +1,6 @@
 package fssi
 package sandbox
+package types
 
 object Protocol {
 
@@ -20,7 +21,10 @@ object Protocol {
     "^Ljava/lang/Object;"
   )
 
-  lazy val allowedResourceFiles = Vector("contract", "version")
+  lazy val contractFileName = "contract"
+  lazy val versionFileName  = "version"
+
+  lazy val allowedResourceFiles = Vector(contractFileName, versionFileName)
 
   lazy val forbiddenPackage = Vector("fssi")
 }
