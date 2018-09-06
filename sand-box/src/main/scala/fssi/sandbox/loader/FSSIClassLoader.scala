@@ -1,5 +1,6 @@
 package fssi
 package sandbox
+package loader
 
 import java.io.{File, FileInputStream}
 import java.nio.file.{Path, Paths}

@@ -11,7 +11,7 @@ case class CheckMethodDeterminismVisitor(visitor: MethodVisitor,
                                          track: scala.collection.mutable.ListBuffer[String])
     extends MethodVisitor(Opcodes.ASM6, visitor) {
 
-  import Protocol._
+  import fssi.sandbox.types.Protocol._
 
   override def visitTypeInsn(opcode: Int, `type`: String): Unit = {
     super.visitTypeInsn(opcode, `type`)

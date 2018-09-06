@@ -2,6 +2,7 @@ package fssi
 package sandbox
 package visitor
 
+import fssi.sandbox.loader.FSSIClassLoader
 import org.objectweb.asm.Opcodes._
 import org.objectweb.asm._
 
@@ -16,8 +17,7 @@ case class CheckClassDeterminismVisitor(classLoader: FSSIClassLoader,
   private[CheckClassDeterminismVisitor] lazy val visitedClasses =
     scala.collection.mutable.ListBuffer.empty[String]
 
-  import CheckClassDeterminismVisitor._
-  import Protocol._
+  import fssi.sandbox.types.Protocol._
   var currentClassName: String       = _
   var currentClassDescriptor: String = _
   var contractMethodExited: Boolean  = false
@@ -69,7 +69,7 @@ case class CheckClassDeterminismVisitor(classLoader: FSSIClassLoader,
     }
 
     val className = Type.getType(descriptor).getClassName
-    if (!visitedClasses.contains(className)) classLoader.loadClass(className)
+    if (!visitedClasses.contains(className)) classLoader.findClass(className, "", Array.empty)
     fieldVisitor
   }
 

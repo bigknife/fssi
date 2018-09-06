@@ -1,5 +1,7 @@
 package fssi
 package sandbox
+package types
+
 import scala.util.control.Exception._
 
 private[sandbox] case class SandBoxVersion(value: Int) {
