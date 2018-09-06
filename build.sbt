@@ -4,7 +4,7 @@ coverageExcludedFiles in ThisBuild := ".*macro.*"
 parallelExecution in ThisBuild := false
 fork in ThisBuild := true
 scalaVersion in ThisBuild := "2.12.4"
-coverageEnabled in(Test, test) := true
+coverageEnabled in (Test, test) := true
 
 // utils
 lazy val pUtils = utils()
@@ -33,8 +33,7 @@ lazy val pTrie = trie()
 lazy val pContractLib = contractLib()
   .dependsOn(pTypes)
 
-lazy val pSandBox = sandBox().dependsOn(pTypes)
-
+lazy val pSandBox = sandBox().dependsOn(pTypes).dependsOn(pContractLib)
 
 lazy val pTool = tool()
   .dependsOn(pInterperter)
@@ -43,9 +42,9 @@ lazy val pTool = tool()
   .settings(
     mainClass in assembly := Some("fssi.tool.ToolMain"),
     assemblyMergeStrategy in assembly := {
-      case "module-info.class" => MergeStrategy.discard
-      case PathList("META-INF", xs@_) => MergeStrategy.discard
-      case "config-sample.conf" => MergeStrategy.first
+      case "module-info.class"          => MergeStrategy.discard
+      case PathList("META-INF", xs @ _) => MergeStrategy.discard
+      case "config-sample.conf"         => MergeStrategy.first
       case x =>
         val oldStrategy = (assemblyMergeStrategy in assembly).value
         oldStrategy(x)
@@ -61,8 +60,8 @@ lazy val pCoreNode = coreNode()
   .settings(
     mainClass in assembly := Some("fssi.corenode.CoreNodeMain"),
     assemblyMergeStrategy in assembly := {
-      case "module-info.class" => MergeStrategy.discard
-      case PathList("META-INF", xs@_) => MergeStrategy.discard
+      case "module-info.class"          => MergeStrategy.discard
+      case PathList("META-INF", xs @ _) => MergeStrategy.discard
       case x =>
         val oldStrategy = (assemblyMergeStrategy in assembly).value
         oldStrategy(x)
@@ -79,8 +78,8 @@ lazy val pEdgeNode = edgeNode()
   .settings(
     mainClass in assembly := Some("fssi.edgenode.EdgeNodeMain"),
     assemblyMergeStrategy in assembly := {
-      case "module-info.class" => MergeStrategy.discard
-      case PathList("META-INF", xs@_) => MergeStrategy.discard
+      case "module-info.class"          => MergeStrategy.discard
+      case PathList("META-INF", xs @ _) => MergeStrategy.discard
       case x =>
         val oldStrategy = (assemblyMergeStrategy in assembly).value
         oldStrategy(x)
@@ -91,4 +90,6 @@ lazy val pEdgeNode = edgeNode()
     test in assembly := {}
   )
 
-addCommandAlias("assemblyAll", ";project tool;clean;assembly;project coreNode;clean;assembly;project edgeNode;clean;assembly")
+addCommandAlias(
+  "assemblyAll",
+  ";project tool;clean;assembly;project coreNode;clean;assembly;project edgeNode;clean;assembly")

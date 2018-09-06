@@ -3,10 +3,12 @@ package sandbox
 import java.io.File
 import java.nio.file.Path
 
+import fssi.contract.lib.Context
 import fssi.sandbox.exception.{
   ContractBuildException,
   ContractCheckException,
-  ContractCompileException
+  ContractCompileException,
+  ContractRunningException
 }
 import fssi.sandbox.world._
 import fssi.types._
@@ -30,4 +32,15 @@ class SandBox {
                     name: UniqueName,
                     version: Version): Either[ContractBuildException, Contract.UserContract] =
     builder.buildUserContractFromFile(accountId, file, name, version)
+
+  def executeContract(context: Context,
+                      contractFile: File,
+                      method: Contract.Method,
+                      params: Contract.Parameter): Either[ContractRunningException, Unit] = {
+    for {
+      methods <- builder.buildContractMethod(contractFile)
+      _       <- checker.isContractMethodExisted(method, params, methods)
+      _       <- checker.checkDeterminism(contractFile)
+    } yield ()
+  }
 }

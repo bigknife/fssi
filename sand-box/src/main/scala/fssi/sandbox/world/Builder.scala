@@ -81,46 +81,58 @@ class Builder {
       name: UniqueName,
       version: Version): Either[ContractBuildException, Contract.UserContract] = {
     if (file.exists() && file.isFile) {
-      import fssi.sandbox.types.Protocol._
-      val cache = Paths.get(file.getParent, "cache")
-      if (cache.toFile.exists()) FileUtil.deleteDir(cache)
-      cache.toFile.mkdirs()
-      try {
-        for {
-          _ <- checker
-            .checkDeterminism(file)
-            .right
-            .map(_ => Vector.empty[Method])
-            .left
-            .map(x => ContractBuildException(x.messages))
-          unzipDir     = better.files.File(file.toPath).unzipTo(cache)
-          contractFile = Paths.get(unzipDir.pathAsString, s"META-INF/$contractFileName").toFile
-          methods <- checker
-            .checkContractDescriptor(contractFile)
-            .left
-            .map(x => ContractBuildException(x.messages))
-        } yield {
-          val fileInputStream       = new FileInputStream(file)
-          val byteArrayOutputStream = new ByteArrayOutputStream
-          val array                 = new Array[Byte](8092)
-          Iterator
-            .continually(fileInputStream.read(array))
-            .takeWhile(_ != -1)
-            .foreach(read => byteArrayOutputStream.write(array, 0, read))
-          byteArrayOutputStream.flush(); fileInputStream.close()
-          import implicits._
-          Contract.UserContract(
-            owner = accountId,
-            name = name,
-            version = version,
-            code = Base64String(byteArrayOutputStream.toByteArray),
-            meta = Meta(methods = TreeSet(methods.map(m => Method(m.alias)): _*)),
-            signature = Signature.empty
-          )
-        }
-      } catch {
-        case t: Throwable => Left(ContractBuildException(Vector(t.getMessage)))
-      } finally { if (cache.toFile.exists()) FileUtil.deleteDir(cache) }
-    } else Left(ContractBuildException(Vector("contract must be a file assembled all class files")))
+      for {
+        methods <- buildContractMethod(file)
+        _ <- checker
+          .checkDeterminism(file)
+          .right
+          .map(_ => Vector.empty[Method])
+          .left
+          .map(x => ContractBuildException(x.messages))
+      } yield {
+        val fileInputStream       = new FileInputStream(file)
+        val byteArrayOutputStream = new ByteArrayOutputStream
+        val array                 = new Array[Byte](8092)
+        Iterator
+          .continually(fileInputStream.read(array))
+          .takeWhile(_ != -1)
+          .foreach(read => byteArrayOutputStream.write(array, 0, read))
+        byteArrayOutputStream.flush(); fileInputStream.close()
+        import implicits._
+        Contract.UserContract(
+          owner = accountId,
+          name = name,
+          version = version,
+          code = Base64String(byteArrayOutputStream.toByteArray),
+          meta = Meta(methods = TreeSet(methods.map(m => Method(m.alias)): _*)),
+          signature = Signature.empty
+        )
+      }
+    } else
+      Left(
+        ContractBuildException(
+          Vector("contract must be a file assembled all class files and contract descriptor")))
+  }
+
+  private[sandbox] def buildContractMethod(
+      contractFile: File): Either[ContractBuildException, Vector[fssi.sandbox.types.Method]] = {
+    import fssi.sandbox.types.Protocol._
+    val cache = Paths.get(contractFile.getParent, "cache")
+    if (cache.toFile.exists()) FileUtil.deleteDir(cache)
+    cache.toFile.mkdirs()
+    try {
+      val unzipDir = better.files.File(contractFile.toPath).unzipTo(cache)
+      val contractDescriptorFile = Paths
+        .get(unzipDir.pathAsString, s"META-INF/$contractFileName")
+        .toFile
+      for {
+        methods <- checker
+          .checkContractDescriptor(contractDescriptorFile)
+          .left
+          .map(x => ContractBuildException(x.messages))
+      } yield methods
+    } catch {
+      case t: Throwable => Left(ContractBuildException(Vector(t.getMessage)))
+    } finally { if (cache.toFile.exists()) FileUtil.deleteDir(cache) }
   }
 }
