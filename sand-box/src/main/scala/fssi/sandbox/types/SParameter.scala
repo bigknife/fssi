@@ -1,5 +1,6 @@
 package fssi
 package sandbox
+package types
 
 sealed trait SParameterType {
   def `type`: Class[_]
