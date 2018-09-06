@@ -51,16 +51,12 @@ trait ContractJsonCodec {
   }
 
   implicit val contractMethodJsonEncoder: Encoder[Contract.Method] = (a: Contract.Method) =>
-    Json.obj(
-      "className"  -> Json.fromString(a.className),
-      "methodName" -> Json.fromString(a.methodName)
-  )
+    Json.obj("alias" -> Json.fromString(a.alias))
 
   implicit val contractMethodJsonDecoder: Decoder[Contract.Method] = (h: HCursor) => {
     for {
-      className  <- h.get[String]("className")
-      methodName <- h.get[String]("methodName")
-    } yield Contract.Method(className, methodName)
+      alias <- h.get[String]("alias")
+    } yield Contract.Method(alias)
   }
 
   implicit val contractMetaJsonEncoder: Encoder[Contract.Meta] = (a: Contract.Meta) =>

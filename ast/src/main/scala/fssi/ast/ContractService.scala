@@ -40,7 +40,11 @@ import java.io._
 
   /** create a user contract object from a compiled contract file
     */
-  def createUserContractFromContractFile(contractFile: File): P[F, Either[FSSIException, Contract.UserContract]]
+  def createUserContractFromContractFile(
+      account: Account,
+      contractFile: File,
+      contractName: UniqueName,
+      contractVersion: Version): P[F, Either[FSSIException, Contract.UserContract]]
 
   /** measure transfer cost
     */
