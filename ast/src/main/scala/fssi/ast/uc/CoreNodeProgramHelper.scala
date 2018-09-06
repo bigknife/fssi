@@ -48,6 +48,7 @@ private[uc] trait CoreNodeProgramHelper[F[_]] extends BaseProgram[F] {
                          runContract: Transaction.RunContract): SP[F, Either[Throwable, Unit]] = {
     import contractService._
     import contractStore._
+    import contractDataStore._    
     import tokenStore._
 
     for {
