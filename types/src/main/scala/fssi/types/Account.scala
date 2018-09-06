@@ -2,8 +2,8 @@ package fssi.types
 
 /**
   * Account, is a crypto digital account id
-  * @param publickey a hexstring
-  * @param encryptedprivatekey encrypted hexstring
+  * @param publicKey a hexstring
+  * @param encryptedPrivateKey encrypted hexstring
   */
 case class Account(
     publicKey: HexString,

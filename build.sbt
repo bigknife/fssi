@@ -17,6 +17,7 @@ lazy val pTypesJson = typesJson()
 
 lazy val pAst = ast()
   .dependsOn(pTypes)
+  .dependsOn(pContractLib)
 
 lazy val pInterperter = interpreter()
   .dependsOn(pAst)
@@ -29,7 +30,11 @@ lazy val pJsonRpc = jsonrpc()
 lazy val pTrie = trie()
   .dependsOn(pUtils)
 
+lazy val pContractLib = contractLib()
+  .dependsOn(pTypes)
+
 lazy val pSandBox = sandBox().dependsOn(pTypes)
+
 
 lazy val pTool = tool()
   .dependsOn(pInterperter)

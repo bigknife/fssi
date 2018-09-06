@@ -1,6 +1,7 @@
 package fssi
 package ast
 
+import contract.lib._
 import types._
 import bigknife.sop._
 import bigknife.sop.macros._
@@ -37,4 +38,20 @@ import java.io._
   /** rollback staged contract data
     */
   def rollbackStagedContractData(height: BigInt): P[F, Unit]
+
+    /** prepare a sql store for running a specified contract
+    */
+  def prepareSqlStoreFor(height: BigInt, contract: Contract.UserContract): P[F, SqlStore]
+
+  /** close a sql store
+    */
+  def closeSqlStore(sqlStore: SqlStore): P[F, Unit]
+
+  /** prepare a key value store for running a specified contract
+    */
+  def prepareKeyValueStoreFor(height: BigInt, contract: Contract.UserContract): P[F, KVStore]
+
+  /** close a kv store
+    */
+  def closeKeyValueStore(kvStore: KVStore): P[F, Unit]
 }
