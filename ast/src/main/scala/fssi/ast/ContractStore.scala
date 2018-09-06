@@ -30,13 +30,17 @@ import java.io._
     */
   def verifyContractStoreState(state: String): P[F, Boolean]
 
-  /** commit staged contract 
+  /** commit staged contract
     */
   def commitStagedContract(height: BigInt): P[F, Unit]
 
-  /** roolback staged contract 
+  /** roolback staged contract
     */
   def rollbackStagedContract(height: BigInt): P[F, Unit]
+
+  /** find user contract with gid
+    */
+  def findUserContract(name: UniqueName, version: Version): P[F, Option[Contract.UserContract]]
 
   /** temp save user's contract
     */

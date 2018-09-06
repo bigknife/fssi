@@ -12,19 +12,19 @@ import java.nio.charset.Charset
 import scala.collection._
 import io.circe.parser._
 import io.circe.syntax._
+import contract.lib._
 import Bytes.implicits._
 import better.files.{File => ScalaFile, _}
 
 import java.io._
 
 class ContractDataStoreHandler extends ContractDataStore.Handler[Stack] with LogSupport {
-  private val contractDataFileName         = "contractdata"
-  private val contractDataTrie: SafeVar[Trie[Char, String]] = SafeVar.empty
+  private val contractDataFileName                                  = "contractdata"
+  private val contractDataTrie: SafeVar[Trie[Char, String]]         = SafeVar.empty
   private val contractDataStore: Once[LevelDBStore[String, String]] = Once.empty
-  private val contractDataTrieJsonFile: Once[ScalaFile] = Once.empty
+  private val contractDataTrieJsonFile: Once[ScalaFile]             = Once.empty
 
-
-  override def initializeContractDataStore(dataDir: File): Stack[Unit] = Stack {setting =>
+  override def initializeContractDataStore(dataDir: File): Stack[Unit] = Stack { setting =>
     val path = new File(dataDir, contractDataFileName)
     path.mkdirs()
     contractDataTrieJsonFile := new File(path, "contract.trie.json").toScala
@@ -83,7 +83,7 @@ class ContractDataStoreHandler extends ContractDataStore.Handler[Stack] with Log
     true
   }
 
-    /** commit staged tokens
+  /** commit staged tokens
     */
   override def commitStagedContractData(height: BigInt): Stack[Unit] = Stack { setting =>
     }
@@ -92,6 +92,59 @@ class ContractDataStoreHandler extends ContractDataStore.Handler[Stack] with Log
     */
   override def rollbackStagedContractData(height: BigInt): Stack[Unit] = Stack { setting =>
     }
+
+  /** prepare a sql store for running a specified contract
+    */
+  override def prepareSqlStoreFor(height: BigInt,
+                                  contract: Contract.UserContract): Stack[SqlStore] = Stack {
+    setting =>
+      setting match {
+        case x: Setting.P2PNodeSetting =>
+          val contractWorkingDir =
+            new File(new File(x.workingDir, contractDataFileName), contract.name.value)
+          val dbPath = new File(contractWorkingDir, "sqlstore")
+          dbPath.mkdirs()
+          val dbUrl = s"jdbc:h2:${dbPath.getAbsolutePath}"
+          new H2SqlStore(dbUrl)
+
+        case _ => throw new RuntimeException("should working in CoreNode or EdgeNode")
+      }
+  }
+
+  /** close a sql store
+    */
+  override def closeSqlStore(sqlStore: SqlStore): Stack[Unit] = Stack { setting =>
+    sqlStore match {
+      case x: H2SqlStore => x.close()
+      case _             => // nothing to do.
+    }
+  }
+
+  /** prepare a key value store for running a specified contract
+    */
+  override def prepareKeyValueStoreFor(height: BigInt,
+                                       contract: Contract.UserContract): Stack[KVStore] = Stack {
+    setting =>
+      setting match {
+        case x: Setting.P2PNodeSetting =>
+          val contractWorkingDir =
+            new File(new File(x.workingDir, contractDataFileName), contract.name.value)
+          val kvPath = new File(contractWorkingDir, "kvstore")
+          kvPath.mkdirs()
+          new LevelDBKVStore(kvPath)
+
+        case _ => throw new RuntimeException("should working in CoreNode or EdgeNode")
+      }
+  }
+
+  /** close a kv store
+    */
+  override def closeKeyValueStore(kvStore: KVStore): Stack[Unit] = Stack { setting =>
+    kvStore match {
+      case x: LevelDBKVStore => x.close()
+      case _                 => // nothing to do.
+    }
+  }
 }
 
 object ContractDataStoreHandler {

@@ -1,6 +1,7 @@
 package fssi
 package ast
 
+import contract.lib._
 import types._, exception._
 import bigknife.sop._
 import bigknife.sop.macros._
@@ -18,15 +19,38 @@ import java.io._
     */
   def compileContractProject(rootPath: File,
                              sandboxVersion: String,
-    outputFile: File): P[F, Either[FSSIException, Unit]]
+                             outputFile: File): P[F, Either[FSSIException, Unit]]
 
-  /** create a user-contract from a compiled contract file
+  /** create a running context for some transaction
+    */
+  def createContextInstance(sqlStore: SqlStore,
+                            kvStore: KVStore,
+                            tokenQuery: TokenQuery): P[F, Context]
+
+  /** invoke a contract
+    */
+  def invokeUserContract(context: Context,
+                         contract: Contract.UserContract,
+                         method: Contract.Method,
+                         params: Contract.Parameter): P[F, Either[Throwable, Unit]]
+
+  /** get user contract gid
+    */
+  def getContractGlobalIdentifiedName(contract: Contract.UserContract): P[F, String]
+
+  /** create a user contract object from a compiled contract file
     */
   def createUserContractFromContractFile(contractFile: File): P[F, Either[FSSIException, Contract.UserContract]]
 
-  def getContractGlobalIdentifiedName(contract: Contract.UserContract): P[F, String]
-
+  /** measure transfer cost
+    */
   def measureCostToTransfer(transferedToken: Token): P[F, Token]
+
+  /** measure publish contract cost
+    */
   def measureCostToPublishContract(publishContract: Transaction.PublishContract): P[F, Token]
+
+  /** measure run a contract cost
+    */
   def measureCostToRunContract(contract: Contract.UserContract): P[F, Token]
 }

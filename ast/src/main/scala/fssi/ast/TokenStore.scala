@@ -1,6 +1,7 @@
 package fssi
 package ast
 
+import contract.lib._
 import types._
 import bigknife.sop._
 import bigknife.sop.macros._
@@ -45,4 +46,8 @@ import java.io._
   /** rollback staged tokens
     */
   def rollbackStagedToken(height: BigInt): P[F, Unit]
+
+  /** prepare a token query for running a specified contract
+    */
+  def prepareTokenQueryFor(height: BigInt, contract: Contract.UserContract): P[F, TokenQuery]
 }

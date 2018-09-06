@@ -1,6 +1,7 @@
 package fssi
 package interpreter
 
+import contract.lib._
 import jsonCodecs._
 import utils._
 import trie._
@@ -37,6 +38,14 @@ class ContractServiceHandler extends ContractService.Handler[Stack] {
     Stack { setting =>
       sandbox.compileContract(rootPath.toPath, sandboxVersion, outputFile)
     }
+
+  /** create a running context for some transaction
+    */
+  override def createContextInstance(sqlStore: SqlStore,
+                                     kvStore: KVStore,
+                                     tokenQuery: TokenQuery): Stack[Context] = Stack { setting =>
+    ContractRunningContext(sqlStore, kvStore, tokenQuery)
+  }
 }
 
 object ContractServiceHandler {
