@@ -41,12 +41,16 @@ trait ContractJsonCodec {
   implicit val contractParamJsonEncoder: Encoder[Contract.Parameter] = {
     case x: Contract.Parameter.PrimaryParameter => x.asJson
     case x: PArray                              => x.asJson
+    case Contract.Parameter.PEmpty              => Json.Null
   }
 
   implicit val contractParamJsonDecoder: Decoder[Contract.Parameter] = (a: HCursor) => {
-    a.as[Contract.Parameter.PrimaryParameter] match {
-      case Left(t)      => a.as[PArray]
-      case x @ Right(_) => x
+    if (a.value == Json.Null) Right(Contract.Parameter.PEmpty)
+    else {
+      a.as[Contract.Parameter.PrimaryParameter] match {
+        case Left(t) => a.as[PArray]
+        case x@Right(_) => x
+      }
     }
   }
 

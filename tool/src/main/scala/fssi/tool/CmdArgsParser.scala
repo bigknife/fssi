@@ -4,6 +4,7 @@ package tool
 import scopt._
 import CmdArgs._
 import types._
+import interpreter.jsonCodecs._
 
 object CmdArgsParser extends OptionParser[CmdArgs]("fssitool") {
 
@@ -124,6 +125,43 @@ object CmdArgsParser extends OptionParser[CmdArgs]("fssitool") {
             .action((x, c) =>
               c.asInstanceOf[CreatePublishContractTransactionArgs]
                 .copy(contractVersion = Version(x)))
+        ),
+      cmd("runContract")
+        .text("create run contract transaction")
+        .action((_, _) => CreateRunContractTransactionArgs())
+        .children(
+          opt[java.io.File]("account-file")
+            .abbr("af")
+            .required()
+            .text("invoker account file created by 'CreateAccount'")
+            .action(
+              (f, c) => c.asInstanceOf[CreateRunContractTransactionArgs].copy(accountFile = f)),
+          opt[String]("password")
+            .abbr("p")
+            .required()
+            .text("invoker's account password")
+            .action((x, c) =>
+              c.asInstanceOf[CreateRunContractTransactionArgs]
+                .copy(password = x.getBytes("utf-8"))),
+          opt[String]("contract-name")
+            .abbr("name")
+            .required()
+            .text("invoking contract name")
+            .action((x, c) =>
+              c.asInstanceOf[CreateRunContractTransactionArgs].copy(contractName = UniqueName(x))),
+          opt[String]("contract-version")
+            .abbr("version")
+            .required()
+            .text("the version of the invoking contract")
+            .action((x, c) =>
+              c.asInstanceOf[CreateRunContractTransactionArgs]
+                .copy(contractVersion = Version(x))),
+          opt[String]("parameter")
+            .abbr("p")
+            .text("parameters for this invoking")
+            .action((x, c) =>
+              c.asInstanceOf[CreateRunContractTransactionArgs]
+                .copy(parameter = io.circe.parser.parse(x).right.get.as[Contract.Parameter].right.get))
         )
     )
 
