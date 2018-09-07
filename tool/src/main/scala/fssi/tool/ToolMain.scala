@@ -17,8 +17,8 @@ object ToolMain extends App {
           createTransferTransaction(accountFile, password, payee, token)
         case CompileContractArgs(projectDirectory, outputDirectory, sandboxVersion) =>
           compileContract(projectDirectory, outputDirectory, sandboxVersion)
-        case CreatePublishContractTransactionArgs(accountFile, password, contractFile) =>
-          createPublishContractTransaction(accountFile, password, contractFile)
+        case CreatePublishContractTransactionArgs(accountFile, password, contractFile, contractName, contractVersion) =>
+          createPublishContractTransaction(accountFile, password, contractFile, contractName, contractVersion)
         case _ =>
       }
     case None =>

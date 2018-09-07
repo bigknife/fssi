@@ -35,7 +35,9 @@ object CmdArgs {
   case class CreatePublishContractTransactionArgs(
       accountFile: File = new File(""),
       password: Array[Byte] = Array.emptyByteArray,
-      contractFile: File = new File("")
+      contractFile: File = new File(""),
+      contractName: UniqueName = UniqueName(""),
+      contractVersion: Version = Version("")
   ) extends CmdArgs
 
   /** Compile Contract Args
