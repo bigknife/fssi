@@ -21,6 +21,10 @@ object Protocol {
     "^Ljava/lang/Object;"
   )
 
+  lazy val ignoreClasses = Vector(
+    "^Lfssi/.*"
+  )
+
   lazy val contractFileName = "contract"
   lazy val versionFileName  = "version"
 

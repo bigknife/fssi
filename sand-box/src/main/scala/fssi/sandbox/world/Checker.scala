@@ -3,14 +3,14 @@ package sandbox
 package world
 
 import java.io._
-import java.nio.file.{Files, Path, Paths}
+import java.nio.file.{Path, Paths}
 
 import fssi.sandbox.exception.ContractCheckException
 import fssi.sandbox.loader.FSSIClassLoader
+import fssi.sandbox.types.SParameterType.SContext
 import fssi.sandbox.types.{Method, SParameterType}
-import fssi.sandbox.visitor.DegradeClassVersionVisitor
+import fssi.types.Contract
 import fssi.utils.FileUtil
-import org.objectweb.asm.{ClassReader, ClassWriter}
 import org.slf4j.{Logger, LoggerFactory}
 
 import scala.collection.mutable.ListBuffer
@@ -125,49 +125,106 @@ class Checker {
 
   def checkContractDescriptor(
       contractDescriptorFile: File): Either[ContractCheckException, Vector[Method]] = {
-    val track  = scala.collection.mutable.ListBuffer.empty[String]
-    val reader = new BufferedReader(new FileReader(contractDescriptorFile))
-    val lines = Iterator
-      .continually(reader.readLine())
-      .takeWhile(_ != null)
-      .foldLeft(Vector.empty[String])((acc, n) => acc :+ n)
-    val methods = lines.map(_.split("\\s*=\\s*")).foldLeft(Vector.empty[Method]) { (acc, n) =>
-      n match {
-        case Array(alias, methodDesc) =>
-          logger.info(s"smart contract exposes method [$alias = $methodDesc]")
-          methodDesc.split("#") match {
-            case Array(className, methodAssign) =>
-              val leftIndex  = methodAssign.indexOf("(")
-              val rightIndex = methodAssign.lastIndexOf(")")
-              if (leftIndex < 0 || rightIndex < 0) {
-                track += s"contract descriptor invalid: $methodAssign"; acc
-              } else {
-                val methodName = methodAssign.substring(0, leftIndex)
-                val parameterTypes = methodAssign
-                  .substring(leftIndex + 1, rightIndex)
-                  .split(",")
-                  .filter(_.nonEmpty)
-                  .map(SParameterType(_))
-                val method = types.Method(alias = alias,
-                                          className = className,
-                                          methodName = methodName,
-                                          parameterTypes = parameterTypes)
-                acc :+ method
-              }
-          }
-      }
-    }
-    if (track.isEmpty) {
-      val errors = methods.groupBy(_.alias).foldLeft(Vector.empty[String]) { (acc, n) =>
+    if (contractDescriptorFile.exists() && contractDescriptorFile.isFile) {
+      val track  = scala.collection.mutable.ListBuffer.empty[String]
+      val reader = new BufferedReader(new FileReader(contractDescriptorFile))
+      val lines = Iterator
+        .continually(reader.readLine())
+        .takeWhile(_ != null)
+        .foldLeft(Vector.empty[String])((acc, n) => acc :+ n)
+      val methods = lines.map(_.split("\\s*=\\s*")).foldLeft(Vector.empty[Method]) { (acc, n) =>
         n match {
-          case (alias, mds) =>
-            if (mds.size > 1)
-              acc :+ s"duplicated contract method alias: $alias, found: ${mds.mkString(" , ")}"
-            else acc
+          case Array(alias, methodDesc) =>
+            logger.info(s"smart contract exposes method [$alias = $methodDesc]")
+            methodDesc.split("#") match {
+              case Array(className, methodAssign) =>
+                val leftIndex  = methodAssign.indexOf("(")
+                val rightIndex = methodAssign.lastIndexOf(")")
+                if (leftIndex < 0 || rightIndex < 0) {
+                  track += s"contract descriptor invalid: $methodAssign"; acc
+                } else {
+                  val methodName = methodAssign.substring(0, leftIndex)
+                  val parameterTypes = methodAssign
+                    .substring(leftIndex + 1, rightIndex)
+                    .split(",")
+                    .filter(_.nonEmpty)
+                    .map(SParameterType(_))
+                  if (parameterTypes.length >= 1 && parameterTypes.head.`type`.getName == SContext.`type`.getName) {
+                    val method = types.Method(alias = alias,
+                                              className = className,
+                                              methodName = methodName,
+                                              parameterTypes = parameterTypes)
+                    acc :+ method
+                  } else {
+                    track += "contract method first parameter must be type of fssi.contract.lib.Context"
+                    acc
+                  }
+                }
+            }
         }
       }
-      if (errors.isEmpty) Right(methods)
-      else Left(ContractCheckException(errors))
-    } else Left(ContractCheckException(track.toVector))
+      if (track.isEmpty) {
+        val errors = methods.groupBy(_.alias).foldLeft(Vector.empty[String]) { (acc, n) =>
+          n match {
+            case (alias, mds) =>
+              if (mds.size > 1)
+                acc :+ s"duplicated contract method alias: $alias, found: ${mds.mkString(" , ")}"
+              else acc
+          }
+        }
+        if (errors.isEmpty) Right(methods)
+        else Left(ContractCheckException(errors))
+      } else Left(ContractCheckException(track.toVector))
+    } else
+      Left(
+        ContractCheckException(
+          Vector(s"contract descriptor must be a file: ${contractDescriptorFile.toString}")))
+  }
+
+  private[sandbox] def isContractMethodExisted(
+      method: Contract.Method,
+      params: Contract.Parameter,
+      methods: Vector[Method]): Either[ContractCheckException, Unit] = {
+    methods.find(_.alias == method.alias) match {
+      case Some(m) => isContractMethodParameterTypeMatched(params, m.parameterTypes)
+      case None =>
+        Left(ContractCheckException(Vector(
+          s"method ${method.alias} not existed,exposed method: ${methods.mkString("\n[", "\n", "\n]")}")))
+    }
+  }
+
+  private def isContractMethodParameterTypeMatched(
+      params: Contract.Parameter,
+      parameterTypes: Array[SParameterType]): Either[ContractCheckException, Unit] = {
+    import fssi.types.Contract.Parameter._
+
+    def convertToSParameterType(parameter: Contract.Parameter,
+                                acc: Array[SParameterType]): Array[SParameterType] = {
+      parameter match {
+        case PString(_) => acc :+ SParameterType.SString
+        case PBool(_)   => acc :+ SParameterType.SBoolean
+        case PBigDecimal(_) =>
+          parameterTypes match {
+            case Array(_, st) =>
+              st match {
+                case SParameterType.SBoolean => acc
+                case SParameterType.SContext => acc
+                case _                       => acc :+ st
+              }
+            case _ => acc
+          }
+        case PArray(array) => array.flatMap(p => convertToSParameterType(p, acc))
+      }
+    }
+
+    val receiptParameterType = SParameterType.SContext +: convertToSParameterType(params,
+                                                                                  Array.empty)
+    val receiptParameterTypeNames  = receiptParameterType.map(_.`type`.getName)
+    val contractParameterTypeNames = parameterTypes.map(_.`type`.getName)
+    if (receiptParameterTypeNames sameElements contractParameterTypeNames) Right(())
+    else
+      Left(ContractCheckException(Vector(
+        s"receipted method parameter type: ${receiptParameterTypeNames.mkString(" , ")} not coordinated with contract method parameter type: ${contractParameterTypeNames
+          .mkString(" , ")}")))
   }
 }

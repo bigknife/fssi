@@ -17,7 +17,6 @@ case class CheckClassDeterminismVisitor(classLoader: FSSIClassLoader,
   private[CheckClassDeterminismVisitor] lazy val visitedClasses =
     scala.collection.mutable.ListBuffer.empty[String]
 
-
   import fssi.sandbox.types.Protocol._
   var currentClassName: String       = _
   var currentClassDescriptor: String = _
@@ -32,22 +31,25 @@ case class CheckClassDeterminismVisitor(classLoader: FSSIClassLoader,
     currentClassName = Type.getObjectType(name).getClassName
     currentClassDescriptor = Type.getObjectType(name).getDescriptor
     if (visitor != null) visitor.visit(version, access, name, signature, superName, interfaces)
-    if (!visitedClasses.contains(currentClassName)) {
-      visitedClasses += currentClassName
-      forbiddenClasses.find(classDescriptor =>
-        classDescriptor.r.pattern.matcher(currentClassDescriptor).matches()) match {
-        case Some(_) => track += s"class [$currentClassName] is forbidden"
-        case None    =>
-      }
-      forbiddenPackage.find(packName => currentClassName.startsWith(packName)) match {
-        case Some(_) => track += s"class [$currentClassName] is forbidden"
-        case None    =>
-      }
-      if (track.isEmpty && superName != null) {
-        val superClass = Type.getObjectType(superName).getClassName
-        if (!visitedClasses.contains(superClass)) {
-          visitedClasses += superClass
-          classLoader.findClass(superClass, "", Array.empty); ()
+    else super.visit(version, access, name, signature, superName, interfaces)
+    if (!ignoreClasses.contains(currentClassDescriptor)) {
+      if (!visitedClasses.contains(currentClassName)) {
+        visitedClasses += currentClassName
+        forbiddenClasses.find(classDescriptor =>
+          classDescriptor.r.pattern.matcher(currentClassDescriptor).matches()) match {
+          case Some(_) => track += s"class [$currentClassName] is forbidden"
+          case None    =>
+        }
+        forbiddenPackage.find(packName => currentClassName.startsWith(packName)) match {
+          case Some(_) => track += s"class [$currentClassName] is forbidden"
+          case None    =>
+        }
+        if (track.isEmpty && superName != null) {
+          val superClass = Type.getObjectType(superName).getClassName
+          if (!visitedClasses.contains(superClass)) {
+            visitedClasses += superClass
+            classLoader.findClass(superClass, "", Array.empty); ()
+          }
         }
       }
     }

@@ -18,6 +18,10 @@ import io.circe.syntax._
 import Bytes.implicits._
 import better.files.{File => ScalaFile, _}
 import java.io._
+import java.nio.file.Paths
+import java.util.UUID
+
+import fssi.sandbox.exception.ContractRunningException
 
 class ContractServiceHandler extends ContractService.Handler[Stack] {
 
@@ -55,6 +59,38 @@ class ContractServiceHandler extends ContractService.Handler[Stack] {
     setting =>
       sandbox.buildContract(account.id, contractFile, contractName, contractVersion)
   }
+
+  override def invokeUserContract(context: Context,
+                                  contract: Contract.UserContract,
+                                  method: Contract.Method,
+                                  params: Contract.Parameter): Stack[Either[Throwable, Unit]] =
+    Stack { setting =>
+      contract.meta.methods.find(_.alias == method.alias) match {
+        case Some(_) =>
+          val contractFile =
+            Paths
+              .get(System.getProperty("user.home"),
+                   s".fssi/.${contract.name.value}_${contract.version.value}")
+              .toFile
+          if (!contractFile.getParentFile.exists()) contractFile.getParentFile.mkdirs()
+          if (contractFile.exists()) FileUtil.deleteDir(contractFile.toPath)
+          contractFile.createNewFile()
+          val fileOutputStream = new FileOutputStream(contractFile, true)
+          try {
+            fileOutputStream.write(contract.code.bytes, 0, contract.code.bytes.length)
+            fileOutputStream.flush()
+            sandbox.executeContract(context, contractFile, method, params)
+          } catch {
+            case t: Throwable => Left(t)
+          } finally {
+            if (fileOutputStream != null) fileOutputStream.close()
+            if (contractFile.exists()) FileUtil.deleteDir(contractFile.toPath)
+          }
+        case None =>
+          Left(ContractRunningException(Vector(
+            s"can not find method ${method.alias} in contract ${contract.name.value}#${contract.version.value}")))
+      }
+    }
 }
 
 object ContractServiceHandler {
