@@ -70,8 +70,9 @@ class ContractServiceHandler extends ContractService.Handler[Stack] {
           val contractFile =
             Paths
               .get(System.getProperty("user.home"),
-                   s".${contract.name.value}_${contract.version.value}")
+                   s".fssi/.${contract.name.value}_${contract.version.value}")
               .toFile
+          if (!contractFile.getParentFile.exists()) contractFile.getParentFile.mkdirs()
           if (contractFile.exists()) FileUtil.deleteDir(contractFile.toPath)
           contractFile.createNewFile()
           val fileOutputStream = new FileOutputStream(contractFile, true)

@@ -127,14 +127,14 @@ class Compiler {
       val javaCompiler    = ToolProvider.getSystemJavaCompiler
       val javaFileManager = javaCompiler.getStandardFileManager(null, null, null)
       val libPath         = Paths.get(rootPath.toString, "lib")
-      var classPath       = System.getProperty("java.class.path")
-      if (libPath.toFile.isDirectory) {
-        classPath = libPath.toFile
+//      var classPath       = System.getProperty("java.class.path")
+      val classPath = if (libPath.toFile.isDirectory) {
+        libPath.toFile
           .list((dir: File, name: String) => name.endsWith(".jar"))
-          .foldLeft(classPath) { (acc, n) =>
-            acc + ":" + Paths.get(libPath.toString, n)
-          }
-      }
+          .map(x => s"${libPath.toString}/$x")
+          .toVector
+          .mkString(":")
+      } else ""
       val options             = Vector("-d", s"${outputPath.toString}", "-classpath", classPath)
       val diagnosticCollector = new DiagnosticCollector[JavaFileObject]
       val compilationTask = javaCompiler.getTask(
