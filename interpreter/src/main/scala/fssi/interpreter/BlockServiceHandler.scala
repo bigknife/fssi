@@ -60,9 +60,9 @@ class BlockServiceHandler extends BlockService.Handler[Stack] with BlockCalSuppo
       import Contract.Parameter._
       def bytesOfParam(p: Contract.Parameter): Array[Byte] = p match {
         case PEmpty         => Array.emptyByteArray
-        case PString(x)     => x.getBytes("utf-8")
-        case PBigDecimal(x) => x.toString.getBytes("")
-        case PBool(x)       => BigInt(if (x) 1 else 0).toByteArray
+        case PString(x1)     => x1.getBytes("utf-8")
+        case PBigDecimal(x1) => x1.toString.getBytes("")
+        case PBool(x1)       => BigInt(if (x1) 1 else 0).toByteArray
         case PArray(array) =>
           array.foldLeft(Array.emptyByteArray)((acc, n) => acc ++ bytesOfParam(n))
       }
