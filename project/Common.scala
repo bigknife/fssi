@@ -91,6 +91,11 @@ object Common {
           )
     }
 
+    object parser {
+      def apply(): Project =
+        prj("parser", "parser")
+    }
+
     object trie {
       def apply(): Project =
         prj("trie", "trie")
