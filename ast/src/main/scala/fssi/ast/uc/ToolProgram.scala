@@ -113,10 +113,39 @@ trait ToolProgram[F[_]] extends BaseProgram[F] {
                                                                  contractName,
                                                                  contractVersion)
       userContract             <- err.either(userContractOrFailed)
-      publishContractNotSigned <- createUnsignedPublishContract(account.id, userContract)
+      publishContractNotSigned <- createUnsignedPublishContractTransaction(account.id, userContract)
       unsignedBytes            <- calculateSingedBytesOfTransaction(publishContractNotSigned)
       signature                <- makeSignature(unsignedBytes, privateKey)
     } yield publishContractNotSigned.copy(signature = signature)
+  }
+
+  def createRunContractTransaction(
+      accountFile: File,
+      password: Array[Byte],
+      contractName: UniqueName,
+      contractVersion: Version,
+      method: Contract.Method,
+      parameter: Contract.Parameter): SP[F, Transaction.RunContract] = {
+    import accountStore._
+    import crypto._
+    import transactionService._
+    import contractService._
+
+    for {
+      accountOrFailed <- loadAccountFromFile(accountFile)
+      account         <- err.either(accountOrFailed)
+      privateKeyOrFailed <- desDecryptPrivateKey(account.encryptedPrivateKey.toBytesValue,
+                                                 account.iv.toBytesValue,
+                                                 BytesValue(password))
+      privateKey <- err.either(privateKeyOrFailed)
+      runContractNotSigned <- createUnsignedRunContractTransaction(account.id,
+                                                                   contractName,
+                                                                   contractVersion,
+                                                                   method,
+                                                                   parameter)
+      unsignedBytes <- calculateSingedBytesOfTransaction(runContractNotSigned)
+      signature     <- makeSignature(unsignedBytes, privateKey)
+    } yield runContractNotSigned.copy(signature = signature)
   }
 }
 

@@ -29,6 +29,10 @@ object Contract {
     override def toString(): String = alias
   }
 
+  object Method {
+    def empty: Method = Method("")
+  }
+
   /** Contract meta info
     */
   case class Meta(
@@ -55,6 +59,7 @@ object Contract {
     */
   sealed trait Parameter {}
   object Parameter {
+    object PEmpty extends Parameter
     sealed trait PrimaryParameter extends Parameter
 
     case class PString(value: String) extends PrimaryParameter {

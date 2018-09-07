@@ -4,6 +4,7 @@ package tool
 import java.io._
 
 import types._
+import io.circe._
 
 sealed trait CmdArgs
 
@@ -36,8 +37,19 @@ object CmdArgs {
       accountFile: File = new File(""),
       password: Array[Byte] = Array.emptyByteArray,
       contractFile: File = new File(""),
-      contractName: UniqueName = UniqueName(""),
-      contractVersion: Version = Version("")
+      contractName: UniqueName = UniqueName.empty,
+      contractVersion: Version = Version.empty
+  ) extends CmdArgs
+
+  /** Create Run Contract Transaction Arguments
+    */
+  case class CreateRunContractTransactionArgs(
+      accountFile: File = new File(""),
+      password: Array[Byte] = Array.emptyByteArray,
+      contractName: UniqueName = UniqueName.empty,
+    contractVersion: Version = Version.empty,
+    method: Contract.Method = Contract.Method.empty,
+      parameter: Contract.Parameter = Contract.Parameter.PEmpty
   ) extends CmdArgs
 
   /** Compile Contract Args

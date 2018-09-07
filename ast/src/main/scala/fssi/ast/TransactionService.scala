@@ -13,12 +13,22 @@ import bigknife.sop.implicits._
     */
   def createUnsignedTransfer(payer: Account.ID,
                              payee: Account.ID,
-    token: Token): P[F, Transaction.Transfer]
-
+                             token: Token): P[F, Transaction.Transfer]
 
   /** create a publish-contract transaction object with an empty signature field
     */
-  def createUnsignedPublishContract(owner: Account.ID, contract: Contract.UserContract): P[F, Transaction.PublishContract]
+  def createUnsignedPublishContractTransaction(
+      owner: Account.ID,
+      contract: Contract.UserContract): P[F, Transaction.PublishContract]
+
+  /** create a run-contract transaction object with an empty signature field
+    */
+  def createUnsignedRunContractTransaction(
+      invoker: Account.ID,
+      contractName: UniqueName,
+      contractVersion: Version,
+      method: Contract.Method,
+      parameter: Contract.Parameter): P[F, Transaction.RunContract]
 
   /** calculate bytes of the transaction object which will be signed
     */
