@@ -109,7 +109,21 @@ object CmdArgsParser extends OptionParser[CmdArgs]("fssitool") {
             .required()
             .text("smart contract file")
             .action((x, c) =>
-              c.asInstanceOf[CreatePublishContractTransactionArgs].copy(contractFile = x))
+              c.asInstanceOf[CreatePublishContractTransactionArgs].copy(contractFile = x)),
+          opt[String]("contract-name")
+            .abbr("name")
+            .required()
+            .text("the uniquename of the contract, eg. com.blabla.finance")
+            .action((x, c) =>
+              c.asInstanceOf[CreatePublishContractTransactionArgs]
+                .copy(contractName = UniqueName(x))),
+          opt[String]("contract-version")
+            .abbr("version")
+            .required()
+            .text("the version of the contract")
+            .action((x, c) =>
+              c.asInstanceOf[CreatePublishContractTransactionArgs]
+                .copy(contractVersion = Version(x)))
         )
     )
 
