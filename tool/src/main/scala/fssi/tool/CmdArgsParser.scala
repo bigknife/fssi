@@ -7,7 +7,7 @@ import types._
 
 object CmdArgsParser extends OptionParser[CmdArgs]("fssitool") {
 
-  head("fssitool", "0.1.0")
+  head("fssi_tool", "0.1.0")
   help("help").abbr("h").text("print this help messages")
 
   cmd("CreateAccount")
