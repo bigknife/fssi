@@ -197,6 +197,7 @@ class Checker {
       params: Contract.Parameter,
       parameterTypes: Array[SParameterType]): Either[ContractCheckException, Unit] = {
     import fssi.types.Contract.Parameter._
+    var index = 0
 
     def convertToSParameterType(parameter: Contract.Parameter,
                                 acc: Array[SParameterType]): Array[SParameterType] = {
@@ -204,16 +205,14 @@ class Checker {
         case PString(_) => acc :+ SParameterType.SString
         case PBool(_)   => acc :+ SParameterType.SBoolean
         case PBigDecimal(_) =>
-          parameterTypes match {
-            case Array(_, st) =>
-              st match {
-                case SParameterType.SBoolean => acc
-                case SParameterType.SContext => acc
-                case _                       => acc :+ st
-              }
-            case _ => acc
+          index = index + 1
+          parameterTypes(index) match {
+            case SParameterType.SBoolean => acc
+            case SParameterType.SContext => acc
+            case x                       => acc :+ x
           }
         case PArray(array) => array.flatMap(p => convertToSParameterType(p, acc))
+        case PEmpty        => acc
       }
     }
 
@@ -224,7 +223,7 @@ class Checker {
     if (receiptParameterTypeNames sameElements contractParameterTypeNames) Right(())
     else
       Left(ContractCheckException(Vector(
-        s"receipted method parameter type: ${receiptParameterTypeNames.mkString(" , ")} not coordinated with contract method parameter type: ${contractParameterTypeNames
-          .mkString(" , ")}")))
+        s"receipted method parameter type: ${receiptParameterTypeNames.mkString("(", ",", ")")} not coordinated with contract method parameter type: ${contractParameterTypeNames
+          .mkString("(", ",", ")")}")))
   }
 }

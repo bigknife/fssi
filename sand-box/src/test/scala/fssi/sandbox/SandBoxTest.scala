@@ -3,7 +3,7 @@ package sandbox
 import java.nio.file.Paths
 
 import fssi.types.Contract.Method
-import fssi.types.Contract.Parameter.PString
+import fssi.types.Contract.Parameter.{PArray, PBigDecimal, PEmpty, PString}
 import org.scalatest.FunSuite
 
 class SandBoxTest extends FunSuite {
@@ -35,7 +35,9 @@ class SandBoxTest extends FunSuite {
     val output     = "/Users/songwenchao/Documents/source/self/pratice/fssi_test/out"
     val outputFile = Paths.get(output).toFile
     val context    = new TestContext
-    sandBox.executeContract(context, outputFile, Method("function2"), PString("124356789")) match {
+    val methodName = "function3"
+    val parameter  = PArray(PString("abcdefg"), PBigDecimal(1))
+    sandBox.executeContract(context, outputFile, Method(methodName), parameter) match {
       case Right(_) => info("run finished")
       case Left(e)  => e.printStackTrace()
     }
