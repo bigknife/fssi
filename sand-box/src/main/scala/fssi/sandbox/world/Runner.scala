@@ -60,11 +60,11 @@ class Runner {
 
     def convertToParameterValue(parameter: Contract.Parameter,
                                 acc: Array[AnyRef]): Array[AnyRef] = {
+      index = index + 1
       parameter match {
         case PString(s) => acc :+ s
         case PBool(b)   => acc :+ java.lang.Boolean.valueOf(b)
         case PBigDecimal(bigDecimal) =>
-          index = index + 1
           parameterTypes(index) match {
             case SInt    => acc :+ Integer.valueOf(bigDecimal.intValue())
             case SLong   => acc :+ java.lang.Long.valueOf(bigDecimal.longValue())
@@ -73,8 +73,10 @@ class Runner {
             case SString => acc :+ bigDecimal.toPlainString
             case _       => acc
           }
-        case PArray(array) => array.flatMap(p => convertToParameterValue(p, acc))
-        case PEmpty        => acc
+        case PArray(array) =>
+          index = index - 1
+          array.flatMap(p => convertToParameterValue(p, acc))
+        case PEmpty => acc
       }
     }
 

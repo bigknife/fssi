@@ -201,18 +201,20 @@ class Checker {
 
     def convertToSParameterType(parameter: Contract.Parameter,
                                 acc: Array[SParameterType]): Array[SParameterType] = {
+      index = index + 1
       parameter match {
         case PString(_) => acc :+ SParameterType.SString
         case PBool(_)   => acc :+ SParameterType.SBoolean
         case PBigDecimal(_) =>
-          index = index + 1
           parameterTypes(index) match {
             case SParameterType.SBoolean => acc
             case SParameterType.SContext => acc
             case x                       => acc :+ x
           }
-        case PArray(array) => array.flatMap(p => convertToSParameterType(p, acc))
-        case PEmpty        => acc
+        case PArray(array) =>
+          index = index - 1
+          array.flatMap(p => convertToSParameterType(p, acc))
+        case PEmpty => acc
       }
     }
 
