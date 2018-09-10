@@ -1,6 +1,8 @@
 package fssi
 package sandbox
 package types
+import fssi.sandbox.counter.CostCounter
+import org.objectweb.asm.Type
 
 object Protocol {
 
@@ -31,4 +33,6 @@ object Protocol {
   lazy val allowedResourceFiles = Vector(contractFileName, versionFileName)
 
   lazy val forbiddenPackage = Vector("fssi")
+
+  lazy val counterInternalName: String = Type.getInternalName(classOf[CostCounter])
 }

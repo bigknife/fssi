@@ -35,8 +35,9 @@ class SandBoxTest extends FunSuite {
     val output     = "/Users/songwenchao/Documents/source/self/pratice/fssi_test/out"
     val outputFile = Paths.get(output).toFile
     val context    = new TestContext
-    val methodName = "function3"
-    val parameter  = PArray(PString("abcdefg"), PBigDecimal(1))
+    val methodName = "function0"
+    val parameter  = PEmpty
+//    val parameter = PArray(PString("haha"), PBigDecimal(123))
     sandBox.executeContract(context, outputFile, Method(methodName), parameter) match {
       case Right(_) => info("run finished")
       case Left(e)  => e.printStackTrace()
