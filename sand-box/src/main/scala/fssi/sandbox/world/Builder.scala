@@ -121,7 +121,9 @@ class Builder {
     if (cache.toFile.exists()) FileUtil.deleteDir(cache)
     cache.toFile.mkdirs()
     try {
-      val unzipDir = better.files.File(contractFile.toPath).unzipTo(cache)
+      val unzipDir = better.files
+        .File(contractFile.toPath)
+        .unzipTo(cache)(java.nio.charset.Charset.forName("utf-8"))
       val contractDescriptorFile = Paths
         .get(unzipDir.pathAsString, s"META-INF/$contractFileName")
         .toFile

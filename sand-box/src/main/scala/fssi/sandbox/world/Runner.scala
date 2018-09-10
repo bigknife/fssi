@@ -30,7 +30,9 @@ class Runner {
       try {
         val source = Paths.get(rootPath.toString, "source")
         if (!source.toFile.exists()) source.toFile.mkdirs()
-        better.files.File(contractFile.toPath).unzipTo(source)
+        better.files
+          .File(contractFile.toPath)
+          .unzipTo(source)(java.nio.charset.Charset.forName("utf-8"))
         val target = Paths.get(rootPath.toString, "target")
         if (!target.toFile.exists()) target.toFile.mkdirs()
         for {

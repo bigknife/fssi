@@ -3,6 +3,7 @@ package sandbox
 package world
 
 import java.io._
+import java.nio.charset.Charset
 import java.nio.file.{Path, Paths}
 
 import fssi.sandbox.exception.ContractCheckException
@@ -27,13 +28,14 @@ class Checker {
     * @return errors when check failed
     */
   def checkDeterminism(contractFile: File): Either[ContractCheckException, Unit] = {
+    logger.info(s"contract file path: $contractFile")
     if (contractFile.exists() && contractFile.isFile) {
       val rootPath = Paths.get(contractFile.getParent, "contractRoot")
       if (rootPath.toFile.exists()) FileUtil.deleteDir(rootPath)
       rootPath.toFile.mkdirs()
       val targetPath = Paths.get(rootPath.getParent.toString, "fssi")
       try {
-        better.files.File(contractFile.toPath).unzipTo(rootPath)
+        better.files.File(contractFile.toPath).unzipTo(rootPath)(Charset.forName("utf-8"))
         val track = scala.collection.mutable.ListBuffer.empty[String]
         if (!targetPath.toFile.exists()) targetPath.toFile.mkdirs()
         for {
@@ -43,7 +45,9 @@ class Checker {
           _ <- checkClasses(targetPath, track, checkClassLoader)
         } yield { if (targetPath.toFile.exists()) FileUtil.deleteDir(targetPath) }
       } catch {
-        case t: Throwable => Left(ContractCheckException(Vector(t.getMessage)))
+        case t: Throwable =>
+          t.printStackTrace()
+          Left(ContractCheckException(Vector(t.getMessage)))
       } finally {
         if (rootPath.toFile.exists()) FileUtil.deleteDir(rootPath)
         if (targetPath.toFile.exists()) FileUtil.deleteDir(targetPath)
@@ -58,7 +62,8 @@ class Checker {
                    track: ListBuffer[String],
                    checkClassLoader: FSSIClassLoader): Either[ContractCheckException, Unit] = {
     try {
-      val classFiles = FileUtil.findAllFiles(rootPath).filter(_.getAbsolutePath.endsWith(".class"))
+      val classFiles =
+        FileUtil.findAllFiles(rootPath).filter(file => file.getAbsolutePath.endsWith(".class"))
       classFiles.foreach { file =>
         val classFileName =
           file.getAbsolutePath.substring(rootPath.toString.length + 1).replace("/", ".")

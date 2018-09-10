@@ -20,11 +20,17 @@ object Protocol {
   )
 
   lazy val allowedClasses = Vector(
-    "^Ljava/lang/Object;"
-  )
-
-  lazy val ignoreClasses = Vector(
-    "^Lfssi/.*"
+    "^Ljava/lang/Object;",
+    "^Ljava/lang/String;",
+    "^Lfssi/.*",
+    "^\\[*C$",
+    "^\\[*Z$",
+    "^\\[*B$",
+    "^\\[*S$",
+    "^\\[*I$",
+    "^\\[*F$",
+    "^\\[*J$",
+    "^\\[*D$"
   )
 
   lazy val contractFileName = "contract"

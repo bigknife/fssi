@@ -32,26 +32,39 @@ case class CheckClassDeterminismVisitor(classLoader: FSSIClassLoader,
     currentClassDescriptor = Type.getObjectType(name).getDescriptor
     if (visitor != null) visitor.visit(version, access, name, signature, superName, interfaces)
     else super.visit(version, access, name, signature, superName, interfaces)
-    if (!ignoreClasses.contains(currentClassDescriptor)) {
-      if (!visitedClasses.contains(currentClassName)) {
-        visitedClasses += currentClassName
-        forbiddenClasses.find(classDescriptor =>
-          classDescriptor.r.pattern.matcher(currentClassDescriptor).matches()) match {
-          case Some(_) => track += s"class [$currentClassName] is forbidden"
-          case None    =>
-        }
-        forbiddenPackage.find(packName => currentClassName.startsWith(packName)) match {
-          case Some(_) => track += s"class [$currentClassName] is forbidden"
-          case None    =>
-        }
-        if (track.isEmpty && superName != null) {
-          val superClass = Type.getObjectType(superName).getClassName
-          if (!visitedClasses.contains(superClass)) {
-            visitedClasses += superClass
-            classLoader.findClass(superClass, "", Array.empty); ()
+    allowedClasses.find(
+      clazzName =>
+        clazzName.r.pattern
+          .matcher(currentClassDescriptor)
+          .matches()) match {
+      case Some(_) =>
+      case None =>
+        if (!visitedClasses.contains(currentClassName)) {
+          visitedClasses += currentClassName
+          forbiddenClasses.find(classDescriptor =>
+            classDescriptor.r.pattern.matcher(currentClassDescriptor).matches()) match {
+            case Some(_) => track += s"class [$currentClassName] is forbidden"
+            case None    =>
+          }
+          forbiddenPackage.find(packName => currentClassName.startsWith(packName)) match {
+            case Some(_) => track += s"class [$currentClassName] is forbidden"
+            case None    =>
+          }
+          if (track.isEmpty && superName != null) {
+            val superClass           = Type.getObjectType(superName).getClassName
+            val superClassDescriptor = Type.getObjectType(superName).getDescriptor
+            allowedClasses.find { clazzName =>
+              clazzName.r.pattern.matcher(superClassDescriptor).matches()
+            } match {
+              case Some(_) =>
+              case None =>
+                if (!visitedClasses.contains(superClass)) {
+                  visitedClasses += superClass
+                  classLoader.findClass(superClass, "", Array.empty); ()
+                }
+            }
           }
         }
-      }
     }
   }
 
@@ -71,8 +84,14 @@ case class CheckClassDeterminismVisitor(classLoader: FSSIClassLoader,
         track += s"class volatile field [$currentClassName.$name] is forbidden"
     }
 
-    val className = Type.getType(descriptor).getClassName
-    if (!visitedClasses.contains(className)) classLoader.findClass(className, "", Array.empty)
+    allowedClasses.find { clazz =>
+      clazz.r.pattern.matcher(descriptor).matches()
+    } match {
+      case Some(_) =>
+      case None =>
+        val className = Type.getType(descriptor).getClassName
+        if (!visitedClasses.contains(className)) classLoader.findClass(className, "", Array.empty)
+    }
     fieldVisitor
   }
 
