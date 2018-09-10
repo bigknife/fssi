@@ -1,7 +1,7 @@
 package fssi
 package sandbox
 package visitor
-
+package clazz
 import fssi.sandbox.types.SandBoxVersion
 import org.objectweb.asm.{ClassVisitor, Opcodes}
 

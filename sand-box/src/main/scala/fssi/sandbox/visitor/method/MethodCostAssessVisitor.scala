@@ -1,8 +1,10 @@
 package fssi
 package sandbox
 package visitor
-import org.objectweb.asm.{Label, MethodVisitor}
+package method
+
 import org.objectweb.asm.Opcodes._
+import org.objectweb.asm.{Label, MethodVisitor}
 
 class MethodCostAssessVisitor(methodVisitor: MethodVisitor)
     extends MethodVisitor(ASM6, methodVisitor) {

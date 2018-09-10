@@ -25,6 +25,8 @@ class Runner {
       contractFile: File,
       method: Method,
       parameters: Contract.Parameter): Either[ContractRunningException, Unit] = {
+    logger.info(
+      s"invoke contract method $method with params $parameters for contract $contractFile in context $context")
     if (contractFile.exists() && contractFile.isFile) {
       val rootPath = Paths.get(contractFile.getParent, UniqueName.randomUUID(false).value)
       try {
@@ -60,13 +62,22 @@ class Runner {
         }
       } catch {
         case t: Throwable =>
-          Left(ContractRunningException(Vector(t.getMessage)))
+          val error =
+            s"invoke contract method $method with params $parameters for contract $contractFile in context $context failed: ${t.getMessage}"
+          logger.error(error, t)
+          Left(ContractRunningException(Vector(error)))
       } finally { if (rootPath.toFile.exists()) FileUtil.deleteDir(rootPath) }
-    } else Left(ContractRunningException(Vector("contract must be a file assembled all files")))
+    } else {
+      val ex = ContractRunningException(
+        Vector(s"contract $contractFile must be a file assembled all files"))
+      logger.error(ex.getMessage, ex)
+      Left(ex)
+    }
   }
 
   private def extractParameterValues(parameterTypes: Array[SParameterType],
                                      parameters: Contract.Parameter): Array[AnyRef] = {
+    logger.info(s"extract params value from $parameters for $parameterTypes")
     import Contract.Parameter._
     var index = 0
 
