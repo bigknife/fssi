@@ -5,16 +5,20 @@ import java.io.File
 import java.nio.file.Paths
 
 import fssi.contract.lib.Context
+import fssi.sandbox.counter.CostCounter
 import fssi.sandbox.exception.ContractRunningException
 import fssi.sandbox.loader.ContractClassLoader
 import fssi.sandbox.types.SParameterType._
 import fssi.sandbox.types.{Method, SParameterType}
 import fssi.types.{Contract, UniqueName}
 import fssi.utils.FileUtil
+import org.slf4j.{Logger, LoggerFactory}
 
 class Runner {
 
   private lazy val builder = new Builder
+
+  private lazy val logger: Logger = LoggerFactory.getLogger(getClass)
 
   def invokeContractMethod(
       context: Context,
@@ -45,10 +49,16 @@ class Runner {
           contractMethod.setAccessible(true)
           contractMethod.invoke(instance, params: _*)
           contractMethod.setAccessible(accessible)
+          val throwCost      = CostCounter.throwCost
+          val allocationCost = CostCounter.allocationCost
+          val jumpCost       = CostCounter.jumpCost
+          val methodCallCost = CostCounter.methodCallCost
+          logger.info(
+            s"invoke contract method success,cost details: \n[\nmethodCallCost: $methodCallCost\nallocationCost: $allocationCost\njumpCost: $jumpCost\nthrowCost: $throwCost\n]")
         }
       } catch {
         case t: Throwable =>
-          Left(ContractRunningException(Vector(s"${t.getCause}")))
+          Left(ContractRunningException(Vector(t.getMessage)))
       } finally { if (rootPath.toFile.exists()) FileUtil.deleteDir(rootPath) }
     } else Left(ContractRunningException(Vector("contract must be a file assembled all files")))
   }

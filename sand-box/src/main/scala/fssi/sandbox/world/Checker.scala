@@ -135,7 +135,7 @@ class Checker {
       val methods = lines.map(_.split("\\s*=\\s*")).foldLeft(Vector.empty[Method]) { (acc, n) =>
         n match {
           case Array(alias, methodDesc) =>
-            logger.info(s"smart contract exposes method [$alias = $methodDesc]")
+            logger.debug(s"smart contract exposes method [$alias = $methodDesc]")
             methodDesc.split("#") match {
               case Array(className, methodAssign) =>
                 val leftIndex  = methodAssign.indexOf("(")
@@ -218,14 +218,20 @@ class Checker {
       }
     }
 
-    val receiptParameterType = SParameterType.SContext +: convertToSParameterType(params,
-                                                                                  Array.empty)
-    val receiptParameterTypeNames  = receiptParameterType.map(_.`type`.getName)
-    val contractParameterTypeNames = parameterTypes.map(_.`type`.getName)
-    if (receiptParameterTypeNames sameElements contractParameterTypeNames) Right(())
-    else
-      Left(ContractCheckException(Vector(
-        s"receipted method parameter type: ${receiptParameterTypeNames.mkString("(", ",", ")")} not coordinated with contract method parameter type: ${contractParameterTypeNames
-          .mkString("(", ",", ")")}")))
+    params match {
+      case PArray(array) if array.length != parameterTypes.length - 1 =>
+        Left(ContractCheckException(Vector(
+          s"receipted method parameter amount ${array.length} is not coordinated with contract method parameter amount ${parameterTypes.length}")))
+      case x =>
+        val receiptParameterType = SParameterType.SContext +: convertToSParameterType(x,
+                                                                                      Array.empty)
+        val receiptParameterTypeNames  = receiptParameterType.map(_.`type`.getName)
+        val contractParameterTypeNames = parameterTypes.map(_.`type`.getName)
+        if (receiptParameterTypeNames sameElements contractParameterTypeNames) Right(())
+        else
+          Left(ContractCheckException(Vector(
+            s"receipted method parameter type: ${receiptParameterTypeNames.mkString("(", ",", ")")} not coordinated with contract method parameter type: ${contractParameterTypeNames
+              .mkString("(", ",", ")")}")))
+    }
   }
 }
