@@ -28,7 +28,7 @@ class Checker {
     * @return errors when check failed
     */
   def checkDeterminism(contractFile: File): Either[ContractCheckException, Unit] = {
-    logger.info(s"contract file path: $contractFile")
+    logger.info(s"check contract determinism for contract file $contractFile")
     if (contractFile.exists() && contractFile.isFile) {
       val rootPath = Paths.get(contractFile.getParent, "contractRoot")
       if (rootPath.toFile.exists()) FileUtil.deleteDir(rootPath)
@@ -46,21 +46,26 @@ class Checker {
         } yield { if (targetPath.toFile.exists()) FileUtil.deleteDir(targetPath) }
       } catch {
         case t: Throwable =>
-          t.printStackTrace()
-          Left(ContractCheckException(Vector(t.getMessage)))
+          val error = s"check contract determinism occurs error: ${t.getMessage}"
+          logger.error(error, t)
+          Left(ContractCheckException(Vector(error)))
       } finally {
         if (rootPath.toFile.exists()) FileUtil.deleteDir(rootPath)
         if (targetPath.toFile.exists()) FileUtil.deleteDir(targetPath)
       }
-    } else
-      Left(
-        ContractCheckException(
-          Vector("contract file not found: contract must be a file assembled all of class files")))
+    } else {
+      val error =
+        s"to check determinism contract file $contractFile not found: contract must be a file assembled all of class files"
+      val ex = ContractCheckException(Vector(error))
+      logger.error(error, ex)
+      Left(ex)
+    }
   }
 
   def checkClasses(rootPath: Path,
                    track: ListBuffer[String],
                    checkClassLoader: FSSIClassLoader): Either[ContractCheckException, Unit] = {
+    logger.info(s"check contract class at path: $rootPath")
     try {
       val classFiles =
         FileUtil.findAllFiles(rootPath).filter(file => file.getAbsolutePath.endsWith(".class"))
@@ -71,9 +76,16 @@ class Checker {
         checkClassLoader.findClassFromClassFile(file, className, "", Array.empty)
       }
       if (track.isEmpty) Right(())
-      else Left(ContractCheckException(track.toVector))
+      else {
+        val ex = ContractCheckException(track.toVector)
+        logger.error(ex.getMessage, ex)
+        Left(ex)
+      }
     } catch {
-      case t: Throwable => Left(ContractCheckException(Vector(t.getMessage)))
+      case t: Throwable =>
+        val error = s"check contract class at path: $rootPath occurs error: ${t.getMessage}"
+        logger.error(error, t)
+        Left(ContractCheckException(Vector(error)))
     }
   }
 
@@ -81,30 +93,42 @@ class Checker {
       rootPath: Path,
       track: ListBuffer[String],
       checkClassLoader: FSSIClassLoader): Either[ContractCheckException, Unit] = {
+    logger.info(s"check contract method at path: $rootPath")
     import fssi.sandbox.types.Protocol._
     try {
       val contract = Paths.get(rootPath.toString, s"META-INF/$contractFileName").toFile
-      if (!contract.exists() || !contract.isFile)
-        Left(ContractCheckException(Vector(s"META-INF/$contractFileName file not found")))
-      else {
+      if (!contract.exists() || !contract.isFile) {
+        val error = s"check contract method: file $contract not found"
+        logger.error(error)
+        Left(ContractCheckException(Vector(error)))
+      } else {
         checkContractDescriptor(contract).flatMap { ms =>
           ms.foreach(m =>
             checkClassLoader.findClass(m.className, m.methodName, m.parameterTypes.map(_.`type`)))
           if (track.isEmpty) Right(())
-          else Left(ContractCheckException(track.toVector))
+          else {
+            val ex = ContractCheckException(track.toVector)
+            logger.error(ex.getMessage, ex)
+            Left(ex)
+          }
         }
       }
     } catch {
-      case t: Throwable => Left(ContractCheckException(Vector(t.getMessage)))
+      case t: Throwable =>
+        val error = s"check contract method at path: $rootPath occurs error: ${t.getMessage}"
+        logger.error(error, t)
+        Left(ContractCheckException(Vector(error)))
     }
   }
 
   def isProjectStructureValid(rootPath: Path): Boolean = {
+    logger.info(s"check project structure at path: $rootPath")
     Paths.get(rootPath.toString, "src/main/java").toFile.isDirectory &&
     Paths.get(rootPath.toString, "src/main/resources/META-INF").toFile.isDirectory
   }
 
   def isResourceFilesInValid(resourcesRoot: Path, resourceFiles: Vector[File]): Vector[String] = {
+    logger.info(s"check resource files validity at path: $resourcesRoot")
     import fssi.sandbox.types.Protocol._
     resourceFiles
       .map(_.getAbsolutePath)
@@ -117,6 +141,7 @@ class Checker {
 
   def isResourceContractFilesInvalid(resourcesRoot: Path,
                                      resourceFiles: Vector[File]): Vector[String] = {
+    logger.info(s"check contract required files validity at path: $resourcesRoot")
     import fssi.sandbox.types.Protocol._
     allowedResourceFiles.foldLeft(Vector.empty[String]) { (acc, n) =>
       val existed = resourceFiles.map(_.getAbsolutePath).exists { filePath =>
@@ -130,6 +155,7 @@ class Checker {
 
   def checkContractDescriptor(
       contractDescriptorFile: File): Either[ContractCheckException, Vector[Method]] = {
+    logger.info(s"check contract method description for descriptor file $contractDescriptorFile")
     if (contractDescriptorFile.exists() && contractDescriptorFile.isFile) {
       val track  = scala.collection.mutable.ListBuffer.empty[String]
       val reader = new BufferedReader(new FileReader(contractDescriptorFile))
@@ -178,29 +204,45 @@ class Checker {
           }
         }
         if (errors.isEmpty) Right(methods)
-        else Left(ContractCheckException(errors))
-      } else Left(ContractCheckException(track.toVector))
-    } else
-      Left(
-        ContractCheckException(
-          Vector(s"contract descriptor must be a file: ${contractDescriptorFile.toString}")))
+        else {
+          val ex = ContractCheckException(errors)
+          logger.error(ex.getMessage, ex)
+          Left(ex)
+        }
+      } else {
+        val ex = ContractCheckException(track.toVector)
+        logger.error(ex.getMessage, ex)
+        Left(ex)
+      }
+    } else {
+      val error = s"check contract method descriptor file not found: $contractDescriptorFile"
+      val ex    = ContractCheckException(Vector(error))
+      logger.error(error, ex)
+      Left(ex)
+    }
   }
 
   private[sandbox] def isContractMethodExisted(
       method: Contract.Method,
       params: Contract.Parameter,
       methods: Vector[Method]): Either[ContractCheckException, Unit] = {
+    logger.info(s"check contract method $method whether existed for params $params")
     methods.find(_.alias == method.alias) match {
       case Some(m) => isContractMethodParameterTypeMatched(params, m.parameterTypes)
       case None =>
-        Left(ContractCheckException(Vector(
-          s"method ${method.alias} not existed,exposed method: ${methods.mkString("\n[", "\n", "\n]")}")))
+        val error =
+          s"method ${method.alias} not existed,exposed method: ${methods.mkString("\n[", "\n", "\n]")}"
+        val ex = ContractCheckException(Vector(error))
+        logger.error(error, ex)
+        Left(ex)
     }
   }
 
   private def isContractMethodParameterTypeMatched(
       params: Contract.Parameter,
       parameterTypes: Array[SParameterType]): Either[ContractCheckException, Unit] = {
+    logger.info(
+      s"check contract method parameter type matched, params: $params, contract descriptor params types: $parameterTypes")
     import fssi.types.Contract.Parameter._
     var index = 0
 
@@ -225,18 +267,24 @@ class Checker {
 
     params match {
       case PArray(array) if array.length != parameterTypes.length - 1 =>
-        Left(ContractCheckException(Vector(
-          s"receipted method parameter amount ${array.length} is not coordinated with contract method parameter amount ${parameterTypes.length}")))
+        val error =
+          s"receipted method parameter amount ${array.length} is not coordinated with contract method parameter amount ${parameterTypes.length}"
+        val ex = ContractCheckException(Vector(error))
+        logger.error(error, ex)
+        Left(ex)
       case x =>
         val receiptParameterType = SParameterType.SContext +: convertToSParameterType(x,
                                                                                       Array.empty)
         val receiptParameterTypeNames  = receiptParameterType.map(_.`type`.getName)
         val contractParameterTypeNames = parameterTypes.map(_.`type`.getName)
         if (receiptParameterTypeNames sameElements contractParameterTypeNames) Right(())
-        else
-          Left(ContractCheckException(Vector(
+        else {
+          val ex = ContractCheckException(Vector(
             s"receipted method parameter type: ${receiptParameterTypeNames.mkString("(", ",", ")")} not coordinated with contract method parameter type: ${contractParameterTypeNames
-              .mkString("(", ",", ")")}")))
+              .mkString("(", ",", ")")}"))
+          logger.error(ex.getMessage, ex)
+          Left(ex)
+        }
     }
   }
 }

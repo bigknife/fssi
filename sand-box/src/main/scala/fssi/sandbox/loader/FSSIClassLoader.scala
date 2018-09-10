@@ -6,6 +6,7 @@ import java.io.{File, FileInputStream}
 import java.nio.file.{Path, Paths}
 
 import fssi.sandbox.visitor._
+import fssi.sandbox.visitor.clazz.CheckClassDeterminismVisitor
 import org.objectweb.asm._
 
 class FSSIClassLoader(val path: Path, val track: scala.collection.mutable.ListBuffer[String])

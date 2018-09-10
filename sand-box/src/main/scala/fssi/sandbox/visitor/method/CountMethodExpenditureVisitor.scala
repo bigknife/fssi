@@ -1,10 +1,12 @@
 package fssi
 package sandbox
 package visitor
-import org.objectweb.asm.{ClassVisitor, MethodVisitor}
-import org.objectweb.asm.Opcodes._
+package method
 
-class CountExpenditureVisitor(val visitor: ClassVisitor) extends ClassVisitor(ASM6, visitor) {
+import org.objectweb.asm.Opcodes._
+import org.objectweb.asm.{ClassVisitor, MethodVisitor}
+
+class CountMethodExpenditureVisitor(val visitor: ClassVisitor) extends ClassVisitor(ASM6, visitor) {
 
   override def visit(version: Int,
                      access: Int,

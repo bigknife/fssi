@@ -4,7 +4,7 @@ package loader
 import java.io.{File, FileInputStream}
 import java.nio.file.{Path, Paths}
 
-import fssi.sandbox.visitor.CountExpenditureVisitor
+import fssi.sandbox.visitor.method.CountMethodExpenditureVisitor
 import org.objectweb.asm.{ClassReader, ClassWriter, Opcodes}
 
 import scala.util.Try
@@ -36,7 +36,7 @@ class ContractClassLoader(path: Path) extends ClassLoader {
   private def evaluateClass(className: String): Class[_] = {
     val classReader  = new ClassReader(className)
     val classWriter  = new ClassWriter(0)
-    val countVisitor = new CountExpenditureVisitor(classWriter)
+    val countVisitor = new CountMethodExpenditureVisitor(classWriter)
     classReader.accept(countVisitor, 0)
     val array = classWriter.toByteArray
     defineClass(null, array, 0, array.length)
@@ -45,7 +45,7 @@ class ContractClassLoader(path: Path) extends ClassLoader {
   private def evaluateClassFile(classFile: File): Class[_] = {
     val classReader  = new ClassReader(new FileInputStream(classFile))
     val classWriter  = new ClassWriter(0)
-    val countVisitor = new CountExpenditureVisitor(classWriter)
+    val countVisitor = new CountMethodExpenditureVisitor(classWriter)
     classReader.accept(countVisitor, 0)
     val array = classWriter.toByteArray
     defineClass(null, array, 0, array.length)
