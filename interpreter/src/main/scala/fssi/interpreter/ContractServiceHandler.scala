@@ -97,6 +97,27 @@ class ContractServiceHandler extends ContractService.Handler[Stack] {
             s"can not find method ${method.alias} in contract ${contract.name.value}#${contract.version.value}")))
       }
     }
+
+  override def measureCostToPublishContract(
+      publishContract: Transaction.PublishContract): Stack[Token] =
+    Stack {
+      Token(amount = BigInt(0), tokenUnit = Token.Unit.Sweet)
+    }
+
+  override def measureCostToRunContract(contract: Contract.UserContract): Stack[Token] =
+    Stack {
+      Token(amount = BigInt(0), tokenUnit = Token.Unit.Sweet)
+    }
+
+  override def measureCostToTransfer(transferedToken: Token): Stack[Token] =
+    Stack {
+      Token(amount = BigInt(0), tokenUnit = Token.Unit.Sweet)
+    }
+
+  override def getContractGlobalIdentifiedName(contract: Contract.UserContract): Stack[String] =
+    Stack {
+      s"${contract.name.value}#${contract.version.value}"
+    }
 }
 
 object ContractServiceHandler {

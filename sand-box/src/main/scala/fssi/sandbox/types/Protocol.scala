@@ -6,7 +6,9 @@ import org.objectweb.asm.Type
 
 object Protocol {
 
-  lazy val version = "0.0.1"
+  lazy val majVersion     = 1
+  lazy val version        = s"$majVersion.0.0"
+  lazy val majJavaVersion = 8
 
   lazy val contractSize: Long = 1024 * 200
 
