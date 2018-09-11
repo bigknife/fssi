@@ -1,6 +1,8 @@
 package fssi
 package sandbox
 package types
+import fssi.sandbox.counter.CostCounter
+import org.objectweb.asm.Type
 
 object Protocol {
 
@@ -8,7 +10,7 @@ object Protocol {
 
   lazy val contractSize: Long = 1024 * 200
 
-  lazy val forbiddenClasses = Vector(
+  lazy val forbiddenDescriptor = Vector(
     "^Ljava/util/concurrent.*",
     "^Ljava/lang/reflect.*",
     "^Ljava/lang/Thread;",
@@ -19,12 +21,18 @@ object Protocol {
     "^Ljava/sql.*"
   )
 
-  lazy val allowedClasses = Vector(
-    "^Ljava/lang/Object;"
-  )
-
-  lazy val ignoreClasses = Vector(
-    "^Lfssi/.*"
+  lazy val ignoreDescriptors = Vector(
+    "^Ljava/lang/Object;",
+    "^Ljava/lang/String;",
+    "^Lfssi/.*",
+    "^\\[*C$",
+    "^\\[*Z$",
+    "^\\[*B$",
+    "^\\[*S$",
+    "^\\[*I$",
+    "^\\[*F$",
+    "^\\[*J$",
+    "^\\[*D$"
   )
 
   lazy val contractFileName = "contract"
@@ -33,4 +41,6 @@ object Protocol {
   lazy val allowedResourceFiles = Vector(contractFileName, versionFileName)
 
   lazy val forbiddenPackage = Vector("fssi")
+
+  lazy val counterInternalName: String = Type.getInternalName(classOf[CostCounter])
 }

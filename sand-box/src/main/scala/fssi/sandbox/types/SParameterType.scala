@@ -43,5 +43,3 @@ object SParameterType {
       throw new IllegalArgumentException(s"unsupported contract method parameter type: $x")
   }
 }
-
-sealed trait SParameter {}

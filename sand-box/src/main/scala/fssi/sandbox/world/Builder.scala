@@ -6,20 +6,24 @@ import java.nio.file.{Files, Path, Paths}
 
 import fssi.sandbox.exception.{ContractBuildException, ContractCheckException}
 import fssi.sandbox.types.SandBoxVersion
-import fssi.sandbox.visitor.DegradeClassVersionVisitor
+import fssi.sandbox.visitor.clazz.DegradeClassVersionVisitor
 import fssi.types.Contract.{Meta, Method}
 import fssi.types._
 import fssi.utils.FileUtil
 import org.objectweb.asm.{ClassReader, ClassWriter}
+import org.slf4j.{Logger, LoggerFactory}
 
 import scala.collection.immutable.TreeSet
 
 class Builder {
 
+  private lazy val logger: Logger = LoggerFactory.getLogger(getClass)
+
   private lazy val checker = new Checker
 
   def degradeClassVersion(rootPath: Path,
                           targetPath: Path): Either[ContractCheckException, Unit] = {
+    logger.info(s"degrade class version for dir: $rootPath saved to $targetPath")
     try {
       val metaInfoPath = Paths.get(targetPath.toString, "META-INF")
       if (metaInfoPath.toFile.exists()) metaInfoPath.toFile.delete()
@@ -76,9 +80,16 @@ class Builder {
         } else acc :+ s"class file ${classFile.getAbsolutePath} can not read"
       }
       if (degradeErrors.isEmpty) Right(())
-      else Left(ContractCheckException(degradeErrors))
+      else {
+        val ex = ContractCheckException(degradeErrors)
+        logger.error(ex.getMessage, ex)
+        Left(ex)
+      }
     } catch {
-      case t: Throwable => Left(ContractCheckException(Vector(t.getMessage)))
+      case t: Throwable =>
+        val error = s"degrade class version occurs error: ${t.getMessage}"
+        logger.error(error, t)
+        Left(ContractCheckException(Vector(error)))
     }
   }
 
@@ -87,6 +98,8 @@ class Builder {
       file: File,
       name: UniqueName,
       version: Version): Either[ContractBuildException, Contract.UserContract] = {
+    logger.info(
+      s"build contract ${name.value} from file: $file for account: ${accountId.value} at version: ${version.value}")
     if (file.exists() && file.isFile) {
       for {
         methods <- buildContractMethod(file)
@@ -115,20 +128,26 @@ class Builder {
           signature = Signature.empty
         )
       }
-    } else
-      Left(
-        ContractBuildException(
-          Vector("contract must be a file assembled all class files and contract descriptor")))
+    } else {
+      val error =
+        s"to build contract from file $file not found: contract must be a file assembled all class files and contract descriptor"
+      val ex = ContractBuildException(Vector(error))
+      logger.error(error, ex)
+      Left(ex)
+    }
   }
 
   private[sandbox] def buildContractMethod(
       contractFile: File): Either[ContractBuildException, Vector[fssi.sandbox.types.Method]] = {
+    logger.info(s"build contract method from contract file: $contractFile")
     import fssi.sandbox.types.Protocol._
     val cache = Paths.get(contractFile.getParent, "cache")
     if (cache.toFile.exists()) FileUtil.deleteDir(cache)
     cache.toFile.mkdirs()
     try {
-      val unzipDir = better.files.File(contractFile.toPath).unzipTo(cache)
+      val unzipDir = better.files
+        .File(contractFile.toPath)
+        .unzipTo(cache)(java.nio.charset.Charset.forName("utf-8"))
       val contractDescriptorFile = Paths
         .get(unzipDir.pathAsString, s"META-INF/$contractFileName")
         .toFile
@@ -139,7 +158,11 @@ class Builder {
           .map(x => ContractBuildException(x.messages))
       } yield methods
     } catch {
-      case t: Throwable => Left(ContractBuildException(Vector(t.getMessage)))
+      case t: Throwable =>
+        val error =
+          s"build contract method from contract descriptor file occurs error: ${t.getMessage}"
+        logger.error(error, t)
+        Left(ContractBuildException(Vector(error)))
     } finally { if (cache.toFile.exists()) FileUtil.deleteDir(cache) }
   }
 }

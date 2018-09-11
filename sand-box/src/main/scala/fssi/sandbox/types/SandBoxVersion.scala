@@ -4,7 +4,7 @@ package types
 
 import scala.util.control.Exception._
 
-private[sandbox] case class SandBoxVersion(maj: Int, min: Int, patch: Int) {
+case class SandBoxVersion(maj: Int, min: Int, patch: Int) {
 
   def gteTo(version: SandBoxVersion): Boolean =
     maj >= version.maj || (maj == version.maj && min >= version.min) || (version.maj == maj && version.min == min && patch >= version.patch)

@@ -6,6 +6,7 @@ import java.io.{File, FileInputStream}
 import java.nio.file.{Path, Paths}
 
 import fssi.sandbox.visitor._
+import fssi.sandbox.visitor.clazz.CheckClassDeterminismVisitor
 import org.objectweb.asm._
 
 class FSSIClassLoader(val path: Path, val track: scala.collection.mutable.ListBuffer[String])
@@ -40,7 +41,7 @@ class FSSIClassLoader(val path: Path, val track: scala.collection.mutable.ListBu
                              parameterTypes: Array[Class[_]]): Class[_] = {
     if (cache.contains(name) && methodName.isEmpty) cache(name)
     else {
-      if (!classFile.canRead) {
+      if (!name.startsWith("java") && !classFile.canRead) {
         track += s"${classFile.getAbsolutePath} can't be read"
         null
       } else {
