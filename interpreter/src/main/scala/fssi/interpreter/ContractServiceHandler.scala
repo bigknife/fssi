@@ -47,8 +47,9 @@ class ContractServiceHandler extends ContractService.Handler[Stack] {
     */
   override def createContextInstance(sqlStore: SqlStore,
                                      kvStore: KVStore,
-                                     tokenQuery: TokenQuery): Stack[Context] = Stack { setting =>
-    ContractRunningContext(sqlStore, kvStore, tokenQuery)
+                                     tokenQuery: TokenQuery,
+                                     currentAccountId: String): Stack[Context] = Stack { setting =>
+    ContractRunningContext(sqlStore, kvStore, tokenQuery, currentAccountId)
   }
 
   override def createUserContractFromContractFile(

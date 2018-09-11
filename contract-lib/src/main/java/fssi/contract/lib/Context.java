@@ -19,4 +19,8 @@ public interface Context {
      */
     TokenQuery tokenQuery();
 
+    /**
+     * get current invoker's account id
+     */
+    String currentAccountId();
 }

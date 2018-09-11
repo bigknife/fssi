@@ -25,7 +25,8 @@ import java.io._
     */
   def createContextInstance(sqlStore: SqlStore,
                             kvStore: KVStore,
-                            tokenQuery: TokenQuery): P[F, Context]
+                            tokenQuery: TokenQuery,
+                            currentAccountId: String): P[F, Context]
 
   /** invoke a contract
     */

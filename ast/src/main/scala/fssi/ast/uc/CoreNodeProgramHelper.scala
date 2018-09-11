@@ -69,7 +69,7 @@ private[uc] trait CoreNodeProgramHelper[F[_]] extends BaseProgram[F] {
                          runContract: Transaction.RunContract): SP[F, Either[Throwable, Unit]] = {
     import contractService._
     import contractStore._
-    import contractDataStore._    
+    import contractDataStore._
     import tokenStore._
 
     for {
@@ -83,7 +83,10 @@ private[uc] trait CoreNodeProgramHelper[F[_]] extends BaseProgram[F] {
           sqlStore   <- prepareSqlStoreFor(height, contractOpt.get)
           kvStore    <- prepareKeyValueStoreFor(height, contractOpt.get)
           tokenQuery <- prepareTokenQueryFor(height, contractOpt.get)
-          context    <- createContextInstance(sqlStore, kvStore, tokenQuery)
+          context <- createContextInstance(sqlStore,
+                                           kvStore,
+                                           tokenQuery,
+                                           runContract.sender.value.toString)
           result <- invokeUserContract(context,
                                        contractOpt.get,
                                        runContract.contractMethod,
