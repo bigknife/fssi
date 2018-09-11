@@ -33,9 +33,9 @@ class Compiler {
     * @return errors if compiled failed
     */
   def compileContract(rootPath: Path,
-                      version: String,
+                      sandBoxVersion: String,
                       outputFile: File): Either[ContractCompileException, Unit] = {
-    logger.info(s"compile contract under path $rootPath at version $version saved to $outputFile")
+    logger.info(s"compile contract under path $rootPath at version $sandBoxVersion saved to $outputFile")
     if (rootPath.toFile.exists() && rootPath.toFile.isDirectory) {
       if (outputFile.exists() && outputFile.isFile) FileUtil.deleteDir(outputFile.toPath)
       val out =
@@ -88,10 +88,10 @@ class Compiler {
                         .map(x => ContractCompileException(x.messages))
                     }
                     .flatMap { _ =>
-                      SandBoxVersion(version) match {
-                        case Some(sandBoxVersion) =>
-                          upgradeAndZipContract(out.toPath, sandBoxVersion, outputFile).flatMap {
-                            _ =>
+                      SandBoxVersion(sandBoxVersion) match {
+                        case Some(boxVersion) =>
+                          if (checker.isSandBoxVersionValid(boxVersion))
+                            upgradeAndZipContract(out.toPath, boxVersion, outputFile).flatMap { _ =>
                               import fssi.sandbox.types.Protocol._
                               val outputFileSize = outputFile.length()
                               if (outputFileSize > contractSize) {
@@ -102,10 +102,16 @@ class Compiler {
                                 logger.error(error, ex)
                                 Left(ex)
                               } else Right(())
+                            } else {
+                            val error =
+                              s"compile contract failed: sandbox version $sandBoxVersion is greater than current version ${SandBoxVersion.currentVersion}"
+                            val ex = ContractCompileException(Vector(error))
+                            logger.error(error, ex)
+                            Left(ex)
                           }
                         case None =>
                           val error =
-                            s"java version $version not support,correct version must between 6 and 10"
+                            s"sandbox version $sandBoxVersion not support,the latest version is ${SandBoxVersion.currentVersion}"
                           val ex = ContractCompileException(Vector(error))
                           logger.error(error, ex)
                           Left(ex)
@@ -155,7 +161,6 @@ class Compiler {
       val javaCompiler    = ToolProvider.getSystemJavaCompiler
       val javaFileManager = javaCompiler.getStandardFileManager(null, null, null)
       val libPath         = Paths.get(rootPath.toString, "lib")
-//      var classPath       = System.getProperty("java.class.path")
       val classPath = if (libPath.toFile.isDirectory) {
         libPath.toFile
           .list((dir: File, name: String) => name.endsWith(".jar"))
@@ -214,7 +219,7 @@ class Compiler {
       sandBoxVersion: SandBoxVersion,
       outputFile: File): Either[ContractCompileException, Unit] = {
     logger.info(
-      s"upgrade contract class from version ${sandBoxVersion.value} and zip to file $outputFile")
+      s"upgrade contract class from version $sandBoxVersion and zip to file $outputFile")
     if (outputFile.exists() && outputFile.isDirectory) {
       val error = s"compiled contract output file $outputFile can not be a directory"
       val ex    = ContractCompileException(Vector(error))
@@ -236,6 +241,7 @@ class Compiler {
           val classPath = classFile.getAbsolutePath
           val entryPath = classPath.substring(outPath.toString.length + 1)
           zipOut.putNextEntry(new ZipEntry(entryPath))
+          zipOut.write(sandBoxVersion.toString.getBytes("utf-8"))
           val array = cw.toByteArray
           zipOut.write(array, 0, array.length)
           zipOut.closeEntry()

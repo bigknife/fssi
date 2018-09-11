@@ -19,13 +19,18 @@ import Bytes.implicits._
 import better.files.{File => ScalaFile, _}
 import java.io._
 import java.nio.file.Paths
-import java.util.UUID
 
 import fssi.sandbox.exception.ContractRunningException
 
 class ContractServiceHandler extends ContractService.Handler[Stack] {
 
   val sandbox = new fssi.sandbox.SandBox
+
+  /** check current contract running environment
+    */
+  override def checkRunningEnvironment(): Stack[Either[FSSIException, Unit]] = Stack { setting =>
+    sandbox.checkRunningEnvironment
+  }
 
   /** check the smart contract project to see where it is full-deterministic or not
     */
@@ -47,8 +52,9 @@ class ContractServiceHandler extends ContractService.Handler[Stack] {
     */
   override def createContextInstance(sqlStore: SqlStore,
                                      kvStore: KVStore,
-                                     tokenQuery: TokenQuery): Stack[Context] = Stack { setting =>
-    ContractRunningContext(sqlStore, kvStore, tokenQuery)
+                                     tokenQuery: TokenQuery,
+                                     currentAccountId: String): Stack[Context] = Stack { setting =>
+    ContractRunningContext(sqlStore, kvStore, tokenQuery, currentAccountId)
   }
 
   override def createUserContractFromContractFile(

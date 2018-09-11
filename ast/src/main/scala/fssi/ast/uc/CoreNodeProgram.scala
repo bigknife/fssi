@@ -23,10 +23,13 @@ trait CoreNodeProgram[F[_]] extends BaseProgram[F] with CoreNodeProgramHelper[F]
     import tokenStore._
     import contractStore._
     import contractDataStore._
+    import contractService._
     import blockStore._
     import log._
 
     for {
+      envCheck                <- checkRunningEnvironment()
+      _                       <- err.either(envCheck)
       _                       <- info(s"starting core node at $dataDir")
       _                       <- initializeBlockStore(dataDir)
       _                       <- info("  initialized block store")

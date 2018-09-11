@@ -13,12 +13,9 @@ case class UpgradeClassVersionVisitor(visitor: ClassVisitor, sandBoxVersion: San
                      signature: String,
                      superName: String,
                      interfaces: Array[_root_.java.lang.String]): Unit = {
-    val boxVersion = sandBoxVersion.toInnerVersion
-    if (boxVersion.isVersionValid) {
-      if (visitor != null)
-        visitor.visit(boxVersion.value, access, name, signature, superName, interfaces)
-      else super.visit(boxVersion.value, access, name, signature, superName, interfaces)
-    } else
-      throw new IllegalArgumentException(s"sandbox version ${sandBoxVersion.value} is not support")
+    val innerVersion = sandBoxVersion.toInnerVersion(version)
+    if (visitor != null)
+      visitor.visit(innerVersion, access, name, signature, superName, interfaces)
+    else super.visit(innerVersion, access, name, signature, superName, interfaces)
   }
 }

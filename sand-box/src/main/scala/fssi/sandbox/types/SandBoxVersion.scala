@@ -4,30 +4,40 @@ package types
 
 import scala.util.control.Exception._
 
-private[sandbox] case class SandBoxVersion(value: Int) {
+case class SandBoxVersion(maj: Int, min: Int, patch: Int) {
 
-  private lazy val STEPPER: Int = 1000
+  def gteTo(version: SandBoxVersion): Boolean =
+    maj >= version.maj || (maj == version.maj && min >= version.min) || (version.maj == maj && version.min == min && patch >= version.patch)
 
-  def isVersionValid: Boolean = SandBoxVersion.majVersionRange.contains(toOuterVersion.value)
+  def lteTo(version: SandBoxVersion): Boolean =
+    maj <= version.maj || (version.maj == maj && min <= version.min) || (version.maj == maj && version.min == min && patch <= version.patch)
 
-  def toInnerVersion: SandBoxVersion = SandBoxVersion(value = value + STEPPER)
+  def toInnerVersion(underlyingVersion: Int): Int = underlyingVersion + maj * 100 + min * 10 + patch
 
-  def toOuterVersion: SandBoxVersion = SandBoxVersion(value = value - STEPPER)
+  def toOuterVersion(innVersion: Int): Int = innVersion - maj * 100 - min * 10 - patch
+
+  def supportHighestJavaVersion: Int = SandBoxVersion.supportHighestJavaVersion(this)
+
+  override def toString: String = s"$maj.$min.$patch"
 }
 
 object SandBoxVersion {
 
-  lazy val javaVersionRange: Range = 6 to 10
-  lazy val majVersionRange: Range  = 50 to 54
+  import Protocol._
 
-  private lazy val majVersionMap: IndexedSeq[(Int, Int)] = javaVersionRange.zip(majVersionRange)
+  private[sandbox] lazy val currentVersion = SandBoxVersion(version).get
 
-  def apply(value: String): Option[SandBoxVersion] = value match {
-    case i
-        if allCatch
-          .opt(i.toInt)
-          .isDefined && javaVersionRange.contains(i.toInt) =>
-      Some(SandBoxVersion(majVersionMap.find(v => v._1 == i.toInt).get._2))
+  def apply(value: String): Option[SandBoxVersion] = value.split("\\.") match {
+    case Array(maj, min, patch)
+        if allCatch.opt(maj.toInt).isDefined && allCatch.opt(min.toInt).isDefined && allCatch
+          .opt(patch.toInt)
+          .isDefined =>
+      Some(SandBoxVersion(maj.toInt, min.toInt, patch.toInt))
     case _ => None
   }
+
+  private[SandBoxVersion] lazy val javaVersionMatch = Map(0 -> 8)
+
+  def supportHighestJavaVersion(sandBoxVersion: SandBoxVersion): Int =
+    javaVersionMatch(sandBoxVersion.maj)
 }

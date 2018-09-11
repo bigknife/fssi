@@ -152,7 +152,7 @@ object Common {
             licenses += ("Apache-2.0", url("https://opensource.org/licenses/Apache-2.0")),
             bintrayRepository := "fssi",
             organization := "fssi",
-            version := "0.0.1-beta"
+            version := "0.0.2-beta"
           )
     }
 

@@ -15,4 +15,9 @@ public class DummyContext implements Context {
     public TokenQuery tokenQuery() {
         throw new UnsupportedOperationException("No Contract Context Provider Found");
     }
+
+    @Override
+    public String currentAccountId() {
+        throw new UnsupportedOperationException("No Contract Context Provider Found");
+    }
 }
