@@ -112,10 +112,14 @@ trait ToolProgram[F[_]] extends BaseProgram[F] {
                                                                  contractFile,
                                                                  contractName,
                                                                  contractVersion)
-      userContract             <- err.either(userContractOrFailed)
-      publishContractNotSigned <- createUnsignedPublishContractTransaction(account.id, userContract)
-      unsignedBytes            <- calculateSingedBytesOfTransaction(publishContractNotSigned)
-      signature                <- makeSignature(unsignedBytes, privateKey)
+      userContract              <- err.either(userContractOrFailed)
+      unsignedUserContractBytes <- calculateSingedBytesOfUserContract(userContract)
+      contractSignature         <- makeSignature(unsignedUserContractBytes, privateKey)
+      publishContractNotSigned <- createUnsignedPublishContractTransaction(
+        account.id,
+        userContract.copy(signature = contractSignature))
+      unsignedBytes <- calculateSingedBytesOfTransaction(publishContractNotSigned)
+      signature     <- makeSignature(unsignedBytes, privateKey)
     } yield publishContractNotSigned.copy(signature = signature)
   }
 

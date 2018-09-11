@@ -118,6 +118,13 @@ class ContractServiceHandler extends ContractService.Handler[Stack] {
     Stack {
       s"${contract.name.value}#${contract.version.value}"
     }
+
+  /** calculate bytes of user contract for beeing singed
+    */
+  override def calculateSingedBytesOfUserContract(
+      userContract: Contract.UserContract): Stack[BytesValue] = Stack { setting =>
+    ???
+  }
 }
 
 object ContractServiceHandler {

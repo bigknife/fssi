@@ -6,6 +6,7 @@ import types._, exception._
 import bigknife.sop._
 import bigknife.sop.macros._
 import bigknife.sop.implicits._
+import utils._
 
 import java.io._
 
@@ -61,4 +62,8 @@ import java.io._
   /** measure run a contract cost
     */
   def measureCostToRunContract(contract: Contract.UserContract): P[F, Token]
+
+  /** calculate bytes of user contract for beeing singed
+    */
+  def calculateSingedBytesOfUserContract(userContract: Contract.UserContract): P[F, BytesValue]
 }
