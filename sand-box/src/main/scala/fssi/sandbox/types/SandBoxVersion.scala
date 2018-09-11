@@ -36,7 +36,7 @@ object SandBoxVersion {
     case _ => None
   }
 
-  private[SandBoxVersion] lazy val javaVersionMatch = Map(0 -> 8)
+  private[SandBoxVersion] lazy val javaVersionMatch = Map(majVersion -> majJavaVersion)
 
   def supportHighestJavaVersion(sandBoxVersion: SandBoxVersion): Int =
     javaVersionMatch(sandBoxVersion.maj)

@@ -22,8 +22,8 @@ trait TransactionJsonCodec {
   implicit val transferJsonEncoder: Encoder[Transfer] = (a: Transfer) =>
     Json.obj(
       "id"        -> a.id.asJson,
-      "payer"      -> a.payer.asJson,
-      "payee"        -> a.payee.asJson,
+      "payer"     -> a.payer.asJson,
+      "payee"     -> a.payee.asJson,
       "token"     -> a.token.asJson,
       "signature" -> a.signature.asJson,
       "timestamp" -> a.timestamp.asJson
@@ -32,8 +32,8 @@ trait TransactionJsonCodec {
   implicit val transferJsonDecoder: Decoder[Transfer] = (a: HCursor) => {
     for {
       id        <- a.get[Transaction.ID]("id")
-      payer      <- a.get[Account.ID]("payer")
-      payee        <- a.get[Account.ID]("payee")
+      payer     <- a.get[Account.ID]("payer")
+      payee     <- a.get[Account.ID]("payee")
       token     <- a.get[Token]("token")
       signature <- a.get[Signature]("signature")
       timestamp <- a.get[Long]("timestamp")
@@ -114,7 +114,7 @@ trait TransactionJsonCodec {
   implicit val transactionJsonDecoder: Decoder[Transaction] = (a: HCursor) => {
     a.get[String]("type") match {
       case Right("Transfer")        => a.get[Transaction.Transfer]("transaction")
-      case Right("Publishcontract") => a.get[Transaction.PublishContract]("transaction")
+      case Right("PublishContract") => a.get[Transaction.PublishContract]("transaction")
       case Right("RunContract")     => a.get[Transaction.RunContract]("transaction")
       case x =>
         Left(
