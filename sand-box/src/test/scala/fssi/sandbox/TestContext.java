@@ -23,4 +23,9 @@ public class TestContext implements Context {
         System.out.println("Test:Get Token Query");
         return null;
     }
+
+    @Override
+    public String currentAccountId() {
+        return null;
+    }
 }

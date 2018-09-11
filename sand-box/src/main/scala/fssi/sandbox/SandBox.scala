@@ -4,12 +4,7 @@ import java.io.File
 import java.nio.file.Path
 
 import fssi.contract.lib.Context
-import fssi.sandbox.exception.{
-  ContractBuildException,
-  ContractCheckException,
-  ContractCompileException,
-  ContractRunningException
-}
+import fssi.sandbox.exception._
 import fssi.sandbox.types.Method
 import fssi.sandbox.world._
 import fssi.types._
@@ -63,4 +58,7 @@ class SandBox {
         .map(_ => Vector.empty[Method])
     } yield ()
   }
+
+  def checkRunningEnvironment: Either[SandBoxEnvironmentException, Unit] =
+    checker.isSandBoxEnvironmentValid
 }

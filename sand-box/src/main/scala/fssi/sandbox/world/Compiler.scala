@@ -15,11 +15,14 @@ import fssi.sandbox.types.SandBoxVersion
 import fssi.utils.FileUtil
 import javax.tools.{DiagnosticCollector, JavaFileObject, ToolProvider}
 import org.objectweb.asm.{ClassReader, ClassWriter}
+import org.slf4j.{Logger, LoggerFactory}
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
 
 class Compiler {
+
+  private lazy val logger: Logger = LoggerFactory.getLogger(getClass)
 
   private lazy val checker = new Checker
 
@@ -30,7 +33,7 @@ class Compiler {
     * @return errors if compiled failed
     */
   def compileContract(rootPath: Path,
-                      version: String,
+                      sandBoxVersion: String,
                       outputFile: File): Either[ContractCompileException, Unit] = {
     if (rootPath.toFile.exists() && rootPath.toFile.isDirectory) {
       if (outputFile.exists() && outputFile.isFile) FileUtil.deleteDir(outputFile.toPath)
@@ -78,20 +81,29 @@ class Compiler {
                         .map(x => ContractCompileException(x.messages))
                     }
                     .flatMap { _ =>
-                      SandBoxVersion(version) match {
-                        case Some(sandBoxVersion) =>
-                          upgradeAndZipContract(out.toPath, sandBoxVersion, outputFile).flatMap {
-                            _ =>
+                      SandBoxVersion(sandBoxVersion) match {
+                        case Some(boxVersion) =>
+                          if (checker.isSandBoxVersionValid(boxVersion))
+                            upgradeAndZipContract(out.toPath, boxVersion, outputFile).flatMap { _ =>
                               import fssi.sandbox.types.Protocol._
                               if (outputFile.length() > contractSize) {
                                 FileUtil.deleteDir(outputFile.toPath)
                                 Left(ContractCompileException(Vector(
                                   s"contract project total size can not exceed $contractSize bytes")))
                               } else Right(())
+                            } else {
+                            val error =
+                              s"compile contract failed: sandbox version $sandBoxVersion is greater than current version ${SandBoxVersion.currentVersion}"
+                            val ex = ContractCompileException(Vector(error))
+                            logger.error(error, ex)
+                            Left(ex)
                           }
                         case None =>
-                          Left(ContractCompileException(Vector(
-                            s"java version $version not support,correct version must between 6 and 10")))
+                          val error =
+                            s"sandbox version $sandBoxVersion not support,the latest version is ${SandBoxVersion.currentVersion}"
+                          val ex = ContractCompileException(Vector(error))
+                          logger.error(error, ex)
+                          Left(ex)
                       }
                     }
                 }
@@ -198,6 +210,7 @@ class Compiler {
           val classPath = classFile.getAbsolutePath
           val entryPath = classPath.substring(outPath.toString.length + 1)
           zipOut.putNextEntry(new ZipEntry(entryPath))
+          zipOut.write(sandBoxVersion.toString.getBytes("utf-8"))
           val array = cw.toByteArray
           zipOut.write(array, 0, array.length)
           zipOut.closeEntry()
