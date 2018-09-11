@@ -53,12 +53,7 @@ trait BlockCalSupport {
     case publishContract: Transaction.PublishContract =>
       BytesValue(publishContract.id.value.getBytes("utf-8")) ++
         publishContract.owner.value.toBytesValue ++
-        publishContract.contract.owner.value.toBytesValue ++
-        BytesValue(publishContract.contract.name.value.getBytes("utf-8")) ++
-        BytesValue(publishContract.contract.version.value.getBytes("utf-8")) ++
-        publishContract.contract.code.toBytesValue ++
-        publishContract.contract.meta.methods.foldLeft(BytesValue.empty)((acc, n) =>
-          acc ++ BytesValue(n.toString.getBytes("utf-8"))) ++
+        calculateBytesToBeSignedOfUserContract(publishContract.contract) ++
         publishContract.contract.signature.value.toBytesValue ++
         BytesValue(BigInt(publishContract.timestamp).toByteArray)
 
@@ -126,6 +121,15 @@ trait BlockCalSupport {
         bytesOfParam(x.contractParameter) ++
         x.signature.value.bytes ++
         BigInt(x.timestamp).toByteArray
+  }
+
+  private [interpreter] def calculateBytesToBeSignedOfUserContract(contract:Contract.UserContract):BytesValue={
+    contract.owner.value.toBytesValue ++
+      BytesValue(contract.name.value.getBytes("utf-8")) ++
+      BytesValue(contract.version.value.getBytes("utf-8")) ++
+      contract.code.toBytesValue ++
+      contract.meta.methods.foldLeft(BytesValue.empty)((acc, n) =>
+        acc ++ BytesValue(n.toString().getBytes("utf-8")))
   }
 
 }
