@@ -61,10 +61,10 @@ trait ToolProgram[F[_]] extends BaseProgram[F] {
   def compileContract(projectDirectory: File, output: File, sandboxVersion: String): SP[F, Unit] = {
     import contractService._
     for {
-      determinEither <- checkDeterminismOfContractProject(projectDirectory)
-      _              <- err.either(determinEither)
       compileEither  <- compileContractProject(projectDirectory, sandboxVersion, output)
       _              <- err.either(compileEither)
+      determinEither <- checkDeterminismOfContractProject(output)
+      _              <- err.either(determinEither)
     } yield ()
   }
 

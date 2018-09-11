@@ -10,16 +10,19 @@ import java.util.zip.{ZipEntry, ZipOutputStream}
 
 import fssi.sandbox.exception.ContractCompileException
 import fssi.sandbox.loader.FSSIClassLoader
-import fssi.sandbox.visitor.UpgradeClassVersionVisitor
 import fssi.sandbox.types.SandBoxVersion
+import fssi.sandbox.visitor.clazz.UpgradeClassVersionVisitor
 import fssi.utils.FileUtil
 import javax.tools.{DiagnosticCollector, JavaFileObject, ToolProvider}
 import org.objectweb.asm.{ClassReader, ClassWriter}
+import org.slf4j.{Logger, LoggerFactory}
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
 
 class Compiler {
+
+  private lazy val logger: Logger = LoggerFactory.getLogger(getClass)
 
   private lazy val checker = new Checker
 
@@ -32,6 +35,7 @@ class Compiler {
   def compileContract(rootPath: Path,
                       version: String,
                       outputFile: File): Either[ContractCompileException, Unit] = {
+    logger.info(s"compile contract under path $rootPath at version $version saved to $outputFile")
     if (rootPath.toFile.exists() && rootPath.toFile.isDirectory) {
       if (outputFile.exists() && outputFile.isFile) FileUtil.deleteDir(outputFile.toPath)
       val out =
@@ -40,24 +44,30 @@ class Compiler {
       try {
         import fssi.sandbox.types.Protocol._
         if (!checker.isProjectStructureValid(rootPath)) {
-          Left(
-            ContractCompileException(
-              Vector("src path should have main/java and main/resources/META-INF subdirectories")))
+          val error =
+            s"$rootPath src path should have main/java and main/resources/META-INF subdirectories"
+          val ex = ContractCompileException(Vector(error))
+          logger.error(error, ex)
+          Left(ex)
         } else {
           val resources     = Paths.get(rootPath.toString, "src/main/resources/META-INF").toFile
           val resourceFiles = resources.listFiles().toVector
           val inValidContractFiles =
             checker.isResourceContractFilesInvalid(resources.toPath, resourceFiles)
           if (inValidContractFiles.nonEmpty) {
-            Left(ContractCompileException(Vector(
-              s"smart contract required files not found: ${inValidContractFiles.mkString(" , ")}")))
+            val error =
+              s"smart contract required files not found: ${inValidContractFiles.mkString(" , ")}"
+            val ex = ContractCompileException(Vector(error))
+            logger.error(error, ex)
+            Left(ex)
           } else {
             val inValidFiles = checker.isResourceFilesInValid(resources.toPath, resourceFiles)
             if (inValidFiles.nonEmpty) {
-              Left(
-                ContractCompileException(
-                  Vector(s"src/main/resources/META-INF dir only support ${allowedResourceFiles
-                    .mkString("、")} files,but found ${inValidFiles.mkString(" , ")}")))
+              val error = s"src/main/resources/META-INF dir only support ${allowedResourceFiles
+                .mkString("、")} files,but found ${inValidFiles.mkString(" , ")}"
+              val ex = ContractCompileException(Vector(error))
+              logger.error(error, ex)
+              Left(ex)
             } else {
               checker
                 .checkContractDescriptor(
@@ -83,15 +93,22 @@ class Compiler {
                           upgradeAndZipContract(out.toPath, sandBoxVersion, outputFile).flatMap {
                             _ =>
                               import fssi.sandbox.types.Protocol._
-                              if (outputFile.length() > contractSize) {
+                              val outputFileSize = outputFile.length()
+                              if (outputFileSize > contractSize) {
                                 FileUtil.deleteDir(outputFile.toPath)
-                                Left(ContractCompileException(Vector(
-                                  s"contract project total size can not exceed $contractSize bytes")))
+                                val error =
+                                  s"contract project compiled file total size $outputFileSize can not exceed $contractSize bytes"
+                                val ex = ContractCompileException(Vector(error))
+                                logger.error(error, ex)
+                                Left(ex)
                               } else Right(())
                           }
                         case None =>
-                          Left(ContractCompileException(Vector(
-                            s"java version $version not support,correct version must between 6 and 10")))
+                          val error =
+                            s"java version $version not support,correct version must between 6 and 10"
+                          val ex = ContractCompileException(Vector(error))
+                          logger.error(error, ex)
+                          Left(ex)
                       }
                     }
                 }
@@ -99,11 +116,21 @@ class Compiler {
           }
         }
       } catch {
-        case t: Throwable => Left(ContractCompileException(Vector(t.getMessage)))
+        case t: Throwable =>
+          val error =
+            s"compile contract project under path $rootPath occurs errors: ${t.getMessage}"
+          val ex = ContractCompileException(Vector(error))
+          logger.error(error, t)
+          Left(ex)
       } finally {
         if (out.exists()) FileUtil.deleteDir(out.toPath)
       }
-    } else Left(ContractCompileException(Vector("contract project must be a directory")))
+    } else {
+      val error = s"contract project $rootPath must be a directory"
+      val ex    = ContractCompileException(Vector(error))
+      logger.error(error, ex)
+      Left(ex)
+    }
   }
 
   /** compile contract project
@@ -113,6 +140,7 @@ class Compiler {
     */
   private[world] def compileProject(rootPath: Path,
                                     outputPath: Path): Either[ContractCompileException, Unit] = {
+    logger.info(s"compile project $rootPath saved to $outputPath")
     import fssi.sandbox.types.Protocol._
     val javaFilePath = Paths.get(rootPath.toString, "src/main/java")
     val javaFiles    = FileUtil.findAllFiles(javaFilePath)
@@ -163,11 +191,16 @@ class Compiler {
           Files.walkFileTree(Paths.get(rootPath.toString, "src/main/resources"), FV)
           Right(())
         case _root_.java.lang.Boolean.FALSE =>
-          Left(
-            ContractCompileException(
-              diagnosticCollector.getDiagnostics.asScala.toVector.map(_.getMessage(null))))
+          val error = diagnosticCollector.getDiagnostics.asScala.toVector.map(_.getMessage(null))
+          val ex    = ContractCompileException(error)
+          logger.error(s"compile project occurs errors: $error", ex)
+          Left(ex)
       }
-    } else Left(ContractCompileException(forbiddenFilesErrors))
+    } else {
+      val ex = ContractCompileException(forbiddenFilesErrors)
+      logger.error(forbiddenFilesErrors.mkString(",\n"), ex)
+      Left(ex)
+    }
   }
 
   /** zip compiled contract
@@ -180,9 +213,14 @@ class Compiler {
       outPath: Path,
       sandBoxVersion: SandBoxVersion,
       outputFile: File): Either[ContractCompileException, Unit] = {
-    if (outputFile.exists() && outputFile.isDirectory)
-      Left(ContractCompileException(Vector("compiled contract output file can not be a directory")))
-    else {
+    logger.info(
+      s"upgrade contract class from version ${sandBoxVersion.value} and zip to file $outputFile")
+    if (outputFile.exists() && outputFile.isDirectory) {
+      val error = s"compiled contract output file $outputFile can not be a directory"
+      val ex    = ContractCompileException(Vector(error))
+      logger.error(error, ex)
+      Left(ex)
+    } else {
       if (!outputFile.exists()) outputFile.createNewFile()
       val output     = new FileOutputStream(outputFile, true)
       val zipOut     = new ZipOutputStream(output)
@@ -221,7 +259,11 @@ class Compiler {
       if (track.isEmpty) Right(())
       else {
         if (outputFile.exists() && outputFile.isFile) outputFile.delete()
-        Left(ContractCompileException(track.toVector))
+        val ex = ContractCompileException(track.toVector)
+        logger.error(
+          s"upgrade contract class version and zip contract occurs errors: ${track.mkString(",\n")}",
+          ex)
+        Left(ex)
       }
     }
   }

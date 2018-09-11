@@ -1,9 +1,10 @@
 package fssi
 package sandbox
+import java.nio.charset.Charset
 import java.nio.file.Paths
 
 import fssi.types.Contract.Method
-import fssi.types.Contract.Parameter.{PArray, PBigDecimal, PEmpty, PString}
+import fssi.types.Contract.Parameter.PEmpty
 import org.scalatest.FunSuite
 
 class SandBoxTest extends FunSuite {
@@ -16,19 +17,14 @@ class SandBoxTest extends FunSuite {
     val version    = "8"
     val projectDir = Paths.get(project)
     val outputFile = Paths.get(output).toFile
-    sandBox.compileContract(projectDir, version, outputFile) match {
-      case Right(_) => info(s"compile contract success,checkout $output")
-      case Left(e)  => e.printStackTrace()
-    }
+    sandBox.compileContract(projectDir, version, outputFile)
   }
 
   test("check contract determinism") {
-    val output     = "/Users/songwenchao/Documents/source/self/pratice/fssi_test/out"
+    val output = "/Users/songwenchao/Documents/source/self/pratice/fssi_test/out"
+//    val output     = "/Users/songwenchao/banana.contract"
     val outputFile = Paths.get(output).toFile
-    sandBox.checkContractDeterminism(outputFile) match {
-      case Right(_) => info("check passed")
-      case Left(e)  => e.printStackTrace()
-    }
+    sandBox.checkContractDeterminism(outputFile)
   }
 
   test("run smart contract") {
@@ -38,9 +34,11 @@ class SandBoxTest extends FunSuite {
     val methodName = "function0"
     val parameter  = PEmpty
 //    val parameter = PArray(PString("haha"), PBigDecimal(123))
-    sandBox.executeContract(context, outputFile, Method(methodName), parameter) match {
-      case Right(_) => info("run finished")
-      case Left(e)  => e.printStackTrace()
-    }
+    sandBox.executeContract(context, outputFile, Method(methodName), parameter)
+  }
+
+  ignore("unzip contract file") {
+    val f = better.files.File("/Users/songwenchao/banana.contract")
+    f.unzipTo(better.files.File("/tmp/b"))(Charset.forName("utf-8"))
   }
 }
