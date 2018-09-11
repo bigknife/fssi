@@ -47,8 +47,8 @@ object CmdArgs {
       accountFile: File = new File(""),
       password: Array[Byte] = Array.emptyByteArray,
       contractName: UniqueName = UniqueName.empty,
-    contractVersion: Version = Version.empty,
-    method: Contract.Method = Contract.Method.empty,
+      contractVersion: Version = Version.empty,
+      method: Contract.Method = Contract.Method.empty,
       parameter: Contract.Parameter = Contract.Parameter.PEmpty
   ) extends CmdArgs
 
@@ -57,6 +57,20 @@ object CmdArgs {
   case class CompileContractArgs(
       projectDirectory: File = new File(""),
       outputFile: File = new File(""),
-      sandboxVersion: String = "0.0.1"
+      sandboxVersion: CompileContractArgs.SandobxVersion = CompileContractArgs.SandobxVersion.`1.0.0`
   ) extends CmdArgs
+
+  object CompileContractArgs {
+    sealed trait SandobxVersion
+    object SandobxVersion {
+      case object `1.0.0` extends SandobxVersion {
+        override def toString: String = "1.0.0"
+      }
+
+      def apply(s: String): SandobxVersion = s match {
+        case "1.0.0" => `1.0.0`
+        case _ => `1.0.0`
+      }
+    }
+  }
 }

@@ -51,8 +51,8 @@ object CmdArgsParser extends OptionParser[CmdArgs]("fssitool") {
         .action((x, c) => c.asInstanceOf[CompileContractArgs].copy(outputFile = x)),
       opt[String]("sandbox-version")
         .abbr("sv")
-        .text("supported version of the sandbox on which the smart contract will run, default is '0.0.1'")
-        .action((x, c) => c.asInstanceOf[CompileContractArgs].copy(sandboxVersion = x))
+        .text("supported version of the sandbox on which the smart contract will run, default is 1.0.0(only support 1.0.0 now)")
+        .action((x, c) => c.asInstanceOf[CompileContractArgs].copy(sandboxVersion = CompileContractArgs.SandobxVersion(x)))
     )
 
   cmd("CreateTransaction")
