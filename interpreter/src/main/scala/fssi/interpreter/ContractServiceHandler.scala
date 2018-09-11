@@ -27,6 +27,13 @@ class ContractServiceHandler extends ContractService.Handler[Stack] {
 
   val sandbox = new fssi.sandbox.SandBox
 
+    /** check current contract running environment
+    */
+  override  def checkRunningEnvironment(): Stack[Either[FSSIException, Unit]] = Stack {setting =>
+    //todo: do sandbox running check
+    ???
+  }
+
   /** check the smart contract project to see where it is full-deterministic or not
     */
   override def checkDeterminismOfContractProject(

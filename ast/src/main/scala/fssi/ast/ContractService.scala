@@ -10,6 +10,9 @@ import bigknife.sop.implicits._
 import java.io._
 
 @sp trait ContractService[F[_]] {
+  /** check current contract running environment
+    */
+  def checkRunningEnvironment(): P[F, Either[FSSIException, Unit]]
 
   /** check the smart contract project to see where it is full-deterministic or not
     */
