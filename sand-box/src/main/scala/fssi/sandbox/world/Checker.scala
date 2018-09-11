@@ -5,10 +5,10 @@ package world
 import java.io._
 import java.nio.file.{Path, Paths}
 
-import fssi.sandbox.exception.ContractCheckException
+import fssi.sandbox.exception.{ContractCheckException, SandBoxEnvironmentException}
 import fssi.sandbox.loader.FSSIClassLoader
 import fssi.sandbox.types.SParameterType.SContext
-import fssi.sandbox.types.{Method, SParameterType}
+import fssi.sandbox.types.{Method, SParameterType, SandBoxVersion}
 import fssi.types.Contract
 import fssi.utils.FileUtil
 import org.slf4j.{Logger, LoggerFactory}
@@ -39,7 +39,7 @@ class Checker {
         for {
           _ <- builder.degradeClassVersion(rootPath, targetPath)
           checkClassLoader = new FSSIClassLoader(targetPath, track)
-          _ <- checkContractMethod(rootPath, track, checkClassLoader)
+          _ <- checkContractMethod(targetPath, track, checkClassLoader)
           _ <- checkClasses(targetPath, track, checkClassLoader)
         } yield { if (targetPath.toFile.exists()) FileUtil.deleteDir(targetPath) }
       } catch {
@@ -225,5 +225,23 @@ class Checker {
       Left(ContractCheckException(Vector(
         s"receipted method parameter type: ${receiptParameterTypeNames.mkString("(", ",", ")")} not coordinated with contract method parameter type: ${contractParameterTypeNames
           .mkString("(", ",", ")")}")))
+  }
+
+  def isSandBoxVersionValid(inputVersion: SandBoxVersion): Boolean =
+    inputVersion.lteTo(SandBoxVersion.currentVersion)
+
+  def isSandBoxEnvironmentValid: Either[SandBoxEnvironmentException, Unit] = {
+    val javaVersion           = System.getProperty("java.version")
+    val jv                    = if (javaVersion.contains(".")) javaVersion.split("\\.")(1) else javaVersion
+    val currentSandBoxVersion = SandBoxVersion.currentVersion
+    val supportJavaHighest    = currentSandBoxVersion.supportHighestJavaVersion
+    if (supportJavaHighest >= jv.toInt) Right(())
+    else {
+      val error =
+        s"sandbox supported highest java version is $supportJavaHighest but current machine java version is $jv"
+      val ex = SandBoxEnvironmentException(error)
+      logger.error(error, ex)
+      Left(ex)
+    }
   }
 }

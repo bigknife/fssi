@@ -19,7 +19,6 @@ import Bytes.implicits._
 import better.files.{File => ScalaFile, _}
 import java.io._
 import java.nio.file.Paths
-import java.util.UUID
 
 import fssi.sandbox.exception.ContractRunningException
 
@@ -27,11 +26,10 @@ class ContractServiceHandler extends ContractService.Handler[Stack] {
 
   val sandbox = new fssi.sandbox.SandBox
 
-    /** check current contract running environment
+  /** check current contract running environment
     */
-  override  def checkRunningEnvironment(): Stack[Either[FSSIException, Unit]] = Stack {setting =>
-    //todo: do sandbox running check
-    ???
+  override def checkRunningEnvironment(): Stack[Either[FSSIException, Unit]] = Stack { setting =>
+    sandbox.checkRunningEnvironment
   }
 
   /** check the smart contract project to see where it is full-deterministic or not

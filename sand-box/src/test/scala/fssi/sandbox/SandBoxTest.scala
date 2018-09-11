@@ -13,12 +13,12 @@ class SandBoxTest extends FunSuite {
   test("test compile contract") {
     val project    = "/Users/songwenchao/Documents/source/self/pratice/fssi_test/fssi_study"
     val output     = "/Users/songwenchao/Documents/source/self/pratice/fssi_test/out"
-    val version    = "8"
+    val version    = "0.0.1"
     val projectDir = Paths.get(project)
     val outputFile = Paths.get(output).toFile
     sandBox.compileContract(projectDir, version, outputFile) match {
-      case Right(_) => info(s"compile contract success,checkout $output")
-      case Left(e)  => e.printStackTrace()
+      case Left(e)      => e.printStackTrace()
+      case Right(value) =>
     }
   }
 
@@ -26,8 +26,8 @@ class SandBoxTest extends FunSuite {
     val output     = "/Users/songwenchao/Documents/source/self/pratice/fssi_test/out"
     val outputFile = Paths.get(output).toFile
     sandBox.checkContractDeterminism(outputFile) match {
-      case Right(_) => info("check passed")
-      case Left(e)  => e.printStackTrace()
+      case Left(e)      => e.printStackTrace()
+      case Right(value) =>
     }
   }
 
@@ -38,8 +38,8 @@ class SandBoxTest extends FunSuite {
     val methodName = "function3"
     val parameter  = PArray(PString("abcdefg"), PBigDecimal(1))
     sandBox.executeContract(context, outputFile, Method(methodName), parameter) match {
-      case Right(_) => info("run finished")
-      case Left(e)  => e.printStackTrace()
+      case Left(e)      => e.printStackTrace()
+      case Right(value) =>
     }
   }
 }

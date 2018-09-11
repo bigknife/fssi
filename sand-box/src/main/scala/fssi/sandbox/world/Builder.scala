@@ -5,6 +5,7 @@ import java.io.{ByteArrayOutputStream, File, FileInputStream, FileOutputStream}
 import java.nio.file.{Files, Path, Paths}
 
 import fssi.sandbox.exception.{ContractBuildException, ContractCheckException}
+import fssi.sandbox.types.SandBoxVersion
 import fssi.sandbox.visitor.DegradeClassVersionVisitor
 import fssi.types.Contract.{Meta, Method}
 import fssi.types._
@@ -57,15 +58,21 @@ class Builder {
           val accessible = readerConstructor.isAccessible
           readerConstructor.setAccessible(true)
           val classReader = readerConstructor.newInstance(classBuffer,
-                                                          Integer.valueOf(0),
+                                                          Integer.valueOf(5),
                                                           java.lang.Boolean.valueOf(false))
           readerConstructor.setAccessible(accessible)
-          val classWriter = new ClassWriter(classReader, 0)
-          val visitor     = DegradeClassVersionVisitor(classWriter)
-          classReader.accept(visitor, 0)
-          val array = classWriter.toByteArray
-          outputStream.write(array, 0, array.length)
-          outputStream.flush(); outputStream.close(); acc
+          val versionStr = new String(classBuffer, 0, 5, java.nio.charset.Charset.forName("utf-8"))
+          SandBoxVersion(versionStr) match {
+            case Some(version) =>
+              val classWriter = new ClassWriter(classReader, 0)
+              val visitor     = DegradeClassVersionVisitor(classWriter, version)
+              classReader.accept(visitor, 0)
+              val array = classWriter.toByteArray
+              outputStream.write(array, 0, array.length)
+              outputStream.flush(); outputStream.close(); acc
+            case None =>
+              acc :+ s"degrade class version failed: fssi contract class file first 5 bytes must be sandbox version,but found $versionStr"
+          }
         } else acc :+ s"class file ${classFile.getAbsolutePath} can not read"
       }
       if (degradeErrors.isEmpty) Right(())

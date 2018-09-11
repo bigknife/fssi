@@ -4,6 +4,8 @@ package types
 
 object Protocol {
 
+  lazy val version = "0.0.1"
+
   lazy val contractSize: Long = 1024 * 200
 
   lazy val forbiddenClasses = Vector(
