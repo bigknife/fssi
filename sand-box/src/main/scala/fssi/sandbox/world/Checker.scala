@@ -41,7 +41,7 @@ class Checker {
         for {
           _ <- builder.degradeClassVersion(rootPath, targetPath)
           checkClassLoader = new FSSIClassLoader(targetPath, track)
-          _ <- checkContractMethod(rootPath, track, checkClassLoader)
+          _ <- checkContractMethod(targetPath, track, checkClassLoader)
           _ <- checkClasses(targetPath, track, checkClassLoader)
         } yield { if (targetPath.toFile.exists()) FileUtil.deleteDir(targetPath) }
       } catch {
@@ -242,7 +242,9 @@ class Checker {
       params: Contract.Parameter,
       parameterTypes: Array[SParameterType]): Either[ContractCheckException, Unit] = {
     logger.info(
-      s"check contract method parameter type matched, params: $params, contract descriptor params types: $parameterTypes")
+      s"check contract method parameter type matched, params: $params, contract descriptor params types: ${parameterTypes
+        .map(_.`type`.getName)
+        .mkString("[", ",", "]")}")
     import fssi.types.Contract.Parameter._
     var index = 0
 

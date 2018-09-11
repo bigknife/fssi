@@ -214,7 +214,7 @@ class Compiler {
       sandBoxVersion: SandBoxVersion,
       outputFile: File): Either[ContractCompileException, Unit] = {
     logger.info(
-      s"upgrade contract class to version ${sandBoxVersion.value} and zip to file $outputFile")
+      s"upgrade contract class from version ${sandBoxVersion.value} and zip to file $outputFile")
     if (outputFile.exists() && outputFile.isDirectory) {
       val error = s"compiled contract output file $outputFile can not be a directory"
       val ex    = ContractCompileException(Vector(error))

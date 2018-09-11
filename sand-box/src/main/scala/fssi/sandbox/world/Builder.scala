@@ -132,7 +132,7 @@ class Builder {
 
   private[sandbox] def buildContractMethod(
       contractFile: File): Either[ContractBuildException, Vector[fssi.sandbox.types.Method]] = {
-    logger.info(s"build contract method from contract descriptor file: $contractFile")
+    logger.info(s"build contract method from contract file: $contractFile")
     import fssi.sandbox.types.Protocol._
     val cache = Paths.get(contractFile.getParent, "cache")
     if (cache.toFile.exists()) FileUtil.deleteDir(cache)
