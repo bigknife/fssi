@@ -84,21 +84,28 @@ class ContractStoreHandler extends ContractStore.Handler[Stack] with LogSupport 
   /** commit staged tokens
     */
   override def commitStagedContract(height: BigInt): Stack[Unit] = Stack { setting =>
-    contractTrie.foreach { ct =>
-      // gid -> leveldbkey -> leveldb value
+    // gid -> leveldbkey -> leveldb value
+    contractTrie.updated { trie =>
       val contractMap: Map[String, Contract.UserContract] =
         contractStage.map(_.get(height)).value.getOrElse(Map.empty)
-      contractMap.foreach {
-        case (gid, contract) =>
-          val contractKey   = contract.signature.value.toString
-          val contractValue = contract.asJson.noSpaces
-          val gidKey        = HexString(gid.getBytes("utf-8")).noPrefix
-          ct.put(gidKey.toCharArray, contractKey)
-          // store to leveldb
-          contractStore.foreach { store =>
-            store.save(contractKey, contractValue)
+      contractMap
+        .foldLeft(trie) {
+          case (acc, (gid, contract)) =>
+            val contractKey   = contract.signature.value.toString
+            val contractValue = contract.asJson.noSpaces
+            val gidKey        = HexString(gid.getBytes("utf-8")).noPrefix
+            val nextTrie      = acc.put(gidKey.toCharArray, contractKey)
+            contractStore.foreach { store =>
+              store.save(contractKey, contractValue)
+            }
+            nextTrie
+        }
+        .unsafe { trieFinal =>
+          contractTrieJsonFile.foreach{
+            f => f.overwrite(trieFinal.asJson.spaces2)
+            log.info(s"saved contract json file to $f")
           }
-      }
+        }
     }
   }
 

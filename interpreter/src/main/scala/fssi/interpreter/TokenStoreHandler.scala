@@ -144,6 +144,11 @@ class TokenStoreHandler extends TokenStore.Handler[Stack] with LogSupport {
           store.save(vHash, v)
         }
         acc.put(k, vHash)
+      }.unsafe {trie =>
+        tokenTrieJsonFile.foreach{ f =>
+          f.overwrite(trie.asJson.spaces2)
+          log.info(s"saved token json file to $f")
+        }
       }
     }
   }
