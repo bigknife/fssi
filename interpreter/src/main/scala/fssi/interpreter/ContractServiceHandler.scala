@@ -22,7 +22,7 @@ import java.nio.file.Paths
 
 import fssi.sandbox.exception.ContractRunningException
 
-class ContractServiceHandler extends ContractService.Handler[Stack] {
+class ContractServiceHandler extends ContractService.Handler[Stack] with BlockCalSupport {
 
   val sandbox = new fssi.sandbox.SandBox
 
@@ -123,7 +123,7 @@ class ContractServiceHandler extends ContractService.Handler[Stack] {
     */
   override def calculateSingedBytesOfUserContract(
       userContract: Contract.UserContract): Stack[BytesValue] = Stack { setting =>
-    ???
+    calculateBytesToBeSignedOfUserContract(userContract)
   }
 }
 
