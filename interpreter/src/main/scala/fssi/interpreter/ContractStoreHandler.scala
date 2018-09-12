@@ -24,6 +24,8 @@ class ContractStoreHandler extends ContractStore.Handler[Stack] with LogSupport 
   private val contractTrie: SafeVar[Trie[Char, String]]         = SafeVar.empty
   private val contractStore: Once[LevelDBStore[String, String]] = Once.empty
   private val contractTrieJsonFile: Once[ScalaFile]             = Once.empty
+  private val contractStage: SafeVar[Map[BigInt, Map[String, Contract.UserContract]]] =
+    SafeVar.empty
 
   /** initialize a data directory to be a contract store
     * @param dataDir directory to save contract.
@@ -73,13 +75,6 @@ class ContractStoreHandler extends ContractStore.Handler[Stack] with LogSupport 
     true
   }
 
-  /** get current token store state
-    * this state should identify current state of token store
-    */
-  override def getTokenStoreState(): Stack[HexString] = Stack { setting =>
-    contractTrie.map { _.rootHexHash }.map(HexString.decode).unsafe()
-  }
-
   /** verify current state of contract store
     */
   override def verifyContractStoreState(state: String): Stack[Boolean] = Stack { setting =>
@@ -89,12 +84,42 @@ class ContractStoreHandler extends ContractStore.Handler[Stack] with LogSupport 
   /** commit staged tokens
     */
   override def commitStagedContract(height: BigInt): Stack[Unit] = Stack { setting =>
+    contractTrie.foreach { ct =>
+      // gid -> leveldbkey -> leveldb value
+      val contractMap: Map[String, Contract.UserContract] =
+        contractStage.map(_.get(height)).value.getOrElse(Map.empty)
+      contractMap.foreach {
+        case (gid, contract) =>
+          val contractKey   = contract.signature.value.toString
+          val contractValue = contract.asJson.noSpaces
+          val gidKey        = HexString(gid.getBytes("utf-8")).noPrefix
+          ct.put(gidKey.toCharArray, contractKey)
+          // store to leveldb
+          contractStore.foreach { store =>
+            store.save(contractKey, contractValue)
+          }
+      }
     }
+  }
 
   /** rollback staged tokens
     */
   override def rollbackStagedContract(height: BigInt): Stack[Unit] = Stack { setting =>
+    contractStage.updated { map =>
+      map - height
     }
+  }
+
+  /** temp save user's contract
+    */
+  override def stageContract(height: BigInt,
+                             gid: String,
+                             contract: Contract.UserContract): Stack[Unit] = Stack { setting =>
+    contractStage.updated { map =>
+      val m = map.get(height).getOrElse(Map.empty) + (gid -> contract)
+      map + (height -> m)
+    }
+  }
 
   /** find user contract with gid
     */
