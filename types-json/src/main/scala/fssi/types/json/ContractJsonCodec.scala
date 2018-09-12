@@ -33,10 +33,30 @@ trait ContractJsonCodec {
     }
 
   implicit val contractPArrayJsonEncoder: Encoder[PArray] =
-    (a: PArray) => a.asJson
+    (a: PArray) => {
+      Json.arr(a.array.map(_.asJson): _*)
+    }
 
-  implicit val contractPArrayJsonDecoder: Decoder[PArray] =
-    (a: HCursor) => a.as[PArray]
+  implicit val contractPArrayJsonDecoder: Decoder[PArray] = (a: HCursor) => {
+    a.values match {
+      case Some(jsons) =>
+        def _loop(jso: Vector[Json], acc: Decoder.Result[PArray]): Decoder.Result[PArray] = {
+          if (jso.isEmpty || acc.isLeft) acc
+          else {
+            val head = jso.head
+            val c = for {
+              hp <- head.as[Contract.Parameter.PrimaryParameter]
+              parray <- acc
+            } yield PArray(parray.array :+ hp)
+            _loop(jso.tail, c)
+          }
+        }
+        _loop(jsons.toVector, Right(PArray()))
+
+
+      case None => Left(DecodingFailure("should be an array", List()))
+    }
+  }
 
   implicit val contractParamJsonEncoder: Encoder[Contract.Parameter] = {
     case x: Contract.Parameter.PrimaryParameter => x.asJson
@@ -48,7 +68,7 @@ trait ContractJsonCodec {
     if (a.value == Json.Null) Right(Contract.Parameter.PEmpty)
     else {
       a.as[Contract.Parameter.PrimaryParameter] match {
-        case Left(t) => a.as[PArray]
+        case Left(_) => a.as[PArray]
         case x@Right(_) => x
       }
     }
