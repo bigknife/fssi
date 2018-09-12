@@ -21,4 +21,23 @@ class TransactionJsonCodecSpec extends FunSuite {
 
     info(s"$t")
   }
+
+  test("decode contract parameters") {
+    /*
+    import Contract.Parameter._
+    val p1: Contract.Parameter = PString("Hello")
+    info(p1.asJson.noSpaces)
+    val p2: Contract.Parameter = PBigDecimal(new java.math.BigDecimal("100.0"))
+    info(p2.asJson.noSpaces)
+*/
+
+    val s = "[100, true, false, 1.01E+3, 10.342567, \"hello\"]"
+    val t= for {
+      json <- parse(s)
+      p <- json.as[Contract.Parameter]
+    } yield p
+
+    info(s"$t")
+
+  }
 }

@@ -25,7 +25,7 @@ class ContractStoreHandler extends ContractStore.Handler[Stack] with LogSupport 
   private val contractStore: Once[LevelDBStore[String, String]] = Once.empty
   private val contractTrieJsonFile: Once[ScalaFile]             = Once.empty
   private val contractStage: SafeVar[Map[BigInt, Map[String, Contract.UserContract]]] =
-    SafeVar.empty
+    SafeVar(Map.empty)
 
   /** initialize a data directory to be a contract store
     * @param dataDir directory to save contract.

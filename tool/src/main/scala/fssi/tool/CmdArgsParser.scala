@@ -156,6 +156,10 @@ object CmdArgsParser extends OptionParser[CmdArgs]("fssitool") {
             .action((x, c) =>
               c.asInstanceOf[CreateRunContractTransactionArgs]
                 .copy(contractVersion = Version(x))),
+          opt[String]("method")
+            .abbr("m")
+            .text("method to invoke")
+            .action((x, c) => c.asInstanceOf[CreateRunContractTransactionArgs].copy(method = Contract.Method(x))),
           opt[String]("parameter")
             .abbr("p")
             .text("parameters for this invoking")
