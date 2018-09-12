@@ -108,7 +108,7 @@ trait BlockCalSupport {
       def bytesOfParam(p: Contract.Parameter): Array[Byte] = p match {
         case PEmpty         => Array.emptyByteArray
         case PString(x)     => x.getBytes("utf-8")
-        case PBigDecimal(x) => x.toString.getBytes("")
+        case PBigDecimal(x) => x.toString.getBytes("utf-8")
         case PBool(x)       => BigInt(if (x) 1 else 0).toByteArray
         case PArray(array) =>
           array.foldLeft(Array.emptyByteArray)((acc, n) => acc ++ bytesOfParam(n))
