@@ -21,11 +21,6 @@ import java.io._
     */
   def testContractStore(block: Block): P[F, Boolean]
 
-  /** get current token store state
-    * this state should identify current state of token store
-    */
-  def getTokenStoreState(): P[F, HexString]
-
   /** verify current state of contract store
     */
   def verifyContractStoreState(state: String): P[F, Boolean]
