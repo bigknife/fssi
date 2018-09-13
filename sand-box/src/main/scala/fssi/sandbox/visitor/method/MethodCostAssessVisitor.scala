@@ -56,7 +56,6 @@ class MethodCostAssessVisitor(methodVisitor: MethodVisitor)
 
       case ANEWARRAY =>
         super.visitInsn(DUP)
-        super.visitInsn(DUP)
         super.visitLdcInsn(8)
         super.visitMethodInsn(INVOKESTATIC,
                               counterInternalName,
