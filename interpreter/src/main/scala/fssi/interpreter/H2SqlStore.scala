@@ -4,35 +4,46 @@ package interpreter
 import contract.lib._
 import java.sql._
 
+import org.slf4j.LoggerFactory
+
 class H2SqlStore(dbUrl: String) extends SqlStore {
   lazy val conn: Connection = DriverManager.getConnection(dbUrl, "", "")
+  lazy val log = LoggerFactory.getLogger(getClass)
 
   def close(): Unit = conn.close()
 
   def commit(): Unit = {
     conn.commit()
     conn.setAutoCommit(true)
+    log.info("commit transaction")
   }
 
   def rollback(): Unit = {
     conn.rollback()
     conn.setAutoCommit(true)
+    log.info("rollback transaction")
   }
 
   def executeCommand(sql: String, args: Object*): Int = {
     val statement = conn.prepareStatement(sql)
     setParam(1, args.toSeq, statement)
-    statement.executeUpdate()
+    val lineCount = statement.executeUpdate()
+    log.info(s"executed command: $sql, affected lines: $lineCount")
+    lineCount
   }
+
   def executeQuery(sql: String, args: Object*): java.util.List[java.util.Map[String, Object]] = {
     val statement = conn.prepareStatement(sql)
     setParam(1, args.toSeq, statement)
     val rs = statement.executeQuery()
-    rsToList(rs, new java.util.ArrayList[java.util.Map[String, Object]])
+    val list = rsToList(rs, new java.util.ArrayList[java.util.Map[String, Object]])
+    log.info(s"executed query: $sql, result set lines: ${list.size()}")
+    list
   }
 
   def startTransaction(): Unit = {
     conn.setAutoCommit(false)
+    log.info("started transaction")
   }
 
   private def setParam(i: Int, args: Seq[Object], statement: PreparedStatement): Unit = {
