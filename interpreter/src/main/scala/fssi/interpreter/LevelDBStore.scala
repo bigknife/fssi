@@ -15,7 +15,7 @@ trait LevelDBStore[K, V] {
   val dbFile: File
 
   private lazy val db: DB = {
-    require(dbFile.exists() && dbFile.isDirectory, "dbFile should be a directory")
+    require(dbFile.exists() && dbFile.isDirectory, s"dbFile($dbFile) should be a directory")
 
     val options: Options = new Options()
     options.createIfMissing(true)
