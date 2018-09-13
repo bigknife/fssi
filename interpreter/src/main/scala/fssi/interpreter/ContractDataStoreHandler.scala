@@ -27,7 +27,7 @@ class ContractDataStoreHandler extends ContractDataStore.Handler[Stack] with Log
   override def initializeContractDataStore(dataDir: File): Stack[Unit] = Stack { setting =>
     val path = new File(dataDir, contractDataFileName)
     path.mkdirs()
-    contractDataTrieJsonFile := new File(path, "contract.trie.json").toScala
+    contractDataTrieJsonFile := new File(path, "contractdata.trie.json").toScala
     contractDataTrieJsonFile.foreach { f =>
       if (f.exists && f.isRegularFile) {
         //reload
@@ -86,6 +86,8 @@ class ContractDataStoreHandler extends ContractDataStore.Handler[Stack] with Log
   /** commit staged tokens
     */
   override def commitStagedContractData(height: BigInt): Stack[Unit] = Stack { setting =>
+    //todo: staged data now is not write to a temp store. SHOULD be fixed
+
     }
 
   /** rollback staged tokens
@@ -104,7 +106,7 @@ class ContractDataStoreHandler extends ContractDataStore.Handler[Stack] with Log
             new File(new File(x.workingDir, contractDataFileName), contract.name.value)
           val dbPath = new File(contractWorkingDir, "sqlstore")
           dbPath.mkdirs()
-          val dbUrl = s"jdbc:h2:${dbPath.getAbsolutePath}"
+          val dbUrl = s"jdbc:h2:${dbPath.getAbsolutePath}/db"
           new H2SqlStore(dbUrl)
 
         case _ => throw new RuntimeException("should working in CoreNode or EdgeNode")
