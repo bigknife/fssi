@@ -1,58 +1,104 @@
-package fssi.interpreter
+package fssi
+package interpreter
 
+import types._
+import exception._
+import ast._
+import org.slf4j._
+import bigknife.scalap.ast.types.{NodeID, SlotIndex}
+import bigknife.scalap.interpreter.{Setting => SCPSetting, runner => scpRunner, _}
+import bigknife.scalap.ast.usecase.SCP
+import bigknife.scalap.ast.usecase.component.{Model => SCPModel, _}
 import bigknife.scalap.ast.types.{NodeID, SlotIndex}
 import bigknife.scalap.ast.usecase.SCP
 import bigknife.scalap.ast.usecase.component._
-import fssi.ast.domain._
-import fssi.ast.domain.types._
-import fssi.interpreter.scp.{MomentValue, SCPExecutionService}
-import fssi.interpreter.util.{MomentPool, Once}
-import org.slf4j.LoggerFactory
+import fssi.interpreter.scp.{QuorumSetSyncMessage, SCPEnvelopeMessage}
 
-class ConsensusEngineHandler extends ConsensusEngine.Handler[Stack] {
-  private val log = LoggerFactory.getLogger(getClass)
+class ConsensusEngineHandler
+    extends ConsensusEngine.Handler[Stack]
+    with BlockCalSupport
+    with SCPSupport
+    with LogSupport {
 
-  private val momentPool: Once[MomentPool] = Once.empty
+  private val scp: SCP[SCPModel.Op] = SCP[SCPModel.Op]
 
-  private val scp: SCP[Model.Op] = SCP[Model.Op]
+  /** initialize consensus engine
+    */
+  override def initializeConsensusEngine(account: Account): Stack[Unit] = Stack { setting =>
+    // only core node need run consensus
+    setting match {
+      case x: Setting.CoreNodeSetting =>
+        val scpSetting = unsafeResolveSCPSetting(account, x)
+        scpRunner.runIO(scp.initialize(), scpSetting).unsafeRunSync
 
-  private def _init(setting: Setting): Unit = {
-    momentPool := MomentPool.newPool(setting.maxMomentSize, setting.maxMomentPoolElapsedSecond)
+      case _ => // nothing to do
+    }
   }
 
-  override def init(node: Node): Stack[Unit] = Stack { setting =>
-    _init(setting)
-    // scp should broadcast current node quorumset periodically
-    val p = scp.initialize()
-    bigknife.scalap.interpreter.runner
-      .runIO(p, setting.toScalapSetting(NodeID(node.accountPublicKey.bytes)))
-      .unsafeRunSync()
-  }
+  /** try to agree a new block
+    * @param account the consensus procedure initiator
+    * @param previous the previous block, latest determined block
+    * @param agreeing current block, being in consensus procedure
+    */
+  override def tryToAgreeBlock(account: Account, previous: Block, agreeing: Block): Stack[Unit] =
+    Stack { setting =>
+      setting match {
+        case x: Setting.CoreNodeSetting =>
+          val nodeID        = NodeID(account.id.value.bytes)
+          val value         = BlockValue(agreeing, calculateTotalBlockBytes(agreeing))
+          val previousValue = BlockValue(previous, calculateTotalBlockBytes(previous))
+          val slotIndex     = SlotIndex(agreeing.height)
+          val p = scp.nominate(nodeID,
+                               slotIndex,
+                               round = 0,
+                               valueToNominate = value,
+                               previousValue = previousValue)
 
-  override def poolMoment(node: Node,
-                          currentHeight: BigInt,
-                          previous: Vector[Moment],
-                          moment: Moment): Stack[Boolean] = Stack { setting =>
-    //momentPool.unsafe().push(moment)
-    // directly put to scp
-    //setting.
-    val nodeID        = NodeID(node.accountPublicKey.bytes)
-    val value         = MomentValue(moment)
-    val previousValue = MomentValue(moment)
-    val slotIndex     = SlotIndex(currentHeight + 1)
+          // invoke scp to nominate `agreeing`
+          val scpSetting = unsafeResolveSCPSetting(account, x)
+          val r          = bigknife.scalap.interpreter.runner.runIO(p, scpSetting).unsafeRunSync()
+          log.info(s"run scp nominate program: $r")
+          ()
 
-    val p = scp.nominate(nodeID,
-                         slotIndex,
-                         round = 0,
-                         valueToNominate = value,
-                         previousValue = previousValue)
-    bigknife.scalap.interpreter.runner.runIO(p, setting.toScalapSetting(nodeID)).unsafeRunSync()
+        case _ => //nothhing todo
+      }
+    }
+
+  /** handle consensus-special message
+    */
+  override def handleConsensusAuxMessage(account: Account,
+                                         auxMessage: ConsensusAuxMessage): Stack[Unit] = Stack {
+    setting =>
+      setting match {
+        case x: Setting.CoreNodeSetting =>
+          val scpSetting = unsafeResolveSCPSetting(account, x)
+          auxMessage match {
+            case QuorumSetSyncMessage(quorumSetSync) =>
+              quorumSetSync.registeredQuorumSets.foreach {
+                case (nodeId, qss) =>
+                  log.debug(s"handle consensus quorum set sync message: ($nodeId -> $qss)")
+                  scpRunner.runIO(scp.cacheQuorumSet(qss), scpSetting).unsafeRunSync
+              }
+            case SCPEnvelopeMessage(envelope) =>
+              log.debug(s"handling scp envelope: $envelope")
+              scpRunner
+                .runIO(scp.processEnvelope(NodeID(account.publicKey.bytes), envelope),
+                       scpSetting)
+                .unsafeRunSync
+              log.debug(s"handled scp envelope: $envelope")
+            case _ => //impossible
+          }
+
+        case _ => //nothing to do
+      }
+
   }
 }
+
 object ConsensusEngineHandler {
-  private val _instance = new ConsensusEngineHandler
+  private val instance: ConsensusEngineHandler = new ConsensusEngineHandler
+
   trait Implicits {
-    implicit val consensusEngineHandler: ConsensusEngineHandler = _instance
+    implicit val consensusEngineHandler: ConsensusEngineHandler = instance
   }
-  object implicits extends Implicits
 }

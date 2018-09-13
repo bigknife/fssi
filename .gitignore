@@ -1,6 +1,7 @@
 *
 !/**/
 !*.scala
+!*.conf
 !*.java
 !*.sbt
 !*.txt
@@ -12,6 +13,7 @@
 !.gitignore
 !.scalafmt.conf
 /target/
+/**/target/
 /project/**
 !/project/*.scala
 !/project/*.properties
@@ -44,3 +46,5 @@
 
 /.ensime_cache/
 /crypto/target/
+
+!/**/docs/

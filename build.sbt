@@ -1,46 +1,64 @@
 import Common._, prj._
-//import sbtassembly.AssemblyPlugin.defaultShellScript
 
 coverageExcludedFiles in ThisBuild := ".*macro.*"
-coverageEnabled.in(Test, test) := true
 parallelExecution in ThisBuild := false
 fork in ThisBuild := true
-ensimeScalaVersion in ThisBuild := "2.12.4"
-ensimeIgnoreMissingDirectories in ThisBuild := true
+scalaVersion in ThisBuild := "2.12.4"
+coverageEnabled in (Test, test) := true
 
-// crypto prj
-lazy val pCrypto = crypto()
+// utils
+lazy val pUtils = utils()
 
-// ast prj
+lazy val pTypes = types()
+  .dependsOn(pUtils)
+
+lazy val pTypesJson = typesJson()
+  .dependsOn(pTypes)
+
 lazy val pAst = ast()
+  .dependsOn(pTypes)
   .dependsOn(pContractLib)
 
-// jsonrpc prj
+lazy val pInterperter = interpreter()
+  .dependsOn(pAst)
+  .dependsOn(pTypesJson)
+  .dependsOn(pTrie)
+  .dependsOn(pSandBox)
+
 lazy val pJsonRpc = jsonrpc()
 
-//sandbox prj
-lazy val pSandbox = sandbox()
-  .dependsOn(pContractLib)
+lazy val pTrie = trie()
+  .dependsOn(pUtils)
 
-// scp prj
-//lazy val pScp = scp()
-//  .dependsOn(pCrypto)
-
-// interpreter prj
-lazy val pInterpreter = interpreter()
-  .dependsOn(pAst)
-  .dependsOn(pJsonRpc)
-  .dependsOn(pSandbox)
-//  .dependsOn(pScp)
-
-// contract lib
 lazy val pContractLib = contractLib()
+  .dependsOn(pTypes)
 
-// fssi
-lazy val pFssi = fssi("fssi", ".")
-  .dependsOn(pInterpreter)
+lazy val pSandBox = sandBox().dependsOn(pTypes).dependsOn(pContractLib)
+
+lazy val pTool = tool()
+  .dependsOn(pInterperter)
+  .dependsOn(pJsonRpc)
+  .dependsOn(pSandBox)
   .settings(
-    mainClass in assembly := Some("fssi.world.Main"),
+    mainClass in assembly := Some("fssi.tool.ToolMain"),
+    assemblyMergeStrategy in assembly := {
+      case "module-info.class"          => MergeStrategy.discard
+      case PathList("META-INF", xs @ _) => MergeStrategy.discard
+      case "config-sample.conf"         => MergeStrategy.first
+      case x =>
+        val oldStrategy = (assemblyMergeStrategy in assembly).value
+        oldStrategy(x)
+    },
+    assemblyOption in assembly := (assemblyOption in assembly).value
+      .copy(prependShellScript = Some(defaultShellScript)),
+    assemblyJarName in assembly := s"${name.value}",
+    test in assembly := {}
+  )
+
+lazy val pCoreNode = coreNode()
+  .dependsOn(pInterperter)
+  .settings(
+    mainClass in assembly := Some("fssi.corenode.CoreNodeMain"),
     assemblyMergeStrategy in assembly := {
       case "module-info.class"          => MergeStrategy.discard
       case PathList("META-INF", xs @ _) => MergeStrategy.discard
@@ -52,5 +70,26 @@ lazy val pFssi = fssi("fssi", ".")
       .copy(prependShellScript = Some(defaultShellScript)),
     assemblyJarName in assembly := s"${name.value}",
     test in assembly := {}
-
   )
+
+lazy val pEdgeNode = edgeNode()
+  .dependsOn(pInterperter)
+  .dependsOn(pJsonRpc)
+  .settings(
+    mainClass in assembly := Some("fssi.edgenode.EdgeNodeMain"),
+    assemblyMergeStrategy in assembly := {
+      case "module-info.class"          => MergeStrategy.discard
+      case PathList("META-INF", xs @ _) => MergeStrategy.discard
+      case x =>
+        val oldStrategy = (assemblyMergeStrategy in assembly).value
+        oldStrategy(x)
+    },
+    assemblyOption in assembly := (assemblyOption in assembly).value
+      .copy(prependShellScript = Some(defaultShellScript)),
+    assemblyJarName in assembly := s"${name.value}",
+    test in assembly := {}
+  )
+
+addCommandAlias(
+  "assemblyAll",
+  ";project tool;clean;assembly;project coreNode;clean;assembly;project edgeNode;clean;assembly")

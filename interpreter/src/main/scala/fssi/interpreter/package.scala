@@ -2,8 +2,9 @@ package fssi
 
 import cats.data.Kleisli
 import cats.effect.IO
-import fssi.interpreter.codec._
-import fssi.interpreter.codec.scp.SCPJsonCodec
+import java.io._
+
+import fssi.trie.Bytes
 
 package object interpreter {
   type Stack[A] = Kleisli[IO, Setting, A]
@@ -15,48 +16,28 @@ package object interpreter {
     def apply[A](f: Setting => A): Stack[A] = Kleisli { setting =>
       IO { f(setting) }
     }
-    def filterSetting[A, B](s: Setting => B)(f: B => A): Stack[A] = Kleisli { setting =>
-      IO { f(s(setting)) }
-    }
   }
 
-  // all types json codec
-  object jsonCodec
-      extends AccountJsonCodec
-      with TokenJsonCodec
-      with NodeJsonCodec
-      with TransactionSendingStatusCodec
-      with ContractJsonCodec
-      with AccountStateJsonCodec
-      with ContractCodeItemJsonCodec
-      with TransactionJsonCodec
-      with SCPJsonCodec
-      with TimeCapsuleJsonCodec
-      with MomentJsonCodec
-
-  object orm extends AccountSnapshotORM
-
   object handlers
-      extends AccountServiceHandler.Implicits
-      with CryptoServiceHandler.Implicits
-      with LogServiceHandler.Implicits
-      with MonitorServiceHandler.Implicits
-      with NetworkServiceHandler.Implicits
-      with AccountSnapshotHandler.Implicits
+      extends CryptoHandler.Implicits
+      with NetworkHandler.Implicits
+      with BlockServiceHandler.Implicits
+      with BlockStoreHandler.Implicits
+      with TokenStoreHandler.Implicits
+      with ContractStoreHandler.Implicits
+      with ContractDataStoreHandler.Implicits
+      with ChainStoreHandler.Implicits
+      with AccountStoreHandler.Implicits
       with TransactionServiceHandler.Implicits
-      with TransactionStoreHandler.Implicits
+      with LogServiceHandler.Implicits
       with ConsensusEngineHandler.Implicits
       with ContractServiceHandler.Implicits
-      with ContractStoreHandler.Implicits
-      with LedgerStoreHandler.Implicits
-      with NetworkStoreHandler.Implicits
-      with LedgerServiceHandler.Implicits
       with bigknife.sop.effect.error.ErrorMInstance
 
   object runner {
     import bigknife.sop._, implicits._
-    import fssi.ast.domain.components._
-    import fssi.ast.domain.components.Model._
+    import ast.components._
+    import ast.components.Model._
     import handlers._
 
     def runStack[A](p: SP[Model.Op, A]): Stack[A]                         = p.interpret[Stack]
@@ -64,6 +45,28 @@ package object interpreter {
     def runIOAttempt[A](p: SP[Model.Op, A],
                         setting: Setting): cats.effect.IO[Either[Throwable, A]] =
       runStack(p)(setting).attempt
-
   }
+
+  /** a store based leveldb, used for utils.trie
+    */
+  object levelDBStore {
+    def apply[K, V](path: File)(implicit EK: Bytes[K], EV: Bytes[V]): LevelDBStore[K, V] =
+      new LevelDBStore[K, V] {
+        override val dbFile: File          = path
+        override implicit val BK: Bytes[K] = EK
+        override implicit val BV: Bytes[V] = EV
+      }
+  }
+
+  /** json codecs
+    */
+  object jsonCodecs
+      extends types.json.AllTypesJsonCodec
+      with trie.TrieCodecs
+      with scp.SCPJsonCodec
+      with io.circe.generic.AutoDerivation
+
+  // scp types
+  type BlockValue = scp.BlockValue
+  val BlockValue: scp.BlockValue.type = scp.BlockValue
 }

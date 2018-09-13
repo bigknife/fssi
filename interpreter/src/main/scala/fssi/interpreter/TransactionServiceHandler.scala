@@ -1,89 +1,86 @@
-package fssi.interpreter
+package fssi
+package interpreter
 
-import fssi.ast.domain._
-import fssi.ast.domain.types.Transaction.{InvokeContract, PublishContract, Transfer}
-import fssi.ast.domain.types._
-import fssi.contract.{AccountState, States}
+import types._
+import utils._
+import ast._
 
-class TransactionServiceHandler extends TransactionService.Handler[Stack] {
-  override def randomTransactionID(): Stack[Transaction.ID] = Stack {
-    Transaction.ID(java.util.UUID.randomUUID().toString.replace("-", ""))
+class TransactionServiceHandler
+    extends TransactionService.Handler[Stack]
+    with BlockCalSupport
+    with LogSupport {
+
+  /** create a transfer object with an empty signature field
+    */
+  override def createUnsignedTransfer(payer: Account.ID,
+                                      payee: Account.ID,
+                                      token: Token): Stack[Transaction.Transfer] = Stack {
+    setting =>
+      val randomId = Transaction.ID(
+        java.util.UUID.randomUUID.toString
+      )
+      Transaction.Transfer(
+        randomId,
+        payer,
+        payee,
+        token,
+        Signature.empty,
+        System.currentTimeMillis
+      )
   }
 
-  override def createTransferWithoutSign(id: Transaction.ID,
-                                         from: String,
-                                         to: String,
-                                         amount: Long): Stack[Transaction.Transfer] = Stack {
-    Transfer(
-      id,
-      Account.ID(from),
-      Account.ID(to),
-      Token(amount, Token.Unit.Sweet),
-      Signature.Empty,
-      Transaction.Status.Init(id)
+  override def createUnsignedRunContractTransaction(
+      invoker: Account.ID,
+      contractName: UniqueName,
+      contractVersion: Version,
+      method: Contract.Method,
+      parameter: Contract.Parameter): Stack[Transaction.RunContract] = Stack { setting =>
+    val randomId = Transaction.ID(
+      java.util.UUID.randomUUID.toString
+    )
+
+    Transaction.RunContract(
+      randomId,
+      invoker,
+      contractName,
+      contractVersion,
+      method,
+      parameter,
+      Signature.empty,
+      System.currentTimeMillis
     )
   }
 
-  override def createPublishContractWithoutSign(
-      id: Transaction.ID,
-      accountId: String,
-      name: String,
-      version: String,
-      contract: Contract.UserContract): Stack[PublishContract] =
-    Stack {
-      PublishContract(
-        id,
-        Account.ID(accountId),
-        contract,
-        Signature.Empty,
-        Transaction.Status.Init(id)
-      )
-    }
-
-  override def createRunContractWithoutSign(id: Transaction.ID,
-                                            accountId: String,
-                                            name: String,
-                                            version: String,
-                                            function: String,
-                                            params: Contract.Parameter): Stack[InvokeContract] =
-    Stack {
-      InvokeContract(
-        id,
-        Account.ID(accountId),
-        Contract.Name(name),
-        Contract.Version(version),
-        Contract.Function(function),
-        params,
-        Signature.Empty,
-        Transaction.Status.Init(id)
-      )
-    }
-
-  override def createMoment(transaction: Transaction,
-                            statesChange: StatesChange,
-                            oldStatesHash: BytesValue,
-                            newStatesHash: BytesValue): Stack[Moment] = Stack {
-    Moment(
-      statesChange.previous,
-      transaction,
-      statesChange.current,
-      oldStatesHash,
-      newStatesHash,
-      System.currentTimeMillis()
+  /** create a publish-contract transaction object with an empty signature field
+    */
+  override def createUnsignedPublishContractTransaction(
+      owner: Account.ID,
+      contract: Contract.UserContract): Stack[Transaction.PublishContract] = Stack { setting =>
+    val randomId = Transaction.ID(
+      java.util.UUID.randomUUID.toString
+    )
+    Transaction.PublishContract(
+      randomId,
+      owner,
+      contract,
+      Signature.empty,
+      System.currentTimeMillis
     )
   }
 
-  override def calculateStatesToBeSigned(states: States): Stack[BytesValue] = Stack {
-    BytesValue(states.bytes)
-  }
+  /** calculate bytes of the transaction object which will be signed
+    */
+  override def calculateSingedBytesOfTransaction(transaction: Transaction): Stack[BytesValue] =
+    Stack { setting =>
+      calculateBytesToBeSignedOfTransaction(transaction)
+    }
 
 }
 
 object TransactionServiceHandler {
   private val instance = new TransactionServiceHandler
+
   trait Implicits {
     implicit val transactionServiceHandler: TransactionServiceHandler = instance
   }
-
-  object implicits extends Implicits
 }

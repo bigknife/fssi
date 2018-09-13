@@ -1,69 +1,46 @@
-package fssi.interpreter
+package fssi
+package interpreter
 
-import java.nio.file.Paths
-
-import bigknife.scalap.ast.types._
-import fssi.ast.domain.Node
-import bigknife.scalap.interpreter.{Setting => ScalapSetting}
+import types._
+import java.io._
+import java.nio.file.{Path, Paths}
 import bigknife.scalap.world.Connect
-import fssi.ast.domain.types.{Account, BytesValue}
-import io.circe.{Json, JsonObject}
 
-/** interpreter's setting */
-case class Setting(
-    workingDir: String = Paths.get(System.getProperty("user.home"), ".fssi").toString,
-    snapshotDbPort: Int = 18080,
-    startSnapshotDbConsole: Boolean = false,
-    snapshotDbConsolePort: Int = 18081,
-    warriorNodesOfNymph: Vector[Node.Address] = Vector.empty,
-    maxMomentSize: Int = 20,
-    maxMomentPoolElapsedSecond: Int = 3,
-    scpConnect: Connect = Connect.dummy,
-    scpMaxTimeoutSeconds: Int = 30 * 60,
-    boundAccount: Option[Account] = None
-) {
-  // try create working dir
-  new java.io.File(workingDir).mkdirs()
+sealed trait Setting
 
-  val snapshotDbBaseDir: String = Paths.get(workingDir, "snapshotdb").toString
-  val nodeJsonFile: String      = Paths.get(workingDir, ".node").toString
-  val contractTempDir: String   = Paths.get(workingDir, "temp/contract").toString
-  def workFileOfName(name: String): String =  Paths.get(workingDir, name).toString
+object Setting {
 
-  lazy val scpRegisteredQuorumSets: Map[NodeID, QuorumSet] = {
-    // read from scp conf file (json)
-    // { registeredQuorumSets: [{"nodeId": "nodeId", quorumSet : {quorumset...}}]}
-    import io.circe.parser._
-    import io.circe.syntax._
-    import jsonCodec._
-    val scpConfFile = better.files.File(Paths.get(workingDir, ".scp.json"))
-    parse(scpConfFile.contentAsString) match {
-      case Left(t) => throw new RuntimeException("scp conf parse failed", t)
-      case Right(json) =>
-        try {
-          val qs: Vector[JsonObject] =
-            json.asObject.get("registeredQuorumSets").get.asArray.get.map(_.asObject).map(_.get)
+  /** default setting
+    */
+  case object DefaultSetting extends Setting
 
-          qs.map { jso =>
-            val accountPublicKeyHex = jso("nodeID").get.as[String].right.get
-            val q = jso("quorumSet").get.as[QuorumSet].right.get
-            val nodeID = NodeID(BytesValue.decodeHex(accountPublicKeyHex).bytes)
-            nodeID -> q
-          }.toMap
-
-        } catch {
-          case x: Throwable => throw new RuntimeException("scp conf parse failed", x)
-        }
-
-    }
-
+  /** Setting for command line tool
+    */
+  case class ToolSetting() extends Setting {
+    def contractTempDir: Path = Paths.get(System.getProperty("user.home"), ".fssi")
   }
 
-  def toScalapSetting(nodeID: NodeID): ScalapSetting = ScalapSetting(
-    nodeID,
-    scpRegisteredQuorumSets(nodeID),
-    scpConnect,
-    scpMaxTimeoutSeconds,
-    scpRegisteredQuorumSets
-  )
+  /** P2P node setting
+    */
+  sealed trait P2PNodeSetting extends Setting {
+    def workingDir: File
+    def password: Array[Byte]
+    def configReader: ConfigReader
+  }
+
+  /** setting for running core node
+    */
+  case class CoreNodeSetting(workingDir: File, password: Array[Byte], consensusConnect: Connect)
+      extends P2PNodeSetting {
+    private lazy val configFile: File = new File(workingDir, "fssi.conf")
+    lazy val configReader: ConfigReader = ConfigReader(configFile)
+  }
+
+  case class EdgeNodeSetting(workingDir: File, password: Array[Byte]) extends P2PNodeSetting {
+    private lazy val configFile: File = new File(workingDir, "fssi.conf")
+    lazy val configReader: ConfigReader = ConfigReader(configFile)
+  }
+
+  def defaultInstance: Setting = DefaultSetting
+
 }

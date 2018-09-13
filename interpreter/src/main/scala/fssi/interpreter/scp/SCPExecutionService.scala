@@ -1,13 +1,12 @@
-package fssi.interpreter.scp
+package fssi
+package interpreter
+package scp
 
+import org.slf4j._
 import java.util.concurrent._
-
-import org.slf4j.LoggerFactory
-
 import scala.util._
 
-sealed trait SCPExecutionService {
-  private val log = LoggerFactory.getLogger(getClass)
+sealed trait SCPExecutionService extends LogSupport{
 
   private val tc: ThreadFactory = new ThreadFactory {
     override def newThread(r: Runnable): Thread = {

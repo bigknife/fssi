@@ -1,10 +1,12 @@
-package fssi.interpreter.scp
+package fssi
+package interpreter
+package scp
 
 import java.nio.ByteBuffer
 import java.security.MessageDigest
 
 import bigknife.scalap.ast.types.{Hash, NodeID, QuorumSet}
-import fssi.ast.domain.types.BytesValue
+import utils._
 
 /**
   * QuorumSet Synchronize Message

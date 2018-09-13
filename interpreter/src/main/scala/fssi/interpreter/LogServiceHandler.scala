@@ -1,6 +1,8 @@
-package fssi.interpreter
+package fssi
+package interpreter
 
-import fssi.ast.domain.LogService
+import types._, exception._
+import ast._
 import org.slf4j.LoggerFactory
 
 /** log service, use logback as the backend

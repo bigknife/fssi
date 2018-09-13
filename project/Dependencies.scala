@@ -52,9 +52,25 @@ object Dependencies {
       val leveldb = "1.8"
 
       // scalap
-      val scalap = "0.1.8_BETA"
+      val scalap = "0.1.10_BETA"
 
       val nettyNative = "4.1.25.Final"
+
+      val scopt = "3.7.0"
+
+      val config = "1.3.2"
+    }
+
+    lazy val config = {
+      Seq(
+        Dpd("com.typesafe", "config", versions.config, autoScalaVersion = false)
+      ).map(_.libraryDependencies)
+    }
+
+    lazy val scopt = {
+      Seq(
+        Dpd("com.github.scopt", "scopt", versions.scopt)
+      ).map(_.libraryDependencies)
     }
 
 
@@ -146,7 +162,7 @@ object Dependencies {
       ).map(_.libraryDependencies)
     }
 
-    lazy val scapap = {
+    lazy val scalap = {
       Seq(
         Dpd("bigknife", "scalap", versions.scalap)
       ).map(_.libraryDependencies)

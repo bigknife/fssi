@@ -8,6 +8,8 @@ cache:
 
 language: scala
 
+-sbt_args: -no-colors -J-Xss2m
+
 scala:
   - 2.12.4
 
@@ -15,7 +17,7 @@ jdk:
   - oraclejdk8
 
 script:
-  - sbt ++$TRAVIS_SCALA_VERSION "; project ast; clean; test; coverageReport; project jsonrpc; clean; test; coverageReport; project interpreter; clean; test; coverageReport"
+  - sbt ++$TRAVIS_SCALA_VERSION ";test; coverageReport"
 
 after_success:
   - export CODECOV_TOKEN="6498d3cf-c13e-4321-bda9-03ed07514cf6"
