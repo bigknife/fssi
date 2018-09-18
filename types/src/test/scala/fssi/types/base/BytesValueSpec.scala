@@ -3,7 +3,7 @@ package types
 package base
 
 import org.scalatest._
-import BytesValue.implicits._
+import fssi.types.base.implicits._
 
 class BytesValueSpec extends FunSuite {
   test("Array[Byte] to BytesValue") {
@@ -20,5 +20,8 @@ class BytesValueSpec extends FunSuite {
     implicit val md = java.security.MessageDigest.getInstance("md5")
     info(s"${(h1 ++ h2).digest.hex}")
     info(s"${(h1 ++ h2).digest.bcBase58}")
+
+    val hash = Hash("Hello".getBytes)
+    info(s"${hash.asBytesValue.bcBase58}")
   }
 }

@@ -3,6 +3,7 @@ package types
 package base
 
 import utils._
+import scala.util._
 
 /** Base type, the raw bytes
   *
@@ -27,6 +28,41 @@ object BytesValue {
       new BytesValue[A] {
         def bytes: Array[Byte] = F(a)
     }
+
+  def decodeHex[A](hex: String): Option[BytesValue[A]] = {
+    // seq size should be
+    def loop(seq: Vector[Char], bytes: Vector[Byte]): Vector[Byte] = {
+      seq.splitAt(2) match {
+        case (Vector(), _) => bytes
+        case (Vector(c1, c2), t) =>
+          loop(t,
+               bytes :+ ((Integer.parseInt(c1.toString, 16) << 4) | Integer.parseInt(c2.toString,
+                                                                                     16)).toByte)
+      }
+    }
+    Try {
+      new BytesValue[A] {
+        def bytes: Array[Byte] = loop(hex.toVector, Vector.empty).toArray
+      }
+    }.toOption
+  }
+
+  def unsafeDecodeHex[A](hex: String): BytesValue[A] = decodeHex(hex).get
+
+  def decodeBase64[A](s: String): Option[BytesValue[A]] =
+    Try {
+      new BytesValue[A] { def bytes: Array[Byte] = java.util.Base64.getDecoder.decode(s) }
+    }.toOption
+
+  def unsafeDecodeBase64[A](s: String): BytesValue[A] = decodeBase64(s).get
+
+  def decodeBcBase58[A](s: String): Option[BytesValue[A]] = base58.decode(s).map { x =>
+    new BytesValue[A] {
+      def bytes: Array[Byte] = x
+    }
+  }
+
+  def unsafeDecodeBcBase58[A](s: String): BytesValue[A] = decodeBcBase58(s).get
 
   final case class Ops[A](bv: BytesValue[A]) {
     def value: Array[Byte] = bv.bytes
@@ -61,7 +97,6 @@ object BytesValue {
         acc ++ F(n)
       }
     }
-
   }
 
   object implicits extends Implicits
