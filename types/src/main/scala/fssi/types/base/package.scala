@@ -2,5 +2,6 @@ package fssi
 package types
 
 package object base {
-  object implicits extends BaseTypeImplicit with Hash.Implicits
+  type Base58Checksum = Base58Check.Checksum
+  object implicits extends BaseTypeImplicit
 }

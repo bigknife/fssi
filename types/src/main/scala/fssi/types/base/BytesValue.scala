@@ -11,7 +11,7 @@ import scala.util._
 trait BytesValue[A] {
 
   /** the value's bytes presentation
-	  */
+    */
   def bytes: Array[Byte]
 
   override def equals(obj: scala.Any): Boolean = obj match {
