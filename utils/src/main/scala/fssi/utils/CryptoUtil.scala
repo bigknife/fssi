@@ -35,14 +35,16 @@ trait CryptoUtil {
     sr.nextBytes(salt)
 
     val spec = new PBEKeySpec(seed.map(_.toChar), salt, 65536, 256) //aes-256
-    val sf = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1")
+    val sf = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1", ProviderName)
     sf.generateSecret(spec)
   }
 
   // use aes to encrypt
   def aesEncryptPrivKey(ivBytes: Array[Byte], key: Array[Byte], source: Array[Byte]): Array[Byte] = {
+    //val ivBytes1 = "1111111111111111".getBytes
     val iv: IvParameterSpec = new IvParameterSpec(ivBytes)
-    val cipher = Cipher.getInstance("AES/CBC/PKCS5Padding")
+    
+    val cipher = Cipher.getInstance("AES/CBC/PKCS5Padding", ProviderName)
     val k = new SecretKeySpec(key, "AES/CBC/PKCS5Padding")
     cipher.init(Cipher.ENCRYPT_MODE, k, iv)
     cipher.update(source)
@@ -104,9 +106,9 @@ trait CryptoUtil {
 
   def des3cbcEncrypt(source: Array[Byte], key: Array[Byte], iv: Array[Byte]): Array[Byte] = {
     val spec       = new DESedeKeySpec(key)
-    val keyFactory = SecretKeyFactory.getInstance(SecretKeyFactoryAlgo)
+    val keyFactory = SecretKeyFactory.getInstance(SecretKeyFactoryAlgo, ProviderName)
     val desKey     = keyFactory.generateSecret(spec)
-    val cipher     = Cipher.getInstance(CipherAlgo)
+    val cipher     = Cipher.getInstance(CipherAlgo, ProviderName)
     val ivSpec     = new IvParameterSpec(iv)
     cipher.init(Cipher.ENCRYPT_MODE, desKey, ivSpec)
 
@@ -115,9 +117,9 @@ trait CryptoUtil {
 
   def des3cbcDecrypt(source: Array[Byte], key: Array[Byte], iv: Array[Byte]): Array[Byte] = {
     val spec       = new DESedeKeySpec(key)
-    val keyFactory = SecretKeyFactory.getInstance(SecretKeyFactoryAlgo)
+    val keyFactory = SecretKeyFactory.getInstance(SecretKeyFactoryAlgo, ProviderName)
     val desKey     = keyFactory.generateSecret(spec)
-    val cipher     = Cipher.getInstance(CipherAlgo)
+    val cipher     = Cipher.getInstance(CipherAlgo, ProviderName)
     val ivSpec     = new IvParameterSpec(iv)
     cipher.init(Cipher.DECRYPT_MODE, desKey, ivSpec)
     cipher.doFinal(source)
@@ -146,7 +148,7 @@ trait CryptoUtil {
   }
 
   def sha256(source: Array[Byte]): Array[Byte] = {
-    java.security.MessageDigest.getInstance("SHA-256").digest(source)
+    java.security.MessageDigest.getInstance("SHA-256", ProviderName).digest(source)
   }
 
 }
