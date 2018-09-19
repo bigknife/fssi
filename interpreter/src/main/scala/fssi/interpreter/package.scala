@@ -28,6 +28,7 @@ package object interpreter {
       with ContractDataStoreHandler.Implicits
       with ChainStoreHandler.Implicits
       with AccountStoreHandler.Implicits
+      with AccountServiceHandler.Implicits
       with TransactionServiceHandler.Implicits
       with LogServiceHandler.Implicits
       with ConsensusEngineHandler.Implicits
