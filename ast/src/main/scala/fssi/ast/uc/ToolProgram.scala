@@ -12,12 +12,13 @@ import java.nio.file.Path
 
 import fssi.types.Contract.Parameter
 
-trait ToolProgram[F[_]] extends BaseProgram[F] {
+trait ToolProgram[F[_]] extends BaseProgram[F] with AccountProgram[F] {
   import model._
 
   /** Create an account, only a password is needed.
     * NOTE: then password is ensured to be 24Bytes length.
     */
+  /*
   def createAccount(password: String): SP[F, Account] = {
     import crypto._
     for {
@@ -27,6 +28,7 @@ trait ToolProgram[F[_]] extends BaseProgram[F] {
       pk <- desEncryptPrivateKey(privateKey, iv, password = password.getBytes("utf-8"))
     } yield Account(HexString(publicKey.value), HexString(pk.value), HexString(iv.value))
   }
+   */
 
   /** Create a chain
     * @param dataDir directory where the chain data saved

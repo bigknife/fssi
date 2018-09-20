@@ -8,17 +8,28 @@ import interpreter.jsonCodecs._
 
 object CmdArgsParser extends OptionParser[CmdArgs]("fssitool") {
 
-  head("fssi_tool", "0.1.0")
+  head("tool", "0.2")
   help("help").abbr("h").text("print this help messages")
 
   cmd("CreateAccount")
     .action((_, _) => CreateAccountArgs())
     .text("Create An FSSI Account")
     .children(
-      opt[String]("password")
-        .abbr("p")
+      opt[String]("random-seed")
+        .text("a random string to create secret key for account")
+        .abbr("s")
         .required()
-        .action((x, c) => c.asInstanceOf[CreateAccountArgs].copy(password = x))
+        .action((x, c) => c.asInstanceOf[CreateAccountArgs].copy(randomSeed = x)),
+      opt[java.io.File]("account-file")
+        .text("output account json file path")
+        .abbr("af")
+        .required()
+        .action((x, c) => c.asInstanceOf[CreateAccountArgs].copy(accountFile = x)),
+      opt[java.io.File]("key-file")
+        .text("output secret key file")
+        .abbr("kf")
+        .required()
+        .action((x, c) => c.asInstanceOf[CreateAccountArgs].copy(secretKeyFile = x))
     )
 
   cmd("CreateChain")

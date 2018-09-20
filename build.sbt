@@ -5,6 +5,7 @@ parallelExecution in ThisBuild := false
 fork in ThisBuild := true
 scalaVersion in ThisBuild := "2.12.4"
 coverageEnabled in (Test, test) := true
+enablePlugins(PackPlugin)
 
 // utils
 lazy val pUtils = utils()
@@ -40,56 +41,25 @@ lazy val pTool = tool()
   .dependsOn(pJsonRpc)
   .dependsOn(pSandBox)
   .settings(
-    mainClass in assembly := Some("fssi.tool.ToolMain"),
-    assemblyMergeStrategy in assembly := {
-      case "module-info.class"          => MergeStrategy.discard
-      case PathList("META-INF", xs @ _) => MergeStrategy.discard
-      case "config-sample.conf"         => MergeStrategy.first
-      case x =>
-        val oldStrategy = (assemblyMergeStrategy in assembly).value
-        oldStrategy(x)
-    },
-    assemblyOption in assembly := (assemblyOption in assembly).value
-      .copy(prependShellScript = Some(defaultShellScript)),
-    assemblyJarName in assembly := s"${name.value}",
-    test in assembly := {}
+    packMain := Map("tool" -> "fssi.tool.ToolMain")
   )
 
 lazy val pCoreNode = coreNode()
   .dependsOn(pInterperter)
   .settings(
-    mainClass in assembly := Some("fssi.corenode.CoreNodeMain"),
-    assemblyMergeStrategy in assembly := {
-      case "module-info.class"          => MergeStrategy.discard
-      case PathList("META-INF", xs @ _) => MergeStrategy.discard
-      case x =>
-        val oldStrategy = (assemblyMergeStrategy in assembly).value
-        oldStrategy(x)
-    },
-    assemblyOption in assembly := (assemblyOption in assembly).value
-      .copy(prependShellScript = Some(defaultShellScript)),
-    assemblyJarName in assembly := s"${name.value}",
-    test in assembly := {}
+    packMain := Map("corenode" -> "fssi.corenode.CoreNodeMain")
   )
 
 lazy val pEdgeNode = edgeNode()
   .dependsOn(pInterperter)
   .dependsOn(pJsonRpc)
   .settings(
-    mainClass in assembly := Some("fssi.edgenode.EdgeNodeMain"),
-    assemblyMergeStrategy in assembly := {
-      case "module-info.class"          => MergeStrategy.discard
-      case PathList("META-INF", xs @ _) => MergeStrategy.discard
-      case x =>
-        val oldStrategy = (assemblyMergeStrategy in assembly).value
-        oldStrategy(x)
-    },
-    assemblyOption in assembly := (assemblyOption in assembly).value
-      .copy(prependShellScript = Some(defaultShellScript)),
-    assemblyJarName in assembly := s"${name.value}",
-    test in assembly := {}
+    packMain := Map("edgenode" -> "fssi.edgenode.EdgeNodeMain")
   )
 
 addCommandAlias(
-  "assemblyAll",
-  ";project tool;clean;assembly;project coreNode;clean;assembly;project edgeNode;clean;assembly")
+  "packInstallAll",
+  ";project tool;clean;packInstall;project coreNode;clean;packInstall;project edgeNode;clean;packInstall")
+addCommandAlias("packInstallTool", ";project /;clean;project tool;packInstall")
+addCommandAlias("packInstallCoreNode", ";project /;clean;project coreNode;packInstall")
+addCommandAlias("packInstallEdgeNode", ";project /;clean;project edgeNode;packInstall")

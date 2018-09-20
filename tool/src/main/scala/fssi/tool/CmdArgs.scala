@@ -14,7 +14,11 @@ object CmdArgs {
 
   /** CreateAccount Arguments
     */
-  case class CreateAccountArgs(password: String = "GoodLuck") extends CmdArgs
+  case class CreateAccountArgs(
+      randomSeed: String = "GoodLuck",
+      accountFile: File = new File(""),
+      secretKeyFile: File = new File("")
+  ) extends CmdArgs
 
   /** CreateChain Arguments
     */
@@ -57,7 +61,8 @@ object CmdArgs {
   case class CompileContractArgs(
       projectDirectory: File = new File(""),
       outputFile: File = new File(""),
-      sandboxVersion: CompileContractArgs.SandobxVersion = CompileContractArgs.SandobxVersion.`1.0.0`
+      sandboxVersion: CompileContractArgs.SandobxVersion =
+        CompileContractArgs.SandobxVersion.`1.0.0`
   ) extends CmdArgs
 
   object CompileContractArgs {
@@ -69,7 +74,7 @@ object CmdArgs {
 
       def apply(s: String): SandobxVersion = s match {
         case "1.0.0" => `1.0.0`
-        case _ => `1.0.0`
+        case _       => `1.0.0`
       }
     }
   }

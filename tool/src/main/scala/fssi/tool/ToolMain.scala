@@ -11,7 +11,8 @@ object ToolMain extends App {
   CmdArgsParser.parse(args, Empty) match {
     case Some(result) =>
       result match {
-        case CreateAccountArgs(password)       => createAccount(password)
+        case CreateAccountArgs(randomSeed, accountFile, secretKeyFile) =>
+          createAccount(randomSeed, accountFile, secretKeyFile)
         case CreateChainArgs(dataDir, chainID) => createChain(dataDir, chainID)
         case CreateTransferTransactionArgs(accountFile, password, payee, token) =>
           createTransferTransaction(accountFile, password, payee, token)
