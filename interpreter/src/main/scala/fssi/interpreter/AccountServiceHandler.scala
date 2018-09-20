@@ -22,7 +22,10 @@ class AccountServiceHandler extends AccountService.Handler[Stack] {
     * we use the AES standard
     */
   override def createAesSecretKey(seed: RandomSeed): Stack[Account.SecretKey] = Stack {
-    Account.SecretKey(crypto.createAesSecretKey(seed.value).getEncoded)
+    val sk = Account.SecretKey(crypto.createAesSecretKey(seed.value).getEncoded)
+    require(sk.value.length == 32,
+            s"secretKey should be 32Bytes(256bits), but is ${sk.value.length}")
+    sk
   }
 
   /** create aes encryption iv(16bytes)
@@ -36,7 +39,11 @@ class AccountServiceHandler extends AccountService.Handler[Stack] {
   override def aesEncryptPrivKey(privKey: Account.PrivKey,
                                  secretKey: Account.SecretKey,
                                  iv: Account.IV): Stack[Account.PrivKey] = Stack {
-    Account.PrivKey(crypto.aesEncryptPrivKey(iv.value, privKey.value, secretKey.value))
+    require(secretKey.value.length == 32,
+            s"secretKey should be 32Bytes(256bits), but is ${secretKey.value.length}")
+    Account.PrivKey(crypto.aesEncryptPrivKey(iv.value, secretKey.value, privKey.value))
+    // bug: parameters order is wrong. because privKey.value and secretKey.value is both of type `Array[Byte]`
+    // Account.PrivKey(crypto.aesEncryptPrivKey(iv.value, privKey.value, secretKey.value))
   }
 
   /** according btc standard, the id/address is from account's public key.

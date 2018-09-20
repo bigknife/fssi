@@ -20,10 +20,14 @@ class AccountServiceHandlerSpec extends FunSuite {
   }
 
   test("createAessecretkey") {
-    val seed = RandomSeed("Hello,world! I love peace.".getBytes)
-    val aesKey =
-      AccountServiceHandler.instance.createAesSecretKey(seed)(Setting.DefaultSetting).unsafeRunSync
-    info(s"aesKey = ${aesKey.asBytesValue.bcBase58}")
+    for (i <- 1 to 100) {
+      val seed = RandomSeed("Hello,world! I love peace.".getBytes)
+      val aesKey =
+        AccountServiceHandler.instance.createAesSecretKey(seed)(Setting.DefaultSetting).unsafeRunSync
+      assert(aesKey.asBytesValue.length == 32)
+      info(s"aesKey = ${aesKey.asBytesValue.bcBase58}")
+    }
+
   }
 
   test("aesEncryptprivKey") {

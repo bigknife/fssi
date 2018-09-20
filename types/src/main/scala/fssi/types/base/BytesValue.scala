@@ -14,6 +14,8 @@ trait BytesValue[A] {
     */
   def bytes: Array[Byte]
 
+  def length: Int = bytes.length
+
   override def equals(obj: scala.Any): Boolean = obj match {
     case x: BytesValue[_] => x.bytes sameElements bytes
     case _                => false

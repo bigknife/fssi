@@ -35,7 +35,7 @@ trait CryptoUtil {
     val salt = Array.fill(16)(0.toByte)
     sr.nextBytes(salt)
 
-    val spec = new PBEKeySpec(seed.map(_.toChar), salt, 65536, 256) //aes-256
+    val spec = new PBEKeySpec(seed.map(_.toChar), salt, 58, 256) //aes-256
     //Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider())
     val sf = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1", ProviderName)
     sf.generateSecret(spec)
@@ -44,7 +44,6 @@ trait CryptoUtil {
   // use aes to encrypt
   def aesEncryptPrivKey(ivBytes: Array[Byte], key: Array[Byte], source: Array[Byte]): Array[Byte] = {
     val iv: IvParameterSpec = new IvParameterSpec(ivBytes)
-    
     val cipher = Cipher.getInstance("AES/CBC/PKCS5Padding", ProviderName)
     val k = new SecretKeySpec(key, "AES/CBC/PKCS5Padding")
     cipher.init(Cipher.ENCRYPT_MODE, k, iv)

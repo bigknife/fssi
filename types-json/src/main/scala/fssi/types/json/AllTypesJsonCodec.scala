@@ -4,6 +4,7 @@ package json
 
 trait AllTypesJsonCodec
     extends AccountCodec
+    with AccountJsonCodec
     with Base64StringJsonCodec
     with HexStringJsonCodec
     with SignatureJsonCodec
