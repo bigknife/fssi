@@ -59,7 +59,10 @@ class AccountServiceHandler extends AccountService.Handler[Stack] {
 }
 
 object AccountServiceHandler {
-  val instance = new AccountServiceHandler
+  val instance = {
+    crypto.registerBC()
+    new AccountServiceHandler
+  }
 
   trait Implicits {
     implicit val accountServiceHandler: AccountServiceHandler = instance

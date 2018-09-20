@@ -43,7 +43,6 @@ trait CryptoUtil {
 
   // use aes to encrypt
   def aesEncryptPrivKey(ivBytes: Array[Byte], key: Array[Byte], source: Array[Byte]): Array[Byte] = {
-    //val ivBytes1 = "1111111111111111".getBytes
     val iv: IvParameterSpec = new IvParameterSpec(ivBytes)
     
     val cipher = Cipher.getInstance("AES/CBC/PKCS5Padding", ProviderName)
