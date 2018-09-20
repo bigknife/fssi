@@ -35,6 +35,7 @@ trait CryptoUtil {
     sr.nextBytes(salt)
 
     val spec = new PBEKeySpec(seed.map(_.toChar), salt, 65536, 256) //aes-256
+    //Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider())
     val sf = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1", ProviderName)
     sf.generateSecret(spec)
   }
