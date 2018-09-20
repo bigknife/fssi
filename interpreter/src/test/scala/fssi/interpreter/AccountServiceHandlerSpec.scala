@@ -5,8 +5,12 @@ import org.scalatest._
 import types.implicits._
 import types.base._
 import types.biz._
+import utils._
 
 class AccountServiceHandlerSpec extends FunSuite {
+  crypto.registerBC()
+
+
   test("createSecp256k1KeyPair") {
     val (pubKey, privKey) =
       AccountServiceHandler.instance.createSecp256k1KeyPair()(Setting.DefaultSetting).unsafeRunSync

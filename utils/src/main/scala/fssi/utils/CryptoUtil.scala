@@ -11,7 +11,8 @@ import java.math.BigInteger
 import org.bouncycastle.jce.interfaces.{ECPrivateKey, ECPublicKey}
 
 trait CryptoUtil {
-  Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider())
+
+  def registerBC(): Int = Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider())
 
   // ECDSA
   //       ref: http://www.bouncycastle.org/wiki/display/JA1/Elliptic+Curve+Key+Pair+Generation+and+Key+Factories
