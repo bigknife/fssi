@@ -12,23 +12,8 @@ import java.nio.file.Path
 
 import fssi.types.Contract.Parameter
 
-trait ToolProgram[F[_]] extends BaseProgram[F] with AccountProgram[F] {
+trait ToolProgram[F[_]] extends BaseProgram[F] with AccountProgram[F] with TransactionFactoryProgram[F]{
   import model._
-
-  /** Create an account, only a password is needed.
-    * NOTE: then password is ensured to be 24Bytes length.
-    */
-  /*
-  def createAccount(password: String): SP[F, Account] = {
-    import crypto._
-    for {
-      keypair <- createKeyPair()
-      (publicKey, privateKey) = keypair
-      iv <- createIVForDes()
-      pk <- desEncryptPrivateKey(privateKey, iv, password = password.getBytes("utf-8"))
-    } yield Account(HexString(publicKey.value), HexString(pk.value), HexString(iv.value))
-  }
-   */
 
   /** Create a chain
     * @param dataDir directory where the chain data saved
@@ -72,6 +57,7 @@ trait ToolProgram[F[_]] extends BaseProgram[F] with AccountProgram[F] {
 
   /** Create a transfer transaction json rpc protocol
     */
+  /*
   def createTransferTransaction(accountFile: File,
                                 password: Array[Byte],
                                 payee: Account.ID,
@@ -91,7 +77,9 @@ trait ToolProgram[F[_]] extends BaseProgram[F] with AccountProgram[F] {
       signature         <- makeSignature(unsignedBytes, privateKey)
     } yield transferNotSigned.copy(signature = signature)
   }
+   */
 
+  /*
   def createPublishContractTransaction(
       accountFile: File,
       password: Array[Byte],
@@ -153,6 +141,7 @@ trait ToolProgram[F[_]] extends BaseProgram[F] with AccountProgram[F] {
       signature     <- makeSignature(unsignedBytes, privateKey)
     } yield runContractNotSigned.copy(signature = signature)
   }
+   */
 }
 
 object ToolProgram {

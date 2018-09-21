@@ -20,7 +20,8 @@ trait CreatePublishContractTransactionHandler extends BaseHandler {
             password: Array[Byte],
             contractFile: File,
             contractName: UniqueName,
-            contractVersion: Version): Unit = {
+    contractVersion: Version): Unit = {
+    /*
     val setting: Setting = Setting.ToolSetting()
 
     runner
@@ -41,6 +42,8 @@ trait CreatePublishContractTransactionHandler extends BaseHandler {
         )
         println(showRequest(request))
     }
+     */
+    ???
   }
 
   private def showRequest(request: Request[Transaction]): String = request.asJson.spaces2

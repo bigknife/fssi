@@ -78,26 +78,26 @@ object CmdArgsParser extends OptionParser[CmdArgs]("fssitool") {
             .required()
             .text("payer account file created by 'CreateAccount'")
             .action((f, c) => c.asInstanceOf[CreateTransferTransactionArgs].copy(accountFile = f)),
-          opt[String]("password")
-            .abbr("p")
+          opt[java.io.File]("key-file")
+            .abbr("kf")
             .required()
-            .text("payer's account password")
+            .text("payer's account secret key file")
             .action((x, c) =>
               c.asInstanceOf[CreateTransferTransactionArgs]
-                .copy(password = x.getBytes("utf-8"))),
+                .copy(secretKeyFile = x)),
           opt[String]("payee-id")
             .abbr("pi")
             .required()
             .text("payee's account id, the hex string of it's public key")
             .action((x, c) =>
               c.asInstanceOf[CreateTransferTransactionArgs]
-                .copy(payee = Account.ID(HexString.decode(x)))),
+                .copy(payee = biz.Account.ID(base.BytesValue.decodeBcBase58(x).get.bytes))),
           opt[String]("token")
             .abbr("t")
             .required()
             .text("amount to be transfered, in form of 'number' + 'unit', eg. 100Sweet. ")
             .action((x, c) =>
-              c.asInstanceOf[CreateTransferTransactionArgs].copy(token = Token.parse(x)))
+              c.asInstanceOf[CreateTransferTransactionArgs].copy(token = biz.Token.parse(x)))
         ),
       cmd("publishContract")
         .text("create publish contract transaction")

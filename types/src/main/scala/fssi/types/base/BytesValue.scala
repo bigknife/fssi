@@ -79,6 +79,10 @@ object BytesValue {
       def bytes: Array[Byte] = MD.digest(bv.bytes)
     }
     def bcBase58: String = base58.encode(bv.bytes)
+
+    def any: BytesValue[Any] = new BytesValue[Any] {
+      def bytes: Array[Byte] = bv.bytes
+    }
   }
 
   final case class Syntax[A](a: A)(implicit F: A => Array[Byte]) {

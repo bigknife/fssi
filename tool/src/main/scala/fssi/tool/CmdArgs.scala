@@ -30,9 +30,9 @@ object CmdArgs {
     */
   case class CreateTransferTransactionArgs(
       accountFile: File = new File(""),
-      password: Array[Byte] = Array.emptyByteArray,
-      payee: Account.ID = Account.ID(HexString.empty),
-      token: Token = Token.Zero
+      secretKeyFile: File = new File(""),
+      payee: biz.Account.ID = biz.Account.emptyId,
+      token: biz.Token = biz.Token.Zero
   ) extends CmdArgs
 
   /** Create Publish Contract Transaction Arguments

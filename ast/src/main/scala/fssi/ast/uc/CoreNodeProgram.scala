@@ -74,6 +74,7 @@ trait CoreNodeProgram[F[_]] extends BaseProgram[F] with CoreNodeProgramHelper[F]
     import consensusEngine._
     import network._
     import log._
+    /*
     for {
       toBeSingedBytes <- calculateSingedBytesOfTransaction(transaction)
       verified <- verifySignature(toBeSingedBytes,
@@ -94,6 +95,8 @@ trait CoreNodeProgram[F[_]] extends BaseProgram[F] with CoreNodeProgramHelper[F]
 
       _ <- tryToAgreeBlock(node.account.get, undeterminedBlock, undeterminedBlock)
     } yield ()
+     */
+    ???
   }
 
   /** handle something when a block is determined

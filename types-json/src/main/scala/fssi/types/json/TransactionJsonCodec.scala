@@ -8,6 +8,7 @@ import io.circe.syntax._
 import implicits._
 
 trait TransactionJsonCodec {
+
   import Transaction._
 
   implicit val transactionIDJsonEncoder: Encoder[Transaction.ID] = (a: Transaction.ID) =>

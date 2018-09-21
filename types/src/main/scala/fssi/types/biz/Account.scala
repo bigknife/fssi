@@ -19,6 +19,8 @@ object Account {
   case class ID(value: Array[Byte])
   case class IV(value: Array[Byte])
 
+  def emptyId: ID = ID(Array.emptyByteArray)
+
   /** secretkey is used to encrypt the private key
     */
   case class SecretKey(value: Array[Byte])

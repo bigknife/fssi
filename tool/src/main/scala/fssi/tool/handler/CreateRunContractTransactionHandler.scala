@@ -21,7 +21,8 @@ trait CreateRunContractTransactionHandler extends BaseHandler {
             contractName: UniqueName,
             contractVersion: Version,
             method: Contract.Method,
-            parameter: Contract.Parameter): Unit = {
+    parameter: Contract.Parameter): Unit = {
+    /*
     val setting: Setting = Setting.ToolSetting()
 
     runner
@@ -43,6 +44,8 @@ trait CreateRunContractTransactionHandler extends BaseHandler {
         )
         println(showRequest(request))
     }
+     */
+    ???
   }
 
   private def showRequest(request: Request[Transaction]): String = request.asJson.spaces2
