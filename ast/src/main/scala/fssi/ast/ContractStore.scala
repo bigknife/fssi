@@ -61,4 +61,9 @@ import java.io._
   /** load a uer contract from a proper contract file
     */
   def loadUserContract(contractFile: File): P[F, Either[FSSIException, Contract.UserContract]]
+
+
+  /** find a user contract from current block chain
+    */
+  def findUserContract(name: UniqueName, version: Contract.Version): P[F, Either[FSSIException, Contract.UserContract]]
 }

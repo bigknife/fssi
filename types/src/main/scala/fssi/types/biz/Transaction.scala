@@ -24,7 +24,7 @@ object Transaction {
       signature: Signature,
       timestamp: Long
   ) extends Transaction {
-    val sender: Account.ID = payer
+    def sender: Account.ID = payer
   }
 
   /** Deploy is a transaction to publish a smart contract to the block chain
@@ -36,7 +36,22 @@ object Transaction {
       signature: Signature,
       timestamp: Long
   ) extends Transaction {
-    val sender: Account.ID = owner
+    def sender: Account.ID = owner
+  }
+
+  /** Run is a transaction to run a smart contract on the block chain
+    */
+  case class Run(
+    id: Transaction.ID,
+    caller: Account.ID,
+    contractName: UniqueName,
+    contractVersion: Contract.Version,
+    methodAlias: String,
+    contractParameter: Option[Contract.UserContract.Parameter],
+    signature: Signature,
+    timestamp: Long
+  ) extends Transaction {
+    def sender: Account.ID = caller
   }
 
 

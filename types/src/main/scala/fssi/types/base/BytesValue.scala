@@ -103,6 +103,11 @@ object BytesValue {
         acc ++ F(n)
       }
     }
+
+    implicit def optionToBytesValue[A](a: Option[A])(implicit F: A => Array[Byte]): Array[Byte] = {
+      if(a.isEmpty) Array.emptyByteArray
+      else F(a.get)
+    }
   }
 
   object implicits extends Implicits

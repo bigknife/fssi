@@ -77,7 +77,7 @@ object CmdArgsParser extends OptionParser[CmdArgs]("fssitool") {
           opt[java.io.File]("account-file")
             .abbr("af")
             .required()
-            .text("payer account file created by 'CreateAccount'")
+            .text("payer's account file created by 'CreateAccount'")
             .action((f, c) => c.asInstanceOf[CreateTransferTransactionArgs].copy(accountFile = f)),
           opt[java.io.File]("key-file")
             .abbr("kf")
@@ -107,7 +107,7 @@ object CmdArgsParser extends OptionParser[CmdArgs]("fssitool") {
           opt[java.io.File]("account-file")
             .abbr("af")
             .required()
-            .text("payer account file created by 'CreateAccount'")
+            .text("contract owner's account file created by 'CreateAccount'")
             .action((f, c) =>
               c.asInstanceOf[CreateDeployTransactionArgs].copy(accountFile = f)),
           opt[java.io.File]("key-file")
@@ -124,47 +124,45 @@ object CmdArgsParser extends OptionParser[CmdArgs]("fssitool") {
             .action((x, c) =>
               c.asInstanceOf[CreateDeployTransactionArgs].copy(contractFile = x))
         ),
-      cmd("runContract")
+      cmd("run")
         .text("create run contract transaction")
-        .action((_, _) => CreateRunContractTransactionArgs())
+        .action((_, _) => CreateRunTransactionArgs())
         .children(
           opt[java.io.File]("account-file")
             .abbr("af")
             .required()
-            .text("invoker account file created by 'CreateAccount'")
+            .text("contract caller's account file created by 'CreateAccount'")
             .action(
-              (f, c) => c.asInstanceOf[CreateRunContractTransactionArgs].copy(accountFile = f)),
-          opt[String]("password")
-            .abbr("p")
+              (f, c) => c.asInstanceOf[CreateRunTransactionArgs].copy(accountFile = f)),
+          opt[java.io.File]("key-file")
+            .abbr("kf")
             .required()
-            .text("invoker's account password")
+            .text("contract caller's account secret key file")            
             .action((x, c) =>
-              c.asInstanceOf[CreateRunContractTransactionArgs]
-                .copy(password = x.getBytes("utf-8"))),
+              c.asInstanceOf[CreateRunTransactionArgs]
+                .copy(secretKeyFile = x))),
           opt[String]("contract-name")
             .abbr("name")
             .required()
-            .text("invoking contract name")
+            .text("calling contract name")
             .action((x, c) =>
-              c.asInstanceOf[CreateRunContractTransactionArgs].copy(contractName = UniqueName(x))),
+              c.asInstanceOf[CreateRunTransactionArgs].copy(contractName = UniqueName(x))),
           opt[String]("contract-version")
             .abbr("version")
             .required()
             .text("the version of the invoking contract")
             .action((x, c) =>
-              c.asInstanceOf[CreateRunContractTransactionArgs]
+              c.asInstanceOf[CreateRunTransactionArgs]
                 .copy(contractVersion = Contract.Version(x).get)),
-          opt[String]("method")
+          opt[String]("method-alias")
             .abbr("m")
-            .text("method to invoke")
-            .action((x, c) => c.asInstanceOf[CreateRunContractTransactionArgs].copy(methodAlias = x)),
+            .required()
+            .text("alias of method to invoke")
+            .action((x, c) => c.asInstanceOf[CreateRunTransactionArgs].copy(methodAlias = x)),
           opt[String]("parameter")
             .abbr("p")
             .text("parameters for this invoking")
             .action((x, c) =>
-              c.asInstanceOf[CreateRunContractTransactionArgs]
-                .copy(parameter = io.circe.parser.parse(x).right.get.as[Contract.UserContract.Parameter].right.get))
-        )
-    )
-
+              c.asInstanceOf[CreateRunTransactionArgs]
+                .copy(parameter = Some(io.circe.parser.parse(x).right.get.as[Contract.UserContract.Parameter].right.get))))
 }

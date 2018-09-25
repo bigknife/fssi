@@ -46,13 +46,13 @@ object CmdArgs {
 
   /** Create Run Contract Transaction Arguments
     */
-  case class CreateRunContractTransactionArgs(
+  case class CreateRunTransactionArgs(
       accountFile: File = new File(""),
-      password: Array[Byte] = Array.emptyByteArray,
+      secretKeyFile: File = new File(""),
       contractName: UniqueName = UniqueName.empty,
       contractVersion: Contract.Version = Contract.Version.empty,
       methodAlias: String = "",
-      parameter: Contract.UserContract.Parameter = Contract.UserContract.Parameter.PEmpty
+      parameter: Option[Contract.UserContract.Parameter] = None
   ) extends CmdArgs
 
   /** Compile Contract Args

@@ -56,6 +56,29 @@ trait TransactionFactoryProgram[F[_]] extends BaseProgram[F] {
       signedDeploy <- signDeploy(deploy, privKey)
     } yield signedDeploy
   }
+
+  /** create a run(user contract) transaction
+    */
+  def createRunTransaction(accountFile: File,
+                           secretKeyFile: File,
+                           contractName: UniqueName,
+                           contractVersion: Contract.Version,
+                           methodAlias: String,
+                           parameter: Option[Contract.UserContract.Parameter]): SP[F, Transaction.Run] = {
+    import accountStore._
+    import accountService._
+    import transactionService._
+    import contractStore._
+
+    for {
+      account      <- loadAccountFromFile(accountFile).right
+      secretKey    <- loadAccountSecretKeyFile(secretKeyFile).right
+      privKey      <- aesDecryptPrivKey(account.encPrivKey, secretKey, account.iv).right
+      id           <- createTransactionID(account.id)
+      run       <- createRun(id, caller = account.id, contractName, contractVersion, methodAlias, parameter)
+      signedRun <- signRun(run, privKey)
+    } yield signedRun
+  }
 }
 
 object TransactionFactoryProgram {

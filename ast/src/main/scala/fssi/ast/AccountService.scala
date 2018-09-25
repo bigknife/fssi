@@ -55,4 +55,8 @@ import bigknife.sop.implicits._
   /** using account's private key to sign a deploy transaction
     */
   def signDeploy(deploy: Transaction.Deploy, privKey: Account.PrivKey): P[F, Transaction.Deploy]
+
+  /** using account's private key to sign a run transaction
+    */
+  def signRun(deploy: Transaction.Run, privKey: Account.PrivKey): P[F, Transaction.Run]
 }

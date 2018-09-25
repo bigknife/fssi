@@ -3,6 +3,7 @@ package ast
 
 import types.exception._
 import types.biz._
+import types.base._
 import utils._
 import bigknife.sop._
 import bigknife.sop.macros._
@@ -23,7 +24,18 @@ import bigknife.sop.implicits._
 
   /** create a publish-contract transaction object with an empty signature field
     */
-  def createDeploy(id: Transaction.ID, owner: Account.ID, contract: Contract.UserContract): P[F, Transaction.Deploy]
+  def createDeploy(id: Transaction.ID,
+                   owner: Account.ID,
+                   contract: Contract.UserContract): P[F, Transaction.Deploy]
+
+  /** create run-contract transaction object with an empty signature field
+    */
+  def createRun(id: Transaction.ID,
+                caller: Account.ID,
+                contractName: UniqueName,
+                version: Contract.Version,
+                methodAlias: String,
+                parameter: Option[Contract.UserContract.Parameter]): P[F, Transaction.Run]
 
   /** Create a publish-contract transaction object with an empty signature field
     */

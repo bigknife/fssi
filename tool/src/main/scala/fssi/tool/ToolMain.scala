@@ -20,20 +20,18 @@ object ToolMain extends App {
           compileContract(projectDirectory, outputDirectory, sandboxVersion.toString)
         case CreateDeployTransactionArgs(accountFile, secretKeyFile, contractFile) =>
           createDeployTransaction(accountFile, secretKeyFile, contractFile)
-        case CreateRunContractTransactionArgs(accountFile,
-                                              password,
-                                              contractName,
-                                              contractVersion,
-                                              method,
-                                              parameter) =>
-        /*
-          createRunContractTransaction(accountFile,
-                                       password,
-                                       contractName,
-                                       contractVersion,
-                                       method,
-                                       parameter)
-         */
+        case CreateRunTransactionArgs(accountFile,
+                                      password,
+                                      contractName,
+                                      contractVersion,
+                                      method,
+                                      parameter) =>
+          createRunTransaction(accountFile,
+                               password,
+                               contractName,
+                               contractVersion,
+                               method,
+                               parameter)
 
         case _ =>
       }

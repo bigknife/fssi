@@ -101,6 +101,15 @@ class AccountServiceHandler extends AccountService.Handler[Stack] {
     deploy.copy(signature = Signature(sign))
   }
 
+  /** using account's private key to sign a run transaction
+    */
+  override  def signRun(run: Transaction.Run, privKey: Account.PrivKey): Stack[Transaction.Run]=Stack {
+val bytes     = determinedBytesWithoutSignature(run)
+    val ecPrivKey = crypto.rebuildECPrivateKey(privKey.value, crypto.SECP256K1)
+    val sign      = crypto.makeSignature(bytes, ecPrivKey)
+    run.copy(signature = Signature(sign))
+}
+
   private def determinedBytesWithoutSignature(transfer: Transaction.Transfer): Array[Byte] = {
     //id/payer/payee/token/timestamp
     import transfer._
@@ -119,6 +128,18 @@ class AccountServiceHandler extends AccountService.Handler[Stack] {
       contract.asBytesValue.any ++
       timestamp.asBytesValue.any).bytes
   }
+
+  private def determinedBytesWithoutSignature(run: Transaction.Run): Array[Byte] = {
+    //id/caller/name/version/alias/parameter/timestamp
+    import run._
+    (id.asBytesValue.any ++
+      caller.asBytesValue.any ++
+      contractName.asBytesValue.any ++
+      contractVersion.asBytesValue.any ++
+      methodAlias.asBytesValue.any ++
+      contractParameter.asBytesValue.any ++
+      timestamp.asBytesValue.any).bytes
+  }  
 }
 
 object AccountServiceHandler {

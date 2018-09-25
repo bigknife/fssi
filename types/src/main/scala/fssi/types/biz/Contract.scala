@@ -83,12 +83,11 @@ object Contract {
       */
     sealed trait Parameter {}
     object Parameter {
-      object PEmpty                 extends Parameter
       sealed trait PrimaryParameter extends Parameter
-
       case class PString(value: String) extends PrimaryParameter {
         override def toString: String = value
       }
+
       case class PBigDecimal(value: java.math.BigDecimal) extends PrimaryParameter {
         override def toString: String = value.toPlainString
       }
@@ -107,7 +106,7 @@ object Contract {
         override def toString: String = "[" + array.map(_.toString).mkString(",") + "]"
       }
       object PArray {
-        val Empty: PArray                        = PArray(Array.empty[PrimaryParameter])
+        def empty: PArray                        = PArray(Array.empty[PrimaryParameter])
         def apply(xs: PrimaryParameter*): PArray = PArray(xs.toArray)
       }
     }
@@ -120,6 +119,15 @@ object Contract {
       implicit def methodToBytesValue(m: Method): Array[Byte] = m.toString.getBytes
 
       implicit def codeToBytesValue(c: Code): Array[Byte] = c.value
+
+      implicit def parameterToBytesValue(p: Parameter): Array[Byte] = p match {
+        case Parameter.PString(x) => x.getBytes("utf-8")
+        case Parameter.PBigDecimal(x) => x.toPlainString.getBytes("utf-8")
+        case Parameter.PBool(x) => if(x) Array(1) else Array(0)
+        case Parameter.PArray(xs) => xs.foldLeft(Array.emptyByteArray) {(acc, n) =>
+          acc ++ parameterToBytesValue(n)
+        }
+      }
 
       implicit def userContractToBytesValue(uc: UserContract): Array[Byte] = {
         import uc._
