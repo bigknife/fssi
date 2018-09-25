@@ -1,6 +1,7 @@
 package fssi
 package ast
 package uc
+package tool
 
 import fssi.types.biz._
 import fssi.types.base._
