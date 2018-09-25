@@ -85,10 +85,20 @@ class AccountServiceHandler extends AccountService.Handler[Stack] {
     */
   override def signTransfer(transfer: Transaction.Transfer,
                             privKey: Account.PrivKey): Stack[Transaction.Transfer] = Stack {
-    val bytes = determinedBytesWithoutSignature(transfer)
+    val bytes     = determinedBytesWithoutSignature(transfer)
     val ecPrivKey = crypto.rebuildECPrivateKey(privKey.value, crypto.SECP256K1)
-    val sign = crypto.makeSignature(bytes, ecPrivKey)
+    val sign      = crypto.makeSignature(bytes, ecPrivKey)
     transfer.copy(signature = Signature(sign))
+  }
+
+  /** using account's private key to sign a deploy transaction
+    */
+  override def signDeploy(deploy: Transaction.Deploy,
+                          privKey: Account.PrivKey): Stack[Transaction.Deploy] = Stack {
+    val bytes     = determinedBytesWithoutSignature(deploy)
+    val ecPrivKey = crypto.rebuildECPrivateKey(privKey.value, crypto.SECP256K1)
+    val sign      = crypto.makeSignature(bytes, ecPrivKey)
+    deploy.copy(signature = Signature(sign))
   }
 
   private def determinedBytesWithoutSignature(transfer: Transaction.Transfer): Array[Byte] = {
@@ -98,6 +108,15 @@ class AccountServiceHandler extends AccountService.Handler[Stack] {
       payer.asBytesValue.any ++
       payee.asBytesValue.any ++
       token.asBytesValue.any ++
+      timestamp.asBytesValue.any).bytes
+  }
+
+  private def determinedBytesWithoutSignature(deploy: Transaction.Deploy): Array[Byte] = {
+    //id/owner/contract/timestamp
+    import deploy._
+    (id.asBytesValue.any ++
+      owner.asBytesValue.any ++
+      contract.asBytesValue.any ++
       timestamp.asBytesValue.any).bytes
   }
 }

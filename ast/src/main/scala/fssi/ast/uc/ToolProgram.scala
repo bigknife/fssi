@@ -27,7 +27,7 @@ trait ToolProgram[F[_]] extends BaseProgram[F] with AccountProgram[F] with Trans
     import contractDataStore._
     import blockService._
     import log._
-
+    /*
     for {
       createRoot   <- createChainRoot(dataDir, chainID)
       root         <- err.either(createRoot)
@@ -40,6 +40,8 @@ trait ToolProgram[F[_]] extends BaseProgram[F] with AccountProgram[F] with Trans
       _            <- saveBlock(genesisBlock)
       _            <- info(s"chain initialized, please edit the default config file: $confFile")
     } yield ()
+     */
+    ???
   }
 
   /** Compile contract
@@ -47,37 +49,16 @@ trait ToolProgram[F[_]] extends BaseProgram[F] with AccountProgram[F] with Trans
     */
   def compileContract(projectDirectory: File, output: File, sandboxVersion: String): SP[F, Unit] = {
     import contractService._
+    /*
     for {
       compileEither  <- compileContractProject(projectDirectory, sandboxVersion, output)
       _              <- err.either(compileEither)
       determinEither <- checkDeterminismOfContractProject(output)
       _              <- err.either(determinEither)
     } yield ()
+     */
+    ???
   }
-
-  /** Create a transfer transaction json rpc protocol
-    */
-  /*
-  def createTransferTransaction(accountFile: File,
-                                password: Array[Byte],
-                                payee: Account.ID,
-                                token: Token): SP[F, Transaction.Transfer] = {
-    import accountStore._
-    import crypto._
-    import transactionService._
-    for {
-      accountOrFailed <- loadAccountFromFile(accountFile)
-      account         <- err.either(accountOrFailed)
-      privateKeyOrFailed <- desDecryptPrivateKey(account.encryptedPrivateKey.toBytesValue,
-                                                 account.iv.toBytesValue,
-                                                 BytesValue(password))
-      privateKey        <- err.either(privateKeyOrFailed)
-      transferNotSigned <- createUnsignedTransfer(payer = account.id, payee, token)
-      unsignedBytes     <- calculateSingedBytesOfTransaction(transferNotSigned)
-      signature         <- makeSignature(unsignedBytes, privateKey)
-    } yield transferNotSigned.copy(signature = signature)
-  }
-   */
 
   /*
   def createPublishContractTransaction(

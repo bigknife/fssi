@@ -4,8 +4,11 @@ package interpreter
 import jsonCodecs._
 import utils._
 import trie._
-import types._
-import implicits._
+import types.biz._
+import types.base._
+import types.implicits._
+import types.exception._
+
 import ast._
 import java.io._
 import java.nio.charset.Charset
@@ -30,6 +33,7 @@ class ContractStoreHandler extends ContractStore.Handler[Stack] with LogSupport 
   /** initialize a data directory to be a contract store
     * @param dataDir directory to save contract.
     */
+  /*
   override def initializeContractStore(dataDir: File): Stack[Unit] = Stack {
     val path = new File(dataDir, contractFileDirName)
     path.mkdirs()
@@ -66,23 +70,29 @@ class ContractStoreHandler extends ContractStore.Handler[Stack] with LogSupport 
       log.info(s"init leveldb at $dbFile")
     }
   }
+   */
 
   /** self test for a contract store
     * @param block contract store should be tested on block
     * @return if the store is sane return true, or false
     */
+  /*
   override def testContractStore(block: Block): Stack[Boolean] = Stack { setting =>
     true
   }
+   */
 
   /** verify current state of contract store
     */
+  /*
   override def verifyContractStoreState(state: String): Stack[Boolean] = Stack { setting =>
     true
   }
+   */
 
   /** commit staged tokens
     */
+  /*
   override def commitStagedContract(height: BigInt): Stack[Unit] = Stack { setting =>
     // gid -> leveldbkey -> leveldb value
     contractTrie.updated { trie =>
@@ -108,17 +118,21 @@ class ContractStoreHandler extends ContractStore.Handler[Stack] with LogSupport 
         }
     }
   }
+   */
 
   /** rollback staged tokens
     */
+  /*
   override def rollbackStagedContract(height: BigInt): Stack[Unit] = Stack { setting =>
     contractStage.updated { map =>
       map - height
     }
   }
+   */
 
   /** temp save user's contract
     */
+  /*
   override def stageContract(height: BigInt,
                              gid: String,
                              contract: Contract.UserContract): Stack[Unit] = Stack { setting =>
@@ -127,9 +141,11 @@ class ContractStoreHandler extends ContractStore.Handler[Stack] with LogSupport 
       map + (height -> m)
     }
   }
+   */
 
   /** find user contract with gid
     */
+  /*
   override def findUserContract(name: UniqueName,
                                 version: Version): Stack[Option[Contract.UserContract]] = Stack {
     setting =>
@@ -152,6 +168,21 @@ class ContractStoreHandler extends ContractStore.Handler[Stack] with LogSupport 
             contract <- json.as[Contract.UserContract]
           } yield contract).toOption
         }
+  }
+   */
+
+    /** load a uer contract from a proper contract file
+    */
+  override  def loadUserContract(contractFile: File): Stack[Either[FSSIException, Contract.UserContract]] = Stack {setting =>
+    //todo: mock
+    Right(Contract.UserContract(
+      owner = Account.emptyId,
+      name = UniqueName.empty,
+      version = Contract.Version.empty,
+      code = Contract.UserContract.Code(Array.emptyByteArray),
+      methods = immutable.TreeSet.empty[Contract.UserContract.Method],
+      signature = Signature.empty
+    ))
   }
 
 }

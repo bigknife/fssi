@@ -15,5 +15,6 @@ trait BizTransactionJsonCodec {
 
   implicit val bizTransactionEncoder: Encoder[Transaction] = {
     case x: Transaction.Transfer => Json.obj("Transfer" -> Encoder[Transaction.Transfer].apply(x))
+    case x: Transaction.Deploy => Json.obj("Deploy" -> Encoder[Transaction.Deploy].apply(x))
   }
 }

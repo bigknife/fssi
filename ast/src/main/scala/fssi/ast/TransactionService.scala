@@ -23,6 +23,10 @@ import bigknife.sop.implicits._
 
   /** create a publish-contract transaction object with an empty signature field
     */
+  def createDeploy(id: Transaction.ID, owner: Account.ID, contract: Contract.UserContract): P[F, Transaction.Deploy]
+
+  /** Create a publish-contract transaction object with an empty signature field
+    */
   /*
   def createUnsignedPublishContractTransaction(
       owner: Account.ID,

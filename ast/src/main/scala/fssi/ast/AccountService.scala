@@ -49,5 +49,10 @@ import bigknife.sop.implicits._
 
   /** using account's private key to sign a transfer transaction
     */
-  def signTransfer(transfer: Transaction.Transfer, privKey: Account.PrivKey): P[F, Transaction.Transfer]
+  def signTransfer(transfer: Transaction.Transfer,
+                   privKey: Account.PrivKey): P[F, Transaction.Transfer]
+
+  /** using account's private key to sign a deploy transaction
+    */
+  def signDeploy(deploy: Transaction.Deploy, privKey: Account.PrivKey): P[F, Transaction.Deploy]
 }

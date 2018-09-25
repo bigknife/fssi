@@ -29,6 +29,14 @@ class TransactionServiceHandler
     Transaction.Transfer(id, payer, payee, token, Signature.empty, System.currentTimeMillis)
   }
 
+    /** create a publish-contract transaction object with an empty signature field
+    */
+  override  def createDeploy(id: Transaction.ID, owner: Account.ID, contract: Contract.UserContract): Stack[Transaction.Deploy] = Stack {
+    Transaction.Deploy(
+      id, owner,contract, Signature.empty, System.currentTimeMillis
+    )
+}
+
   /** create a transfer object with an empty signature field
     */
   /*

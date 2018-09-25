@@ -3,7 +3,8 @@ package tool
 
 import java.io._
 
-import types._
+import types.biz._
+import types.base._
 import io.circe._
 
 sealed trait CmdArgs
@@ -31,18 +32,16 @@ object CmdArgs {
   case class CreateTransferTransactionArgs(
       accountFile: File = new File(""),
       secretKeyFile: File = new File(""),
-      payee: biz.Account.ID = biz.Account.emptyId,
-      token: biz.Token = biz.Token.Zero
+      payee: Account.ID = Account.emptyId,
+      token: Token = Token.Zero
   ) extends CmdArgs
 
   /** Create Publish Contract Transaction Arguments
     */
-  case class CreatePublishContractTransactionArgs(
+  case class CreateDeployTransactionArgs(
       accountFile: File = new File(""),
-      password: Array[Byte] = Array.emptyByteArray,
-      contractFile: File = new File(""),
-      contractName: UniqueName = UniqueName.empty,
-      contractVersion: Version = Version.empty
+      secretKeyFile: File = new File(""),
+      contractFile: File = new File("")
   ) extends CmdArgs
 
   /** Create Run Contract Transaction Arguments
@@ -51,9 +50,9 @@ object CmdArgs {
       accountFile: File = new File(""),
       password: Array[Byte] = Array.emptyByteArray,
       contractName: UniqueName = UniqueName.empty,
-      contractVersion: Version = Version.empty,
-      method: Contract.Method = Contract.Method.empty,
-      parameter: Contract.Parameter = Contract.Parameter.PEmpty
+      contractVersion: Contract.Version = Contract.Version.empty,
+      methodAlias: String = "",
+      parameter: Contract.UserContract.Parameter = Contract.UserContract.Parameter.PEmpty
   ) extends CmdArgs
 
   /** Compile Contract Args

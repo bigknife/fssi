@@ -3,6 +3,7 @@ package biz
 
 import base._
 import scala.collection._
+import fssi.types.implicits._
 
 sealed trait Contract {
   def name: UniqueName
@@ -19,12 +20,17 @@ object Contract {
   }
   object Version {
 
+    private val VersionR = "^(\\d+)\\.(\\d+)\\.(\\d+)$".r
+
     /** empty or initialization version
       */
     def empty: Version = Version(0, 0, 0)
+    def apply(s: String): Option[Version] = s match {
+      case VersionR(major, minor, patch) => Some(Version(major.toInt, minor.toInt, patch.toInt))
+      case _ => None
+    }
 
     trait Implicits {
-
       /** version is ordered
         */
       implicit val versionOrdering: Ordering[Version] = new Ordering[Version] {
@@ -39,6 +45,7 @@ object Contract {
           } else m
         }
       }
+      implicit def versionToBytesValue(v: Version): Array[Byte] = v.toString.getBytes
     }
   }
 
@@ -54,17 +61,21 @@ object Contract {
       name: UniqueName,
       version: Version,
       code: UserContract.Code,
-      meta: UserContract.Meta,
+      methods: immutable.TreeSet[UserContract.Method],
       signature: Signature
   ) extends Contract
   object UserContract {
     case class Code(value: Array[Byte])
-    case class Meta(methods: immutable.TreeSet[Method])
-    case class Method(alias: String) {
-      override def toString(): String = alias
+    case class Method(
+      alias: String,
+      fullSignature: String
+    ) {
+      override def toString(): String = {
+        s"$alias=$fullSignature"
+      }
     }
     object Method {
-      def empty: Method = Method("")
+      def empty: Method = Method("", "")
     }
 
     /**
@@ -100,7 +111,26 @@ object Contract {
         def apply(xs: PrimaryParameter*): PArray = PArray(xs.toArray)
       }
     }
+
+    trait Implicits {
+      implicit val methodOrdering: Ordering[Method] = new Ordering[Method] {
+        def compare(m1: Method, m2: Method): Int = Ordering[String].compare(m1.toString, m2.toString)
+      }
+
+      implicit def methodToBytesValue(m: Method): Array[Byte] = m.toString.getBytes
+
+      implicit def codeToBytesValue(c: Code): Array[Byte] = c.value
+
+      implicit def userContractToBytesValue(uc: UserContract): Array[Byte] = {
+        import uc._
+        owner.value ++ name.value ++ version.asBytesValue.bytes ++ code.value ++ methods.foldLeft(Array.emptyByteArray){(acc, n) =>
+          acc ++ n.asBytesValue.bytes
+        }
+      }
+    }
   }
+
+
 
   // inner contract
   object inner {

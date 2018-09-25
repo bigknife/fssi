@@ -19,7 +19,8 @@ private[uc] trait CoreNodeProgramHelper[F[_]] extends BaseProgram[F] {
     * @return transaction account pair, first is payer, second is payee
     */
   def tempRunTransfer(height: BigInt,
-                      transfer: Transaction.Transfer): SP[F, Either[Throwable, Unit]] = {
+    transfer: Transaction.Transfer): SP[F, Either[Throwable, Unit]] = {
+    /*
     import tokenStore._
     for {
       payerCurrentToken <- getCurrentToken(transfer.payer)
@@ -36,6 +37,8 @@ private[uc] trait CoreNodeProgramHelper[F[_]] extends BaseProgram[F] {
           Throwable,
           Unit]).pureSP[F]
     } yield r
+     */
+    ???
   }
 
   /** run publish contract
@@ -46,6 +49,7 @@ private[uc] trait CoreNodeProgramHelper[F[_]] extends BaseProgram[F] {
     // get the owner's token to check if he can afford to publish this contract
     // if he can afford, save user contract to a temp store reletived to height
     //
+    /*
     import tokenStore._
     import contractService._
     import contractStore._
@@ -61,6 +65,8 @@ private[uc] trait CoreNodeProgramHelper[F[_]] extends BaseProgram[F] {
           _   <- stageContract(height, gid, publishContract.contract)
         } yield Right(())
     } yield result
+     */
+    ???
   }
 
   /** run run contract
@@ -72,6 +78,7 @@ private[uc] trait CoreNodeProgramHelper[F[_]] extends BaseProgram[F] {
     import contractDataStore._
     import tokenStore._
 
+    /*
     for {
       contractOpt <- findUserContract(runContract.contractName, runContract.contractVersion)
       x <- if (contractOpt.isEmpty)
@@ -95,6 +102,8 @@ private[uc] trait CoreNodeProgramHelper[F[_]] extends BaseProgram[F] {
           _ <- closeKeyValueStore(kvStore)
         } yield result
     } yield x
+     */
+    ???
   }
 
   def commit(block: Block): SP[F, Unit] = {
@@ -104,6 +113,7 @@ private[uc] trait CoreNodeProgramHelper[F[_]] extends BaseProgram[F] {
     import blockStore._
     import log._
 
+    /*
     val height = block.height
     for {
       _ <- saveBlock(block)
@@ -115,7 +125,8 @@ private[uc] trait CoreNodeProgramHelper[F[_]] extends BaseProgram[F] {
       _ <- commitStagedContractData(height)
       _ <- info(s"commit staged contract data of block($height)")
     } yield ()
-
+     */
+    ???
   }
 
   def rollback(block: Block): SP[F, Unit] = {
@@ -124,6 +135,7 @@ private[uc] trait CoreNodeProgramHelper[F[_]] extends BaseProgram[F] {
     import contractStore._
     import log._
 
+    /*
     val height = block.height
     for {
       _ <- rollbackStagedToken(height)
@@ -133,5 +145,7 @@ private[uc] trait CoreNodeProgramHelper[F[_]] extends BaseProgram[F] {
       _ <- rollbackStagedContractData(height)
       _ <- info(s"rollback staged contract data of block($height)")
     } yield ()
+     */
+    ???
   }
 }

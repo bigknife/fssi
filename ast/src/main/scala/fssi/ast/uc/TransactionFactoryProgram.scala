@@ -40,12 +40,22 @@ trait TransactionFactoryProgram[F[_]] extends BaseProgram[F] {
     */
   def createDeployTransaction(accountFile: File,
                               secretKeyFile: File,
-                              contractFile: File,
-                              contractName: UniqueName,
-                              contractVersion: Contract.Version): SP[F, Transaction.Deploy] = {
-    ???
-  }
+                              contractFile: File): SP[F, Transaction.Deploy] = {
 
+    import accountStore._
+    import accountService._
+    import transactionService._
+    import contractStore._
+    for {
+      account      <- loadAccountFromFile(accountFile).right
+      secretKey    <- loadAccountSecretKeyFile(secretKeyFile).right
+      privKey      <- aesDecryptPrivKey(account.encPrivKey, secretKey, account.iv).right
+      id           <- createTransactionID(account.id)
+      userContract <- loadUserContract(contractFile).right
+      deploy       <- createDeploy(id, owner = account.id, userContract)
+      signedDeploy <- signDeploy(deploy, privKey)
+    } yield signedDeploy
+  }
 }
 
 object TransactionFactoryProgram {

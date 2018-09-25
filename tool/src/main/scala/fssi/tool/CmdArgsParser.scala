@@ -3,7 +3,8 @@ package tool
 
 import scopt._
 import CmdArgs._
-import types._
+import types.biz._
+import types.base._
 import interpreter.jsonCodecs._
 
 object CmdArgsParser extends OptionParser[CmdArgs]("fssitool") {
@@ -91,51 +92,37 @@ object CmdArgsParser extends OptionParser[CmdArgs]("fssitool") {
             .text("payee's account id, the hex string of it's public key")
             .action((x, c) =>
               c.asInstanceOf[CreateTransferTransactionArgs]
-                .copy(payee = biz.Account.ID(base.BytesValue.decodeBcBase58(x).get.bytes))),
+                .copy(payee = Account.ID(BytesValue.decodeBcBase58(x).get.bytes))),
           opt[String]("token")
             .abbr("t")
             .required()
             .text("amount to be transfered, in form of 'number' + 'unit', eg. 100Sweet. ")
             .action((x, c) =>
-              c.asInstanceOf[CreateTransferTransactionArgs].copy(token = biz.Token.parse(x)))
+              c.asInstanceOf[CreateTransferTransactionArgs].copy(token = Token.parse(x)))
         ),
-      cmd("publishContract")
-        .text("create publish contract transaction")
-        .action((_, _) => CreatePublishContractTransactionArgs())
+      cmd("deploy")
+        .text("create deploy contract transaction")
+        .action((_, _) => CreateDeployTransactionArgs())
         .children(
           opt[java.io.File]("account-file")
             .abbr("af")
             .required()
             .text("payer account file created by 'CreateAccount'")
             .action((f, c) =>
-              c.asInstanceOf[CreatePublishContractTransactionArgs].copy(accountFile = f)),
-          opt[String]("password")
-            .abbr("p")
+              c.asInstanceOf[CreateDeployTransactionArgs].copy(accountFile = f)),
+          opt[java.io.File]("key-file")
+            .abbr("kf")
             .required()
-            .text("payer's account password")
+            .text("contract owner's account secret key file")
             .action((x, c) =>
-              c.asInstanceOf[CreatePublishContractTransactionArgs]
-                .copy(password = x.getBytes("utf-8"))),
+              c.asInstanceOf[CreateDeployTransactionArgs]
+                .copy(secretKeyFile = x)),
           opt[java.io.File]("contract-file")
             .abbr("cf")
             .required()
             .text("smart contract file")
             .action((x, c) =>
-              c.asInstanceOf[CreatePublishContractTransactionArgs].copy(contractFile = x)),
-          opt[String]("contract-name")
-            .abbr("name")
-            .required()
-            .text("the uniquename of the contract, eg. com.blabla.finance")
-            .action((x, c) =>
-              c.asInstanceOf[CreatePublishContractTransactionArgs]
-                .copy(contractName = UniqueName(x))),
-          opt[String]("contract-version")
-            .abbr("version")
-            .required()
-            .text("the version of the contract")
-            .action((x, c) =>
-              c.asInstanceOf[CreatePublishContractTransactionArgs]
-                .copy(contractVersion = Version(x)))
+              c.asInstanceOf[CreateDeployTransactionArgs].copy(contractFile = x))
         ),
       cmd("runContract")
         .text("create run contract transaction")
@@ -166,17 +153,17 @@ object CmdArgsParser extends OptionParser[CmdArgs]("fssitool") {
             .text("the version of the invoking contract")
             .action((x, c) =>
               c.asInstanceOf[CreateRunContractTransactionArgs]
-                .copy(contractVersion = Version(x))),
+                .copy(contractVersion = Contract.Version(x).get)),
           opt[String]("method")
             .abbr("m")
             .text("method to invoke")
-            .action((x, c) => c.asInstanceOf[CreateRunContractTransactionArgs].copy(method = Contract.Method(x))),
+            .action((x, c) => c.asInstanceOf[CreateRunContractTransactionArgs].copy(methodAlias = x)),
           opt[String]("parameter")
             .abbr("p")
             .text("parameters for this invoking")
             .action((x, c) =>
               c.asInstanceOf[CreateRunContractTransactionArgs]
-                .copy(parameter = io.circe.parser.parse(x).right.get.as[Contract.Parameter].right.get))
+                .copy(parameter = io.circe.parser.parse(x).right.get.as[Contract.UserContract.Parameter].right.get))
         )
     )
 
