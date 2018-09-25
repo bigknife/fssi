@@ -29,6 +29,15 @@ object Transaction {
 
   /** Deploy is a transaction to publish a smart contract to the block chain
     */
+  case class Deploy(
+      id: Transaction.ID,
+      owner: Account.ID,
+      contract: Contract.UserContract,
+      signature: Signature,
+      timestamp: Long
+  ) extends Transaction {
+    val sender: Account.ID = owner
+  }
 
 
   /** Implicits */

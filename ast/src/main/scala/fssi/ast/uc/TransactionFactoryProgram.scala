@@ -17,6 +17,8 @@ import java.io.File
 trait TransactionFactoryProgram[F[_]] extends BaseProgram[F] {
   import model._
 
+  /** create transfer transaction
+    */
   def createTransferTransaction(accountFile: File,
                                 secretKeyFile: File,
                                 payee: Account.ID,
@@ -33,6 +35,17 @@ trait TransactionFactoryProgram[F[_]] extends BaseProgram[F] {
       signedTransfer <- signTransfer(transfer, privKey)
     } yield signedTransfer
   }
+
+  /** create a deploy transaction
+    */
+  def createDeployTransaction(accountFile: File,
+                              secretKeyFile: File,
+                              contractFile: File,
+                              contractName: UniqueName,
+                              contractVersion: Contract.Version): SP[F, Transaction.Deploy] = {
+    ???
+  }
+
 }
 
 object TransactionFactoryProgram {
