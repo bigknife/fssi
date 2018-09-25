@@ -19,6 +19,7 @@ import org.slf4j.{Logger, LoggerFactory}
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
+import fssi.sandbox.config._
 
 class Compiler {
 
@@ -35,7 +36,8 @@ class Compiler {
   def compileContract(rootPath: Path,
                       sandBoxVersion: String,
                       outputFile: File): Either[ContractCompileException, Unit] = {
-    logger.info(s"compile contract under path $rootPath at version $sandBoxVersion saved to $outputFile")
+    logger.info(
+      s"compile contract under path $rootPath at version $sandBoxVersion saved to $outputFile")
     if (rootPath.toFile.exists() && rootPath.toFile.isDirectory) {
       if (outputFile.exists() && outputFile.isFile) FileUtil.deleteDir(outputFile.toPath)
       val out =
@@ -69,9 +71,10 @@ class Compiler {
               logger.error(error, ex)
               Left(ex)
             } else {
+              val metaFile     = Paths.get(resources.getAbsolutePath, metaFileName).toFile
+              val configReader = ConfigReader(metaFile)
               checker
-                .checkContractDescriptor(
-                  Paths.get(resources.getAbsolutePath, contractFileName).toFile)
+                .checkContractDescriptor(configReader.interfaces)
                 .left
                 .map(x => ContractCompileException(x.messages))
                 .right
@@ -218,8 +221,7 @@ class Compiler {
       outPath: Path,
       sandBoxVersion: SandBoxVersion,
       outputFile: File): Either[ContractCompileException, Unit] = {
-    logger.info(
-      s"upgrade contract class from version $sandBoxVersion and zip to file $outputFile")
+    logger.info(s"upgrade contract class from version $sandBoxVersion and zip to file $outputFile")
     if (outputFile.exists() && outputFile.isDirectory) {
       val error = s"compiled contract output file $outputFile can not be a directory"
       val ex    = ContractCompileException(Vector(error))

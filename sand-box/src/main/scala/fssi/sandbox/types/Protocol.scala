@@ -37,10 +37,9 @@ object Protocol {
     "^\\[*D$"
   )
 
-  lazy val contractFileName = "contract"
-  lazy val versionFileName  = "version"
+  lazy val metaFileName  = "contract.meta.conf"
 
-  lazy val allowedResourceFiles = Vector(contractFileName, versionFileName)
+  lazy val allowedResourceFiles = Vector(metaFileName)
 
   lazy val forbiddenPackage = Vector("fssi")
 

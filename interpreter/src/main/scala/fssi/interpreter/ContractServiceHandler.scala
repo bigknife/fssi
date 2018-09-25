@@ -63,7 +63,8 @@ class ContractServiceHandler extends ContractService.Handler[Stack] with BlockCa
       contractName: UniqueName,
       contractVersion: Version): Stack[Either[FSSIException, Contract.UserContract]] = Stack {
     setting =>
-      sandbox.buildContract(account.id, contractFile, contractName, contractVersion)
+//      sandbox.buildContract(account.id, contractFile, contractName, contractVersion)
+      Left(new FSSIException(""))
   }
 
   override def invokeUserContract(context: Context,

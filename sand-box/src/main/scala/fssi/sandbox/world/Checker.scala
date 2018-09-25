@@ -13,7 +13,8 @@ import fssi.sandbox.types.{Method, SParameterType, SandBoxVersion}
 import fssi.types.Contract
 import fssi.utils.FileUtil
 import org.slf4j.{Logger, LoggerFactory}
-
+import fssi.sandbox.types._
+import fssi.sandbox.config._
 import scala.collection.mutable.ListBuffer
 
 class Checker {
@@ -96,13 +97,14 @@ class Checker {
     logger.info(s"check contract method at path: $rootPath")
     import fssi.sandbox.types.Protocol._
     try {
-      val contract = Paths.get(rootPath.toString, s"META-INF/$contractFileName").toFile
+      val contract = Paths.get(rootPath.toString, s"META-INF/$metaFileName").toFile
       if (!contract.exists() || !contract.isFile) {
         val error = s"check contract method: file $contract not found"
         logger.error(error)
         Left(ContractCheckException(Vector(error)))
       } else {
-        checkContractDescriptor(contract).flatMap { ms =>
+        val configReader = ConfigReader(contract)
+        checkContractDescriptor(configReader.interfaces).flatMap { ms =>
           ms.foreach(m =>
             checkClassLoader.findClass(m.className, m.methodName, m.parameterTypes.map(_.`type`)))
           if (track.isEmpty) Right(())
@@ -153,71 +155,56 @@ class Checker {
     }
   }
 
-  def checkContractDescriptor(
-      contractDescriptorFile: File): Either[ContractCheckException, Vector[Method]] = {
-    logger.info(s"check contract method description for descriptor file $contractDescriptorFile")
-    if (contractDescriptorFile.exists() && contractDescriptorFile.isFile) {
-      val track  = scala.collection.mutable.ListBuffer.empty[String]
-      val reader = new BufferedReader(new FileReader(contractDescriptorFile))
-      val lines = Iterator
-        .continually(reader.readLine())
-        .takeWhile(_ != null)
-        .foldLeft(Vector.empty[String])((acc, n) => acc :+ n)
-      val methods = lines.map(_.split("\\s*=\\s*")).foldLeft(Vector.empty[Method]) { (acc, n) =>
-        n match {
-          case Array(alias, methodDesc) =>
-            logger.debug(s"smart contract exposes method [$alias = $methodDesc]")
-            methodDesc.split("#") match {
-              case Array(className, methodAssign) =>
-                val leftIndex  = methodAssign.indexOf("(")
-                val rightIndex = methodAssign.lastIndexOf(")")
-                if (leftIndex < 0 || rightIndex < 0) {
-                  track += s"contract descriptor invalid: $methodAssign"; acc
-                } else {
-                  val methodName = methodAssign.substring(0, leftIndex)
-                  val parameterTypes = methodAssign
-                    .substring(leftIndex + 1, rightIndex)
-                    .split(",")
-                    .filter(_.nonEmpty)
-                    .map(SParameterType(_))
-                  if (parameterTypes.length >= 1 && parameterTypes.head.`type`.getName == SContext.`type`.getName) {
-                    val method = types.Method(alias = alias,
-                                              className = className,
-                                              methodName = methodName,
-                                              parameterTypes = parameterTypes)
-                    acc :+ method
-                  } else {
-                    track += "contract method first parameter must be type of fssi.contract.lib.Context"
-                    acc
-                  }
-                }
+  def checkContractDescriptor(contractDescriptors: Vector[MethodDescriptor])
+    : Either[ContractCheckException, Vector[Method]] = {
+    logger.info(s"check contract method description for descriptors file $contractDescriptors")
+    val track = scala.collection.mutable.ListBuffer.empty[String]
+    val methods = contractDescriptors.foldLeft(Vector.empty[Method]) { (acc, n) =>
+      logger.debug(s"smart contract exposes method [${n.alias} = ${n.descriptor}]")
+      n.descriptor.split("#") match {
+        case Array(className, methodAssign) =>
+          val leftIndex  = methodAssign.indexOf("(")
+          val rightIndex = methodAssign.lastIndexOf(")")
+          if (leftIndex < 0 || rightIndex < 0) {
+            track += s"contract descriptor invalid: $methodAssign"; acc
+          } else {
+            val methodName = methodAssign.substring(0, leftIndex)
+            val parameterTypes = methodAssign
+              .substring(leftIndex + 1, rightIndex)
+              .split(",")
+              .filter(_.nonEmpty)
+              .map(SParameterType(_))
+            if (parameterTypes.length >= 1 && parameterTypes.head.`type`.getName == SContext.`type`.getName) {
+              val method = types.Method(alias = n.alias,
+                                        className = className,
+                                        methodName = methodName,
+                                        parameterTypes = parameterTypes)
+              acc :+ method
+            } else {
+              track += "contract method first parameter must be type of fssi.contract.lib.Context"
+              acc
             }
+          }
+      }
+    }
+    if (track.isEmpty) {
+      val errors = methods.groupBy(_.alias).foldLeft(Vector.empty[String]) { (acc, n) =>
+        n match {
+          case (alias, mds) =>
+            if (mds.size > 1)
+              acc :+ s"duplicated contract method alias: $alias, found: ${mds.mkString(" , ")}"
+            else acc
         }
       }
-      if (track.isEmpty) {
-        val errors = methods.groupBy(_.alias).foldLeft(Vector.empty[String]) { (acc, n) =>
-          n match {
-            case (alias, mds) =>
-              if (mds.size > 1)
-                acc :+ s"duplicated contract method alias: $alias, found: ${mds.mkString(" , ")}"
-              else acc
-          }
-        }
-        if (errors.isEmpty) Right(methods)
-        else {
-          val ex = ContractCheckException(errors)
-          logger.error(ex.getMessage, ex)
-          Left(ex)
-        }
-      } else {
-        val ex = ContractCheckException(track.toVector)
+      if (errors.isEmpty) Right(methods)
+      else {
+        val ex = ContractCheckException(errors)
         logger.error(ex.getMessage, ex)
         Left(ex)
       }
     } else {
-      val error = s"check contract method descriptor file not found: $contractDescriptorFile"
-      val ex    = ContractCheckException(Vector(error))
-      logger.error(error, ex)
+      val ex = ContractCheckException(track.toVector)
+      logger.error(ex.getMessage, ex)
       Left(ex)
     }
   }
