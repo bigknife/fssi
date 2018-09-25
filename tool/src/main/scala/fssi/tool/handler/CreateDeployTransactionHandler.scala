@@ -18,7 +18,10 @@ import bigknife.jsonrpc._, Request.implicits._
 import java.io._
 
 trait CreateDeployTransactionHandler extends BaseHandler {
-  def apply(accountFile: File, secretKeyFile: File, contractFile: File): Unit = {
+  def apply(accountFile: File,
+            secretKeyFile: File,
+            contractFile: File,
+            outputFile: Option[File]): Unit = {
     val setting: Setting = Setting.ToolSetting()
 
     runner
@@ -33,7 +36,12 @@ trait CreateDeployTransactionHandler extends BaseHandler {
           method = "sendTransaction",
           params = transaction: Transaction
         )
-        println(showRequest(request))
+        val output = showRequest(request)
+        if (outputFile.isEmpty) println(output)
+        else {
+          better.files.File(outputFile.get.toPath).overwrite(output)
+          ()
+        }
     }
   }
 

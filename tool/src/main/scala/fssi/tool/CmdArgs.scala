@@ -33,7 +33,8 @@ object CmdArgs {
       accountFile: File = new File(""),
       secretKeyFile: File = new File(""),
       payee: Account.ID = Account.emptyId,
-      token: Token = Token.Zero
+      token: Token = Token.Zero,
+      outputFile: Option[File] = None
   ) extends CmdArgs
 
   /** Create Publish Contract Transaction Arguments
@@ -41,7 +42,8 @@ object CmdArgs {
   case class CreateDeployTransactionArgs(
       accountFile: File = new File(""),
       secretKeyFile: File = new File(""),
-      contractFile: File = new File("")
+      contractFile: File = new File(""),
+      outputFile: Option[File] = None
   ) extends CmdArgs
 
   /** Create Run Contract Transaction Arguments
@@ -52,7 +54,8 @@ object CmdArgs {
       contractName: UniqueName = UniqueName.empty,
       contractVersion: Contract.Version = Contract.Version.empty,
       methodAlias: String = "",
-      parameter: Option[Contract.UserContract.Parameter] = None
+      parameter: Option[Contract.UserContract.Parameter] = None,
+      outputFile: Option[File] = None
   ) extends CmdArgs
 
   /** Compile Contract Args

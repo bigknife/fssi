@@ -24,7 +24,8 @@ trait CreateRunContractTransactionHandler extends BaseHandler {
             contractName: UniqueName,
             contractVersion: Contract.Version,
             methodAlias: String,
-            parameter: Option[Contract.UserContract.Parameter]): Unit = {
+            parameter: Option[Contract.UserContract.Parameter],
+            outputFile: Option[File]): Unit = {
 
     val setting: Setting = Setting.ToolSetting()
 
@@ -45,7 +46,13 @@ trait CreateRunContractTransactionHandler extends BaseHandler {
           method = "sendTransaction",
           params = transaction: Transaction
         )
-        println(showRequest(request))
+        val output = showRequest(request)
+        if (outputFile.isEmpty) println(output)
+        else {
+          better.files.File(outputFile.get.toPath).overwrite(output)
+          ()
+        }
+          
     }
 
   }

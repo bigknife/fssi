@@ -64,7 +64,9 @@ object CmdArgsParser extends OptionParser[CmdArgs]("fssitool") {
       opt[String]("sandbox-version")
         .abbr("sv")
         .text("supported version of the sandbox on which the smart contract will run, default is 1.0.0(only support 1.0.0 now)")
-        .action((x, c) => c.asInstanceOf[CompileContractArgs].copy(sandboxVersion = CompileContractArgs.SandobxVersion(x)))
+        .action((x, c) =>
+          c.asInstanceOf[CompileContractArgs]
+            .copy(sandboxVersion = CompileContractArgs.SandobxVersion(x)))
     )
 
   cmd("CreateTransaction")
@@ -98,7 +100,12 @@ object CmdArgsParser extends OptionParser[CmdArgs]("fssitool") {
             .required()
             .text("amount to be transfered, in form of 'number' + 'unit', eg. 100Sweet. ")
             .action((x, c) =>
-              c.asInstanceOf[CreateTransferTransactionArgs].copy(token = Token.parse(x)))
+              c.asInstanceOf[CreateTransferTransactionArgs].copy(token = Token.parse(x))),
+          opt[java.io.File]("output-file")
+            .abbr("o")
+            .text("if set, the message will output to this file")
+            .action((x, c) =>
+              c.asInstanceOf[CreateTransferTransactionArgs].copy(outputFile = Some(x)))
         ),
       cmd("deploy")
         .text("create deploy contract transaction")
@@ -108,8 +115,7 @@ object CmdArgsParser extends OptionParser[CmdArgs]("fssitool") {
             .abbr("af")
             .required()
             .text("contract owner's account file created by 'CreateAccount'")
-            .action((f, c) =>
-              c.asInstanceOf[CreateDeployTransactionArgs].copy(accountFile = f)),
+            .action((f, c) => c.asInstanceOf[CreateDeployTransactionArgs].copy(accountFile = f)),
           opt[java.io.File]("key-file")
             .abbr("kf")
             .required()
@@ -121,8 +127,12 @@ object CmdArgsParser extends OptionParser[CmdArgs]("fssitool") {
             .abbr("cf")
             .required()
             .text("smart contract file")
-            .action((x, c) =>
-              c.asInstanceOf[CreateDeployTransactionArgs].copy(contractFile = x))
+            .action((x, c) => c.asInstanceOf[CreateDeployTransactionArgs].copy(contractFile = x)),
+          opt[java.io.File]("output-file")
+            .abbr("o")
+            .text("if set, the message will output to this file")
+            .action(
+              (x, c) => c.asInstanceOf[CreateDeployTransactionArgs].copy(outputFile = Some(x)))
         ),
       cmd("run")
         .text("create run contract transaction")
@@ -132,37 +142,44 @@ object CmdArgsParser extends OptionParser[CmdArgs]("fssitool") {
             .abbr("af")
             .required()
             .text("contract caller's account file created by 'CreateAccount'")
-            .action(
-              (f, c) => c.asInstanceOf[CreateRunTransactionArgs].copy(accountFile = f)),
+            .action((f, c) => c.asInstanceOf[CreateRunTransactionArgs].copy(accountFile = f)),
           opt[java.io.File]("key-file")
             .abbr("kf")
             .required()
-            .text("contract caller's account secret key file")            
+            .text("contract caller's account secret key file")
             .action((x, c) =>
               c.asInstanceOf[CreateRunTransactionArgs]
-                .copy(secretKeyFile = x))),
-          opt[String]("contract-name")
-            .abbr("name")
-            .required()
-            .text("calling contract name")
-            .action((x, c) =>
-              c.asInstanceOf[CreateRunTransactionArgs].copy(contractName = UniqueName(x))),
-          opt[String]("contract-version")
-            .abbr("version")
-            .required()
-            .text("the version of the invoking contract")
-            .action((x, c) =>
-              c.asInstanceOf[CreateRunTransactionArgs]
-                .copy(contractVersion = Contract.Version(x).get)),
-          opt[String]("method-alias")
-            .abbr("m")
-            .required()
-            .text("alias of method to invoke")
-            .action((x, c) => c.asInstanceOf[CreateRunTransactionArgs].copy(methodAlias = x)),
-          opt[String]("parameter")
-            .abbr("p")
-            .text("parameters for this invoking")
-            .action((x, c) =>
-              c.asInstanceOf[CreateRunTransactionArgs]
-                .copy(parameter = Some(io.circe.parser.parse(x).right.get.as[Contract.UserContract.Parameter].right.get))))
+                .copy(secretKeyFile = x))
+        ),
+      opt[String]("contract-name")
+        .abbr("name")
+        .required()
+        .text("calling contract name")
+        .action((x, c) =>
+          c.asInstanceOf[CreateRunTransactionArgs].copy(contractName = UniqueName(x))),
+      opt[String]("contract-version")
+        .abbr("version")
+        .required()
+        .text("the version of the invoking contract")
+        .action((x, c) =>
+          c.asInstanceOf[CreateRunTransactionArgs]
+            .copy(contractVersion = Contract.Version(x).get)),
+      opt[String]("method-alias")
+        .abbr("m")
+        .required()
+        .text("alias of method to invoke")
+        .action((x, c) => c.asInstanceOf[CreateRunTransactionArgs].copy(methodAlias = x)),
+      opt[String]("parameter")
+        .abbr("p")
+        .text("parameters for this invoking")
+        .action(
+          (x, c) =>
+            c.asInstanceOf[CreateRunTransactionArgs]
+              .copy(parameter = Some(
+                io.circe.parser.parse(x).right.get.as[Contract.UserContract.Parameter].right.get))),
+      opt[java.io.File]("output-file")
+        .abbr("o")
+        .text("if set, the message will output to this file")
+        .action((x, c) => c.asInstanceOf[CreateRunTransactionArgs].copy(outputFile = Some(x)))
+    )
 }

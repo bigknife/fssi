@@ -21,14 +21,18 @@ import java.io._
 
 trait CreateTransferTransactionHandler extends BaseHandler {
 
-  def apply(accountFile: File, secretKeyFile: File, payee: Account.ID, token: Token): Unit = {
+  def apply(accountFile: File,
+            secretKeyFile: File,
+            payee: Account.ID,
+            token: Token,
+            outputFile: Option[File]): Unit = {
     val setting: Setting = Setting.ToolSetting()
     runner
       .runIOAttempt(toolProgram.createTransferTransaction(accountFile, secretKeyFile, payee, token),
                     setting)
       .unsafeRunSync match {
-        case Left(t) =>
-          t.printStackTrace()
+      case Left(t) =>
+        t.printStackTrace()
         println(t.getMessage)
       case Right(transfer) =>
         val request = Request(
@@ -36,7 +40,12 @@ trait CreateTransferTransactionHandler extends BaseHandler {
           method = "sendTransaction",
           params = transfer: Transaction
         )
-        println(showRequest(request))
+        val output = showRequest(request)
+        if (outputFile.isEmpty) println(output)
+        else {
+          better.files.File(outputFile.get.toPath).overwrite(output)
+          ()
+        }
     }
   }
 
