@@ -11,6 +11,7 @@ import utils._
 import java.io._
 
 @sp trait ContractService[F[_]] {
+
   /** check current contract running environment
     */
   def checkRunningEnvironment(): P[F, Either[FSSIException, Unit]]
@@ -21,7 +22,10 @@ import java.io._
 
   /** compile smart contract project and output to the target file
     */
-  def compileContractProject(rootPath: File,
+  def compileContractProject(accountId: biz.Account.ID,
+                             pubKey: biz.Account.PubKey,
+                             privKey: biz.Account.PrivKey,
+                             rootPath: File,
                              sandboxVersion: String,
                              outputFile: File): P[F, Either[FSSIException, Unit]]
 

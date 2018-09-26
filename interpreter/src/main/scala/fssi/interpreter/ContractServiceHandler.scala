@@ -41,7 +41,10 @@ class ContractServiceHandler extends ContractService.Handler[Stack] with BlockCa
 
   /** compile smart contract project and output to the target file
     */
-  override def compileContractProject(rootPath: File,
+  override def compileContractProject(accountId: biz.Account.ID,
+                                      pubKey: biz.Account.PubKey,
+                                      privKey: biz.Account.PrivKey,
+                                      rootPath: File,
                                       sandboxVersion: String,
                                       outputFile: File): Stack[Either[FSSIException, Unit]] =
     Stack { setting =>

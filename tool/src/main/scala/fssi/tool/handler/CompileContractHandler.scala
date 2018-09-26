@@ -13,10 +13,10 @@ import json.implicits._
 import java.io._
 
 trait CompileContractHandler extends BaseHandler {
-  def apply(projectDirectory: File, outputFile: File, sandboxVersion: String): Unit = {
+  def apply(accountFile: File, secretKeyFile: File, projectDirectory: File, outputFile: File, sandboxVersion: String): Unit = {
     val setting: Setting = Setting.ToolSetting()
     runner
-      .runIO(toolProgram.compileContract(projectDirectory, outputFile, sandboxVersion), setting)
+      .runIO(toolProgram.compileContract(accountFile, secretKeyFile, projectDirectory, outputFile, sandboxVersion), setting)
       .unsafeRunSync
 
   }

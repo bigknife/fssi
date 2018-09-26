@@ -12,6 +12,7 @@ import bigknife.sop.implicits._
 import java.io._
 
 trait ContractProgram[F[_]] extends BaseProgram[F] {
+  import model._
 
   /** create a contract project
     */
@@ -24,17 +25,25 @@ trait ContractProgram[F[_]] extends BaseProgram[F] {
     * @param output the contract target file
     * @param sandboxVersion the adapted version for contract
     */
-  def compileContract(projectRoot: File, output: File, sandboxVersion: String): SP[F, Unit] = {
-    /*
-        import contractService._
-
+  def compileContract(accountFile: File,
+                      secretKeyFile: File,
+                      projectRoot: File,
+                      output: File,
+                      sandboxVersion: String): SP[F, Unit] = {
+    import contractService._
+    import accountStore._
+    import accountService._
     for {
-      compileEither  <- compileContractProject(projectDirectory, sandboxVersion, output)
-      _              <- err.either(compileEither)
-      determinEither <- checkDeterminismOfContractProject(output)
-      _              <- err.either(determinEither)
+      account   <- loadAccountFromFile(accountFile).right
+      secretKey <- loadAccountSecretKeyFile(secretKeyFile).right
+      privKey   <- aesDecryptPrivKey(account.encPrivKey, secretKey, account.iv).right
+      _ <- compileContractProject(account.id,
+                                  account.pubKey,
+                                  privKey,
+                                  projectRoot,
+                                  sandboxVersion,
+                                  output).right
+      _ <- checkDeterminismOfContractProject(output).right
     } yield ()
-     */
-    ???
   }
 }

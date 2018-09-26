@@ -16,8 +16,8 @@ object ToolMain extends App {
         case CreateChainArgs(rootDir, chainID) => createChain(rootDir, chainID)
         case CreateTransferTransactionArgs(accountFile, secretKeyFile, payee, token, o) =>
           createTransferTransaction(accountFile, secretKeyFile, payee, token, o)
-        case CompileContractArgs(projectDirectory, outputDirectory, sandboxVersion) =>
-          compileContract(projectDirectory, outputDirectory, sandboxVersion.toString)
+        case CompileContractArgs(accountFile, secretKeyFile, projectDirectory, outputDirectory, sandboxVersion) =>
+          compileContract(accountFile, secretKeyFile, projectDirectory, outputDirectory, sandboxVersion.toString)
         case CreateDeployTransactionArgs(accountFile, secretKeyFile, contractFile, o) =>
           createDeployTransaction(accountFile, secretKeyFile, contractFile, o)
         case CreateRunTransactionArgs(accountFile,

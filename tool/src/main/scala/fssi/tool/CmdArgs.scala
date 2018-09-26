@@ -61,6 +61,8 @@ object CmdArgs {
   /** Compile Contract Args
     */
   case class CompileContractArgs(
+      accountFile: File = new File(""),
+      secretKeyFile: File = new File(""),    
       projectDirectory: File = new File(""),
       outputFile: File = new File(""),
       sandboxVersion: CompileContractArgs.SandobxVersion =
