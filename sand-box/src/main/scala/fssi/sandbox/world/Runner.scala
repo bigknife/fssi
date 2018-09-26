@@ -10,7 +10,8 @@ import fssi.sandbox.exception.ContractRunningException
 import fssi.sandbox.loader.ContractClassLoader
 import fssi.sandbox.types.SParameterType._
 import fssi.sandbox.types.{Method, SParameterType}
-import fssi.types.{Contract, UniqueName}
+import fssi.types.base.UniqueName
+import fssi.types.biz.Contract
 import fssi.utils.FileUtil
 import org.slf4j.{Logger, LoggerFactory}
 
@@ -24,11 +25,12 @@ class Runner {
       context: Context,
       contractFile: File,
       method: Method,
-      parameters: Contract.Parameter): Either[ContractRunningException, Unit] = {
+      parameters: Contract.UserContract.Parameter): Either[ContractRunningException, Unit] = {
     logger.info(
       s"invoke contract method $method with params $parameters for contract $contractFile in context $context")
     if (contractFile.exists() && contractFile.isFile) {
-      val rootPath = Paths.get(contractFile.getParent, UniqueName.randomUUID(false).value)
+      val rootPath =
+        Paths.get(contractFile.getParent, String.valueOf(UniqueName.randomUUID(false).value))
       try {
         val source = Paths.get(rootPath.toString, "source")
         if (!source.toFile.exists()) source.toFile.mkdirs()
@@ -76,12 +78,12 @@ class Runner {
   }
 
   private def extractParameterValues(parameterTypes: Array[SParameterType],
-                                     parameters: Contract.Parameter): Array[AnyRef] = {
+                                     parameters: Contract.UserContract.Parameter): Array[AnyRef] = {
     logger.info(s"extract params value from $parameters for $parameterTypes")
-    import Contract.Parameter._
+    import Contract.UserContract.Parameter._
     var index = 0
 
-    def convertToParameterValue(parameter: Contract.Parameter,
+    def convertToParameterValue(parameter: Contract.UserContract.Parameter,
                                 acc: Array[AnyRef]): Array[AnyRef] = {
       index = index + 1
       parameter match {
@@ -99,7 +101,6 @@ class Runner {
         case PArray(array) =>
           index = index - 1
           array.flatMap(p => convertToParameterValue(p, acc))
-        case PEmpty => acc
       }
     }
 

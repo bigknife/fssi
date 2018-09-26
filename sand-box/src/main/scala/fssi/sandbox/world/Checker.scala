@@ -6,15 +6,15 @@ import java.io._
 import java.nio.charset.Charset
 import java.nio.file.{Path, Paths}
 
+import fssi.types.biz.Contract.UserContract.Parameter._
 import fssi.sandbox.exception.{ContractCheckException, SandBoxEnvironmentException}
 import fssi.sandbox.loader.FSSIClassLoader
 import fssi.sandbox.types.SParameterType.SContext
 import fssi.sandbox.types.{Method, SParameterType, SandBoxVersion}
-import fssi.types.Contract
+import fssi.types.biz.Contract
 import fssi.utils.FileUtil
 import org.slf4j.{Logger, LoggerFactory}
 import fssi.sandbox.types._
-import fssi.sandbox.config._
 import scala.collection.mutable.ListBuffer
 import fssi.sandbox.config._
 import fssi.sandbox.types.Protocol._
@@ -212,8 +212,8 @@ class Checker {
   }
 
   private[sandbox] def isContractMethodExisted(
-      method: Contract.Method,
-      params: Contract.Parameter,
+      method: Contract.UserContract.Method,
+      params: Contract.UserContract.Parameter,
       methods: Vector[Method]): Either[ContractCheckException, Unit] = {
     logger.info(s"check contract method $method whether existed for params $params")
     methods.find(_.alias == method.alias) match {
@@ -228,16 +228,15 @@ class Checker {
   }
 
   private def isContractMethodParameterTypeMatched(
-      params: Contract.Parameter,
+      params: Contract.UserContract.Parameter,
       parameterTypes: Array[SParameterType]): Either[ContractCheckException, Unit] = {
     logger.info(
       s"check contract method parameter type matched, params: $params, contract descriptor params types: ${parameterTypes
         .map(_.`type`.getName)
         .mkString("[", ",", "]")}")
-    import fssi.types.Contract.Parameter._
     var index = 0
 
-    def convertToSParameterType(parameter: Contract.Parameter,
+    def convertToSParameterType(parameter: Contract.UserContract.Parameter,
                                 acc: Array[SParameterType]): Array[SParameterType] = {
       index = index + 1
       parameter match {
@@ -252,7 +251,6 @@ class Checker {
         case PArray(array) =>
           index = index - 1
           array.flatMap(p => convertToSParameterType(p, acc))
-        case PEmpty => acc
       }
     }
 

@@ -5,9 +5,8 @@ import java.nio.file.Path
 
 import fssi.contract.lib.Context
 import fssi.sandbox.exception._
-import fssi.sandbox.types.Method
 import fssi.sandbox.world._
-import fssi.types._
+import fssi.types.biz._
 
 class SandBox {
 
@@ -16,7 +15,10 @@ class SandBox {
   private lazy val builder  = new Builder
   private lazy val runner   = new Runner
 
-  def compileContract(rootPath: Path,
+  def compileContract(accountId: Account.ID,
+                      publicKey: Account.PubKey,
+                      privateKey: Account.PrivKey,
+                      rootPath: Path,
                       version: String,
                       outputFile: File): Either[ContractCompileException, Unit] =
     compiler.compileContract(rootPath, version, outputFile)
@@ -27,10 +29,11 @@ class SandBox {
   def buildContract(file: File): Either[ContractBuildException, Contract.UserContract] =
     builder.buildUserContractFromFile(file)
 
-  def executeContract(context: Context,
-                      contractFile: File,
-                      method: Contract.Method,
-                      params: Contract.Parameter): Either[ContractRunningException, Unit] = {
+  def executeContract(
+      context: Context,
+      contractFile: File,
+      method: Contract.UserContract.Method,
+      params: Contract.UserContract.Parameter): Either[ContractRunningException, Unit] = {
     for {
       methodMeta <- builder
         .buildContractMeta(contractFile)

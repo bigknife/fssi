@@ -7,14 +7,17 @@ import java.nio.file.{Files, Path, Paths}
 import fssi.sandbox.exception.{ContractBuildException, ContractCheckException}
 import fssi.sandbox.types.SandBoxVersion
 import fssi.sandbox.visitor.clazz.DegradeClassVersionVisitor
-import fssi.types.Contract.{Meta, Method}
-import fssi.types.{Version => ContractVersion, _}
+import fssi.types.biz.Contract.UserContract._
+import fssi.types.biz.Contract.{Version => ContractVersion, _}
+import fssi.types.base._
 import fssi.utils.FileUtil
 import org.objectweb.asm.{ClassReader, ClassWriter}
 import org.slf4j.{Logger, LoggerFactory}
-import fssi.sandbox.config._
 import fssi.sandbox.types.ContractMeta
 import fssi.sandbox.config._
+import fssi.types.HexString
+import fssi.types.biz.{Account, Contract}
+
 import scala.collection.immutable.TreeSet
 
 class Builder {
@@ -116,13 +119,13 @@ class Builder {
           .takeWhile(_ != -1)
           .foreach(read => byteArrayOutputStream.write(array, 0, read))
         byteArrayOutputStream.flush(); fileInputStream.close()
-        import implicits._
+        import fssi.types.implicits._
         Contract.UserContract(
-          owner = Account.ID(HexString.decode(contractMeta.owner.value)),
+          owner = Account.ID(HexString.decode(contractMeta.owner.value).bytes),
           name = UniqueName(contractMeta.name.value),
-          version = ContractVersion(contractMeta.version.value),
-          code = Base64String(byteArrayOutputStream.toByteArray),
-          meta = Meta(methods = TreeSet(contractMeta.interfaces.map(m => Method(m.alias)): _*)),
+          version = ContractVersion(contractMeta.version.value).get,
+          code = Code(byteArrayOutputStream.toByteArray),
+          methods = TreeSet(contractMeta.interfaces.map(m => Method(m.alias, m.descriptor)): _*),
           signature = Signature.empty
         )
       }
