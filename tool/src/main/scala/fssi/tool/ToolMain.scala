@@ -13,7 +13,7 @@ object ToolMain extends App {
       result match {
         case CreateAccountArgs(randomSeed, accountFile, secretKeyFile) =>
           createAccount(randomSeed, accountFile, secretKeyFile)
-        case CreateChainArgs(dataDir, chainID) => createChain(dataDir, chainID)
+        case CreateChainArgs(rootDir, chainID) => createChain(rootDir, chainID)
         case CreateTransferTransactionArgs(accountFile, secretKeyFile, payee, token, o) =>
           createTransferTransaction(accountFile, secretKeyFile, payee, token, o)
         case CompileContractArgs(projectDirectory, outputDirectory, sandboxVersion) =>

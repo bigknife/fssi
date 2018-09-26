@@ -14,6 +14,7 @@ package object types {
       with biz.Token.Implicits
       with biz.Contract.Version.Implicits
       with biz.Contract.UserContract.Implicits
+      with biz.Block.Implicits
       with Transaction.Implicits
       with Contract.Implicits
       with Token.Implicits

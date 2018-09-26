@@ -7,6 +7,9 @@ package base
 case class Hash(value: Array[Byte]) extends AnyVal
 
 object Hash {
+
+  def empty: Hash = Hash(Array.emptyByteArray)
+
   trait Implicits {
     implicit def hashToBytesValue(x: Hash): Array[Byte] = x.value
   }

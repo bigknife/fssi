@@ -7,6 +7,10 @@ package base
 case class WorldState(value: Array[Byte]) extends AnyVal
 
 object WorldState {
+  /** create an empty world state, chaos
+    */
+  def empty: WorldState = WorldState(Array.emptyByteArray)
+
   trait Implicits {
     implicit def worldStateToBytesValue(a: WorldState): Array[Byte] = a.value
   }

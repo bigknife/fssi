@@ -190,4 +190,7 @@ trait CryptoUtil {
     java.security.MessageDigest.getInstance("SHA-256", ProviderName).digest(source)
   }
 
+  implicit lazy val sha_256digestInstance: java.security.MessageDigest =
+    java.security.MessageDigest.getInstance("SHA-256", ProviderName)
+  implicit lazy val sha3_256digestInstance: java.security.MessageDigest = new SHA3.Digest256
 }

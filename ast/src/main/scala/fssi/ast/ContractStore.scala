@@ -14,11 +14,10 @@ import java.io._
 @sp trait ContractStore[F[_]] {
 
   /** initialize a data directory to be a contract store
-    * @param dataDir directory to save contract.
+    * @param contractStoreRoot directory to save contract.
     */
-  /*
-  def initializeContractStore(dataDir: File): P[F, Unit]
-   */
+  def initializeContractStore(contractStoreRoot: File): P[F, Unit]
+
 
   /** self test for a contract store
     * @param block contract store should be tested on block

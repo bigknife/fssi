@@ -17,6 +17,7 @@ trait AllTypesJsonCodec
     with BizTokenJsonCodec
     with BizContractJsonCodec
     with BaseUniqueNameJsonCodec
+    with BaseWorldStateJsonCodec
     with TokenJsonCodec
     with UniqueNameJsonCodec
     with VersionJsonCodec

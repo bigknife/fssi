@@ -31,13 +31,10 @@ class ContractStoreHandler extends ContractStore.Handler[Stack] with LogSupport 
     SafeVar(Map.empty)
 
   /** initialize a data directory to be a contract store
-    * @param dataDir directory to save contract.
+    * @param contractStoreRoot directory to save contract.
     */
-  /*
-  override def initializeContractStore(dataDir: File): Stack[Unit] = Stack {
-    val path = new File(dataDir, contractFileDirName)
-    path.mkdirs()
-    contractTrieJsonFile := new File(path, "contractdata.trie.json").toScala
+  override def initializeContractStore(contractStoreRoot: File): Stack[Unit] = Stack {
+    contractTrieJsonFile := new File(contractStoreRoot, "contract.trie.json").toScala
     contractTrieJsonFile.foreach { f =>
       if (f.exists && f.isRegularFile) {
         //reload
@@ -64,13 +61,13 @@ class ContractStoreHandler extends ContractStore.Handler[Stack] with LogSupport 
         throw new RuntimeException(s"$f should be empty to init or a regular file to load.")
 
       // init or load level db store
-      val dbFile = new File(path, "db")
+      val dbFile = new File(contractStoreRoot, "db")
       dbFile.mkdirs()
       contractStore := levelDBStore(dbFile)
       log.info(s"init leveldb at $dbFile")
     }
   }
-   */
+
 
   /** self test for a contract store
     * @param block contract store should be tested on block

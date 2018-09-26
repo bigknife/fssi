@@ -24,6 +24,10 @@ trait BytesValue[A] {
 
 object BytesValue {
 
+  def empty[A]: BytesValue[A] = new BytesValue[A] {
+    def bytes: Array[Byte] = Array.emptyByteArray
+  }
+
   def apply[A](implicit I: BytesValue[A]): BytesValue[A] = I
   def summon[A](F: A => Array[Byte]): A => BytesValue[A] =
     (a: A) =>
@@ -80,6 +84,10 @@ object BytesValue {
     }
     def bcBase58: String = base58.encode(bv.bytes)
 
+    def isEmpty: Boolean   = bv.bytes.length == 0
+    def nonEmpty: Boolean  = bv.bytes.length != 0
+    def isDefined: Boolean = bv.bytes.length != 0
+
     def any: BytesValue[Any] = new BytesValue[Any] {
       def bytes: Array[Byte] = bv.bytes
     }
@@ -105,7 +113,7 @@ object BytesValue {
     }
 
     implicit def optionToBytesValue[A](a: Option[A])(implicit F: A => Array[Byte]): Array[Byte] = {
-      if(a.isEmpty) Array.emptyByteArray
+      if (a.isEmpty) Array.emptyByteArray
       else F(a.get)
     }
   }

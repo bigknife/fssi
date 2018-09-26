@@ -11,14 +11,17 @@ import java.io._
 @sp trait BlockStore[F[_]] {
 
   /** initialize a data directory to be a block store
-    * @param dataDir directory to save block.
+    * @param blockStoreRoot directory to save block.
     */
-  def initializeBlockStore(dataDir: File): P[F, Unit]
+  def initializeBlockStore(blockStoreRoot: File): P[F, Unit]
+
+  def saveBizBlock(block: biz.Block): P[F, Unit]
 
   /** save block, before saving, invoker should guarantee that the block is legal
     * which means, block has correct hashes, correct height etc.
     * @param block a legal block.
     */
+  //@deprecated("release_0.2", "use saveBizBlock")
   def saveBlock(block: Block): P[F, Unit]
 
   /** get latest saved block, which block must have been gone through consensus

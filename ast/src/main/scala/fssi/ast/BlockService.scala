@@ -7,6 +7,15 @@ import bigknife.sop.macros._
 import bigknife.sop.implicits._
 
 @sp trait BlockService[F[_]] {
+
+  /** create an empty block
+    */
+  def createFirstBlock(chainId: String): P[F, biz.Block]
+
+  /** update hash for the block
+    */
+  def hashBlock(block: biz.Block): P[F, biz.Block]
+
   /** create the genesis block for a chain
     * @param chainID the chain identity
     * @return genesis block

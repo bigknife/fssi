@@ -37,10 +37,10 @@ object CmdArgsParser extends OptionParser[CmdArgs]("fssitool") {
     .action((_, _) => CreateChainArgs(new java.io.File("."), "testnet"))
     .text("Create a chain")
     .children(
-      opt[java.io.File]("data-dir")
+      opt[java.io.File]("root-dir")
         .abbr("d")
         .required()
-        .action((x, c) => c.asInstanceOf[CreateChainArgs].copy(dataDir = x)),
+        .action((x, c) => c.asInstanceOf[CreateChainArgs].copy(rootDir = x)),
       opt[String]("chain-id")
         .abbr("id")
         .required()
