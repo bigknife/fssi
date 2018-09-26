@@ -36,24 +36,21 @@ class SandBox {
         .buildContractMeta(contractFile)
         .left
         .map(x => ContractRunningException(x.messages))
-      methods <- checker.checkContractDescriptor(methodMeta.interfaces)
-      _ <- checker
-        .isContractMethodExisted(method, params, methodMeta.interfaces)
+      methods <- checker
+        .checkContractDescriptor(methodMeta.interfaces)
         .left
         .map(x => ContractRunningException(x.messages))
-        .right
-        .map(_ => Vector.empty[Method])
+      _ <- checker
+        .isContractMethodExisted(method, params, methods)
+        .left
+        .map(x => ContractRunningException(x.messages))
       _ <- checker
         .checkDeterminism(contractFile)
         .left
         .map(x => ContractRunningException(x.messages))
-        .right
-        .map(_ => Vector.empty[Method])
-      contractMethod = methodMeta.interfaces.find(_.alias == method.alias).get
+      contractMethod = methods.find(_.alias == method.alias).get
       _ <- runner
         .invokeContractMethod(context, contractFile, contractMethod, params)
-        .right
-        .map(_ => Vector.empty[Method])
     } yield ()
   }
 

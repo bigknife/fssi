@@ -6,19 +6,20 @@ import java.io.File
 import com.typesafe.config._
 import fssi.sandbox.types._
 import scala.collection.JavaConverters._
+import fssi.sandbox.types.Protocol._
 
 case class ConfigReader(configFile: File) {
 
   lazy val config: Config = ConfigFactory.parseFile(configFile)
 
-  lazy val owner: Owner = Owner(config.getString("contract.owner"))
+  lazy val owner: Owner = Owner(config.getString(ownerKey))
 
-  lazy val name: Name = Name(config.getString("contract.name"))
+  lazy val name: Name = Name(config.getString(nameKey))
 
-  lazy val version: Version = Version(config.getString("contract.version"))
+  lazy val version: Version = Version(config.getString(versionKey))
 
   lazy val interfaces: Vector[MethodDescriptor] = config
-    .getObject("contract.interfaces")
+    .getObject(interfacesKey)
     .entrySet
     .asScala
     .toVector
@@ -28,4 +29,7 @@ case class ConfigReader(configFile: File) {
       acc :+ MethodDescriptor(alias, descriptor)
     }
 
+  def hasConfigKey(keyName: String): Boolean = {
+    config.hasPath(keyName)
+  }
 }

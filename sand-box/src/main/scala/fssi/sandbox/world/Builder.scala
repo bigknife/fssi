@@ -150,13 +150,18 @@ class Builder {
         .get(unzipDir.pathAsString, s"META-INF/$metaFileName")
         .toFile
       if (contractDescriptorFile.exists && contractDescriptorFile.isFile) {
-        val configReader      = ConfigReader(contractDescriptorFile)
-        val methodDescriptors = configReader.interfaces
-        Right(
-          ContractMeta(owner = configReader.owner,
-                       name = configReader.name,
-                       version = configReader.version,
-                       interfaces = methodDescriptors))
+        checker
+          .isContractMetaFileValid(contractDescriptorFile)
+          .left
+          .map(x => ContractBuildException(x.messages))
+          .map { _ =>
+            val configReader      = ConfigReader(contractDescriptorFile)
+            val methodDescriptors = configReader.interfaces
+            ContractMeta(owner = configReader.owner,
+                         name = configReader.name,
+                         version = configReader.version,
+                         interfaces = methodDescriptors)
+          }
       } else {
         val error =
           s"build user contract from file failed, can't not find contract meta conf in contract file $contractFile"

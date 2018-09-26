@@ -16,6 +16,8 @@ import org.slf4j.{Logger, LoggerFactory}
 import fssi.sandbox.types._
 import fssi.sandbox.config._
 import scala.collection.mutable.ListBuffer
+import fssi.sandbox.config._
+import fssi.sandbox.types.Protocol._
 
 class Checker {
 
@@ -293,5 +295,21 @@ class Checker {
       logger.error(error, ex)
       Left(ex)
     }
+  }
+
+  def isContractMetaFileValid(metaFile: File): Either[ContractCheckException, Unit] = {
+    logger.info(s"check contract meta file is valid: $metaFile")
+    val configReader = ConfigReader(metaFile)
+    val errors       = scala.collection.mutable.ListBuffer.empty[String]
+    if (!configReader.hasConfigKey(ownerKey))
+      errors += s"can't not find $ownerKey in contract meta conf file"
+    if (!configReader.hasConfigKey(nameKey))
+      errors += s"can't not find $nameKey in contract meta conf file"
+    if (!configReader.hasConfigKey(versionKey))
+      errors += s"can't not find $versionKey in contract meta conf file"
+    if (!configReader.hasConfigKey(interfacesKey))
+      errors += s"can't not find $interfacesKey in contract meta conf file"
+    if (errors.isEmpty) Right(())
+    else Left(ContractCheckException(errors.toVector))
   }
 }

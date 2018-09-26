@@ -15,12 +15,12 @@ object Protocol {
   lazy val forbiddenDescriptor = Vector(
     "^Ljava/util/concurrent.*",
     "^Ljava/lang/reflect.*",
-    "^Ljava/lang/Thread;",
-    "^Ljava/lang/Class;",
+    "^Ljava/net.*",
+    "^Ljava/sql.*",
     "^Ljavax/.*",
     "^Lsun/.*",
-    "^Ljava/net.*",
-    "^Ljava/sql.*"
+    "^Ljava/lang/Thread;",
+    "^Ljava/lang/Class;"
   )
 
   lazy val ignoreDescriptors = Vector(
@@ -37,7 +37,12 @@ object Protocol {
     "^\\[*D$"
   )
 
-  lazy val metaFileName  = "contract.meta.conf"
+  lazy val metaFileName = "contract.meta.conf"
+
+  lazy val ownerKey      = "contract.owner"
+  lazy val nameKey       = "contract.name"
+  lazy val versionKey    = "contract.version"
+  lazy val interfacesKey = "contract.interfaces"
 
   lazy val allowedResourceFiles = Vector(metaFileName)
 
