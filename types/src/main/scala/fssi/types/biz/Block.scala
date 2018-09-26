@@ -3,4 +3,10 @@ package biz
 
 import scala.collection._
 
-case class Block( )
+case class Block(
+
+)
+
+object Block {
+
+}

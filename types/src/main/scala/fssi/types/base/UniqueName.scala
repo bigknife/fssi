@@ -3,7 +3,7 @@ package base
 
 /** unique name data
   */
-case class UniqueName(value: Array[Byte])
+case class UniqueName(value: Array[Byte]) extends AnyVal
 
 object UniqueName {
   def empty: UniqueName = UniqueName(Array.emptyByteArray)

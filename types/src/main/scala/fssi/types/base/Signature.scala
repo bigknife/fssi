@@ -3,7 +3,7 @@ package base
 
 /** Signature
   */
-case class Signature(value: Array[Byte])
+case class Signature(value: Array[Byte]) extends AnyVal
 
 object Signature {
   def empty: Signature = Signature(Array.emptyByteArray)

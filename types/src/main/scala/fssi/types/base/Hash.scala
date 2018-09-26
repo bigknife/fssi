@@ -4,7 +4,7 @@ package base
 
 /** hash for any data, a common hash, no more type info.
   */
-case class Hash(value: Array[Byte])
+case class Hash(value: Array[Byte]) extends AnyVal
 
 object Hash {
   trait Implicits {
