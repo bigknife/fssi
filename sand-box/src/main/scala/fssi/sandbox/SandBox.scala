@@ -21,7 +21,12 @@ class SandBox {
                       rootPath: Path,
                       version: String,
                       outputFile: File): Either[ContractCompileException, Unit] =
-    compiler.compileContract(rootPath, version, outputFile)
+    compiler.compileContract(accountId.value,
+                             publicKey.value,
+                             privateKey.value,
+                             rootPath,
+                             version,
+                             outputFile)
 
   def checkContractDeterminism(contractFile: File): Either[ContractCheckException, Unit] =
     checker.checkDeterminism(contractFile)
@@ -44,7 +49,7 @@ class SandBox {
         .left
         .map(x => ContractRunningException(x.messages))
       _ <- checker
-        .isContractMethodExisted(method, params, methods)
+        .isContractMethodDescriptorExisted(method, params, methods)
         .left
         .map(x => ContractRunningException(x.messages))
       _ <- checker

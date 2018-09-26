@@ -33,7 +33,10 @@ class Compiler {
     * @param outputFile path to store class file
     * @return errors if compiled failed
     */
-  def compileContract(rootPath: Path,
+  def compileContract(accountId: Array[Byte],
+                      publicKeyBytes: Array[Byte],
+                      privateKeyBytes: Array[Byte],
+                      rootPath: Path,
                       sandBoxVersion: String,
                       outputFile: File): Either[ContractCompileException, Unit] = {
     logger.info(
@@ -88,7 +91,7 @@ class Compiler {
                     .left
                     .map(x => ContractCompileException(x.messages))
                     .right
-                    .flatMap { _ =>
+                    .flatMap { methods =>
                       val compileEither = compileProject(rootPath, out.toPath)
                       compileEither
                         .flatMap { _ =>
@@ -96,7 +99,7 @@ class Compiler {
                           val targetPath       = out.toPath
                           val checkClassLoader = new FSSIClassLoader(targetPath, track)
                           checker
-                            .checkContractMethod(targetPath, track, checkClassLoader)
+                            .isContractMethodExisted(checkClassLoader, methods)
                             .left
                             .map(x => ContractCompileException(x.messages))
                         }

@@ -6,6 +6,8 @@ import org.objectweb.asm.Type
 
 object Protocol {
 
+  lazy val majic = "FSSI"
+
   lazy val majVersion     = 1
   lazy val version        = s"$majVersion.0.0"
   lazy val majJavaVersion = 8

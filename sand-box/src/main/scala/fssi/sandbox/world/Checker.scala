@@ -43,8 +43,13 @@ class Checker {
         if (!targetPath.toFile.exists()) targetPath.toFile.mkdirs()
         for {
           _ <- builder.degradeClassVersion(rootPath, targetPath)
+          contractMeta <- builder
+            .buildContractMeta(contractFile)
+            .left
+            .map(x => ContractCheckException(x.messages))
+          methods <- checkContractDescriptor(contractMeta.interfaces)
           checkClassLoader = new FSSIClassLoader(targetPath, track)
-          _ <- checkContractMethod(targetPath, track, checkClassLoader)
+          _ <- isContractMethodExisted(checkClassLoader, methods)
           _ <- checkClasses(targetPath, track, checkClassLoader)
         } yield { if (targetPath.toFile.exists()) FileUtil.deleteDir(targetPath) }
       } catch {
@@ -92,34 +97,20 @@ class Checker {
     }
   }
 
-  def checkContractMethod(
-      rootPath: Path,
-      track: ListBuffer[String],
-      checkClassLoader: FSSIClassLoader): Either[ContractCheckException, Unit] = {
-    logger.info(s"check contract method at path: $rootPath")
-    import fssi.sandbox.types.Protocol._
+  def isContractMethodExisted(checkClassLoader: FSSIClassLoader,
+                              methods: Vector[Method]): Either[ContractCheckException, Unit] = {
     try {
-      val contract = Paths.get(rootPath.toString, s"META-INF/$metaFileName").toFile
-      if (!contract.exists() || !contract.isFile) {
-        val error = s"check contract method: file $contract not found"
-        logger.error(error)
-        Left(ContractCheckException(Vector(error)))
-      } else {
-        val configReader = ConfigReader(contract)
-        checkContractDescriptor(configReader.interfaces).flatMap { ms =>
-          ms.foreach(m =>
-            checkClassLoader.findClass(m.className, m.methodName, m.parameterTypes.map(_.`type`)))
-          if (track.isEmpty) Right(())
-          else {
-            val ex = ContractCheckException(track.toVector)
-            logger.error(ex.getMessage, ex)
-            Left(ex)
-          }
-        }
+      methods.foreach(m =>
+        checkClassLoader.findClass(m.className, m.methodName, m.parameterTypes.map(_.`type`)))
+      if (checkClassLoader.track.isEmpty) Right(())
+      else {
+        val ex = ContractCheckException(checkClassLoader.track.toVector)
+        logger.error(ex.getMessage, ex)
+        Left(ex)
       }
     } catch {
       case t: Throwable =>
-        val error = s"check contract method at path: $rootPath occurs error: ${t.getMessage}"
+        val error = s"check contract method occurs error: ${t.getMessage}"
         logger.error(error, t)
         Left(ContractCheckException(Vector(error)))
     }
@@ -211,7 +202,7 @@ class Checker {
     }
   }
 
-  private[sandbox] def isContractMethodExisted(
+  private[sandbox] def isContractMethodDescriptorExisted(
       method: Contract.UserContract.Method,
       params: Contract.UserContract.Parameter,
       methods: Vector[Method]): Either[ContractCheckException, Unit] = {
