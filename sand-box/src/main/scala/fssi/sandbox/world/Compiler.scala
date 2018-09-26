@@ -19,6 +19,7 @@ import org.slf4j.{Logger, LoggerFactory}
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
+import fssi.sandbox.config._
 
 class Compiler {
 
@@ -35,7 +36,8 @@ class Compiler {
   def compileContract(rootPath: Path,
                       sandBoxVersion: String,
                       outputFile: File): Either[ContractCompileException, Unit] = {
-    logger.info(s"compile contract under path $rootPath at version $sandBoxVersion saved to $outputFile")
+    logger.info(
+      s"compile contract under path $rootPath at version $sandBoxVersion saved to $outputFile")
     if (rootPath.toFile.exists() && rootPath.toFile.isDirectory) {
       if (outputFile.exists() && outputFile.isFile) FileUtil.deleteDir(outputFile.toPath)
       val out =
@@ -69,53 +71,67 @@ class Compiler {
               logger.error(error, ex)
               Left(ex)
             } else {
+              val metaFile = Paths.get(resources.getAbsolutePath, metaFileName).toFile
               checker
-                .checkContractDescriptor(
-                  Paths.get(resources.getAbsolutePath, contractFileName).toFile)
+                .isContractMetaFileValid(metaFile)
                 .left
-                .map(x => ContractCompileException(x.messages))
-                .right
+                .map { x =>
+                  val error = s"compile contract under path $rootPath failed"
+                  val ex    = ContractCompileException(x.messages)
+                  logger.error(error, ex)
+                  ex
+                }
                 .flatMap { _ =>
-                  val compileEither = compileProject(rootPath, out.toPath)
-                  compileEither
+                  val configReader = ConfigReader(metaFile)
+                  checker
+                    .checkContractDescriptor(configReader.interfaces)
+                    .left
+                    .map(x => ContractCompileException(x.messages))
+                    .right
                     .flatMap { _ =>
-                      val track            = ListBuffer.empty[String]
-                      val targetPath       = out.toPath
-                      val checkClassLoader = new FSSIClassLoader(targetPath, track)
-                      checker
-                        .checkContractMethod(targetPath, track, checkClassLoader)
-                        .left
-                        .map(x => ContractCompileException(x.messages))
-                    }
-                    .flatMap { _ =>
-                      SandBoxVersion(sandBoxVersion) match {
-                        case Some(boxVersion) =>
-                          if (checker.isSandBoxVersionValid(boxVersion))
-                            upgradeAndZipContract(out.toPath, boxVersion, outputFile).flatMap { _ =>
-                              import fssi.sandbox.types.Protocol._
-                              val outputFileSize = outputFile.length()
-                              if (outputFileSize > contractSize) {
-                                FileUtil.deleteDir(outputFile.toPath)
+                      val compileEither = compileProject(rootPath, out.toPath)
+                      compileEither
+                        .flatMap { _ =>
+                          val track            = ListBuffer.empty[String]
+                          val targetPath       = out.toPath
+                          val checkClassLoader = new FSSIClassLoader(targetPath, track)
+                          checker
+                            .checkContractMethod(targetPath, track, checkClassLoader)
+                            .left
+                            .map(x => ContractCompileException(x.messages))
+                        }
+                        .flatMap { _ =>
+                          SandBoxVersion(sandBoxVersion) match {
+                            case Some(boxVersion) =>
+                              if (checker.isSandBoxVersionValid(boxVersion))
+                                upgradeAndZipContract(out.toPath, boxVersion, outputFile).flatMap {
+                                  _ =>
+                                    import fssi.sandbox.types.Protocol._
+                                    val outputFileSize = outputFile.length()
+                                    if (outputFileSize > contractSize) {
+                                      FileUtil.deleteDir(outputFile.toPath)
+                                      val error =
+                                        s"contract project compiled file total size $outputFileSize can not exceed $contractSize bytes"
+                                      val ex = ContractCompileException(Vector(error))
+                                      logger.error(error, ex)
+                                      Left(ex)
+                                    } else Right(())
+                                } else {
                                 val error =
-                                  s"contract project compiled file total size $outputFileSize can not exceed $contractSize bytes"
+                                  s"compile contract failed: sandbox version $sandBoxVersion is greater than current version ${SandBoxVersion.currentVersion}"
                                 val ex = ContractCompileException(Vector(error))
                                 logger.error(error, ex)
                                 Left(ex)
-                              } else Right(())
-                            } else {
-                            val error =
-                              s"compile contract failed: sandbox version $sandBoxVersion is greater than current version ${SandBoxVersion.currentVersion}"
-                            val ex = ContractCompileException(Vector(error))
-                            logger.error(error, ex)
-                            Left(ex)
+                              }
+                            case None =>
+                              val error =
+                                s"sandbox version $sandBoxVersion not support,the latest version is ${SandBoxVersion.currentVersion}"
+                              val ex = ContractCompileException(Vector(error))
+                              logger.error(error, ex)
+                              Left(ex)
                           }
-                        case None =>
-                          val error =
-                            s"sandbox version $sandBoxVersion not support,the latest version is ${SandBoxVersion.currentVersion}"
-                          val ex = ContractCompileException(Vector(error))
-                          logger.error(error, ex)
-                          Left(ex)
-                      }
+
+                        }
                     }
                 }
             }
@@ -218,8 +234,7 @@ class Compiler {
       outPath: Path,
       sandBoxVersion: SandBoxVersion,
       outputFile: File): Either[ContractCompileException, Unit] = {
-    logger.info(
-      s"upgrade contract class from version $sandBoxVersion and zip to file $outputFile")
+    logger.info(s"upgrade contract class from version $sandBoxVersion and zip to file $outputFile")
     if (outputFile.exists() && outputFile.isDirectory) {
       val error = s"compiled contract output file $outputFile can not be a directory"
       val ex    = ContractCompileException(Vector(error))

@@ -10,7 +10,7 @@ class SandBoxTest extends FunSuite {
 
   val sandBox = new SandBox
 
-  ignore("test compile contract") {
+  test("test compile contract") {
     val project    = "/Users/songwenchao/Documents/source/company/weihui/chain/fssi_contract"
     val output     = "/Users/songwenchao/opt/fssi/banana.contract"
     val version    = "1.0.0"
@@ -19,13 +19,13 @@ class SandBoxTest extends FunSuite {
     sandBox.compileContract(projectDir, version, outputFile)
   }
 
-  ignore("check contract determinism") {
+  test("check contract determinism") {
     val output     = "/Users/songwenchao/opt/fssi/banana.contract"
     val outputFile = Paths.get(output).toFile
     sandBox.checkContractDeterminism(outputFile)
   }
 
-  ignore("run smart contract") {
+  test("run smart contract") {
     val output     = "/Users/songwenchao/opt/fssi/banana.contract"
     val outputFile = Paths.get(output).toFile
     val context    = new TestContext

@@ -24,38 +24,33 @@ class SandBox {
   def checkContractDeterminism(contractFile: File): Either[ContractCheckException, Unit] =
     checker.checkDeterminism(contractFile)
 
-  def buildContract(accountId: Account.ID,
-                    file: File,
-                    name: UniqueName,
-                    version: Version): Either[ContractBuildException, Contract.UserContract] =
-    builder.buildUserContractFromFile(accountId, file, name, version)
+  def buildContract(file: File): Either[ContractBuildException, Contract.UserContract] =
+    builder.buildUserContractFromFile(file)
 
   def executeContract(context: Context,
                       contractFile: File,
                       method: Contract.Method,
                       params: Contract.Parameter): Either[ContractRunningException, Unit] = {
     for {
-      methods <- builder
-        .buildContractMethod(contractFile)
+      methodMeta <- builder
+        .buildContractMeta(contractFile)
+        .left
+        .map(x => ContractRunningException(x.messages))
+      methods <- checker
+        .checkContractDescriptor(methodMeta.interfaces)
         .left
         .map(x => ContractRunningException(x.messages))
       _ <- checker
         .isContractMethodExisted(method, params, methods)
         .left
         .map(x => ContractRunningException(x.messages))
-        .right
-        .map(_ => Vector.empty[Method])
       _ <- checker
         .checkDeterminism(contractFile)
         .left
         .map(x => ContractRunningException(x.messages))
-        .right
-        .map(_ => Vector.empty[Method])
       contractMethod = methods.find(_.alias == method.alias).get
       _ <- runner
         .invokeContractMethod(context, contractFile, contractMethod, params)
-        .right
-        .map(_ => Vector.empty[Method])
     } yield ()
   }
 

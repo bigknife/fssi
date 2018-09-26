@@ -8,11 +8,13 @@ import fssi.sandbox.exception.{ContractBuildException, ContractCheckException}
 import fssi.sandbox.types.SandBoxVersion
 import fssi.sandbox.visitor.clazz.DegradeClassVersionVisitor
 import fssi.types.Contract.{Meta, Method}
-import fssi.types._
+import fssi.types.{Version => ContractVersion, _}
 import fssi.utils.FileUtil
 import org.objectweb.asm.{ClassReader, ClassWriter}
 import org.slf4j.{Logger, LoggerFactory}
-
+import fssi.sandbox.config._
+import fssi.sandbox.types.ContractMeta
+import fssi.sandbox.config._
 import scala.collection.immutable.TreeSet
 
 class Builder {
@@ -94,15 +96,11 @@ class Builder {
   }
 
   def buildUserContractFromFile(
-      accountId: Account.ID,
-      file: File,
-      name: UniqueName,
-      version: Version): Either[ContractBuildException, Contract.UserContract] = {
-    logger.info(
-      s"build contract ${name.value} from file: $file for account: ${accountId.value} at version: ${version.value}")
+      file: File): Either[ContractBuildException, Contract.UserContract] = {
+    logger.info(s"build contract from file: $file")
     if (file.exists() && file.isFile) {
       for {
-        methods <- buildContractMethod(file)
+        contractMeta <- buildContractMeta(file)
         _ <- checker
           .checkDeterminism(file)
           .right
@@ -120,11 +118,11 @@ class Builder {
         byteArrayOutputStream.flush(); fileInputStream.close()
         import implicits._
         Contract.UserContract(
-          owner = accountId,
-          name = name,
-          version = version,
+          owner = Account.ID(HexString.decode(contractMeta.owner.value)),
+          name = UniqueName(contractMeta.name.value),
+          version = ContractVersion(contractMeta.version.value),
           code = Base64String(byteArrayOutputStream.toByteArray),
-          meta = Meta(methods = TreeSet(methods.map(m => Method(m.alias)): _*)),
+          meta = Meta(methods = TreeSet(contractMeta.interfaces.map(m => Method(m.alias)): _*)),
           signature = Signature.empty
         )
       }
@@ -137,32 +135,46 @@ class Builder {
     }
   }
 
-  private[sandbox] def buildContractMethod(
-      contractFile: File): Either[ContractBuildException, Vector[fssi.sandbox.types.Method]] = {
-    logger.info(s"build contract method from contract file: $contractFile")
+  private[sandbox] def buildContractMeta(
+      contractFile: File): Either[ContractBuildException, ContractMeta] = {
+    logger.info(s"build contract meta from contract file: $contractFile")
     import fssi.sandbox.types.Protocol._
     val cache = Paths.get(contractFile.getParent, "cache")
-    if (cache.toFile.exists()) FileUtil.deleteDir(cache)
-    cache.toFile.mkdirs()
     try {
+      if (cache.toFile.exists()) FileUtil.deleteDir(cache)
+      cache.toFile.mkdirs()
       val unzipDir = better.files
         .File(contractFile.toPath)
         .unzipTo(cache)(java.nio.charset.Charset.forName("utf-8"))
       val contractDescriptorFile = Paths
-        .get(unzipDir.pathAsString, s"META-INF/$contractFileName")
+        .get(unzipDir.pathAsString, s"META-INF/$metaFileName")
         .toFile
-      for {
-        methods <- checker
-          .checkContractDescriptor(contractDescriptorFile)
+      if (contractDescriptorFile.exists && contractDescriptorFile.isFile) {
+        checker
+          .isContractMetaFileValid(contractDescriptorFile)
           .left
           .map(x => ContractBuildException(x.messages))
-      } yield methods
+          .map { _ =>
+            val configReader      = ConfigReader(contractDescriptorFile)
+            val methodDescriptors = configReader.interfaces
+            ContractMeta(owner = configReader.owner,
+                         name = configReader.name,
+                         version = configReader.version,
+                         interfaces = methodDescriptors)
+          }
+      } else {
+        val error =
+          s"build user contract from file failed, can't not find contract meta conf in contract file $contractFile"
+        val ex = ContractBuildException(Vector(error))
+        logger.error(error, ex)
+        Left(ex)
+      }
     } catch {
       case t: Throwable =>
-        val error =
-          s"build contract method from contract descriptor file occurs error: ${t.getMessage}"
-        logger.error(error, t)
-        Left(ContractBuildException(Vector(error)))
-    } finally { if (cache.toFile.exists()) FileUtil.deleteDir(cache) }
+        val error = s"build user contract from file failed: ${t.getMessage}"
+        val ex    = ContractBuildException(Vector(error))
+        logger.error(error, ex)
+        Left(ex)
+    } finally if (cache.toFile.exists()) FileUtil.deleteDir(cache)
   }
 }
