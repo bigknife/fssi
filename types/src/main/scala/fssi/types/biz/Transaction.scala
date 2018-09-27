@@ -12,7 +12,7 @@ sealed trait Transaction {
 }
 
 object Transaction {
-  case class ID(value: Array[Byte])
+  case class ID(value: Array[Byte]) extends AnyVal
   def emptyId: ID = ID(Array.emptyByteArray)
 
   /** Transfer is a  transaction to transfer payer's token to payee's token
@@ -89,8 +89,8 @@ object Transaction {
 
     implicit def bizTransactionToBytesValue(a: Transaction): Array[Byte] = a match {
       case x: Transfer => bizTransactionToBytesValue(x)
-      case x: Deploy => bizDeployToBytesValue(x)
-      case x: Run => bizRunToBytesValue(x)
+      case x: Deploy   => bizDeployToBytesValue(x)
+      case x: Run      => bizRunToBytesValue(x)
     }
   }
 }

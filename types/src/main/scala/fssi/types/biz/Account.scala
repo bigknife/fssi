@@ -14,16 +14,13 @@ case class Account(
 )
 
 object Account {
-  case class PrivKey(value: Array[Byte])
-  case class PubKey(value: Array[Byte])
-  case class ID(value: Array[Byte])
-  case class IV(value: Array[Byte])
+  case class PrivKey(value: Array[Byte])   extends AnyVal
+  case class PubKey(value: Array[Byte])    extends AnyVal
+  case class ID(value: Array[Byte])        extends AnyVal
+  case class IV(value: Array[Byte])        extends AnyVal
+  case class SecretKey(value: Array[Byte]) extends AnyVal
 
   def emptyId: ID = ID(Array.emptyByteArray)
-
-  /** secretkey is used to encrypt the private key
-    */
-  case class SecretKey(value: Array[Byte])
 
   trait Implicits {
     implicit def accountPrivateKeyToBytesValue(x: Account.PrivKey): Array[Byte]  = x.value
