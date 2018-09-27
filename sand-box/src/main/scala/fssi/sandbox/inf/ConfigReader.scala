@@ -1,10 +1,12 @@
 package fssi
 package sandbox
-package config
+package inf
 
 import java.io.File
+
 import com.typesafe.config._
-import fssi.sandbox.types._
+import fssi.sandbox.types.ContractMeta.{MethodDescriptor, Name, Owner, Version}
+
 import scala.collection.JavaConverters._
 import fssi.sandbox.types.Protocol._
 
@@ -18,7 +20,7 @@ case class ConfigReader(configFile: File) {
 
   lazy val version: Version = Version(config.getString(versionKey))
 
-  lazy val interfaces: Vector[MethodDescriptor] = config
+  lazy val methodDescriptors: Vector[MethodDescriptor] = config
     .getObject(interfacesKey)
     .entrySet
     .asScala

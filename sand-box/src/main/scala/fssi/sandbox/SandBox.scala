@@ -4,9 +4,9 @@ import java.io.File
 import java.nio.file.Path
 
 import fssi.contract.lib.Context
-import fssi.sandbox.exception._
 import fssi.sandbox.world._
 import fssi.types.biz._
+import fssi.types.exception.FSSIException
 
 class SandBox {
 
@@ -20,7 +20,7 @@ class SandBox {
                       privateKey: Account.PrivKey,
                       rootPath: Path,
                       version: String,
-                      outputFile: File): Either[ContractCompileException, Unit] =
+                      outputFile: File): Either[FSSIException, Unit] =
     compiler.compileContract(accountId.value,
                              publicKey.value,
                              privateKey.value,
@@ -28,40 +28,44 @@ class SandBox {
                              version,
                              outputFile)
 
-  def checkContractDeterminism(contractFile: File): Either[ContractCheckException, Unit] =
-    checker.checkDeterminism(contractFile)
-
-  def buildContract(file: File): Either[ContractBuildException, Contract.UserContract] =
-    builder.buildUserContractFromFile(file)
-
-  def executeContract(
-      context: Context,
-      contractFile: File,
-      method: Contract.UserContract.Method,
-      params: Contract.UserContract.Parameter): Either[ContractRunningException, Unit] = {
+  def checkContractDeterminism(publicKey: Account.PubKey,
+                               contractFile: File): Either[FSSIException, Unit] = {
     for {
-      methodMeta <- builder
-        .buildContractMeta(contractFile)
-        .left
-        .map(x => ContractRunningException(x.messages))
-      methods <- checker
-        .checkContractDescriptor(methodMeta.interfaces)
-        .left
-        .map(x => ContractRunningException(x.messages))
-      _ <- checker
-        .isContractMethodDescriptorExisted(method, params, methods)
-        .left
-        .map(x => ContractRunningException(x.messages))
-      _ <- checker
-        .checkDeterminism(contractFile)
-        .left
-        .map(x => ContractRunningException(x.messages))
-      contractMethod = methods.find(_.alias == method.alias).get
-      _ <- runner
-        .invokeContractMethod(context, contractFile, contractMethod, params)
+      contractBytes <- builder.readContractBytesFromFile(publicKey.value, contractFile)
+      contractPath <- builder.buildContractProjectFromBytes(contractBytes,
+                                                            contractFile.getParentFile.toPath)
+      _ <- checker.checkDeterminism(contractPath)
     } yield ()
   }
 
-  def checkRunningEnvironment: Either[SandBoxEnvironmentException, Unit] =
+  def buildUnsignedContract(publicKey: Account.PubKey,
+                            file: File): Either[FSSIException, Contract.UserContract] = {
+    for {
+      contractBytes <- builder.readContractBytesFromFile(publicKey.value, file)
+      contractPath <- builder.buildContractProjectFromBytes(contractBytes,
+                                                            file.getParentFile.toPath)
+      contract <- builder.buildUserContractFromPath(contractPath, contractBytes)
+    } yield contract
+  }
+
+  def executeContract(publicKey: Account.PubKey,
+                      context: Context,
+                      contractFile: File,
+                      method: Contract.UserContract.Method,
+                      params: Contract.UserContract.Parameter): Either[FSSIException, Unit] = {
+    for {
+      contractBytes <- builder.readContractBytesFromFile(publicKey.value, contractFile)
+      contractPath <- builder.buildContractProjectFromBytes(contractBytes,
+                                                            contractFile.getParentFile.toPath)
+      methodMeta <- builder.buildContractMeta(contractPath)
+      methods    <- checker.checkContractDescriptor(methodMeta.interfaces)
+      _          <- checker.isContractMethodExposed(method, params, methods)
+      _          <- checker.checkDeterminism(contractPath)
+      contractMethod = methods.find(_.alias == method.alias).get
+      _ <- runner.invokeContractMethod(context, contractPath, contractMethod, params)
+    } yield ()
+  }
+
+  def checkRunningEnvironment: Either[FSSIException, Unit] =
     checker.isSandBoxEnvironmentValid
 }

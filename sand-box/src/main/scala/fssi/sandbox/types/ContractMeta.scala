@@ -1,14 +1,7 @@
 package fssi
 package sandbox
 package types
-
-case class Owner(value: String)
-
-case class Name(value: String)
-
-case class Version(value: String)
-
-case class MethodDescriptor(alias: String, descriptor: String)
+import fssi.sandbox.types.ContractMeta.{MethodDescriptor, Name, Owner, Version}
 
 case class ContractMeta(
     owner: Owner,
@@ -16,3 +9,15 @@ case class ContractMeta(
     version: Version,
     interfaces: Vector[MethodDescriptor]
 )
+
+object ContractMeta {
+
+  case class Owner(value: String)
+
+  case class Name(value: String)
+
+  case class Version(value: String)
+
+  case class MethodDescriptor(alias: String, descriptor: String)
+
+}

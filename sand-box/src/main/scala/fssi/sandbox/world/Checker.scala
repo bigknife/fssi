@@ -3,7 +3,6 @@ package sandbox
 package world
 
 import java.io._
-import java.nio.charset.Charset
 import java.nio.file.{Path, Paths}
 
 import fssi.types.biz.Contract.UserContract.Parameter._
@@ -13,41 +12,35 @@ import fssi.sandbox.types.SParameterType.SContext
 import fssi.sandbox.types.{Method, SParameterType, SandBoxVersion}
 import fssi.types.biz.Contract
 import fssi.utils.FileUtil
-import org.slf4j.{Logger, LoggerFactory}
-import fssi.sandbox.types._
-import scala.collection.mutable.ListBuffer
-import fssi.sandbox.config._
-import fssi.sandbox.types.Protocol._
 
-class Checker {
+import scala.collection.mutable.ListBuffer
+import fssi.sandbox.inf._
+import fssi.sandbox.types.ContractMeta.MethodDescriptor
+import fssi.sandbox.types.Protocol._
+import fssi.types.base.BytesValue
+import fssi.types.exception.FSSIException
+import fssi.types.implicits._
+
+class Checker extends BaseLogger {
 
   private lazy val builder = new Builder
 
-  private lazy val logger: Logger = LoggerFactory.getLogger(getClass)
-
   /** check contract class file determinism
     *
-    * @param contractFile contract jar
+    * @param rootPath contract root path
     * @return errors when check failed
     */
-  def checkDeterminism(contractFile: File): Either[ContractCheckException, Unit] = {
-    logger.info(s"check contract determinism for contract file $contractFile")
-    if (contractFile.exists() && contractFile.isFile) {
-      val rootPath = Paths.get(contractFile.getParent, "contractRoot")
-      if (rootPath.toFile.exists()) FileUtil.deleteDir(rootPath)
-      rootPath.toFile.mkdirs()
+  def checkDeterminism(rootPath: Path): Either[FSSIException, Unit] = {
+    logger.info(s"check contract determinism for contract $rootPath")
+    if (rootPath.toFile.exists()) {
       val targetPath = Paths.get(rootPath.getParent.toString, "fssi")
       try {
-        better.files.File(contractFile.toPath).unzipTo(rootPath)(Charset.forName("utf-8"))
         val track = scala.collection.mutable.ListBuffer.empty[String]
         if (!targetPath.toFile.exists()) targetPath.toFile.mkdirs()
         for {
-          _ <- builder.degradeClassVersion(rootPath, targetPath)
-          contractMeta <- builder
-            .buildContractMeta(contractFile)
-            .left
-            .map(x => ContractCheckException(x.messages))
-          methods <- checkContractDescriptor(contractMeta.interfaces)
+          _            <- builder.degradeClassVersion(rootPath, targetPath)
+          contractMeta <- builder.buildContractMeta(rootPath)
+          methods      <- checkContractDescriptor(contractMeta.interfaces)
           checkClassLoader = new FSSIClassLoader(targetPath, track)
           _ <- isContractMethodExisted(checkClassLoader, methods)
           _ <- checkClasses(targetPath, track, checkClassLoader)
@@ -57,13 +50,10 @@ class Checker {
           val error = s"check contract determinism occurs error: ${t.getMessage}"
           logger.error(error, t)
           Left(ContractCheckException(Vector(error)))
-      } finally {
-        if (rootPath.toFile.exists()) FileUtil.deleteDir(rootPath)
-        if (targetPath.toFile.exists()) FileUtil.deleteDir(targetPath)
-      }
+      } finally if (targetPath.toFile.exists()) FileUtil.deleteDir(targetPath)
     } else {
       val error =
-        s"to check determinism contract file $contractFile not found: contract must be a file assembled all of class files"
+        s"to check determinism contract file $rootPath not found: contract must be a file assembled all of class files"
       val ex = ContractCheckException(Vector(error))
       logger.error(error, ex)
       Left(ex)
@@ -72,7 +62,7 @@ class Checker {
 
   def checkClasses(rootPath: Path,
                    track: ListBuffer[String],
-                   checkClassLoader: FSSIClassLoader): Either[ContractCheckException, Unit] = {
+                   checkClassLoader: FSSIClassLoader): Either[FSSIException, Unit] = {
     logger.info(s"check contract class at path: $rootPath")
     try {
       val classFiles =
@@ -98,7 +88,7 @@ class Checker {
   }
 
   def isContractMethodExisted(checkClassLoader: FSSIClassLoader,
-                              methods: Vector[Method]): Either[ContractCheckException, Unit] = {
+                              methods: Vector[Method]): Either[FSSIException, Unit] = {
     try {
       methods.foreach(m =>
         checkClassLoader.findClass(m.className, m.methodName, m.parameterTypes.map(_.`type`)))
@@ -116,29 +106,42 @@ class Checker {
     }
   }
 
-  def isProjectStructureValid(rootPath: Path): Boolean = {
+  def isProjectStructureValid(rootPath: Path): Either[FSSIException, Unit] = {
     logger.info(s"check project structure at path: $rootPath")
-    Paths.get(rootPath.toString, "src/main/java").toFile.isDirectory &&
-    Paths.get(rootPath.toString, "src/main/resources/META-INF").toFile.isDirectory
+    val isValid = Paths.get(rootPath.toString, "src/main/java").toFile.isDirectory &&
+      Paths.get(rootPath.toString, "src/main/resources/META-INF").toFile.isDirectory
+    if (isValid) Right(())
+    else {
+      val error =
+        s"$rootPath src path should have main/java and main/resources/META-INF subdirectories"
+      Left(ContractCheckException(Vector(error)))
+    }
   }
 
-  def isResourceFilesInValid(resourcesRoot: Path, resourceFiles: Vector[File]): Vector[String] = {
+  def isResourceFilesInValid(resourcesRoot: Path,
+                             resourceFiles: Vector[File]): Either[FSSIException, Unit] = {
     logger.info(s"check resource files validity at path: $resourcesRoot")
     import fssi.sandbox.types.Protocol._
-    resourceFiles
+    val invalidFiles = resourceFiles
       .map(_.getAbsolutePath)
       .foldLeft(Vector.empty[String]) { (acc, n) =>
         val fileName = n.substring(resourcesRoot.toString.length + 1)
         if (!allowedResourceFiles.contains(fileName)) acc :+ fileName
         else acc
       }
+    if (invalidFiles.isEmpty) Right(())
+    else {
+      val error = s"src/main/resources/META-INF dir only support ${allowedResourceFiles
+        .mkString("、")} files,but found ${invalidFiles.mkString(" , ")}"
+      Left(ContractCheckException(Vector(error)))
+    }
   }
 
   def isResourceContractFilesInvalid(resourcesRoot: Path,
-                                     resourceFiles: Vector[File]): Vector[String] = {
+                                     resourceFiles: Vector[File]): Either[FSSIException, Unit] = {
     logger.info(s"check contract required files validity at path: $resourcesRoot")
     import fssi.sandbox.types.Protocol._
-    allowedResourceFiles.foldLeft(Vector.empty[String]) { (acc, n) =>
+    val invalidContractFiles = allowedResourceFiles.foldLeft(Vector.empty[String]) { (acc, n) =>
       val existed = resourceFiles.map(_.getAbsolutePath).exists { filePath =>
         val contractFileName = filePath.substring(resourcesRoot.toString.length + 1)
         n == contractFileName
@@ -146,10 +149,16 @@ class Checker {
       if (existed) acc
       else acc :+ n
     }
+    if (invalidContractFiles.isEmpty) Right(())
+    else {
+      val error =
+        s"smart contract required files not found: ${invalidContractFiles.mkString(" , ")}"
+      Left(ContractCheckException(Vector(error)))
+    }
   }
 
-  def checkContractDescriptor(contractDescriptors: Vector[MethodDescriptor])
-    : Either[ContractCheckException, Vector[Method]] = {
+  def checkContractDescriptor(
+      contractDescriptors: Vector[MethodDescriptor]): Either[FSSIException, Vector[Method]] = {
     logger.info(s"check contract method description for descriptors file $contractDescriptors")
     val track = scala.collection.mutable.ListBuffer.empty[String]
     val methods = contractDescriptors.foldLeft(Vector.empty[Method]) { (acc, n) =>
@@ -202,10 +211,10 @@ class Checker {
     }
   }
 
-  private[sandbox] def isContractMethodDescriptorExisted(
+  private[sandbox] def isContractMethodExposed(
       method: Contract.UserContract.Method,
       params: Contract.UserContract.Parameter,
-      methods: Vector[Method]): Either[ContractCheckException, Unit] = {
+      methods: Vector[Method]): Either[FSSIException, Unit] = {
     logger.info(s"check contract method $method whether existed for params $params")
     methods.find(_.alias == method.alias) match {
       case Some(m) => isContractMethodParameterTypeMatched(params, m.parameterTypes)
@@ -220,7 +229,7 @@ class Checker {
 
   private def isContractMethodParameterTypeMatched(
       params: Contract.UserContract.Parameter,
-      parameterTypes: Array[SParameterType]): Either[ContractCheckException, Unit] = {
+      parameterTypes: Array[SParameterType]): Either[FSSIException, Unit] = {
     logger.info(
       s"check contract method parameter type matched, params: $params, contract descriptor params types: ${parameterTypes
         .map(_.`type`.getName)
@@ -268,10 +277,17 @@ class Checker {
     }
   }
 
-  def isSandBoxVersionValid(inputVersion: SandBoxVersion): Boolean =
-    inputVersion.lteTo(SandBoxVersion.currentVersion)
+  def isSandBoxVersionValid(inputVersion: SandBoxVersion): Either[FSSIException, Unit] = {
+    val valid = inputVersion.lteTo(SandBoxVersion.currentVersion)
+    if (valid) Right(())
+    else {
+      val error =
+        s"compile contract failed: sandbox version $inputVersion is greater than current version ${SandBoxVersion.currentVersion}"
+      Left(ContractCheckException(Vector(error)))
+    }
+  }
 
-  def isSandBoxEnvironmentValid: Either[SandBoxEnvironmentException, Unit] = {
+  def isSandBoxEnvironmentValid: Either[FSSIException, Unit] = {
     val javaVersion           = System.getProperty("java.version")
     val jv                    = if (javaVersion.contains(".")) javaVersion.split("\\.")(1) else javaVersion
     val currentSandBoxVersion = SandBoxVersion.currentVersion
@@ -286,7 +302,7 @@ class Checker {
     }
   }
 
-  def isContractMetaFileValid(metaFile: File): Either[ContractCheckException, Unit] = {
+  def isContractMetaFileValid(metaFile: File): Either[FSSIException, Unit] = {
     logger.info(s"check contract meta file is valid: $metaFile")
     val configReader = ConfigReader(metaFile)
     val errors       = scala.collection.mutable.ListBuffer.empty[String]
@@ -300,5 +316,23 @@ class Checker {
       errors += s"can't not find $interfacesKey in contract meta conf file"
     if (errors.isEmpty) Right(())
     else Left(ContractCheckException(errors.toVector))
+  }
+
+  def isContractSizeValid(size: Long): Either[FSSIException, Unit] = {
+    import fssi.sandbox.types.Protocol._
+    val valid = size <= contractSize
+    if (valid) Right(())
+    else {
+      val error =
+        s"contract project compiled file total size $size can not exceed $contractSize bytes"
+      Left(ContractCheckException(Vector(error)))
+    }
+  }
+
+  def isContractOwnerValid(accountId: Array[Byte], owner: String): Either[FSSIException, Unit] = {
+    val account = accountId.asBytesValue.bcBase58
+    val valid   = account == owner
+    if (valid) Right(())
+    else Left(new FSSIException(s"compiler owner $owner is different with contract owner $account"))
   }
 }

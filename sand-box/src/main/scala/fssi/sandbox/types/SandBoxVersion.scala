@@ -2,6 +2,8 @@ package fssi
 package sandbox
 package types
 
+import fssi.types.exception.FSSIException
+
 import scala.util.control.Exception._
 
 case class SandBoxVersion(maj: Int, min: Int, patch: Int) {
@@ -25,15 +27,17 @@ object SandBoxVersion {
 
   import Protocol._
 
-  private[sandbox] lazy val currentVersion = SandBoxVersion(version).get
+  private[sandbox] lazy val currentVersion = SandBoxVersion(version).right.get
 
-  def apply(value: String): Option[SandBoxVersion] = value.split("\\.") match {
+  def apply(value: String): Either[FSSIException, SandBoxVersion] = value.split("\\.") match {
     case Array(maj, min, patch)
         if allCatch.opt(maj.toInt).isDefined && allCatch.opt(min.toInt).isDefined && allCatch
           .opt(patch.toInt)
           .isDefined =>
-      Some(SandBoxVersion(maj.toInt, min.toInt, patch.toInt))
-    case _ => None
+      Right(SandBoxVersion(maj.toInt, min.toInt, patch.toInt))
+    case _ =>
+      Left(new FSSIException(
+        s"sandbox version $value not support,the latest version is ${SandBoxVersion.currentVersion}"))
   }
 
   private[SandBoxVersion] lazy val javaVersionMatch = Map(majVersion -> majJavaVersion)
