@@ -189,6 +189,13 @@ object Common {
         )
     }
 
+    object contractScaffold{
+      def apply(): Project = prj("contractScaffold", "contract-scaffold")
+        .settings(
+          libraryDependencies ++= all.betterfiles
+        )
+    }
+
   }
 
   val defaultShellScript: Seq[String] = defaultShellScript(
