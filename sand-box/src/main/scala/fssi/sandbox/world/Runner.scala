@@ -1,47 +1,35 @@
 package fssi
 package sandbox
 package world
-import java.io.File
-import java.nio.file.Paths
+import java.nio.file.{Path, Paths}
 
 import fssi.contract.lib.Context
 import fssi.sandbox.counter.CostCounter
 import fssi.sandbox.exception.ContractRunningException
+import fssi.sandbox.inf.BaseLogger
 import fssi.sandbox.loader.ContractClassLoader
 import fssi.sandbox.types.SParameterType._
 import fssi.sandbox.types.{Method, SParameterType}
-import fssi.types.{Contract, UniqueName}
-import fssi.utils.FileUtil
-import org.slf4j.{Logger, LoggerFactory}
+import fssi.types.biz.Contract
+import fssi.types.exception.FSSIException
 
-class Runner {
+class Runner extends BaseLogger {
 
   private lazy val builder = new Builder
 
-  private lazy val logger: Logger = LoggerFactory.getLogger(getClass)
-
   def invokeContractMethod(
       context: Context,
-      contractFile: File,
+      contractPath: Path,
       method: Method,
-      parameters: Contract.Parameter): Either[ContractRunningException, Unit] = {
+      parameters: Contract.UserContract.Parameter): Either[FSSIException, Unit] = {
     logger.info(
-      s"invoke contract method $method with params $parameters for contract $contractFile in context $context")
-    if (contractFile.exists() && contractFile.isFile) {
-      val rootPath = Paths.get(contractFile.getParent, UniqueName.randomUUID(false).value)
+      s"invoke contract method $method with params $parameters for contract $contractPath in context $context")
+    if (contractPath.toFile.exists()) {
       try {
-        val source = Paths.get(rootPath.toString, "source")
-        if (!source.toFile.exists()) source.toFile.mkdirs()
-        better.files
-          .File(contractFile.toPath)
-          .unzipTo(source)(java.nio.charset.Charset.forName("utf-8"))
-        val target = Paths.get(rootPath.toString, "target")
+        val target = Paths.get(contractPath.toString, "target")
         if (!target.toFile.exists()) target.toFile.mkdirs()
         for {
-          _ <- builder
-            .degradeClassVersion(source, target)
-            .left
-            .map(x => ContractRunningException(x.messages))
+          _ <- builder.degradeClassVersion(contractPath, target)
         } yield {
           val classLoader          = new ContractClassLoader(target)
           val methodParameterTypes = method.parameterTypes.map(_.`type`)
@@ -63,25 +51,25 @@ class Runner {
       } catch {
         case t: Throwable =>
           val error =
-            s"invoke contract method $method with params $parameters for contract $contractFile in context $context failed: ${t.getMessage}"
+            s"invoke contract method $method with params $parameters for contract $contractPath in context $context failed: ${t.getMessage}"
           logger.error(error, t)
           Left(ContractRunningException(Vector(error)))
-      } finally { if (rootPath.toFile.exists()) FileUtil.deleteDir(rootPath) }
+      }
     } else {
       val ex = ContractRunningException(
-        Vector(s"contract $contractFile must be a file assembled all files"))
+        Vector(s"contract $contractPath must be a file assembled all files"))
       logger.error(ex.getMessage, ex)
       Left(ex)
     }
   }
 
   private def extractParameterValues(parameterTypes: Array[SParameterType],
-                                     parameters: Contract.Parameter): Array[AnyRef] = {
+                                     parameters: Contract.UserContract.Parameter): Array[AnyRef] = {
     logger.info(s"extract params value from $parameters for $parameterTypes")
-    import Contract.Parameter._
+    import Contract.UserContract.Parameter._
     var index = 0
 
-    def convertToParameterValue(parameter: Contract.Parameter,
+    def convertToParameterValue(parameter: Contract.UserContract.Parameter,
                                 acc: Array[AnyRef]): Array[AnyRef] = {
       index = index + 1
       parameter match {
@@ -99,7 +87,6 @@ class Runner {
         case PArray(array) =>
           index = index - 1
           array.flatMap(p => convertToParameterValue(p, acc))
-        case PEmpty => acc
       }
     }
 

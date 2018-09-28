@@ -4,10 +4,10 @@ import java.io.File
 import java.nio.file.Path
 
 import fssi.contract.lib.Context
-import fssi.sandbox.exception._
-import fssi.sandbox.types.Method
 import fssi.sandbox.world._
-import fssi.types._
+import fssi.types.biz._
+import fssi.types.exception.FSSIException
+import fssi.utils.FileUtil
 
 class SandBox {
 
@@ -16,49 +16,57 @@ class SandBox {
   private lazy val builder  = new Builder
   private lazy val runner   = new Runner
 
-  def compileContract(rootPath: Path,
+  def compileContract(accountId: Account.ID,
+                      publicKey: Account.PubKey,
+                      privateKey: Account.PrivKey,
+                      rootPath: Path,
                       version: String,
-                      outputFile: File): Either[ContractCompileException, Unit] =
-    compiler.compileContract(rootPath, version, outputFile)
+                      outputFile: File): Either[FSSIException, Unit] =
+    compiler.compileContract(accountId.value,
+                             publicKey.value,
+                             privateKey.value,
+                             rootPath,
+                             version,
+                             outputFile)
 
-  def checkContractDeterminism(contractFile: File): Either[ContractCheckException, Unit] =
-    checker.checkDeterminism(contractFile)
-
-  def buildContract(accountId: Account.ID,
-                    file: File,
-                    name: UniqueName,
-                    version: Version): Either[ContractBuildException, Contract.UserContract] =
-    builder.buildUserContractFromFile(accountId, file, name, version)
-
-  def executeContract(context: Context,
-                      contractFile: File,
-                      method: Contract.Method,
-                      params: Contract.Parameter): Either[ContractRunningException, Unit] = {
+  def checkContractDeterminism(publicKey: Account.PubKey,
+                               contractFile: File): Either[FSSIException, Unit] = {
     for {
-      methods <- builder
-        .buildContractMethod(contractFile)
-        .left
-        .map(x => ContractRunningException(x.messages))
-      _ <- checker
-        .isContractMethodExisted(method, params, methods)
-        .left
-        .map(x => ContractRunningException(x.messages))
-        .right
-        .map(_ => Vector.empty[Method])
-      _ <- checker
-        .checkDeterminism(contractFile)
-        .left
-        .map(x => ContractRunningException(x.messages))
-        .right
-        .map(_ => Vector.empty[Method])
-      contractMethod = methods.find(_.alias == method.alias).get
-      _ <- runner
-        .invokeContractMethod(context, contractFile, contractMethod, params)
-        .right
-        .map(_ => Vector.empty[Method])
-    } yield ()
+      contractBytes <- builder.readContractBytesFromFile(publicKey.value, contractFile)
+      contractPath <- builder.buildContractProjectFromBytes(contractBytes,
+                                                            contractFile.getParentFile.toPath)
+      _ <- checker.checkDeterminism(contractPath)
+    } yield FileUtil.deleteDir(contractPath)
   }
 
-  def checkRunningEnvironment: Either[SandBoxEnvironmentException, Unit] =
+  def buildUnsignedContract(publicKey: Account.PubKey,
+                            file: File): Either[FSSIException, Contract.UserContract] = {
+    for {
+      contractBytes <- builder.readContractBytesFromFile(publicKey.value, file)
+      contractPath <- builder.buildContractProjectFromBytes(contractBytes,
+                                                            file.getParentFile.toPath)
+      contract <- builder.buildUserContractFromPath(contractPath, contractBytes)
+    } yield { FileUtil.deleteDir(contractPath); contract }
+  }
+
+  def executeContract(publicKey: Account.PubKey,
+                      context: Context,
+                      contractFile: File,
+                      method: Contract.UserContract.Method,
+                      params: Contract.UserContract.Parameter): Either[FSSIException, Unit] = {
+    for {
+      contractBytes <- builder.readContractBytesFromFile(publicKey.value, contractFile)
+      contractPath <- builder.buildContractProjectFromBytes(contractBytes,
+                                                            contractFile.getParentFile.toPath)
+      methodMeta <- builder.buildContractMeta(contractPath)
+      methods    <- checker.checkContractDescriptor(methodMeta.interfaces)
+      _          <- checker.isContractMethodExposed(method, params, methods)
+      _          <- checker.checkDeterminism(contractPath)
+      contractMethod = methods.find(_.alias == method.alias).get
+      _ <- runner.invokeContractMethod(context, contractPath, contractMethod, params)
+    } yield FileUtil.deleteDir(contractPath)
+  }
+
+  def checkRunningEnvironment: Either[FSSIException, Unit] =
     checker.isSandBoxEnvironmentValid
 }
