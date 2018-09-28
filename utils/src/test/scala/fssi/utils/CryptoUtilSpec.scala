@@ -1,10 +1,10 @@
 package fssi.utils
 
-import org.bouncycastle.jcajce.provider.asymmetric.ec.BCECPublicKey
 import org.scalatest._
 
 class CryptoUtilSpec extends FunSuite {
 
+  cryptoUtil.registerBC()
 
   test("rebuildPublickKey") {
     val kp = crypto.generateECKeyPair()
