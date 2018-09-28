@@ -7,6 +7,7 @@ import fssi.contract.lib.Context
 import fssi.sandbox.world._
 import fssi.types.biz._
 import fssi.types.exception.FSSIException
+import fssi.utils.FileUtil
 
 class SandBox {
 
@@ -35,7 +36,7 @@ class SandBox {
       contractPath <- builder.buildContractProjectFromBytes(contractBytes,
                                                             contractFile.getParentFile.toPath)
       _ <- checker.checkDeterminism(contractPath)
-    } yield ()
+    } yield FileUtil.deleteDir(contractPath)
   }
 
   def buildUnsignedContract(publicKey: Account.PubKey,
@@ -45,7 +46,7 @@ class SandBox {
       contractPath <- builder.buildContractProjectFromBytes(contractBytes,
                                                             file.getParentFile.toPath)
       contract <- builder.buildUserContractFromPath(contractPath, contractBytes)
-    } yield contract
+    } yield { FileUtil.deleteDir(contractPath); contract }
   }
 
   def executeContract(publicKey: Account.PubKey,
@@ -63,7 +64,7 @@ class SandBox {
       _          <- checker.checkDeterminism(contractPath)
       contractMethod = methods.find(_.alias == method.alias).get
       _ <- runner.invokeContractMethod(context, contractPath, contractMethod, params)
-    } yield ()
+    } yield FileUtil.deleteDir(contractPath)
   }
 
   def checkRunningEnvironment: Either[FSSIException, Unit] =

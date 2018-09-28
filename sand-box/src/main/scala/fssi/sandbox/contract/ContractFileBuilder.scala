@@ -17,16 +17,22 @@ class ContractFileBuilder extends BaseLogger {
 
   def makeContractSignature(privateKey: Array[Byte],
                             contractBytes: Array[Byte]): Either[FSSIException, Array[Byte]] = {
-    Try { crypto.makeSignature(contractBytes, crypto.rebuildECPrivateKey(privateKey)) }.toEither.left
+    logger.debug(s"make signature for contract ,private key length: ${privateKey.length}")
+    Try {
+      crypto.makeSignature(contractBytes, crypto.rebuildECPrivateKey(privateKey, crypto.SECP256K1))
+    }.toEither.left
       .map(x => new FSSIException(x.getMessage))
   }
 
   def verifyContractSignature(publicKey: Array[Byte],
                               source: Array[Byte],
                               contractSignature: Array[Byte]): Either[FSSIException, Unit] = {
+    logger.debug(s"verify signature for contract ,public key length: ${publicKey.length}")
     Try {
       val r =
-        crypto.verifySignature(contractSignature, source, crypto.rebuildECPublicKey(publicKey))
+        crypto.verifySignature(contractSignature,
+                               source,
+                               crypto.rebuildECPublicKey(publicKey, crypto.SECP256K1))
       if (r) ()
       else throw new FSSIException("contract signature verified failed")
     }.toEither.left
@@ -35,7 +41,7 @@ class ContractFileBuilder extends BaseLogger {
 
   def addContractMagic(contractFile: File): Either[FSSIException, Unit] = {
     import fssi.sandbox.types.Protocol._
-    logger.info(s"add magic $magic to contract file: $contractFile")
+    logger.debug(s"add magic $magic to contract file: $contractFile")
     if (contractFile.exists() && contractFile.isFile) {
       try {
         val randomAccessFile = new RandomAccessFile(contractFile, "rw")
@@ -53,7 +59,7 @@ class ContractFileBuilder extends BaseLogger {
 
   def addContractSize(size: Long, contractFile: File): Either[FSSIException, Unit] = {
     import fssi.sandbox.types.Protocol._
-    logger.info(s"add contract size $size to contract file: $contractFile")
+    logger.debug(s"add contract size $size to contract file: $contractFile")
     if (contractFile.exists() && contractFile.isFile) {
       try {
         val randomAccessFile = new RandomAccessFile(contractFile, "rw")
@@ -71,7 +77,7 @@ class ContractFileBuilder extends BaseLogger {
 
   def addSmartContract(contractBytes: Array[Byte],
                        contractFile: File): Either[FSSIException, Unit] = {
-    logger.info(s"add contract ${contractBytes.length} bytes to contract file: $contractFile")
+    logger.debug(s"add contract ${contractBytes.length} bytes to contract file: $contractFile")
     import fssi.sandbox.types.Protocol._
     if (contractFile.exists() && contractFile.isFile) {
       try {
@@ -91,7 +97,8 @@ class ContractFileBuilder extends BaseLogger {
 
   def addContractSignature(signature: Array[Byte],
                            contractFile: File): Either[FSSIException, Unit] = {
-    logger.info(s"add contract signature ${signature.length} bytes to contract file: $contractFile")
+    logger.debug(
+      s"add contract signature ${signature.length} bytes to contract file: $contractFile")
     import fssi.sandbox.types.Protocol._
     if (contractFile.exists() && contractFile.isFile) {
       try {
@@ -111,6 +118,7 @@ class ContractFileBuilder extends BaseLogger {
   }
 
   def readContractMagic(contractFile: File): Either[FSSIException, Unit] = {
+    logger.debug(s"read magic from contract file: $contractFile")
     import fssi.sandbox.types.Protocol._
     if (contractFile.exists() && contractFile.isFile) {
       Try {
@@ -125,6 +133,7 @@ class ContractFileBuilder extends BaseLogger {
   }
 
   def readContractSize(contractFile: File): Either[FSSIException, Long] = {
+    logger.debug(s"read contract size from contract file: $contractFile")
     import fssi.sandbox.types.Protocol._
     if (contractFile.exists() && contractFile.isFile) {
       Try {
@@ -136,6 +145,7 @@ class ContractFileBuilder extends BaseLogger {
   }
 
   def readSmartContract(contractFile: File, size: Long): Either[FSSIException, Array[Byte]] = {
+    logger.debug(s"read smart contract from contract file: $contractFile")
     import fssi.sandbox.types.Protocol._
     if (contractFile.exists() && contractFile.isFile) {
       Try {
@@ -150,6 +160,7 @@ class ContractFileBuilder extends BaseLogger {
 
   def readContractSignature(contractFile: File,
                             smartContractSize: Long): Either[FSSIException, Array[Byte]] = {
+    logger.debug(s"read contract signature from contract file: $contractFile")
     import fssi.sandbox.types.Protocol._
     if (contractFile.exists() && contractFile.isFile) {
       Try {

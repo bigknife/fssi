@@ -2,7 +2,7 @@ package fssi
 package sandbox
 import java.nio.file.Paths
 
-import fssi.types.biz.Contract.UserContract._
+import fssi.types.biz.Contract.UserContract.{Parameter, _}
 import fssi.types.biz.Account
 import org.scalatest.FunSuite
 import Parameter._
@@ -15,24 +15,26 @@ class SandBoxTest extends FunSuite {
 
   val sandBox = new SandBox
 
+  val account         = "12BFTJnXQYtiEEu42qqpqngVhntN1gSzcF"
+  val publicKey       = "p4Dy6tfK5iJ1WMPUmqNYyTsWyszjpDCgMHaXYhD6JhtA"
+  val entryPrivateKey = "ozdSkJVEDER2Tk12xTRpNeWvxxo9aHjusRauewpdPDcjFqGAXQsCakQ7HfjAQ8BTX"
+  val key             = "BgpLjEqGFw3Zj7HK13gHns8MUXkEwkYpdQnhJHiS6kVw"
+  val iv              = "BMzTqHsaPTtTZ26xEhmbQX"
+  val privateKey =
+    crypto.aesDecryptPrivKey(BytesValue.decodeBcBase58(iv).get.bytes,
+                             BytesValue.decodeBcBase58(key).get.bytes,
+                             BytesValue.decodeBcBase58(entryPrivateKey).get.bytes)
+  val accountId = Account.ID(BytesValue.decodeBcBase58(account).get.bytes)
+  val pubKey    = Account.PubKey(BytesValue.decodeBcBase58(publicKey).get.bytes)
+  val prvKey    = Account.PrivKey(privateKey)
+
+  val project    = "/Users/songwenchao/Documents/source/company/weihui/chain/fssi_contract"
+  val projectDir = Paths.get(project)
+  val output     = "/tmp/banana.contract"
+  val outputFile = Paths.get(output).toFile
+  val version    = "1.0.0"
+
   test("test compile contract") {
-    val account         = "12BFTJnXQYtiEEu42qqpqngVhntN1gSzcF"
-    val publicKey       = "p4Dy6tfK5iJ1WMPUmqNYyTsWyszjpDCgMHaXYhD6JhtA"
-    val entryPrivateKey = "ozdSkJVEDER2Tk12xTRpNeWvxxo9aHjusRauewpdPDcjFqGAXQsCakQ7HfjAQ8BTX"
-    val key             = "BgpLjEqGFw3Zj7HK13gHns8MUXkEwkYpdQnhJHiS6kVw"
-    val iv              = "BMzTqHsaPTtTZ26xEhmbQX"
-    val privateKey =
-      crypto.aesDecryptPrivKey(BytesValue.decodeBcBase58(iv).get.bytes,
-                               BytesValue.decodeBcBase58(key).get.bytes,
-                               BytesValue.decodeBcBase58(entryPrivateKey).get.bytes)
-    val project    = "/Users/songwenchao/Documents/source/company/weihui/chain/fssi_contract"
-    val output     = "/Users/songwenchao/fssi/banana.contract"
-    val version    = "1.0.0"
-    val projectDir = Paths.get(project)
-    val outputFile = Paths.get(output).toFile
-    val accountId  = Account.ID(BytesValue.decodeBcBase58(account).get.bytes)
-    val pubKey     = Account.PubKey(BytesValue.decodeBcBase58(publicKey).get.bytes)
-    val prvKey     = Account.PrivKey(privateKey)
     sandBox.compileContract(accountId, pubKey, prvKey, projectDir, version, outputFile) match {
       case Right(_) => println("SUCCESS: compile project success")
       case Left(e)  => e.printStackTrace()
@@ -40,10 +42,6 @@ class SandBoxTest extends FunSuite {
   }
 
   test("check contract determinism") {
-    val output     = "/Users/songwenchao/fssi/banana.contract"
-    val publicKey  = "p4Dy6tfK5iJ1WMPUmqNYyTsWyszjpDCgMHaXYhD6JhtA"
-    val pubKey     = Account.PubKey(BytesValue.decodeBcBase58(publicKey).get.bytes)
-    val outputFile = Paths.get(output).toFile
     sandBox.checkContractDeterminism(pubKey, outputFile) match {
       case Right(_) => println("SUCCESS: check project success")
       case Left(e)  => e.printStackTrace()
@@ -51,17 +49,24 @@ class SandBoxTest extends FunSuite {
   }
 
   test("run smart contract") {
-    val publicKey  = "p4Dy6tfK5iJ1WMPUmqNYyTsWyszjpDCgMHaXYhD6JhtA"
-    val pubKey     = Account.PubKey(publicKey.getBytes("utf-8"))
-    val output     = "/Users/songwenchao/fssi/banana.contract"
-    val outputFile = Paths.get(output).toFile
     val context    = new TestContext
     val methodName = "registerBanana"
     val full       = ""
-    val parameter  = PArray(PString("hh"), PString("bbb"))
+    val parameter  = PArray(PString("hh"), PBigDecimal(123))
     sandBox.executeContract(pubKey, context, outputFile, Method(methodName, full), parameter) match {
       case Right(_) => println("SUCCESS: run contract success")
       case Left(e)  => e.printStackTrace()
     }
+  }
+
+  test("test crypto") {
+    val str   = "11111111122222222222233333333444444455565"
+    val bytes = str.getBytes("utf-8")
+    val signature =
+      crypto.makeSignature(bytes, crypto.rebuildECPrivateKey(prvKey.value, crypto.SECP256K1))
+    val verified = crypto.verifySignature(signature,
+                                          bytes,
+                                          crypto.rebuildECPublicKey(pubKey.value, crypto.SECP256K1))
+    assert(verified)
   }
 }

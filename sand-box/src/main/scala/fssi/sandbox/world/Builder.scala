@@ -189,6 +189,8 @@ class Builder extends BaseLogger {
     val file = Paths.get(rootPath.toString, "contract-tmp").toFile
     try {
       val contractRootPath = Paths.get(rootPath.toString, "FSSIContract")
+      if (contractRootPath.toFile.exists()) FileUtil.deleteDir(contractRootPath)
+      contractRootPath.toFile.mkdirs()
       better.files
         .File(file.toPath)
         .writeByteArray(contractBytes)

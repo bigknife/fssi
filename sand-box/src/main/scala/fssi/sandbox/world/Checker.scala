@@ -17,7 +17,6 @@ import scala.collection.mutable.ListBuffer
 import fssi.sandbox.inf._
 import fssi.sandbox.types.ContractMeta.MethodDescriptor
 import fssi.sandbox.types.Protocol._
-import fssi.types.base.BytesValue
 import fssi.types.exception.FSSIException
 import fssi.types.implicits._
 
