@@ -28,27 +28,27 @@ class SandBoxTest extends FunSuite {
   val pubKey    = Account.PubKey(BytesValue.decodeBcBase58(publicKey).get.bytes)
   val prvKey    = Account.PrivKey(privateKey)
 
-  val project    = "/Users/songwenchao/Documents/source/company/weihui/chain/fssi_contract"
+  val project    = "/tmp/fssi_scaffold"
   val projectDir = Paths.get(project)
   val output     = "/tmp/banana.contract"
   val outputFile = Paths.get(output).toFile
   val version    = "1.0.0"
 
-  test("test compile contract") {
+  ignore("test compile contract") {
     sandBox.compileContract(accountId, pubKey, prvKey, projectDir, version, outputFile) match {
       case Right(_) => println("SUCCESS: compile project success")
       case Left(e)  => e.printStackTrace()
     }
   }
 
-  test("check contract determinism") {
+  ignore("check contract determinism") {
     sandBox.checkContractDeterminism(pubKey, outputFile) match {
       case Right(_) => println("SUCCESS: check project success")
       case Left(e)  => e.printStackTrace()
     }
   }
 
-  test("run smart contract") {
+  ignore("run smart contract") {
     val context    = new TestContext
     val methodName = "registerBanana"
     val full       = ""
@@ -59,7 +59,7 @@ class SandBoxTest extends FunSuite {
     }
   }
 
-  test("test crypto") {
+  ignore("test crypto") {
     val str   = "11111111122222222222233333333444444455565"
     val bytes = str.getBytes("utf-8")
     val signature =
