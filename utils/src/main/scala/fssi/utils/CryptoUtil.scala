@@ -129,15 +129,15 @@ trait CryptoUtil {
   def getECPrivateKey(kp: KeyPair): Array[Byte] =
     kp.getPrivate.asInstanceOf[ECPrivateKey].getD.toByteArray
 
-  def rebuildECPublicKey(bytesValue: Array[Byte]): PublicKey = {
-    val ecSpec  = ECNamedCurveTable.getParameterSpec(ECSpec)
+  def rebuildECPublicKey(bytesValue: Array[Byte], spec: String = ECSpec): PublicKey = {
+    val ecSpec  = ECNamedCurveTable.getParameterSpec(spec)
     val pubSpec = new ECPublicKeySpec(ecSpec.getCurve.decodePoint(bytesValue), ecSpec)
     val kf      = KeyFactory.getInstance(KeyFactoryAlgo, ProviderName)
     kf.generatePublic(pubSpec)
   }
 
   def rebuildECPrivateKey(bytesValue: Array[Byte], spec: String = ECSpec): PrivateKey = {
-    val ecSpec  = ECNamedCurveTable.getParameterSpec(ECSpec)
+    val ecSpec  = ECNamedCurveTable.getParameterSpec(spec)
     val prvSpec = new ECPrivateKeySpec(new BigInteger(bytesValue), ecSpec)
     val kf      = KeyFactory.getInstance(KeyFactoryAlgo, ProviderName)
     kf.generatePrivate(prvSpec)
