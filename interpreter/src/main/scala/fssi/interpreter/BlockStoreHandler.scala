@@ -14,6 +14,7 @@ import io.circe.parser._
 import io.circe.syntax._
 import Bytes.implicits._
 import better.files.{File => ScalaFile, _}
+import crypto.sha3_256digestInstance
 
 class BlockStoreHandler extends BlockStore.Handler[Stack] with BlockCalSupport with LogSupport {
   private val blockFileDirName                               = "block"
@@ -33,10 +34,8 @@ class BlockStoreHandler extends BlockStore.Handler[Stack] with BlockCalSupport w
   /** initialize a data directory to be a block store
     * @param dataDir directory to save block.
     */
-  override def initializeBlockStore(dataDir: File): Stack[Unit] = Stack { setting =>
-    val path = new File(dataDir, blockFileDirName)
-    path.mkdirs()
-    blockTrieJsonFile := new File(path, "block.trie.json").toScala
+  override def initializeBlockStore(blockStoreRoot: File): Stack[Unit] = Stack { setting =>
+    blockTrieJsonFile := new File(blockStoreRoot, "block.trie.json").toScala
     blockTrieJsonFile.foreach { f =>
       if (f.exists && f.isRegularFile) {
         //reload
@@ -68,11 +67,56 @@ class BlockStoreHandler extends BlockStore.Handler[Stack] with BlockCalSupport w
         throw new RuntimeException(s"$f should be empty to init or a regular file to load.")
 
       // init or load level db store
-      val dbFile = new File(path, "db")
+      val dbFile = new File(blockStoreRoot, "db")
       dbFile.mkdirs()
       blockStore := levelDBStore(dbFile)
       log.info(s"init leveldb at $dbFile")
     }
+  }
+
+  override def saveBizBlock(block: biz.Block): Stack[Unit] = Stack {setting =>
+    // save block in blockTrie
+    // block will saved as json
+    // key is the height of the block
+    blockTrie.updated { trie =>
+      // current height value is stored in trie, with referenced by KEY_CURRENT_HEIGHT
+      val currentHeightValue = block.head.height.asBytesValue.bcBase58
+
+      // the current height as a key to refer to a block hash
+      // height's sha3_256 digest as the ke
+      val currentHeightKey = block.head.height.asBytesValue.digest.bcBase58.toCharArray
+
+      // block hash value, referred by currentHeightKey
+      // and also the key of block in the block store
+      val blockHashValue = block.hash.asBytesValue.bcBase58
+
+      // block content json stored in a store
+      // refered by blockHashValue
+      val storedValue = block.asJson.noSpaces
+
+      // store value
+      blockStore.foreach { store =>
+        store.save(blockHashValue, storedValue)
+        log.info(s"block(height=${block.head.height}) saved to db with key = $blockHashValue")
+      }
+
+      trie
+        .put(KEY_CURRENT_HEIGHT, currentHeightValue)
+        .unsafe {
+          log.info(s"saved current height to block trie, $currentHeightValue")
+        }
+        .put(currentHeightKey, blockHashValue)
+        .unsafe { trie =>
+          log.info(
+            s"saved blockHashValue = $blockHashValue with key = ${currentHeightKey.mkString("")}")
+          // save trie to json file
+          blockTrieJsonFile.foreach { f =>
+            f.overwrite(trie.asJson.spaces2)
+            log.info(s"saved block json file to $f")
+          }
+        }
+
+    }    
   }
 
   /** save block, before saving, invoker should guarantee that the block is legal

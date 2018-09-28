@@ -27,6 +27,7 @@ trait CoreNodeProgram[F[_]] extends BaseProgram[F] with CoreNodeProgramHelper[F]
     import blockStore._
     import log._
 
+    /*
     for {
       envCheck                <- checkRunningEnvironment()
       _                       <- err.either(envCheck)
@@ -56,6 +57,8 @@ trait CoreNodeProgram[F[_]] extends BaseProgram[F] with CoreNodeProgramHelper[F]
       _  <- info("initialized consensus engine")
       _  <- info(s"node startup and binding account: $n2")
     } yield n2
+     */
+    ???
   }
 
   /** Shutdown core node
@@ -74,6 +77,7 @@ trait CoreNodeProgram[F[_]] extends BaseProgram[F] with CoreNodeProgramHelper[F]
     import consensusEngine._
     import network._
     import log._
+    /*
     for {
       toBeSingedBytes <- calculateSingedBytesOfTransaction(transaction)
       verified <- verifySignature(toBeSingedBytes,
@@ -94,6 +98,8 @@ trait CoreNodeProgram[F[_]] extends BaseProgram[F] with CoreNodeProgramHelper[F]
 
       _ <- tryToAgreeBlock(node.account.get, undeterminedBlock, undeterminedBlock)
     } yield ()
+     */
+    ???
   }
 
   /** handle something when a block is determined
@@ -109,6 +115,7 @@ trait CoreNodeProgram[F[_]] extends BaseProgram[F] with CoreNodeProgramHelper[F]
     //    if no error, save block to local store
     // 2. check block's chainID
 
+    /*
     import blockStore._
     import blockService._
     import log._
@@ -169,19 +176,23 @@ trait CoreNodeProgram[F[_]] extends BaseProgram[F] with CoreNodeProgramHelper[F]
           } yield ()
       }
     } yield ()
+     */
+    ???
   }
 
   /** get current core node height
     */
-  def currentHeight(): SP[F, BigInt] = blockStore.getLatestDeterminedBlock().map(_.height)
+  def currentHeight(): SP[F, BigInt] = ??? /*blockStore.getLatestDeterminedBlock().map(_.height)*/
 
   /** handle consensus aux message
     */
-  def handleConsensusAuxMessage(auxMessage: ConsensusAuxMessage): SP[F, Unit] =
+  def handleConsensusAuxMessage(auxMessage: ConsensusAuxMessage): SP[F, Unit] = ???
+  /*
     for {
       node <- network.getCurrentNode()
       _    <- consensusEngine.handleConsensusAuxMessage(node.account.get, auxMessage)
     } yield ()
+   */
 
 }
 object CoreNodeProgram {

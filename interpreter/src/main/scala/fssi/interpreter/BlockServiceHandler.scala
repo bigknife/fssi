@@ -6,8 +6,32 @@ import types._, implicits._
 import ast._
 
 import scala.collection._
+import crypto.sha3_256digestInstance
 
 class BlockServiceHandler extends BlockService.Handler[Stack] with BlockCalSupport {
+
+  /** create an empty block
+    */
+  override def createFirstBlock(chainId: String): Stack[biz.Block] = Stack {
+    biz.Block(
+      head = biz.Block.Head(previousStates = biz.Block.emptyWordStates,
+                            currentStates = biz.Block.emptyWordStates,
+                            height = 0,
+                            chainId = chainId),
+      transactions = immutable.TreeSet.empty[biz.Transaction],
+      hash = base.Hash.empty
+    )
+  }
+
+  /** update hash for the block
+    */
+  override def hashBlock(block: biz.Block): Stack[biz.Block] = Stack {
+    // if hash is not empty, we will make it empty, and re-calclute the hash
+    val b1: biz.Block =
+      if (block.hash.asBytesValue.nonEmpty) block.copy(hash = base.Hash.empty) else block
+    b1.copy(hash = base.Hash(b1.asBytesValue.digest.bytes))
+  }
+
   override def createGenesisBlock(chainID: String): Stack[Block] = Stack {
     val b1 = Block(
       hash = Hash.empty,
@@ -59,7 +83,7 @@ class BlockServiceHandler extends BlockService.Handler[Stack] with BlockCalSuppo
     case x: Transaction.RunContract =>
       import Contract.Parameter._
       def bytesOfParam(p: Contract.Parameter): Array[Byte] = p match {
-        case PEmpty         => Array.emptyByteArray
+        case PEmpty          => Array.emptyByteArray
         case PString(x1)     => x1.getBytes("utf-8")
         case PBigDecimal(x1) => x1.toString.getBytes("")
         case PBool(x1)       => BigInt(if (x1) 1 else 0).toByteArray

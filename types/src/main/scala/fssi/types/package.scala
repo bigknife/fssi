@@ -10,6 +10,11 @@ package object types {
   object implicits
       extends base.BaseTypeImplicits
       with biz.Account.Implicits
+      with biz.Transaction.Implicits
+      with biz.Token.Implicits
+      with biz.Contract.Version.Implicits
+      with biz.Contract.UserContract.Implicits
+      with biz.Block.Implicits
       with Transaction.Implicits
       with Contract.Implicits
       with Token.Implicits

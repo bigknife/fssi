@@ -33,6 +33,8 @@ package object interpreter {
       with LogServiceHandler.Implicits
       with ConsensusEngineHandler.Implicits
       with ContractServiceHandler.Implicits
+      with DataStoreHandler.Implicits
+      with ReceiptStoreHandler.Implicits
       with bigknife.sop.effect.error.ErrorMInstance
 
   object runner {

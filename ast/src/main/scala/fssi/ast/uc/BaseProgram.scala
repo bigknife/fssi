@@ -18,6 +18,18 @@ trait BaseProgram[F[_]] {
       Either.cond(condition, trueValue, falseException)
     )
 
-  def requireM[A <: Throwable](condition: Boolean, falseException : => A): SP[F, Unit] =
+  /** requireM throws exception when condition is false
+    */
+  def requireM[A <: FSSIException](condition: Boolean, falseException: => A): SP[F, Unit] =
     ifM(condition, (), falseException)
+
+  implicit final class SPEitherOps[A, E <: Throwable](x: SP[F, Either[E, A]]) {
+    def right: SP[F, A] =
+      for {
+        ax <- x
+        a  <- model.err.either(ax)
+      } yield a
+  }
+  implicit def toSPEitherOps[A, E <: Throwable](x: P[F, Either[E, A]]): SPEitherOps[A, E] =
+    new SPEitherOps(x: SP[F, Either[E, A]])
 }

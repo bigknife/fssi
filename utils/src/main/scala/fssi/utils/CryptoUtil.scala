@@ -12,7 +12,8 @@ import org.bouncycastle.jce.interfaces.{ECPrivateKey, ECPublicKey}
 
 trait CryptoUtil {
 
-  def registerBC(): Int = Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider())
+  def registerBC(): Int =
+    Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider())
 
   // ECDSA
   //       ref: http://www.bouncycastle.org/wiki/display/JA1/Elliptic+Curve+Key+Pair+Generation+and+Key+Factories
@@ -25,13 +26,17 @@ trait CryptoUtil {
   val CipherAlgo: String           = "desede/CBC/PKCS5Padding"
   val KeyFactoryAlgo: String       = "ECDH"
 
+  object EncAlgo {
+    val AES = "AES/CBC/PKCS5Padding" //"AES/CBC/PKCS5Padding"
+  }
+
   object SignAlgo {
     val SHA256withECDSA = "SHA256withECDSA"
   }
 
   // create aes key
   def createAesSecretKey(seed: Array[Byte]): SecretKey = {
-    val sr = new SecureRandom
+    val sr   = new SecureRandom
     val salt = Array.fill(16)(0.toByte)
     sr.nextBytes(salt)
 
@@ -42,13 +47,47 @@ trait CryptoUtil {
   }
 
   // use aes to encrypt
-  def aesEncryptPrivKey(ivBytes: Array[Byte], key: Array[Byte], source: Array[Byte]): Array[Byte] = {
+  def aesEncryptPrivKey(ivBytes: Array[Byte],
+                        key: Array[Byte],
+                        source: Array[Byte]): Array[Byte] = {
     val iv: IvParameterSpec = new IvParameterSpec(ivBytes)
-    val cipher = Cipher.getInstance("AES/CBC/PKCS5Padding", ProviderName)
-    val k = new SecretKeySpec(key, "AES/CBC/PKCS5Padding")
-    cipher.init(Cipher.ENCRYPT_MODE, k, iv)
-    cipher.update(source)
-    cipher.doFinal
+
+    def loop(s: Array[Byte], acc: Array[Byte]): Array[Byte] =
+      if (s.isEmpty) acc
+      else {
+        val block  = s.take(15)
+        val cipher = Cipher.getInstance(EncAlgo.AES, ProviderName)
+        val k      = new SecretKeySpec(key, EncAlgo.AES)
+        cipher.init(Cipher.ENCRYPT_MODE, k, iv)
+        cipher.update(block)
+        val accNext = acc ++ cipher.doFinal
+        loop(s.drop(15), accNext)
+      }
+
+    loop(source, Array.emptyByteArray)
+  }
+
+  // use aes to decrypt
+  def aesDecryptPrivKey(ivBytes: Array[Byte],
+                        key: Array[Byte],
+                        encryption: Array[Byte]): Array[Byte] = {
+    require(encryption.length % 16 == 0, "aes encrypted data should be 16-times length")
+    val iv: IvParameterSpec = new IvParameterSpec(ivBytes)
+
+    def loop(s: Array[Byte], acc: Array[Byte]): Array[Byte] =
+      if (s.isEmpty) acc
+      else {
+        val block  = s.take(16)
+        val cipher = Cipher.getInstance(EncAlgo.AES, ProviderName)
+        val k      = new SecretKeySpec(key, EncAlgo.AES)
+        cipher.init(Cipher.DECRYPT_MODE, k, iv)
+        cipher.update(block)
+        val accNext = acc ++ cipher.doFinal
+        loop(s.drop(16), accNext)
+      }
+
+    loop(encryption, Array.emptyByteArray)
+
   }
 
   def hash(source: Array[Byte]): Array[Byte] = sha3(source)
@@ -90,15 +129,15 @@ trait CryptoUtil {
   def getECPrivateKey(kp: KeyPair): Array[Byte] =
     kp.getPrivate.asInstanceOf[ECPrivateKey].getD.toByteArray
 
-  def rebuildECPublicKey(bytesValue: Array[Byte]): PublicKey = {
-    val ecSpec  = ECNamedCurveTable.getParameterSpec(ECSpec)
+  def rebuildECPublicKey(bytesValue: Array[Byte], spec: String = ECSpec): PublicKey = {
+    val ecSpec  = ECNamedCurveTable.getParameterSpec(spec)
     val pubSpec = new ECPublicKeySpec(ecSpec.getCurve.decodePoint(bytesValue), ecSpec)
     val kf      = KeyFactory.getInstance(KeyFactoryAlgo, ProviderName)
     kf.generatePublic(pubSpec)
   }
 
-  def rebuildECPrivateKey(bytesValue: Array[Byte]): PrivateKey = {
-    val ecSpec  = ECNamedCurveTable.getParameterSpec(ECSpec)
+  def rebuildECPrivateKey(bytesValue: Array[Byte], spec: String = ECSpec): PrivateKey = {
+    val ecSpec  = ECNamedCurveTable.getParameterSpec(spec)
     val prvSpec = new ECPrivateKeySpec(new BigInteger(bytesValue), ecSpec)
     val kf      = KeyFactory.getInstance(KeyFactoryAlgo, ProviderName)
     kf.generatePrivate(prvSpec)
@@ -132,7 +171,7 @@ trait CryptoUtil {
   }
 
   def randomBytes(length: Int): Array[Byte] = {
-    val sr = new SecureRandom
+    val sr    = new SecureRandom
     val bytes = Array.fill[Byte](length)(0)
     sr.nextBytes(bytes)
     bytes
@@ -151,4 +190,7 @@ trait CryptoUtil {
     java.security.MessageDigest.getInstance("SHA-256", ProviderName).digest(source)
   }
 
+  implicit lazy val sha_256digestInstance: java.security.MessageDigest =
+    java.security.MessageDigest.getInstance("SHA-256", ProviderName)
+  implicit lazy val sha3_256digestInstance: java.security.MessageDigest = new SHA3.Digest256
 }

@@ -20,11 +20,20 @@ import better.files.{File => ScalaFile, _}
 import java.io._
 import java.nio.file.Paths
 
+import fssi.contract.scaffold.ContractScaffold
 import fssi.sandbox.exception.ContractRunningException
 
 class ContractServiceHandler extends ContractService.Handler[Stack] with BlockCalSupport {
 
   val sandbox = new fssi.sandbox.SandBox
+  lazy val scaffold = new ContractScaffold
+
+  /** create contract project
+    *
+    */
+  override def createContractProject(projectRoot: File): Stack[Either[FSSIException,Unit]] = Stack { setting =>
+    scaffold.createContractProject(projectRoot.toPath)
+  }
 
   /** check current contract running environment
     */
@@ -36,16 +45,25 @@ class ContractServiceHandler extends ContractService.Handler[Stack] with BlockCa
     */
   override def checkDeterminismOfContractProject(
       rootPath: File): Stack[Either[FSSIException, Unit]] = Stack { setting =>
-    sandbox.checkContractDeterminism(rootPath)
+//    sandbox.checkContractDeterminism(rootPath)
+    Right(())
   }
 
   /** compile smart contract project and output to the target file
     */
-  override def compileContractProject(rootPath: File,
+  override def compileContractProject(accountId: biz.Account.ID,
+                                      pubKey: biz.Account.PubKey,
+                                      privKey: biz.Account.PrivKey,
+                                      rootPath: File,
                                       sandboxVersion: String,
                                       outputFile: File): Stack[Either[FSSIException, Unit]] =
     Stack { setting =>
-      sandbox.compileContract(rootPath.toPath, sandboxVersion, outputFile)
+      sandbox.compileContract(accountId,
+                              pubKey,
+                              privKey,
+                              rootPath.toPath,
+                              sandboxVersion,
+                              outputFile)
     }
 
   /** create a running context for some transaction
@@ -63,7 +81,8 @@ class ContractServiceHandler extends ContractService.Handler[Stack] with BlockCa
       contractName: UniqueName,
       contractVersion: Version): Stack[Either[FSSIException, Contract.UserContract]] = Stack {
     setting =>
-      sandbox.buildContract(account.id, contractFile, contractName, contractVersion)
+//      sandbox.buildContract(contractFile)
+      Left(new FSSIException(""))
   }
 
   override def invokeUserContract(context: Context,
@@ -85,7 +104,8 @@ class ContractServiceHandler extends ContractService.Handler[Stack] with BlockCa
           try {
             fileOutputStream.write(contract.code.bytes, 0, contract.code.bytes.length)
             fileOutputStream.flush()
-            sandbox.executeContract(context, contractFile, method, params)
+//            sandbox.executeContract(context, contractFile, method, params)
+            Right(())
           } catch {
             case t: Throwable => Left(t)
           } finally {

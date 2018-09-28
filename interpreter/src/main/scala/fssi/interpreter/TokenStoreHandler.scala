@@ -35,12 +35,10 @@ class TokenStoreHandler extends TokenStore.Handler[Stack] with LogSupport {
   private val tokenTrieJsonFile: Once[ScalaFile]                       = Once.empty
   private val tokenStage: SafeVar[Map[BigInt, Map[Account.ID, Token]]] = SafeVar(Map.empty)
 
-  override def initializeTokenStore(dataDir: File): Stack[Unit] = Stack { setting =>
-    val path = new File(dataDir, tokenFileDirName)
-    path.mkdirs()
+  override def initializeTokenStore(tokenStoreRoot: File): Stack[Unit] = Stack { setting =>
     // find token.trie(json) to initialize a trie
     // if not found, create one and persist it.
-    tokenTrieJsonFile := new File(path, "token.trie.json").toScala
+    tokenTrieJsonFile := new File(tokenStoreRoot, "token.trie.json").toScala
     tokenTrieJsonFile.foreach { f =>
       if (f.exists && f.isRegularFile) {
         //reload
@@ -67,7 +65,7 @@ class TokenStoreHandler extends TokenStore.Handler[Stack] with LogSupport {
         throw new RuntimeException(s"$f should be empty to init or a regular file to load.")
 
       // init or load level db store
-      val dbFile = new File(path, "db")
+      val dbFile = new File(tokenStoreRoot, "db")
       dbFile.mkdirs()
       tokenStore := levelDBStore(dbFile)
       log.info(s"init leveldb at $dbFile")

@@ -184,7 +184,15 @@ object Common {
       def apply(): Project = prj("sandBox", "sand-box")
         .settings(
           libraryDependencies ++= all.betterfiles,
-          libraryDependencies ++= all.asm
+          libraryDependencies ++= all.asm,
+          libraryDependencies ++= all.config
+        )
+    }
+
+    object contractScaffold{
+      def apply(): Project = prj("contractScaffold", "contract-scaffold")
+        .settings(
+          libraryDependencies ++= all.betterfiles
         )
     }
 

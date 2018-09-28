@@ -12,9 +12,9 @@ import java.io._
 @sp trait TokenStore[F[_]] {
 
   /** initialize a data directory to be a token store
-    * @param dataDir directory to save token.
+    * @param tokenStoreRoot directory to save token.
     */
-  def initializeTokenStore(dataDir: File): P[F, Unit]
+  def initializeTokenStore(tokenStoreRoot: File): P[F, Unit]
 
   /** self test for a token store
     * @param block token store should be tested on block
