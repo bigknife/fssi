@@ -1,57 +1,37 @@
 package fssi
 package interpreter
 
+import utils._
 import org.scalatest._
-import types._
+import types.{base, _}
 import types.syntax._
 
 class CryptoHandlerTest extends FunSuite with GivenWhenThen {
   val setting = Setting.DefaultSetting
-  val crypto  = new CryptoHandler
-
-  test("create keypair") {
-
-    val kp = crypto
-      .createKeyPair()
-      .map(x => (x._1.hex, x._2.hex))
-      .run(setting)
-      .unsafeRunSync()
-
-    info(s"created keypair is $kp")
+  val cryptoHandler  = {
+    utils.crypto.registerBC()
+    new CryptoHandler
   }
 
-  test("create iv fork des") {
-    val iv = crypto
-      .createIVForDes()
-      .map(_.hex)
-      .run(setting)
-      .unsafeRunSync()
+  test("sign and verify") {
+    val encrytedKey = "ADYTEporUmFmKToDQHBc76hXz4RfoRKZUkuUAnpa47aXYHnELmVknH5s2QvTAaBfHU"
+    val pubKey = "21884yKTVyHonyERqEUuThnZo1eBe9YtF14NRxLPhT9yu"
+    val iv = "QoVapk76GcfUaCxYUQvT9W"
+    val secretKey = "C7absPeDYLoMAzQuVyrA8cyvXSMeuJNPkAz96SNZDQri"
 
-    info(s"created iv is $iv")
-  }
+    val privKey = for {
+      ivBytes <- base.BytesValue.decodeBcBase58[Any](iv)
+      secretKeyBytes <- base.BytesValue.decodeBcBase58[Any](secretKey)
+      encrytionBytes <- base.BytesValue.decodeBcBase58[Any](encrytedKey)
+    } yield {
+      val pkBytes = crypto.aesDecryptPrivKey(ivBytes.bytes, secretKeyBytes.bytes, encrytionBytes.bytes)
+      crypto.rebuildECPrivateKey(pkBytes, crypto.SECP256K1)
+    }
 
-  test("encrypt private key") {
-    Given("KeyPair")
-    val kp = crypto
-      .createKeyPair()
-      .run(setting)
-      .unsafeRunSync()
-    info(s"private key is ${kp._2.hex}")
+    val data = "Hello,WOrld".getBytes()
+    val sign = crypto.makeSignature(data, privKey.get)
+    val verify = crypto.verifySignature(sign, data, crypto.rebuildECPublicKey(base.BytesValue.decodeBcBase58(pubKey).get.bytes, crypto.SECP256K1))
+    assert(verify)
 
-    Given("IV")
-    val iv = crypto
-      .createIVForDes()
-      .run(setting)
-      .unsafeRunSync()
-
-    When("encrypt private key of there KeyPair with a password")
-    val password = "Hello,world".getBytes
-
-    Then("do encrypt")
-    val result = crypto
-      .desEncryptPrivateKey(kp._2, iv, password)
-      .run(setting)
-      .unsafeRunSync
-    info(s"result is ${result.hex}")
   }
 }
