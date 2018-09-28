@@ -15,7 +15,7 @@ import java.io._
   /** create contract project
     *
     */
-  def createContractProject(projectRoot: File): P[F, Unit]
+  def createContractProject(projectRoot: File): P[F, Either[FSSIException,Unit]]
 
   /** check current contract running environment
     */

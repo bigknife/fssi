@@ -18,23 +18,12 @@ object ToolMain extends App {
           createTransferTransaction(accountFile, secretKeyFile, payee, token, o)
         case CompileContractArgs(accountFile, secretKeyFile, projectDirectory, outputDirectory, sandboxVersion) =>
           compileContract(accountFile, secretKeyFile, projectDirectory, outputDirectory, sandboxVersion.toString)
+        case CreateContractProjectArgs(projectDir) =>
+          createContractProject(projectDir)
         case CreateDeployTransactionArgs(accountFile, secretKeyFile, contractFile, o) =>
           createDeployTransaction(accountFile, secretKeyFile, contractFile, o)
-        case CreateRunTransactionArgs(accountFile,
-                                      password,
-                                      contractName,
-                                      contractVersion,
-                                      method,
-                                      parameter,
-                                      o) =>
-          createRunTransaction(accountFile,
-                               password,
-                               contractName,
-                               contractVersion,
-                               method,
-                               parameter,
-                               o)
-
+        case CreateRunTransactionArgs(accountFile, password, contractName, contractVersion, method, parameter, o) =>
+          createRunTransaction(accountFile, password, contractName, contractVersion, method, parameter, o)
         case _ =>
       }
     case None =>

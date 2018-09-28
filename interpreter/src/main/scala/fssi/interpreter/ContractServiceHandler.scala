@@ -31,8 +31,8 @@ class ContractServiceHandler extends ContractService.Handler[Stack] with BlockCa
   /** create contract project
     *
     */
-  override def createContractProject(projectRoot: File): Stack[Unit] = Stack { setting =>
-    scaffold.createContractProject(projectRoot.toPath).right.get
+  override def createContractProject(projectRoot: File): Stack[Either[FSSIException,Unit]] = Stack { setting =>
+    scaffold.createContractProject(projectRoot.toPath)
   }
 
   /** check current contract running environment

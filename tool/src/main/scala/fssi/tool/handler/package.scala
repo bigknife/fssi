@@ -7,5 +7,6 @@ package object handler {
   object createDeployTransaction   extends CreateDeployTransactionHandler
   object createRunTransaction      extends CreateRunContractTransactionHandler
   object compileContract           extends CompileContractHandler
+  object createContractProject     extends CreateContractProjectHandler
 
 }

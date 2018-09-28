@@ -16,7 +16,12 @@ trait ContractProgram[F[_]] extends BaseProgram[F] {
 
   /** create a contract project
     */
-  def createContractProject(projectRoot: File): SP[F, Unit] = contractService.createContractProject(projectRoot)
+  def createContractProject(projectRoot: File): SP[F, Unit] = {
+    for {
+      createEither <- contractService.createContractProject(projectRoot)
+      _            <- err.either(createEither)
+    } yield ()
+  }
 
   /** compile contract project
     * @param projectRoot the root path of the contract project
