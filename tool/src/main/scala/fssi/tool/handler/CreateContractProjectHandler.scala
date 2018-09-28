@@ -13,6 +13,11 @@ trait CreateContractProjectHandler extends BaseHandler {
 
   def apply(projectDirectory: File): Unit = {
     val setting: Setting = Setting.ToolSetting()
-    runner.runIO(toolProgram.createContractProject(projectDirectory), setting).unsafeRunSync()
+    runner
+      .runIOAttempt(toolProgram.createContractProject(projectDirectory), setting)
+      .unsafeRunSync() match {
+      case Left(e)  => logger.error(e.getMessage)
+      case Right(_) => logger.info(s"created,please checkout $projectDirectory")
+    }
   }
 }

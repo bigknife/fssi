@@ -62,7 +62,7 @@ object CmdArgs {
     */
   case class CompileContractArgs(
       accountFile: File = new File(""),
-      secretKeyFile: File = new File(""),    
+      secretKeyFile: File = new File(""),
       projectDirectory: File = new File(""),
       outputFile: File = new File(""),
       sandboxVersion: CompileContractArgs.SandobxVersion =
@@ -82,4 +82,6 @@ object CmdArgs {
       }
     }
   }
+
+  case class CreateContractProjectArgs(projectDir: File = new File(".")) extends CmdArgs
 }

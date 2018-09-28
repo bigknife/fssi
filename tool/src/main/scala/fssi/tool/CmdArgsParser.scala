@@ -69,6 +69,17 @@ object CmdArgsParser extends OptionParser[CmdArgs]("fssitool") {
             .copy(sandboxVersion = CompileContractArgs.SandobxVersion(x)))
     )
 
+  cmd("CreateContractProject")
+    .text("Create Contract Project")
+    .action((_, _) => CreateContractProjectArgs())
+    .children(
+      opt[java.io.File]("project-directory")
+        .abbr("pd")
+        .text("smart contract project root path default current dir")
+        .optional()
+        .action((x, c) => c.asInstanceOf[CreateContractProjectArgs].copy(projectDir = x))
+    )
+
   cmd("CreateTransaction")
     .text("Create Transaction")
     .children(
