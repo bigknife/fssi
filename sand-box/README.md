@@ -12,6 +12,9 @@
                 -- META-INF
                      -- contract.meta.conf (智能合约元信息配置文件)
         --test
+            --java
+            -- resources
+                -- META-INF
         
 ### 智能合约元信息配置文件
 

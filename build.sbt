@@ -36,6 +36,8 @@ lazy val pContractLib = contractLib()
 
 lazy val pSandBox = sandBox().dependsOn(pTypes).dependsOn(pContractLib)
 
+lazy val pContractScaffold = contractScaffold().dependsOn(pTypes)
+
 lazy val pTool = tool()
   .dependsOn(pInterperter)
   .dependsOn(pJsonRpc)
