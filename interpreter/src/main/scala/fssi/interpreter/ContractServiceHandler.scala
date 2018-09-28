@@ -20,11 +20,20 @@ import better.files.{File => ScalaFile, _}
 import java.io._
 import java.nio.file.Paths
 
+import fssi.contract.scaffold.ContractScaffold
 import fssi.sandbox.exception.ContractRunningException
 
 class ContractServiceHandler extends ContractService.Handler[Stack] with BlockCalSupport {
 
   val sandbox = new fssi.sandbox.SandBox
+  lazy val scaffold = new ContractScaffold
+
+  /** create contract project
+    *
+    */
+  override def createContractProject(projectRoot: File): Stack[Unit] = Stack { setting =>
+    scaffold.createContractProject(projectRoot.toPath).right.get
+  }
 
   /** check current contract running environment
     */

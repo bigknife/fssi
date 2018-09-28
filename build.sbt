@@ -25,6 +25,7 @@ lazy val pInterperter = interpreter()
   .dependsOn(pTypesJson)
   .dependsOn(pTrie)
   .dependsOn(pSandBox)
+  .dependsOn(pContractScaffold)
 
 lazy val pJsonRpc = jsonrpc()
 

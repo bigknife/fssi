@@ -12,6 +12,11 @@ import java.io._
 
 @sp trait ContractService[F[_]] {
 
+  /** create contract project
+    *
+    */
+  def createContractProject(projectRoot: File): P[F, Unit]
+
   /** check current contract running environment
     */
   def checkRunningEnvironment(): P[F, Either[FSSIException, Unit]]
