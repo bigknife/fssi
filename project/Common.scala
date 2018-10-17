@@ -83,6 +83,10 @@ object Common {
       Project(id, file(dir))
         .settings(settings)
 
+    object base {
+      def apply(): Project = prj("base", "base")
+    }
+
     object utils {
       def apply(): Project =
         prj("utils", "utils")
@@ -116,6 +120,14 @@ object Common {
         prj("ast", "ast")
           .settings(
             libraryDependencies ++= (all.sop ++ all.cats)
+          )
+    }
+
+    object scp {
+      def apply(): Project =
+        prj("scp", "scp")
+          .settings(
+            libraryDependencies ++= (all.sop ++ all.cats ++ all.circe ++ all.bcprov)
           )
     }
 
