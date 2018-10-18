@@ -1,6 +1,6 @@
 package fssi.scp.types
 
-case class Envelope(
-  statement: Statement,
+case class Envelope[M <: Message](
+  statement: Statement[M],
   signature: Signature
 )
