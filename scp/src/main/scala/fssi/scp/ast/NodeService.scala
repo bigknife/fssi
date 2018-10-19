@@ -67,4 +67,18 @@ import types._
     */
   def createVotePrepareMessage(nodeId: NodeID, slotIndex: SlotIndex): P[F, Message.VotePrepare]
 
+  /** create a accept-prepare-ballot message based on current node state
+    */
+  def createAcceptPrepareMessage(nodeId: NodeID, slotIndex: SlotIndex): P[F, Message.AcceptPrepare]
+
+  /** check the message to see if it's sane
+    */
+  def isMessageSane(message: Message): P[F, Boolean]
+  def isMessageNotSane(message: Message): P[F, Boolean] =
+    isMessageSane(message).map(!_)
+
+  /** check current phase to see if a message can be ignored
+    */
+  def needHandleMessage(nodeId: NodeID, slotIndex: SlotIndex, message: Message): P[F, Boolean]
+
 }

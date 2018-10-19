@@ -10,6 +10,7 @@ import bigknife.sop.implicits._
 
 trait EmitProgram[F[_]] extends SCP[F] with BaseProgram[F] {
   import model.nodeService._
+  import model.nodeStore._
 
   /** send message to let peer nodes know
     * first, let the envelope be processed locally
@@ -21,8 +22,10 @@ trait EmitProgram[F[_]] extends SCP[F] with BaseProgram[F] {
            message: Message): SP[F, Unit] =
     for {
       envelope <- putInEnvelope(nodeId, message)
-      _ <- ifThen(handleSCPEnvelope(nodeId, slotIndex, envelope, previousValue)) {
-        broadcastEnvelope(nodeId, envelope)
+      _ <- ifThen(canEmit(nodeId, slotIndex, envelope)) {
+        ifThen(handleSCPEnvelope(nodeId, slotIndex, envelope, previousValue)) {
+          broadcastEnvelope(nodeId, envelope)
+        }
       }
 
     } yield ()
