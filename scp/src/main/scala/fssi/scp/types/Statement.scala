@@ -7,4 +7,6 @@ case class Statement[M <: Message](
   message: M
 ) {
   def to[N <: Message]: Statement[N] = this.asInstanceOf[Statement[N]]
+
+  def withMessage[N <: Message](n: N): Statement[N] = Statement(from, timestamp, quorumSet, n)
 }

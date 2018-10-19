@@ -24,7 +24,15 @@ import types._
 
   /** find current un-accepted votes values (vote(nominate x))
     */
-  def unAcceptedVotes(nodeId: NodeID, slotIndex: SlotIndex): P[F, ValueSet]
+  def unAcceptedNominations(nodeId: NodeID, slotIndex: SlotIndex): P[F, ValueSet]
+
+  /** nominate a value as candidate value
+    */
+  def nominateAsCandidate(nodeId: NodeID, slotIndex: SlotIndex, value: Value): P[F, Unit]
+
+  /** find current accepted nomination votes
+    */
+  def acceptedNominations(nodeId: NodeID, slotIndex: SlotIndex): P[F, ValueSet]
 
   /** the set of nodes which has voted(nominate x)
     */
@@ -45,4 +53,8 @@ import types._
   /** check if a value has been stored as votes or accepted.
     */
   def valueVotedOrAccepted(nodeId: NodeID, slotIndex: SlotIndex, value: Value): P[F, Boolean]
+
+  /** check if a value has been stored as accepted
+    */
+  def valueAccepted(nodeId: NodeID, slotIndex: SlotIndex, value: Value): P[F, Boolean]
 }

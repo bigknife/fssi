@@ -11,7 +11,9 @@ object Message {
   case class VoteNominations(values: ValueSet) extends Message
 
   // vote(accept(nominate x))
-  case class AcceptNominations(values: ValueSet) extends Message
+  case class AcceptNominations(values: ValueSet) extends Message {
+    def asVote: VoteNominations = VoteNominations(values)
+  }
 
   // vote(prepare b)
   case class VotePrepare(ballot: Ballot) extends Message
@@ -28,7 +30,7 @@ object Message {
   // externalize(b)
   case class Externalize(ballot: Ballot) extends Message
 
-  // conbined messages
+  // combined messages
   case class Bunches(messages: Vector[Message]) extends Message {
     def isEmpty: Boolean = messages.isEmpty
     def nonEmpty: Boolean = messages.nonEmpty

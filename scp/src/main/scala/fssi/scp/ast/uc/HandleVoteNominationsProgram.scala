@@ -50,7 +50,7 @@ trait HandleVoteNominationsProgram[F[_]] extends SCP[F] with BaseProgram[F] {
 
     // federated accept to promote votes to accepted
     lazy val promoteVotesToAccepted: SP[F, Boolean] = for {
-      unAccepted <- unAcceptedVotes(nodeId, slotIndex)
+      unAccepted <- unAcceptedNominations(nodeId, slotIndex)
       promoted <- unAccepted.foldLeft(false.pureSP[F]) { (acc, n) =>
         for {
           pre           <- acc

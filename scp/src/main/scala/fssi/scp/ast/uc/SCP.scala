@@ -26,7 +26,7 @@ trait SCP[F[_]] {
 
 object SCP {
   def apply[F[_]](implicit M: Model[F]): SCP[F] =
-    new HandleRequestProgram[F] with HandleSCPEnvelopeProgram[F] {
+    new HandleAppRequestProgram[F] with HandleSCPEnvelopeProgram[F] {
       private[uc] val model: Model[F] = M
     }
 }

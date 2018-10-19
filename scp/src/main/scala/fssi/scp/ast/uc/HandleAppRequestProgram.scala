@@ -8,7 +8,7 @@ import components._
 import bigknife.sop._
 import bigknife.sop.implicits._
 
-trait HandleRequestProgram[F[_]] extends SCP[F] with BaseProgram[F] {
+trait HandleAppRequestProgram[F[_]] extends SCP[F] with BaseProgram[F] {
   import model._
 
   /** handle request of application
