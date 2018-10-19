@@ -28,7 +28,7 @@ import types._
 
   /** nominate a value as candidate value
     */
-  def nominateAsCandidate(nodeId: NodeID, slotIndex: SlotIndex, value: Value): P[F, Unit]
+  def candidateNewValue(nodeId: NodeID, slotIndex: SlotIndex, value: Value): P[F, Unit]
 
   /** find current accepted nomination votes
     */

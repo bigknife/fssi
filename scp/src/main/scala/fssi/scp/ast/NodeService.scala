@@ -63,4 +63,8 @@ import types._
     */
   def createAcceptNominationMessage(nodeId: NodeID, slotIndex: SlotIndex): P[F, Message.AcceptNominations]
 
+  /** create a vote-prepare-ballot message based on current node state
+    */
+  def createVotePrepareMessage(nodeId: NodeID, slotIndex: SlotIndex): P[F, Message.VotePrepare]
+
 }

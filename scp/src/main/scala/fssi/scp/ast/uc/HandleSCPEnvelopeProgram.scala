@@ -70,7 +70,7 @@ trait HandleSCPEnvelopeProgram[F[_]]
       case _: Message.Externalize =>
         handleExternalize(nodeId, slotIndex, previousValue, statement.to[Message.Externalize])
       case Message.Bunches(xs) =>
-        xs.foldLeft(false.pureSP[F]) { (acc, n) =>
+        xs.foldLeft(true.pureSP[F]) { (acc, n) =>
           for {
             pre <- acc
             r   <- handleStatement(nodeId, slotIndex, previousValue, statement.copy(message = n))

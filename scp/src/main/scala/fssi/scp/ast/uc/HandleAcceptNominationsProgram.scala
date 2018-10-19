@@ -8,7 +8,10 @@ import components._
 import bigknife.sop._
 import bigknife.sop.implicits._
 
-trait HandleAcceptNominationsProgram[F[_]] extends HandleVoteNominationsProgram[F] {
+trait HandleAcceptNominationsProgram[F[_]]
+    extends HandleVoteNominationsProgram[F]
+    with EmitProgram[F] {
+
   import model.nodeService._
   import model.nodeStore._
   import model.applicationService._
@@ -59,36 +62,39 @@ trait HandleAcceptNominationsProgram[F[_]] extends HandleVoteNominationsProgram[
         } yield if (ratifiedAccepted) pre + n else pre
       }
 
-    // send message to let peer nodes know
-    def emit(message: Option[Message]): SP[F, Unit] =
-      if (message.isDefined)
-        for {
-          envelope <- putInEnvelope(nodeId, message.get)
-          _        <- handleSCPEnvelope(nodeId, slotIndex, envelope, previousValue)
-          _        <- broadcastEnvelope(nodeId, envelope)
-        } yield ()
-      else ()
+    val voteNomMsg = statement.withMessage(statement.message.asVote)
 
-    for {
-      _ <- handleVoteNominations(nodeId, slotIndex, previousValue, statement.withMessage(statement.message.asVote))
-      newAccepted     <- completelyNewValues
-      accepted        <- tryAccept(newAccepted)
-      _               <- ifThen(accepted.nonEmpty)(acceptNewNominations(nodeId, slotIndex, accepted))
-      currentAccepted <- acceptedNominations(nodeId, slotIndex)
-      candidates      <- tryCandidate(currentAccepted)
-      candidateValue  <- combineCandidates(candidates)
-      _ <- ifThen(candidateValue.isDefined)(
-        nominateAsCandidate(nodeId, slotIndex, candidateValue.get))
-      acceptMessage <- ifM(accepted.isEmpty && candidateValue.isEmpty,
-                           Option.empty[Message.AcceptNominations]) {
-        for {
-          msg <- createAcceptNominationMessage(nodeId, slotIndex)
-        } yield Option(msg)
-      }
-      _ <- emit(acceptMessage)
+    // first, treat AcceptNominations as a VoteNomination, then handle it.
+    ifM(handleVoteNominations(nodeId, slotIndex, previousValue, voteNomMsg).map(!_), right = false) {
+      for {
 
-    } yield accepted
+        newAccepted <- completelyNewValues
+        accepted    <- tryAccept(newAccepted)
 
-    ???
+        _ <- ifThen(accepted.nonEmpty)(acceptNewNominations(nodeId, slotIndex, accepted))
+        acceptMessage <- ifM(accepted.isEmpty, Option.empty[Message.AcceptNominations]) {
+          for {
+            msg <- createAcceptNominationMessage(nodeId, slotIndex)
+          } yield Option(msg)
+        }
+        _ <- ifThen(acceptMessage.isDefined) {
+          emit(nodeId, slotIndex, previousValue, acceptMessage.get)
+        }
+
+        currentAccepted <- acceptedNominations(nodeId, slotIndex)
+        candidates      <- tryCandidate(currentAccepted)
+        candidateValue  <- combineCandidates(candidates)
+
+        _ <- ifThen(candidateValue.isDefined) {
+          for {
+            _   <- candidateNewValue(nodeId, slotIndex, candidateValue.get)
+            msg <- createVotePrepareMessage(nodeId, slotIndex)
+            _   <- emit(nodeId, slotIndex, previousValue, msg)
+          } yield ()
+        }
+
+      } yield true
+
+    }
   }
 }

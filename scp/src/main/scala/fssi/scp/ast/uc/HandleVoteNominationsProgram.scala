@@ -8,7 +8,7 @@ import components._
 import bigknife.sop._
 import bigknife.sop.implicits._
 
-trait HandleVoteNominationsProgram[F[_]] extends SCP[F] with BaseProgram[F] {
+trait HandleVoteNominationsProgram[F[_]] extends SCP[F] with EmitProgram[F] {
   import model.nodeService._
   import model.nodeStore._
   import model.applicationService._
@@ -64,15 +64,6 @@ trait HandleVoteNominationsProgram[F[_]] extends SCP[F] with BaseProgram[F] {
 
     } yield promoted
 
-    // send message to let peer nodes know
-    def emit(message: Message.Bunches): SP[F, Unit] =
-      if (message.nonEmpty) for {
-        envelope <- putInEnvelope(nodeId, message)
-        _        <- handleSCPEnvelope(nodeId, slotIndex, envelope, previousValue)
-        _        <- broadcastEnvelope(nodeId, envelope)
-      } yield ()
-      else ()
-
     ifM(nominatingStopped, right = false) {
       for {
         newVotes <- validNarrowed
@@ -89,8 +80,11 @@ trait HandleVoteNominationsProgram[F[_]] extends SCP[F] with BaseProgram[F] {
             msg <- createAcceptNominationMessage(nodeId, slotIndex)
           } yield Option(msg)
         }
-        _ <- emit(Message.bunchOption(voteMessage, acceptMessage))
-      } yield voted || accepted
+        bunchedMessage = Message.bunchOption(voteMessage, acceptMessage)
+        _ <- ifThen(bunchedMessage.nonEmpty) {
+          emit(nodeId, slotIndex, previousValue, bunchedMessage)
+        }
+      } yield true
     }
   }
 }
