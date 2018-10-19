@@ -19,7 +19,7 @@ object Message {
   case class VotePrepare(ballot: Ballot, prepared: Ballot, preparedPrime: Ballot) extends Message
 
   // vote(accept(prepare b))
-  case class AcceptPrepare(ballot: Ballot) extends Message
+  case class AcceptPrepare(ballot: Ballot, prepared: Ballot, preparedPrime: Ballot) extends Message
 
   // vote(commit b)
   case class VoteCommit(ballot: Ballot) extends Message

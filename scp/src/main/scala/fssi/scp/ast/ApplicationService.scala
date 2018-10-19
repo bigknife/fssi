@@ -19,4 +19,10 @@ import types._
   /** combine values to ONE value, maybe nothing
     */
   def combineCandidates(xs: ValueSet): P[F, Option[Value]]
+
+  /** after timeout milliseconds, execute the program
+    *
+    * @param program with type: SP[F, Unit]
+    */
+  def delayExecuteProgram(program: Any, timeout: Long): P[F, Unit]
 }

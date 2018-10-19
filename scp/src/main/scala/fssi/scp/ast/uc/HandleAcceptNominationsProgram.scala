@@ -62,39 +62,34 @@ trait HandleAcceptNominationsProgram[F[_]]
         } yield if (ratifiedAccepted) pre + n else pre
       }
 
-    val voteNomMsg = statement.withMessage(statement.message.asVote)
+    for {
 
-    // first, treat AcceptNominations as a VoteNomination, then handle it.
-    ifM(handleVoteNominations(nodeId, slotIndex, previousValue, voteNomMsg).map(!_), right = false) {
-      for {
+      newAccepted <- completelyNewValues
+      accepted    <- tryAccept(newAccepted)
 
-        newAccepted <- completelyNewValues
-        accepted    <- tryAccept(newAccepted)
+      _ <- ifThen(accepted.nonEmpty)(acceptNewNominations(nodeId, slotIndex, accepted))
+      acceptMessage <- ifM(accepted.isEmpty, Option.empty[Message.AcceptNominations]) {
+        for {
+          msg <- createAcceptNominationMessage(nodeId, slotIndex)
+        } yield Option(msg)
+      }
+      _ <- ifThen(acceptMessage.isDefined) {
+        emit(nodeId, slotIndex, previousValue, acceptMessage.get)
+      }
 
-        _ <- ifThen(accepted.nonEmpty)(acceptNewNominations(nodeId, slotIndex, accepted))
-        acceptMessage <- ifM(accepted.isEmpty, Option.empty[Message.AcceptNominations]) {
-          for {
-            msg <- createAcceptNominationMessage(nodeId, slotIndex)
-          } yield Option(msg)
-        }
-        _ <- ifThen(acceptMessage.isDefined) {
-          emit(nodeId, slotIndex, previousValue, acceptMessage.get)
-        }
+      currentAccepted <- acceptedNominations(nodeId, slotIndex)
+      candidates      <- tryCandidate(currentAccepted)
+      candidateValue  <- combineCandidates(candidates)
 
-        currentAccepted <- acceptedNominations(nodeId, slotIndex)
-        candidates      <- tryCandidate(currentAccepted)
-        candidateValue  <- combineCandidates(candidates)
+      _ <- ifThen(candidateValue.isDefined) {
+        for {
+          _   <- candidateNewValue(nodeId, slotIndex, candidateValue.get)
+          msg <- createVotePrepareMessage(nodeId, slotIndex)
+          _   <- emit(nodeId, slotIndex, previousValue, msg)
+        } yield ()
+      }
 
-        _ <- ifThen(candidateValue.isDefined) {
-          for {
-            _   <- candidateNewValue(nodeId, slotIndex, candidateValue.get)
-            msg <- createVotePrepareMessage(nodeId, slotIndex)
-            _   <- emit(nodeId, slotIndex, previousValue, msg)
-          } yield ()
-        }
+    } yield true
 
-      } yield true
-
-    }
   }
 }

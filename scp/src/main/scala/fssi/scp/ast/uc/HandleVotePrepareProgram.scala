@@ -19,7 +19,7 @@ trait HandleVotePrepareProgram[F[_]] extends EmitProgram[F] {
                         previousValue: Value,
     statement: Statement[Message.VotePrepare]): SP[F, Boolean] = {
 
-    // because BallotSet is totally orderd, so we can iterate them from
+    // because BallotSet is totally ordered, so we can iterate them from
     // right side to get a highest, acceptable ballot.
     def findAcceptableBallot(xs: BallotSet): SP[F, Option[Ballot]] =
       xs.foldRight(Option.empty[Ballot].pureSP[F]) {(n, acc) =>

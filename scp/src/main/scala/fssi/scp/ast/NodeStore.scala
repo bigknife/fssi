@@ -14,6 +14,10 @@ import types._
     */
   def currentNominateRound(nodeId: NodeID, slotIndex: SlotIndex): P[F, Int]
 
+  /** set nominate round to the next one
+    */
+  def gotoNextNominateRound(nodeId: NodeID, slotIndex: SlotIndex): P[F, Unit]
+
   /** save new values to current voted nominations
     */
   def voteNewNominations(nodeId: NodeID, slotIndex: SlotIndex, newVotes: ValueSet): P[F, Unit]
@@ -50,7 +54,7 @@ import types._
     */
   def nodesAcceptedPrepare(nodeId: NodeID, slotIndex: SlotIndex, ballot: Ballot): P[F, Set[NodeID]]
 
-  /** save latest message sent from any node. SHOULD saved by diffent message type.
+  /** save latest message sent from any node. SHOULD saved by different message type.
     */
   def saveLatestStatement[M <: Message](nodeId: NodeID, slotIndex: SlotIndex, statement: Statement[M]): P[F, Unit]
 
@@ -66,15 +70,19 @@ import types._
     */
   def valueAccepted(nodeId: NodeID, slotIndex: SlotIndex, value: Value): P[F, Boolean]
 
-  /** find canidate ballot to prepare from local stored envelopes received from other peers
+  /** find candidate ballot to prepare from local stored envelopes received from other peers
     * if the ballot is prepared, should be ignored.
     * @see BallotProtocol.cpp#getPrepareCandidates
     */
   def findBallotsToPrepare(nodeId: NodeID, slotIndex: SlotIndex): P[F, BallotSet]
 
-  /** set prepared ballot for local states, if any states changed, return true, or else return false
+  /** set prepared ballot to accepted for local states, if any states changed, return true, or else return false
     */
   def acceptPrepared(nodeId: NodeID, slotIndex: SlotIndex, ballot: Ballot): P[F, StateChanged]
+
+  /** set prepared ballot to confirmed for local state, if any states changed, return true, or else return false
+    */
+  def confirmPrepared(nodeId: NodeID, slotIndex: SlotIndex, ballot: Ballot): P[F, StateChanged]
 
   /** check if a envelope can be emitted
     */

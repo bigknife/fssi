@@ -9,7 +9,9 @@ import bigknife.sop._
 import bigknife.sop.implicits._
 
 trait HandleAppRequestProgram[F[_]] extends SCP[F] with BaseProgram[F] {
-  import model._
+  import model.nodeService._
+  import model.nodeStore._
+  import model.applicationService._
 
   /** handle request of application
     */
@@ -17,14 +19,12 @@ trait HandleAppRequestProgram[F[_]] extends SCP[F] with BaseProgram[F] {
                        slotIndex: SlotIndex,
                        value: Value,
                        previousValue: Value): SP[F, Boolean] = {
-    import nodeStore._
-    import nodeService._
 
-    ifM(cannotNominateNewValue(nodeId, slotIndex), false) {
+    ifM(cannotNominateNewValue(nodeId, slotIndex), right = false) {
       // rate limits
       for {
         newVotes <- narrowDownVotes(nodeId, slotIndex, ValueSet(value), previousValue)
-        voted <- ifM(newVotes.isEmpty, false) {
+        voted <- ifM(newVotes.isEmpty, right = false) {
           for {
             _        <- voteNewNominations(nodeId, slotIndex, newVotes)
             message  <- createVoteNominationMessage(nodeId, slotIndex)
@@ -33,6 +33,10 @@ trait HandleAppRequestProgram[F[_]] extends SCP[F] with BaseProgram[F] {
             _        <- ifThen(handled)(broadcastEnvelope(nodeId, envelope))
           } yield handled
         }
+        round   <- currentNominateRound(nodeId, slotIndex)
+        timeout <- computeTimeout(round)
+        _       <- gotoNextNominateRound(nodeId, slotIndex)
+        _       <- delayExecuteProgram(handleAppRequest(nodeId, slotIndex, value, previousValue), timeout)
       } yield voted
     }
   }

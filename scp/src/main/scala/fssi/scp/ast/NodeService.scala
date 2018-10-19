@@ -12,6 +12,10 @@ import types._
 
 @sp trait NodeService[F[_]] {
 
+  /** compute next round timeout (in ms)
+    */
+  def computeTimeout(round: Int): P[F, Long]
+
   /** check if in-nominating and no any candidate produced
     */
   def canNominateNewValue(nodeId: NodeID, slotIndex: SlotIndex): P[F, Boolean]
@@ -23,6 +27,10 @@ import types._
   def isNominatingStopped(nodeId: NodeID, slotIndex: SlotIndex): P[F, Boolean]
   def isNominatingGoingOn(nodeId: NodeID, slotIndex: SlotIndex): P[F, Boolean] =
     isNominatingStopped(nodeId, slotIndex).map(!_)
+
+  /** stop nomination process
+    */
+  def stopNominating(nodeId: NodeID, slotIndex: SlotIndex): P[F, Unit]
 
   /** do some rate-limits stuff to narrow down the nominating votes
     */
@@ -70,6 +78,10 @@ import types._
   /** create a accept-prepare-ballot message based on current node state
     */
   def createAcceptPrepareMessage(nodeId: NodeID, slotIndex: SlotIndex): P[F, Message.AcceptPrepare]
+
+  /** create a vote-commit-ballot (confirm-accept-ballot) message based on current node state
+    */
+  def createVoteCommit(nodeId: NodeID, slotIndex: SlotIndex): P[F, Message.VoteCommit]
 
   /** check the message to see if it's sane
     */
