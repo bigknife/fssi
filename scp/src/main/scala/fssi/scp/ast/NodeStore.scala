@@ -54,6 +54,14 @@ import types._
     */
   def nodesAcceptedPrepare(nodeId: NodeID, slotIndex: SlotIndex, ballot: Ballot): P[F, Set[NodeID]]
 
+  /** the set of nodes which have voted vote(commit b)
+    */
+  def nodesVotedCommit(nodeId: NodeID, slotIndex: SlotIndex, ballot: Ballot, counterInterval: CounterInterval): P[F, Set[NodeID]]
+
+  /** the set of nodes which have accepted vote(commit b)
+    */
+  def nodesAcceptedCommit(nodeId: NodeID, slotIndex: SlotIndex, ballot: Ballot, counterInterval: CounterInterval): P[F, Set[NodeID]]
+
   /** save latest message sent from any node. SHOULD saved by different message type.
     */
   def saveLatestStatement[M <: Message](nodeId: NodeID, slotIndex: SlotIndex, statement: Statement[M]): P[F, Unit]
@@ -84,7 +92,16 @@ import types._
     */
   def confirmPrepared(nodeId: NodeID, slotIndex: SlotIndex, ballot: Ballot): P[F, StateChanged]
 
+  /** accepted ballots(low and high) as committed
+    */
+  def acceptCommitted(nodeId: NodeID, slotIndex: SlotIndex, lowest: Ballot, highest: Ballot): P[F, StateChanged]
+
   /** check if a envelope can be emitted
     */
   def canEmit[M <: Message](nodeId: NodeID, slotIndex: SlotIndex, envelope: Envelope[M]): P[F, Boolean]
+
+  /** find all committed counters from envelopes received from peers
+    * @param ballot the one in envelope should be compatible with ballot
+    */
+  def findCompatibleCounterOfCommitted(nodeId: NodeID, slotIndex: SlotIndex, ballot: Ballot): P[F, CounterSet]
 }

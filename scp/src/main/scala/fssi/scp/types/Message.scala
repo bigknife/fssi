@@ -22,7 +22,7 @@ object Message {
   case class AcceptPrepare(ballot: Ballot, prepared: Ballot, preparedPrime: Ballot) extends Message
 
   // vote(commit b)
-  case class VoteCommit(ballot: Ballot) extends Message
+  case class VoteCommit(ballot: Ballot, lowestCounter: Int, highestCounter: Int) extends Message
 
   // vote(accept(commit b))
   case class AcceptCommit(ballot: Ballot) extends Message

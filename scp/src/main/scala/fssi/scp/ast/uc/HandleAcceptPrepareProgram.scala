@@ -10,7 +10,6 @@ import bigknife.sop.implicits._
 
 trait HandleAcceptPrepareProgram[F[_]] extends EmitProgram[F] {
 
-  import model.applicationService._
   import model.nodeService._
   import model.nodeStore._
 
@@ -47,7 +46,7 @@ trait HandleAcceptPrepareProgram[F[_]] extends EmitProgram[F] {
               _ <- ifThen(changed) {
                 for {
                   _   <- stopNominating(nodeId, slotIndex)
-                  msg <- createVoteCommit(nodeId, slotIndex)
+                  msg <- createVoteCommitMessage(nodeId, slotIndex)
                   _   <- emit(nodeId, slotIndex, previousValue, msg)
                 } yield ()
               }

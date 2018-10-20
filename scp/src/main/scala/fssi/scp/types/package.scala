@@ -14,4 +14,6 @@ package object types {
   }
 
   type StateChanged = Boolean
+
+  type CounterSet = scala.collection.immutable.TreeSet[Int]
 }

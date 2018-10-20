@@ -81,7 +81,9 @@ import types._
 
   /** create a vote-commit-ballot (confirm-accept-ballot) message based on current node state
     */
-  def createVoteCommit(nodeId: NodeID, slotIndex: SlotIndex): P[F, Message.VoteCommit]
+  def createVoteCommitMessage(nodeId: NodeID, slotIndex: SlotIndex): P[F, Message.VoteCommit]
+
+  def createAcceptCommitMessage(nodeId: NodeID, slotIndex: SlotIndex): P[F, Message.AcceptCommit]
 
   /** check the message to see if it's sane
     */
@@ -93,4 +95,9 @@ import types._
     */
   def needHandleMessage(nodeId: NodeID, slotIndex: SlotIndex, message: Message): P[F, Boolean]
 
+  /** check ballot can be commit (vote (commit b))
+    */
+  def canBallotCommitted(nodeId: NodeID, slotIndex: SlotIndex, ballot: Ballot): P[F, Boolean]
+  def cannotBallotCommitted(nodeId: NodeID, slotIndex: SlotIndex, ballot: Ballot): P[F, Boolean] =
+    canBallotCommitted(nodeId, slotIndex, ballot).map(!_)
 }

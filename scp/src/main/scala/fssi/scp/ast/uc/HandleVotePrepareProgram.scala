@@ -10,7 +10,6 @@ import bigknife.sop.implicits._
 
 trait HandleVotePrepareProgram[F[_]] extends EmitProgram[F] {
 
-  import model.applicationService._
   import model.nodeService._
   import model.nodeStore._
 
