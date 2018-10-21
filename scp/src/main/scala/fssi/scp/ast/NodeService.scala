@@ -39,6 +39,10 @@ import types._
                       values: ValueSet,
                       previousValue: Value): P[F, ValueSet]
 
+  /** create nomination message based on local state
+    */
+  def createVoteNominationMessage(nodeId: NodeID, slotIndex: SlotIndex): P[F, Message.Nomination]
+
   /** make a envelope for a message
     */
   def putInEnvelope[M <: Message](nodeId: NodeID, message: M): P[F, Envelope[M]]
@@ -49,11 +53,21 @@ import types._
 
   /** verify the signature of the envelope
     */
-  def verifySignature[M <: Message](envelope: Envelope[M]): P[F, Boolean]
+  def isSignatureVerified[M <: Message](envelope: Envelope[M]): P[F, Boolean]
+  def isSignatureTampered[M <: Message](envelope: Envelope[M]): P[F, Boolean] =
+    isSignatureVerified(envelope).map(!_)
 
   /** check the statement to see if it is illegal
     */
-  def checkStatementValidity[M <: Message](statement: Statement[M]): P[F, Boolean]
+  def isStatementValid[M <: Message](statement: Statement[M]): P[F, Boolean]
+  def isStatementInvalid[M <: Message](statement: Statement[M]): P[F, Boolean] =
+    isStatementValid(statement).map(!_)
+
+  /** check the message to see if it's sane
+    */
+  def isMessageSane(message: Message): P[F, Boolean]
+  def isMessageNotSane(message: Message): P[F, Boolean] =
+    isMessageSane(message).map(!_)
 
   /** check a node set to see if they can construct a quorum for a node (configured quorum slices)
     */
@@ -63,33 +77,7 @@ import types._
     */
   def isVBlocking(nodeId: NodeID, nodes: Set[NodeID]): P[F, Boolean]
 
-  /** create a vote-nomination message based on current node state
-    */
-  def createVoteNominationMessage(nodeId: NodeID, slotIndex: SlotIndex): P[F, Message.VoteNominations]
-
-  /** create a accept-nomination message based on current node state
-    */
-  def createAcceptNominationMessage(nodeId: NodeID, slotIndex: SlotIndex): P[F, Message.AcceptNominations]
-
-  /** create a vote-prepare-ballot message based on current node state
-    */
-  def createVotePrepareMessage(nodeId: NodeID, slotIndex: SlotIndex): P[F, Message.VotePrepare]
-
-  /** create a accept-prepare-ballot message based on current node state
-    */
-  def createAcceptPrepareMessage(nodeId: NodeID, slotIndex: SlotIndex): P[F, Message.AcceptPrepare]
-
-  /** create a vote-commit-ballot (confirm-accept-ballot) message based on current node state
-    */
-  def createVoteCommitMessage(nodeId: NodeID, slotIndex: SlotIndex): P[F, Message.VoteCommit]
-
-  def createAcceptCommitMessage(nodeId: NodeID, slotIndex: SlotIndex): P[F, Message.AcceptCommit]
-
-  /** check the message to see if it's sane
-    */
-  def isMessageSane(message: Message): P[F, Boolean]
-  def isMessageNotSane(message: Message): P[F, Boolean] =
-    isMessageSane(message).map(!_)
+  
 
   /** check current phase to see if a message can be ignored
     */

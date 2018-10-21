@@ -4,35 +4,34 @@ sealed trait Message
 
 object Message {
 
-  def bunch(xs: Message*): Bunches = Bunches(xs.toVector)
-  def bunchOption(xs: Option[Message]*): Bunches = Bunches(xs.flatMap(_.toVector).toVector)
+  /** nomination msg
+    */
+  case class Nomination(
+    voted: ValueSet,
+    accepted: ValueSet
+  ) extends Message
 
-  // vote(nominate x)
-  case class VoteNominations(values: ValueSet) extends Message
+  sealed trait BallotMessage extends Message
 
-  // vote(accept(nominate x))
-  case class AcceptNominations(values: ValueSet) extends Message {
-    def asVote: VoteNominations = VoteNominations(values)
-  }
+  case class Prepare(
+    b: Ballot,
+    p: Ballot,
+    `p'`: Ballot,
+    `c.n`: Int,
+    `p.n`: Int
+  ) extends BallotMessage
 
-  // vote(prepare b)
-  case class VotePrepare(ballot: Ballot, prepared: Ballot, preparedPrime: Ballot) extends Message
+  case class Confirm(
+    b: Ballot,
+    `p.n`: Int,
+    `c.n`: Int,
+    `h.n`: Int
+  ) extends BallotMessage
 
-  // vote(accept(prepare b))
-  case class AcceptPrepare(ballot: Ballot, prepared: Ballot, preparedPrime: Ballot) extends Message
+  case class Externalize(
+    x: Value,
+    `c.n`: Int,
+    `h.n`: Int
+  ) extends BallotMessage
 
-  // vote(commit b)
-  case class VoteCommit(ballot: Ballot, lowestCounter: Int, highestCounter: Int) extends Message
-
-  // vote(accept(commit b))
-  case class AcceptCommit(ballot: Ballot) extends Message
-
-  // externalize(b)
-  case class Externalize(ballot: Ballot) extends Message
-
-  // combined messages
-  case class Bunches(messages: Vector[Message]) extends Message {
-    def isEmpty: Boolean = messages.isEmpty
-    def nonEmpty: Boolean = messages.nonEmpty
-  }
 }

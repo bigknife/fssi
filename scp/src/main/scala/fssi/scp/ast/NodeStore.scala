@@ -10,6 +10,15 @@ import scala.collection.immutable._
 import types._
 
 @sp trait NodeStore[F[_]] {
+
+  /** check the envelope to see if it's newer than local cache
+    */
+  def isNewerEnvelope[M <: Message](nodeId: NodeID, slotIndex: SlotIndex, envelope: Envelope[M]): P[F, Boolean]
+  def isOlderEnvelope[M <: Message](nodeId: NodeID, slotIndex: SlotIndex, envelope: Envelope[M]): P[F, Boolean] =
+    isNewerEnvelope(nodeId, slotIndex, envelope).map(!_)
+
+  def saveEnvelope[M <: Message](nodeId: NodeID, slotIndex: SlotIndex, envelope: Envelope[M]): P[F, Unit]
+
   /** get current nominating round
     */
   def currentNominateRound(nodeId: NodeID, slotIndex: SlotIndex): P[F, Int]
