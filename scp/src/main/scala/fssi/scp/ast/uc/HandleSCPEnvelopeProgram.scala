@@ -38,10 +38,10 @@ trait HandleSCPEnvelopeProgram[F[_]] extends SCP[F] with BaseProgram[F] {
                              previousValue,
                              statement.asInstanceOf[Statement[Message.Nomination]])
           case _: Message.BallotMessage =>
-            handleBalootMessage(nodeId,
+            handleBallotMessage(nodeId,
                                 slotIndex,
                                 previousValue,
-                                statement.asInstanceOf[Statement[Message.BallotMessage]])
+                                envelope.asInstanceOf[Envelope[Message.BallotMessage]])
         }
       } yield handled
 
@@ -53,8 +53,8 @@ trait HandleSCPEnvelopeProgram[F[_]] extends SCP[F] with BaseProgram[F] {
                        previousValue: Value,
                        statement: Statement[Message.Nomination]): SP[F, Boolean]
 
-  def handleBalootMessage(nodeId: NodeID,
+  def handleBallotMessage(nodeId: NodeID,
                           slotIndex: SlotIndex,
                           previousValue: Value,
-                          statement: Statement[Message.BallotMessage]): SP[F, Boolean]
+                          envelope: Envelope[Message.BallotMessage]): SP[F, Boolean]
 }

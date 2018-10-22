@@ -92,4 +92,9 @@ import types._
   def canBallotCommitted(nodeId: NodeID, slotIndex: SlotIndex, ballot: Ballot): P[F, Boolean]
   def cannotBallotCommitted(nodeId: NodeID, slotIndex: SlotIndex, ballot: Ballot): P[F, Boolean] =
     canBallotCommitted(nodeId, slotIndex, ballot).map(!_)
+
+  /** get values from a ballot message
+    */
+  def valuesFromBallotMessage(msg: Message.BallotMessage): P[F, ValueSet]
+  
 }

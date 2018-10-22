@@ -28,6 +28,12 @@ import types._
                                  slotIndex: SlotIndex,
                                  envelope: Envelope[M]): P[F, Unit]
 
+  /** remove an envelope
+    */
+  def removeEnvelope[M <: Message](nodeId: NodeID,
+                                   slotIndex: SlotIndex,
+                                   envelope: Envelope[M]): P[F, Unit]
+
   /** find not accepted (nominate x) from values
     * @param values given a value set
     * @return a subset of values, the element in which is not accepted as nomination value
@@ -75,7 +81,10 @@ import types._
   /** given a ballot, get next ballot to try base on local state (z)
     * if there is a value stored in z, use <z, counter>, or use <attempt, counter>
     */
-  def nextBallotToTry(nodeId: NodeID, slotIndex: SlotIndex, attempt: Value, counter: Int): P[F, Ballot]
+  def nextBallotToTry(nodeId: NodeID,
+                      slotIndex: SlotIndex,
+                      attempt: Value,
+                      counter: Int): P[F, Ballot]
 
   /** update local state based to the specified ballot
     */
@@ -84,6 +93,11 @@ import types._
   /** check received ballot envelope, find nodes which are ahead of local node
     */
   def nodesAheadLocal(nodeId: NodeID, slotIndex: SlotIndex): P[F, Set[NodeID]]
+
+  /** find nodes ballot is ahead of a counter n
+    * @see BallotProtocol#1385
+    */
+  def nodesAheadBallotCounter(nodeId: NodeID, slotIndex: SlotIndex, counter: Int): P[F, Set[NodeID]]
 
   /** set heard from quorum
     */
@@ -96,6 +110,27 @@ import types._
   /** get current ballot phase
     */
   def currentBallotPhase(nodeId: NodeID, slotIndex: SlotIndex): P[F, Ballot.Phase]
+
+  /** get `c` in local state
+    */
+  def currentCommitBallot(nodeId: NodeID, slotIndex: SlotIndex): P[F, Option[Ballot]]
+
+  /** get current message level
+    * message level is used to control `attempBump` only bening invoked once when advancing ballot which 
+    * would cause recursive-invoking.
+    */
+  def currentMessageLevel(nodeId: NodeID, slotIndex: SlotIndex): P[F, Int]
+  def currentMessageLevelUp(nodeId: NodeID, slotIndex: SlotIndex): P[F, Unit]
+  def currentMessageLevelDown(nodeId: NodeID, slotIndex: SlotIndex): P[F, Unit]
+
+  /** find all counters from received ballot message envelopes
+    * @see BallotProtocol.cpp#1338
+    */
+  def allCountersFromBallotEnvelopes(nodeId: NodeID, slotIndex: SlotIndex): P[F, CounterSet]
+
+  /** get un emitted ballot message 
+    */
+  def currentUnemittedBallotMessage(nodeId: NodeID, slotIndex: SlotIndex): P[F, Option[Message.BallotMessage]]
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////
   /** get current nominating round

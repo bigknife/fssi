@@ -14,15 +14,19 @@ import types._
 
   /** validate value on application level
     */
-  def validateValue(value: Value): P[F, Value.Validity]
+  def validateValue(nodeId: NodeID, slotIndex: SlotIndex, value: Value): P[F, Value.Validity]
+
+  /** validate some values
+    */
+  def validateValues(nodeId: NodeID, slotIndex: SlotIndex, values: ValueSet): P[F, Value.Validity]
 
   /** combine values to ONE value, maybe nothing
     */
-  def combineCandidates(xs: ValueSet): P[F, Option[Value]]
+  def combineCandidates(nodeId: NodeID, slotIndex: SlotIndex, xs: ValueSet): P[F, Option[Value]]
 
   /** extract valida value from a not fully validated value
     */
-  def extractValidValue(value: Value): P[F, Option[Value]]
+  def extractValidValue(nodeId: NodeID, slotIndex: SlotIndex, value: Value): P[F, Option[Value]]
 
   
 

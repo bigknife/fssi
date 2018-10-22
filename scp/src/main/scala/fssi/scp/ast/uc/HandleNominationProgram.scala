@@ -57,8 +57,8 @@ trait HandleNominationProgram[F[_]] extends SCP[F] with EmitProgram[F] {
           .foldLeft((Option.empty[Value], 0L).pureSP[F]) { (acc, n) =>
             for {
               pre <- acc
-              validValue <- ifM(validateValue(n).map(_ == Value.Validity.FullyValidated),
-                                Option(n))(extractValidValue(n))
+              validValue <- ifM(validateValue(nodeId, slotIndex, n).map(_ == Value.Validity.FullyValidated),
+                                Option(n))(extractValidValue(nodeId, slotIndex, n))
               next <- ifM(validValue.isEmpty, acc) {
                 for {
                   p <- hashValue(slotIndex, previousValue, round, validValue.get)
@@ -95,7 +95,7 @@ trait HandleNominationProgram[F[_]] extends SCP[F] with EmitProgram[F] {
         _ <- ifThen(candidateNew) {
           for {
             candidates <- candidateNominations(nodeId, slotIndex)
-            composite <- combineCandidates(candidates)
+            composite <- combineCandidates(nodeId, slotIndex, candidates)
             _         <- ifM(composite.isEmpty, false)(bumpState(nodeId, slotIndex, previousValue, composite.get, false))
           } yield ()
         }
