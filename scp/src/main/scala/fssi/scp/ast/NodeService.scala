@@ -8,8 +8,6 @@ import bigknife.sop.implicits._
 import scala.collection.immutable._
 
 import types._
-
-
 @sp trait NodeService[F[_]] {
 
   /** compute next round timeout (in ms)
@@ -28,6 +26,10 @@ import types._
   def isNominatingGoingOn(nodeId: NodeID, slotIndex: SlotIndex): P[F, Boolean] =
     isNominatingStopped(nodeId, slotIndex).map(!_)
 
+  /** compute a value's hash
+    */
+  def hashValue(slotIndex: SlotIndex, previousValue: Value, round: Int, value: Value): P[F, Long]
+
   /** stop nomination process
     */
   def stopNominating(nodeId: NodeID, slotIndex: SlotIndex): P[F, Unit]
@@ -41,7 +43,11 @@ import types._
 
   /** create nomination message based on local state
     */
-  def createVoteNominationMessage(nodeId: NodeID, slotIndex: SlotIndex): P[F, Message.Nomination]
+  def createNominationMessage(nodeId: NodeID, slotIndex: SlotIndex): P[F, Message.Nomination]
+
+  /** create ballot message based on local state
+    */
+  def createBallotMessage(nodeId: NodeID, slotIndex: SlotIndex): P[F, Message.BallotMessage]
 
   /** make a envelope for a message
     */
@@ -76,8 +82,6 @@ import types._
   /** check a node set to see if they can construct a vblocking set for a node (configured quorum slices)
     */
   def isVBlocking(nodeId: NodeID, nodes: Set[NodeID]): P[F, Boolean]
-
-  
 
   /** check current phase to see if a message can be ignored
     */

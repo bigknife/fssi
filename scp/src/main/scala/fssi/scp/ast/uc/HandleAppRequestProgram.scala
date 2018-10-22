@@ -27,7 +27,7 @@ trait HandleAppRequestProgram[F[_]] extends SCP[F] with BaseProgram[F] {
         voted <- ifM(newVotes.isEmpty, right = false) {
           for {
             _        <- voteNewNominations(nodeId, slotIndex, newVotes)
-            message  <- createVoteNominationMessage(nodeId, slotIndex)
+            message  <- createNominationMessage(nodeId, slotIndex)
             envelope <- putInEnvelope(nodeId, message)
             handled  <- handleSCPEnvelope(nodeId, slotIndex, envelope, previousValue)
             _        <- ifThen(handled)(broadcastEnvelope(nodeId, envelope))
@@ -36,7 +36,7 @@ trait HandleAppRequestProgram[F[_]] extends SCP[F] with BaseProgram[F] {
         round   <- currentNominateRound(nodeId, slotIndex)
         timeout <- computeTimeout(round)
         _       <- gotoNextNominateRound(nodeId, slotIndex)
-        _       <- delayExecuteProgram(handleAppRequest(nodeId, slotIndex, value, previousValue), timeout)
+        _       <- delayExecuteProgram(NOMINATE_TIMER, handleAppRequest(nodeId, slotIndex, value, previousValue), timeout)
       } yield voted
     }
   }

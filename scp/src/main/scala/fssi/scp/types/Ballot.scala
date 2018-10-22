@@ -31,5 +31,12 @@ object Ballot {
   def zero: Ballot   = Bottom
 
   def apply(counter: Int, value: Value): Ballot = CommonBallot(counter, value)
-  def max(value: Value): Ballot = CommonBallot(Int.MaxValue, value)
+  def max(value: Value): Ballot                 = CommonBallot(Int.MaxValue, value)
+
+  sealed trait Phase
+  object Phase {
+    case object Prepare     extends Phase
+    case object Confirm     extends Phase
+    case object Externalize extends Phase
+  }
 }
