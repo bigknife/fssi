@@ -41,7 +41,7 @@ trait BumpStateProgram[F[_]] extends SCP[F] with EmitProgram[F] {
 
     for {
       newB    <- nextBallotToTry(nodeId, slotIndex, value, counter)
-      updated <- updateBallotState(nodeId, slotIndex, newB)
+      updated <- updateBallotStateWhenBumpNewBallot(nodeId, slotIndex, newB)
       _ <- ifThen(updated) {
         for {
           msg <- createBallotMessage(nodeId, slotIndex)

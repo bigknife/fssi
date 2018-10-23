@@ -15,6 +15,8 @@ object Message {
 
   sealed trait BallotMessage extends Message {
     def workingBallot: Ballot
+    def commitableBallot: Option[Ballot]
+    def externalizableBallot: Option[Ballot]
   }
 
   case class Prepare(
@@ -22,9 +24,15 @@ object Message {
       p: Option[Ballot],
       `p'`: Option[Ballot],
       `c.n`: Int,
-      `p.n`: Int
+      `h.n`: Int
   ) extends BallotMessage {
     def workingBallot: Ballot = b
+    def commitableBallot: Option[Ballot] =
+      if(`c.n` != 0) Some(Ballot(`h.n`, b.value))
+      else None
+
+    def externalizableBallot: Option[Ballot] = None
+
   }
 
   case class Confirm(
@@ -34,6 +42,9 @@ object Message {
       `h.n`: Int
   ) extends BallotMessage {
     def workingBallot: Ballot = Ballot(`c.n`, b.value)
+    def commitableBallot: Option[Ballot] = Some(Ballot(`h.n`, b.value))
+
+    def externalizableBallot: Option[Ballot] = Some(Ballot(`h.n`, b.value))
   }
 
   case class Externalize(
@@ -42,6 +53,9 @@ object Message {
       `h.n`: Int
   ) extends BallotMessage {
     def workingBallot: Ballot = Ballot(`c.n`, x)
+    def commitableBallot: Option[Ballot] = Some(Ballot(`h.n`, x))
+
+    def externalizableBallot: Option[Ballot] = Some(Ballot(`h.n`, x))
   }
 
 }

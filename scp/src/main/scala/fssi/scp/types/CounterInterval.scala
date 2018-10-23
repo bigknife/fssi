@@ -7,6 +7,8 @@ sealed trait CounterInterval {
   def withFirst(first: Int): CounterInterval
   def withSecond(second: Int): CounterInterval
 
+  def isAvailable: Boolean  = first > 0
+  def notAvailable: Boolean = first <= 0
 }
 
 object CounterInterval {

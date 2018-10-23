@@ -96,5 +96,37 @@ import types._
   /** get values from a ballot message
     */
   def valuesFromBallotMessage(msg: Message.BallotMessage): P[F, ValueSet]
+
+  /** check a ballot can be used as a prepared candidate based on local p , p' and phase
+    */
+  def canBallotBePrepared(nodeId: NodeID, slotIndex: SlotIndex, ballot: Ballot): P[F, Boolean]
+  def ballotCannotBePrepared(nodeId: NodeID, slotIndex: SlotIndex, ballot: Ballot): P[F, Boolean] =
+    canBallotBePrepared(nodeId, slotIndex, ballot).map(!_)
   
+
+  /** check a ballot can be potentially raise h, be confirmed prepared, to a commit
+    * @see BallotProtocol.cpp#937-938
+    */
+  def canBallotBeHighestCommitPotentially(nodeId: NodeID,
+                                          slotIndex: SlotIndex,
+                                          ballot: Ballot): P[F, Boolean]
+
+  /** check a ballot can be potentially raise h, be confirmed prepared, to a commit
+    * @see BallotProtocol.cpp#970-973, 975-976 b should be compatible with newH
+    */
+  def canBallotBeLowestCommitPotentially(nodeId: NodeID,
+                                         slotIndex: SlotIndex,
+                                         b: Ballot,
+                                         newH: Ballot): P[F, Boolean]
+
+  /** check if it's neccessary to set `c` based on a new `h`
+    * @see BallotProtocol.cpp#961
+    */
+  def needSetLowestCommitBallotUnderHigh(nodeId: NodeID,
+                                         slotIndex: SlotIndex,
+                                         high: Ballot): P[F, Boolean]
+  def notNeccessarySetLowestCommitBallotUnderHigh(nodeId: NodeID,
+                                                  slotIndex: SlotIndex,
+                                                  high: Ballot): P[F, Boolean] =
+    needSetLowestCommitBallotUnderHigh(nodeId, slotIndex, high).map(!_)
 }

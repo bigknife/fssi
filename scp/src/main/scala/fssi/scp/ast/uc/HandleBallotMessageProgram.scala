@@ -45,10 +45,10 @@ trait HandleBallotMessageProgram[F[_]] extends SCP[F] with BumpStateProgram[F] {
     //attemp bump to the latest un-accepted ballot
     // we can got a set of counters from envelopes: [3,5,6,7,9,10]
     // find a smallest,unaccepted counter, but is greater than currentBallot's counter.
-    def isCounterAccepted(n: Int): SP[F, Boolean]    = {
+    def isCounterAccepted(n: Int): SP[F, Boolean] = {
       for {
         aheadNodes <- nodesAheadBallotCounter(nodeId, slotIndex, n)
-        q <- isQuorum(nodeId, aheadNodes)
+        q          <- isQuorum(nodeId, aheadNodes)
       } yield q
     }
     def isCounterNotAccepted(n: Int): SP[F, Boolean] = isCounterAccepted(n).map(!_)
@@ -103,36 +103,36 @@ trait HandleBallotMessageProgram[F[_]] extends SCP[F] with BumpStateProgram[F] {
 
     for {
       _                <- currentMessageLevelUp(nodeId, slotIndex)
-      prepareAccepted  <- attempAcceptPrepare(nodeId, slotIndex, previousValue, statement)
-      prepareConfirmed <- attempConfirmPrepare(nodeId, slotIndex, previousValue, statement)
-      commitAccepted   <- attempAcceptCommit(nodeId, slotIndex, previousValue, statement)
-      commitConfirmed  <- attempConfirmCommit(nodeId, slotIndex, previousValue, statement)
+      prepareAccepted  <- attemptAcceptPrepare(nodeId, slotIndex, previousValue, statement)
+      prepareConfirmed <- attemptConfirmPrepare(nodeId, slotIndex, previousValue, statement)
+      commitAccepted   <- attemptAcceptCommit(nodeId, slotIndex, previousValue, statement)
+      commitConfirmed  <- attemptConfirmCommit(nodeId, slotIndex, previousValue, statement)
       didWork = prepareAccepted || prepareConfirmed || commitAccepted || commitConfirmed
       bumped <- ifM(currentMessageLevel(nodeId, slotIndex).map(_ == 1), attemptBumpMore)(false)
       _ <- ifThen(didWork || bumped) {
         for {
           unemitted <- currentUnemittedBallotMessage(nodeId, slotIndex)
-          _ <- ifThen(unemitted.isDefined)(emit(nodeId, slotIndex, previousValue, unemitted.get))
+          _         <- ifThen(unemitted.isDefined)(emit(nodeId, slotIndex, previousValue, unemitted.get))
         } yield ()
       }
-      _      <- currentMessageLevelDown(nodeId, slotIndex)
+      _ <- currentMessageLevelDown(nodeId, slotIndex)
     } yield ()
   }
 
-  def attempAcceptPrepare(nodeId: NodeID,
-                          slotIndex: SlotIndex,
-                          previousValue: Value,
-                          hint: Statement[Message.BallotMessage]): SP[F, Boolean] = ???
-  def attempConfirmPrepare(nodeId: NodeID,
+  def attemptAcceptPrepare(nodeId: NodeID,
                            slotIndex: SlotIndex,
                            previousValue: Value,
-                           hint: Statement[Message.BallotMessage]): SP[F, Boolean] = ???
-  def attempAcceptCommit(nodeId: NodeID,
-                         slotIndex: SlotIndex,
-                         previousValue: Value,
-                         hint: Statement[Message.BallotMessage]): SP[F, Boolean] = ???
-  def attempConfirmCommit(nodeId: NodeID,
+                           hint: Statement[Message.BallotMessage]): SP[F, Boolean]
+  def attemptConfirmPrepare(nodeId: NodeID,
+                            slotIndex: SlotIndex,
+                            previousValue: Value,
+                            hint: Statement[Message.BallotMessage]): SP[F, Boolean]
+  def attemptAcceptCommit(nodeId: NodeID,
                           slotIndex: SlotIndex,
                           previousValue: Value,
-                          hint: Statement[Message.BallotMessage]): SP[F, Boolean] = ???
+                          hint: Statement[Message.BallotMessage]): SP[F, Boolean]
+  def attemptConfirmCommit(nodeId: NodeID,
+                           slotIndex: SlotIndex,
+                           previousValue: Value,
+                           hint: Statement[Message.BallotMessage]): SP[F, Boolean]
 }
