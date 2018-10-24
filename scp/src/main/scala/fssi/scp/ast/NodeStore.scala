@@ -49,8 +49,6 @@ import types._
   /** find current candidates nomination value
     */
   def candidateNominations(nodeId: NodeID, slotIndex: SlotIndex): P[F, ValueSet]
-  def noCandidateNominations(nodeId: NodeID, slotIndex: SlotIndex): P[F, Boolean] =
-    candidateNominations(nodeId, slotIndex).map(_.isEmpty)
   def haveCandidateNominations(nodeId: NodeID, slotIndex: SlotIndex): P[F, Boolean] =
     candidateNominations(nodeId, slotIndex).map(_.nonEmpty)
 
@@ -148,7 +146,7 @@ import types._
 
   /** get un emitted ballot message
     */
-  def currentUnemittedBallotMessage(nodeId: NodeID,
+  def currentUnEmittedBallotMessage(nodeId: NodeID,
                                     slotIndex: SlotIndex): P[F, Option[Message.BallotMessage]]
 
   /** find candidate ballot to prepare from local stored envelopes received from other peers
@@ -217,9 +215,7 @@ import types._
   /** get current confirmed ballot
     */
   def currentConfirmedBallot(nodeId: NodeID, slotIndex: SlotIndex): P[F, Ballot]
-  
 
-  //////////////////////////////////////////////////////////////////////////////////////////////////////
   /** get current nominating round
     */
   def currentNominateRound(nodeId: NodeID, slotIndex: SlotIndex): P[F, Int]
@@ -232,56 +228,13 @@ import types._
     */
   def acceptNewNominations(nodeId: NodeID, slotIndex: SlotIndex, values: ValueSet): P[F, Unit]
 
-  /** find current un-accepted votes values (vote(nominate x))
-    */
-  def unAcceptedNominations(nodeId: NodeID, slotIndex: SlotIndex): P[F, ValueSet]
-
-  /** nominate a value as candidate value
-    */
-  def candidateNewValue(nodeId: NodeID, slotIndex: SlotIndex, value: Value): P[F, Unit]
-
   /** find latest candidate value
     */
   def currentCandidateValue(nodeId: NodeID, slotIndex: SlotIndex): P[F, Option[Value]]
-
-  /** save latest message sent from any node. SHOULD saved by different message type.
-    */
-  def saveLatestStatement[M <: Message](nodeId: NodeID,
-                                        slotIndex: SlotIndex,
-                                        statement: Statement[M]): P[F, Unit]
-
-  /** compare the message with local cached message
-    */
-  def isStatementNewer[M <: Message](nodeId: NodeID,
-                                     slotIndex: SlotIndex,
-                                     statement: Statement[M]): P[F, Boolean]
-
-  /** check if a value has been stored as votes or accepted.
-    */
-  def valueVotedOrAccepted(nodeId: NodeID, slotIndex: SlotIndex, value: Value): P[F, Boolean]
-
-  /** check if a value has been stored as accepted
-    */
-  def valueAccepted(nodeId: NodeID, slotIndex: SlotIndex, value: Value): P[F, Boolean]
-
-  /** set prepared ballot to accepted for local states, if any states changed, return true, or else return false
-    */
-  def acceptPrepared(nodeId: NodeID, slotIndex: SlotIndex, ballot: Ballot): P[F, StateChanged]
-
-  /** set prepared ballot to confirmed for local state, if any states changed, return true, or else return false
-    */
-  def confirmPrepared(nodeId: NodeID, slotIndex: SlotIndex, ballot: Ballot): P[F, StateChanged]
 
   /** check if a envelope can be emitted
     */
   def canEmit[M <: Message](nodeId: NodeID,
                             slotIndex: SlotIndex,
                             envelope: Envelope[M]): P[F, Boolean]
-
-  /** find all committed counters from envelopes received from peers
-    * @param ballot the one in envelope should be compatible with ballot
-    */
-  def findCompatibleCounterOfCommitted(nodeId: NodeID,
-                                       slotIndex: SlotIndex,
-                                       ballot: Ballot): P[F, CounterSet]
 }
