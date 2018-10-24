@@ -1,3 +1,5 @@
 package fssi.scp.interpreter.store
 
-case class NominationStatus()
+case class NominationStatus(
+  roundNumber: Var[Int]
+)

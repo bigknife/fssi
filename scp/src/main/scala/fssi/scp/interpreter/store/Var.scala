@@ -5,6 +5,7 @@ import java.util.concurrent.atomic.AtomicReference
 sealed trait Var[A] {
   def apply(a: A): this.type
   def apply(): Option[A]
+  def unsafe(): A = apply().get
 
   def :=(a: A): this.type = apply(a)
 

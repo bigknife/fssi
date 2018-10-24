@@ -21,5 +21,14 @@ class InterpreterSpec extends FunSuite {
 
     info(s"z = $z")
 
+    val nominationStatus = NominationStatus(Var(1))
+    info(s"nom status: $nominationStatus")
+
+    nominationStatus.roundNumber := 2
+    info(s"nom status: $nominationStatus")
+
+    val xi = x.unsafe()
+    info(s"xi = $xi")
+
   }
 }
