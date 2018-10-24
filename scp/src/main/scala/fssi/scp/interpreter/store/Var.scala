@@ -15,6 +15,11 @@ sealed trait Var[A] {
   def flatMap[B](f: A => Var[B]): Var[B] =
     apply().map(f).getOrElse(Var.empty[B])
 
+  def exists(f: A => Boolean): Boolean = {
+    apply().exists(f)
+  }
+
+
 }
 
 object Var {
