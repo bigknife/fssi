@@ -62,7 +62,12 @@ trait AttemptConfirmCommitProgram[F[_]] extends SCP[F] with EmitProgram[F] {
         accepted <- ifM(interval.notAvailable, false) {
           val newC = Ballot(interval.first, ballot.value)
           val newH = Ballot(interval.second, ballot.value)
-          confirmCommitted(nodeId, slotIndex, newC, newH)
+          //todo: stopNomination
+          for {
+            confirmed <- confirmCommitted(nodeId, slotIndex, newC, newH)
+            _         <- ifThen(confirmed)(stopNominating(nodeId, slotIndex))
+          } yield confirmed
+
         }
         phaseNow <- currentBallotPhase(nodeId, slotIndex)
         _ <- ifThen(phase == Ballot.Phase.Confirm && phaseNow == Ballot.Phase.Externalize) {
