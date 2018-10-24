@@ -50,7 +50,7 @@ trait AttemptConfirmCommitProgram[F[_]] extends SCP[F] with EmitProgram[F] {
       }
     }
 
-    ifM(ignoreByCurrentPhase, false) {
+    ifM(ignoreByCurrentPhase, false.pureSP[F]) {
       val ballot = ballotToExternalize.get
 
       for {

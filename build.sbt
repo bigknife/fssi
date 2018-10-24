@@ -25,6 +25,7 @@ lazy val pAst = ast()
 
 lazy val pScp = scp()
   .dependsOn(pBase)
+  .dependsOn(pUtils)
 
 lazy val pInterperter = interpreter()
   .dependsOn(pAst)

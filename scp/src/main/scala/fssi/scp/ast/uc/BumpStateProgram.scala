@@ -16,7 +16,7 @@ trait BumpStateProgram[F[_]] extends SCP[F] with EmitProgram[F] {
   /** a bridge function, nomination process can bump to ballot process
     * @param force force to set local state
     */
-  private[uc] def bumpState(nodeId: NodeID,
+  private[uc] override def bumpState(nodeId: NodeID,
                             slotIndex: SlotIndex,
                             previousValue: Value,
                             compositeValue: Value,
@@ -114,7 +114,7 @@ trait BumpStateProgram[F[_]] extends SCP[F] with EmitProgram[F] {
       value <- ifM(candidate.isDefined, candidate)(
         currentBallot(nodeId, slotIndex).map(_.map(_.value)))
       r <- ifM(value.isEmpty, false)(
-        ifM(counter == 0, bumpState(nodeId, slotIndex, previousValue, value.get, true))(
+        ifM((counter == 0).pureSP[F], bumpState(nodeId, slotIndex, previousValue, value.get, true))(
           bumpState(nodeId, slotIndex, previousValue, value.get, counter)))
     } yield true
 

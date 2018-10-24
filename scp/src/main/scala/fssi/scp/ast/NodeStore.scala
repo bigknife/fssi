@@ -89,17 +89,24 @@ import types._
   /** update local state when a new ballot was bumped into
     * @see BallotProtocol.cpp#399
     */
-  def updateBallotStateWhenBumpNewBallot(nodeId: NodeID, slotIndex: SlotIndex, newB: Ballot): P[F, Boolean]
+  def updateBallotStateWhenBumpNewBallot(nodeId: NodeID,
+                                         slotIndex: SlotIndex,
+                                         newB: Ballot): P[F, Boolean]
 
   /** update local state when a ballot would be accepted as being prepared
     * @see BallotProtocol.cpp#879
     */
-  def updateBallotStateWhenAcceptPrepare(nodeId: NodeID, slotIndex: SlotIndex, newP: Ballot): P[F, Boolean]
+  def updateBallotStateWhenAcceptPrepare(nodeId: NodeID,
+                                         slotIndex: SlotIndex,
+                                         newP: Ballot): P[F, Boolean]
 
   /** update local state when a new high ballot and a new low ballot would be confirmed as being prepared
     * @see BallotProtocol.cpp#1031
     */
-  def updateBallotStateWhenConfirmPrepare(nodeId: NodeID, slotIndex: SlotIndex, newH: Option[Ballot], newC: Option[Ballot]): P[F, Boolean]
+  def updateBallotStateWhenConfirmPrepare(nodeId: NodeID,
+                                          slotIndex: SlotIndex,
+                                          newH: Option[Ballot],
+                                          newC: Option[Ballot]): P[F, Boolean]
 
   /** check received ballot envelope, find nodes which are ahead of local node
     */
@@ -127,7 +134,7 @@ import types._
   def currentCommitBallot(nodeId: NodeID, slotIndex: SlotIndex): P[F, Option[Ballot]]
 
   /** get current message level
-    * message level is used to control `attempBump` only bening invoked once when advancing ballot which 
+    * message level is used to control `attempBump` only bening invoked once when advancing ballot which
     * would cause recursive-invoking.
     */
   def currentMessageLevel(nodeId: NodeID, slotIndex: SlotIndex): P[F, Int]
@@ -139,15 +146,18 @@ import types._
     */
   def allCountersFromBallotEnvelopes(nodeId: NodeID, slotIndex: SlotIndex): P[F, CounterSet]
 
-  /** get un emitted ballot message 
+  /** get un emitted ballot message
     */
-  def currentUnemittedBallotMessage(nodeId: NodeID, slotIndex: SlotIndex): P[F, Option[Message.BallotMessage]]
+  def currentUnemittedBallotMessage(nodeId: NodeID,
+                                    slotIndex: SlotIndex): P[F, Option[Message.BallotMessage]]
 
   /** find candidate ballot to prepare from local stored envelopes received from other peers
     * if the ballot is prepared, should be ignored.
     * @see BallotProtocol.cpp#getPrepareCandidates
     */
-  def prepareCandidatesWithHint(nodeId: NodeID, slotIndex: SlotIndex, hint: Statement[Message.BallotMessage]): P[F, BallotSet]
+  def prepareCandidatesWithHint(nodeId: NodeID,
+                                slotIndex: SlotIndex,
+                                hint: Statement[Message.BallotMessage]): P[F, BallotSet]
 
   /** the set of nodes which have vote(prepare b)
     * @see BallotProtocol.cpp#839-866
@@ -184,16 +194,15 @@ import types._
   def acceptCommitted(nodeId: NodeID,
                       slotIndex: SlotIndex,
                       lowest: Ballot,
-    highest: Ballot): P[F, StateChanged]
-
+                      highest: Ballot): P[F, StateChanged]
 
   /** confirm ballots(low and high) as committed
     * @see BallotProtocol.cpp#1292
     */
   def confirmCommitted(nodeId: NodeID,
-                      slotIndex: SlotIndex,
-                      lowest: Ballot,
-                      highest: Ballot): P[F, StateChanged]
+                       slotIndex: SlotIndex,
+                       lowest: Ballot,
+                       highest: Ballot): P[F, StateChanged]
 
   /** check if it's able to accept commit a ballot now
     * @see BallotProtocol.cpp#1169-1172, 1209-1215
@@ -230,12 +239,6 @@ import types._
     */
   def currentCandidateValue(nodeId: NodeID, slotIndex: SlotIndex): P[F, Option[Value]]
 
-
-
-
-
-  
-
   /** save latest message sent from any node. SHOULD saved by different message type.
     */
   def saveLatestStatement[M <: Message](nodeId: NodeID,
@@ -263,8 +266,6 @@ import types._
   /** set prepared ballot to confirmed for local state, if any states changed, return true, or else return false
     */
   def confirmPrepared(nodeId: NodeID, slotIndex: SlotIndex, ballot: Ballot): P[F, StateChanged]
-
-  
 
   /** check if a envelope can be emitted
     */

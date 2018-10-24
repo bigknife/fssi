@@ -20,7 +20,7 @@ trait HandleAppRequestProgram[F[_]] extends SCP[F] with BaseProgram[F] {
                        value: Value,
                        previousValue: Value): SP[F, Boolean] = {
 
-    ifM(cannotNominateNewValue(nodeId, slotIndex), right = false) {
+    ifM(cannotNominateNewValue(nodeId, slotIndex), false.pureSP[F]) {
       // rate limits
       for {
         newVotes <- narrowDownVotes(nodeId, slotIndex, ValueSet(value), previousValue)

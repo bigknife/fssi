@@ -64,16 +64,16 @@ trait HandleBallotMessageProgram[F[_]] extends SCP[F] with BumpStateProgram[F] {
                 targetCounter = b.map(_.counter).getOrElse(0)
                 r00 <- ifM(counters.head < targetCounter, false) {
                   for {
-                    r000 <- ifM(isCounterNotAccepted(targetCounter), false) {
+                    r000 <- ifM(isCounterNotAccepted(targetCounter), false.pureSP[F]) {
                       //(result, found not accepted):(Boolean, Boolean)
                       counters
                         .foldLeft((false, false).pureSP[F]) { (acc, n) =>
                           for {
                             pre <- acc
-                            r0000 <- ifM(pre._2, acc) {
+                            r0000 <- ifM(pre._2, pre) {
                               for {
                                 notAccepted <- isCounterNotAccepted(n)
-                                r00000 <- ifM(notAccepted,
+                                r00000 <- ifM(notAccepted.pureSP[F],
                                               abandonBallot(nodeId, slotIndex, previousValue, n)
                                                 .map((_, true)))(acc)
                               } yield r00000
@@ -95,7 +95,7 @@ trait HandleBallotMessageProgram[F[_]] extends SCP[F] with BumpStateProgram[F] {
       def _loop(acc: Boolean): SP[F, Boolean] =
         for {
           b <- attemptBump
-          _ <- ifM(b, attemptBump)(false)
+          _ <- ifM(b.pureSP[F], attemptBump)(false.pureSP[F])
         } yield acc || b
 
       _loop(false)
@@ -108,7 +108,7 @@ trait HandleBallotMessageProgram[F[_]] extends SCP[F] with BumpStateProgram[F] {
       commitAccepted   <- attemptAcceptCommit(nodeId, slotIndex, previousValue, statement)
       commitConfirmed  <- attemptConfirmCommit(nodeId, slotIndex, previousValue, statement)
       didWork = prepareAccepted || prepareConfirmed || commitAccepted || commitConfirmed
-      bumped <- ifM(currentMessageLevel(nodeId, slotIndex).map(_ == 1), attemptBumpMore)(false)
+      bumped <- ifM(currentMessageLevel(nodeId, slotIndex).map(_ == 1), attemptBumpMore)(false.pureSP[F])
       _ <- ifThen(didWork || bumped) {
         for {
           unemitted <- currentUnemittedBallotMessage(nodeId, slotIndex)

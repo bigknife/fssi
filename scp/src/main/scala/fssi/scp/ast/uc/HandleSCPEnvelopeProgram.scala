@@ -12,9 +12,10 @@ trait HandleSCPEnvelopeProgram[F[_]] extends SCP[F] with BaseProgram[F] {
   import model.nodeService._
   import model.nodeStore._
 
+  
   /** process message envelope from peer nodes
     */
-  def handleSCPEnvelope[M <: Message](nodeId: NodeID,
+  override def handleSCPEnvelope[M <: Message](nodeId: NodeID,
                                       slotIndex: SlotIndex,
                                       envelope: Envelope[M],
                                       previousValue: Value): SP[F, Boolean] = {
@@ -23,12 +24,12 @@ trait HandleSCPEnvelopeProgram[F[_]] extends SCP[F] with BaseProgram[F] {
     val message   = statement.message
 
     def checkEnvelope: SP[F, Boolean] =
-      ifM(isOlderEnvelope(nodeId, slotIndex, envelope), false)(
-        ifM(isSignatureTampered(envelope), false)(
-          ifM(isStatementInvalid(statement), false)(isMessageSane(message))))
+      ifM(isOlderEnvelope(nodeId, slotIndex, envelope), false.pureSP[F])(
+        ifM(isSignatureTampered(envelope), false.pureSP[F])(
+          ifM(isStatementInvalid(statement), false.pureSP[F])(isMessageSane(message))))
     def envelopeCheckingFailed = checkEnvelope.map(!_)
 
-    ifM(envelopeCheckingFailed, false) {
+    ifM(envelopeCheckingFailed, false.pureSP[F]) {
       for {
         _ <- saveEnvelope(nodeId, slotIndex, envelope)
         handled <- message match {

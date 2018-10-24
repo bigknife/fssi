@@ -21,12 +21,12 @@ trait AttemptAcceptCommitProgram[F[_]] extends SCP[F] with EmitProgram[F] {
     val ballotToCommit = hint.message.commitableBallot
 
     lazy val ignoreByCurrentPhase: SP[F, Boolean] =
-      ifM(ballotToCommit.isEmpty, true)(canAcceptCommitNow(nodeId, slotIndex, ballotToCommit.get))
+      ifM(ballotToCommit.isEmpty, true)(canAcceptCommitNow(nodeId, slotIndex, ballotToCommit.get): SP[F, Boolean])
 
     def isCounterAccepted(interval: CounterInterval, ballot: Ballot): SP[F, Boolean] = {
       for {
         acceptedNodes <- nodesAcceptedCommit(nodeId, slotIndex, ballot, interval)
-        accepted <- ifM(isVBlocking(nodeId, acceptedNodes), true) {
+        accepted <- ifM(isVBlocking(nodeId, acceptedNodes), true.pureSP[F]) {
           for {
             votedNodes <- nodesVotedCommit(nodeId, slotIndex, ballot, interval)
             q          <- isQuorum(nodeId, votedNodes ++ acceptedNodes)
@@ -57,7 +57,7 @@ trait AttemptAcceptCommitProgram[F[_]] extends SCP[F] with EmitProgram[F] {
       }
     }
 
-    ifM(ignoreByCurrentPhase, false) {
+    ifM(ignoreByCurrentPhase, false.pureSP[F]) {
       val ballot: Ballot = ballotToCommit.get
       for {
         boundaries <- commitBoundaries(nodeId, slotIndex, ballot)

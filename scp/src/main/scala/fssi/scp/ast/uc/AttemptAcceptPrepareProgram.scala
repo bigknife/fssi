@@ -25,12 +25,12 @@ trait AttemptAcceptPrepareProgram[F[_]] extends SCP[F] with EmitProgram[F] {
       candidates.foldRight(Option.empty[Ballot].pureSP[F]){(n, acc) =>
         for {
           pre <- acc
-          next <- ifM(pre.isDefined, acc) {
+          next <- ifM(pre.isDefined, pre) {
             for {
-              canBePrepared <- ifM(ballotCannotBePrepared(nodeId, slotIndex, n), false) {
+              canBePrepared <- ifM(ballotCannotBePrepared(nodeId, slotIndex, n), false.pureSP[F]) {
                 for {
                   nodeAccepted <- nodesAcceptedPrepare(nodeId, slotIndex, n)
-                  accepted <- ifM(isVBlocking(nodeId, nodeAccepted), true) {
+                  accepted <- ifM(isVBlocking(nodeId, nodeAccepted), true.pureSP[F]) {
                     for {
                       nodeVoted <- nodesVotedPrepare(nodeId, slotIndex, n)
                       byQuorum <- isQuorum(nodeId, nodeVoted ++ nodeAccepted)
@@ -38,7 +38,7 @@ trait AttemptAcceptPrepareProgram[F[_]] extends SCP[F] with EmitProgram[F] {
                   }
                 } yield accepted
               }
-              next <- ifM(!canBePrepared, acc) {
+              next <- ifM(!canBePrepared, pre) {
                 for {
                   updated <- updateBallotStateWhenAcceptPrepare(nodeId, slotIndex, n)
                 } yield if(updated) Option(n) else pre
@@ -50,7 +50,7 @@ trait AttemptAcceptPrepareProgram[F[_]] extends SCP[F] with EmitProgram[F] {
       }.map(_.isDefined)
 
     // AST:
-    ifM(ignoreByCurrentPhase, false) {
+    ifM(ignoreByCurrentPhase, false.pureSP[F]) {
       for {
         candidates      <- prepareCandidatesWithHint(nodeId, slotIndex, hint)
         phase <- currentBallotPhase(nodeId, slotIndex)

@@ -19,14 +19,14 @@ trait HandleNominationProgram[F[_]] extends SCP[F] with EmitProgram[F] {
                        previousValue: Value,
                        statement: Statement[Message.Nomination]): SP[F, Boolean] = {
 
-    ifM(isNominatingStopped(nodeId, slotIndex), false) {
+    ifM(isNominatingStopped(nodeId, slotIndex), false.pureSP[F]) {
       // try to accept votes from the message,
       def tryAcceptVotes(xs: ValueSet): SP[F, StateChanged] = {
         xs.foldLeft(false.pureSP[F]) { (acc, n) =>
           for {
             pre           <- acc
             acceptedNodes <- nodesAcceptedNomination(nodeId, slotIndex, n)
-            changed <- ifM(isVBlocking(nodeId, acceptedNodes), true) {
+            changed <- ifM(isVBlocking(nodeId, acceptedNodes), true.pureSP[F]) {
               for {
                 votedNodes <- nodesVotedNomination(nodeId, slotIndex, n)
                 x          <- isQuorum(nodeId, votedNodes ++ acceptedNodes)
@@ -58,8 +58,8 @@ trait HandleNominationProgram[F[_]] extends SCP[F] with EmitProgram[F] {
             for {
               pre <- acc
               validValue <- ifM(validateValue(nodeId, slotIndex, n).map(_ == Value.Validity.FullyValidated),
-                                Option(n))(extractValidValue(nodeId, slotIndex, n))
-              next <- ifM(validValue.isEmpty, acc) {
+                                Option(n).pureSP[F])(extractValidValue(nodeId, slotIndex, n))
+              next <- ifM(validValue.isEmpty, pre) {
                 for {
                   p <- hashValue(slotIndex, previousValue, round, validValue.get)
                 } yield if (pre._1.isEmpty || p >= pre._2) (validValue, p) else pre
@@ -75,7 +75,7 @@ trait HandleNominationProgram[F[_]] extends SCP[F] with EmitProgram[F] {
         acceptNew    <- tryAcceptVotes(toVotes)
         accepted     <- acceptedNominations(nodeId, slotIndex)
         candidateNew <- tryCandidate(accepted)
-        voteNew <- ifM(haveCandidateNominations(nodeId, slotIndex), false) {
+        voteNew <- ifM(haveCandidateNominations(nodeId, slotIndex), false.pureSP[F]) {
           for {
             round <- currentNominateRound(nodeId, slotIndex)
             value <- tryGetNewValueFromNomination(nom, round)
