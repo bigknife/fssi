@@ -21,4 +21,11 @@ object BallotStatus {
         b
     }.unsafe
   }
+  def cleanInstance(nodeId: NodeID, slotIndex: SlotIndex): Unit =
+    instances.map(_.get((nodeId, slotIndex))).foreach {
+      case Some(_) =>
+        instances := instances.unsafe() - ((nodeId, slotIndex))
+        ()
+      case None =>
+    }
 }

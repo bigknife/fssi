@@ -19,6 +19,12 @@ sealed trait Var[A] {
     apply().exists(f)
   }
 
+  def foreach(f: A => Unit): Unit =
+    apply().foreach(f)
+
+  def isEmpty: Boolean   = apply().isEmpty
+  def nonEmpty: Boolean  = apply().nonEmpty
+  def isDefined: Boolean = apply().isDefined
 
 }
 

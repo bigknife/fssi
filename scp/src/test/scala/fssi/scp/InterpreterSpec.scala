@@ -57,5 +57,11 @@ class InterpreterSpec extends FunSuite {
     val ballotStatus3 = BallotStatus.getInstance(nodeId, slotIndex1)
     info(s"$ballotStatus3")
     assert(ballotStatus3 != ballotStatus)
+
+    BallotStatus.cleanInstance(nodeId, slotIndex)
+    val ballotStatus4 = BallotStatus.getInstance(nodeId, slotIndex)
+    info(s"$ballotStatus4")
+    assert(ballotStatus4.phase.isEmpty)
+    assert(ballotStatus != ballotStatus4)
   }
 }
