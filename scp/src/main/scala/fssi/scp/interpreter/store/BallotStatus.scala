@@ -13,7 +13,6 @@ object BallotStatus {
   private val instances: Var[Map[(NodeID, SlotIndex), BallotStatus]] = Var(Map.empty)
 
   def getInstance(nodeId: NodeID, slotIndex: SlotIndex): BallotStatus = {
-    // Var[Option[Ballot]]
     instances.map(_.get((nodeId, slotIndex))).map {
       case Some(b) => b
       case None =>
