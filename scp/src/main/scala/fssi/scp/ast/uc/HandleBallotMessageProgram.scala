@@ -108,11 +108,12 @@ trait HandleBallotMessageProgram[F[_]] extends SCP[F] with BumpStateProgram[F] {
       commitAccepted   <- attemptAcceptCommit(nodeId, slotIndex, previousValue, statement)
       commitConfirmed  <- attemptConfirmCommit(nodeId, slotIndex, previousValue, statement)
       didWork = prepareAccepted || prepareConfirmed || commitAccepted || commitConfirmed
-      bumped <- ifM(currentMessageLevel(nodeId, slotIndex).map(_ == 1), attemptBumpMore)(false.pureSP[F])
+      bumped <- ifM(currentMessageLevel(nodeId, slotIndex).map(_ == 1), attemptBumpMore)(
+        false.pureSP[F])
       _ <- ifThen(didWork || bumped) {
         for {
-          unemitted <- currentUnemittedBallotMessage(nodeId, slotIndex)
-          _         <- ifThen(unemitted.isDefined)(emit(nodeId, slotIndex, previousValue, unemitted.get))
+          unEmitted <- currentUnEmittedBallotMessage(nodeId, slotIndex)
+          _         <- ifThen(unEmitted.isDefined)(emit(nodeId, slotIndex, previousValue, unEmitted.get))
         } yield ()
       }
       _ <- currentMessageLevelDown(nodeId, slotIndex)
