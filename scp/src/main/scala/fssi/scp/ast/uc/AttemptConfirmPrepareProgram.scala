@@ -79,16 +79,17 @@ trait AttemptConfirmPrepareProgram[F[_]] extends SCP[F] with EmitProgram[F] {
     def findLowestNewC(xs: BallotSet): SP[F, Option[Ballot]] =
       //(Option[Ballot], Boolean): (the lowest, last ratified)
       xs.foldRight((Option.empty[Ballot], false).pureSP[F]) { (n, acc) =>
-        for {
-          pre <- acc
-          next <- ifM((pre._1.isDefined && !pre._2), pre) {
-            for {
-              acceptedNodes <- nodesAcceptedPrepare(nodeId, slotIndex, n)
-              q             <- isQuorum(nodeId, acceptedNodes)
-            } yield if (q) (Option(n), true) else (pre._1, false)
-          }
-        } yield next
-      }.map(_._1)
+          for {
+            pre <- acc
+            next <- ifM((pre._1.isDefined && !pre._2), pre) {
+              for {
+                acceptedNodes <- nodesAcceptedPrepare(nodeId, slotIndex, n)
+                q             <- isQuorum(nodeId, acceptedNodes)
+              } yield if (q) (Option(n), true) else (pre._1, false)
+            }
+          } yield next
+        }
+        .map(_._1)
 
     // AST:
     ifM(ignoreByCurrentPhase, false.pureSP[F]) {
@@ -96,7 +97,7 @@ trait AttemptConfirmPrepareProgram[F[_]] extends SCP[F] with EmitProgram[F] {
         candidates <- prepareCandidatesWithHint(nodeId, slotIndex, hint)
         newH       <- newHighestBallot(candidates)
         newC <- ifM(newH.isEmpty, Option.empty[Ballot]) {
-          ifM(notNeccessarySetLowestCommitBallotUnderHigh(nodeId, slotIndex, newH.get),
+          ifM(notNecessarySetLowestCommitBallotUnderHigh(nodeId, slotIndex, newH.get),
               Option.empty[Ballot].pureSP[F]) {
             for {
               legalLowCommits <- commitAsLowestBallots(lowestCandidates(candidates, newH.get),

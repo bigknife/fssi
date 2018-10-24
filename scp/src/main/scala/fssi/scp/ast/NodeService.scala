@@ -23,8 +23,6 @@ import types._
   /** check if nominating is stopped
     */
   def isNominatingStopped(nodeId: NodeID, slotIndex: SlotIndex): P[F, Boolean]
-  def isNominatingGoingOn(nodeId: NodeID, slotIndex: SlotIndex): P[F, Boolean] =
-    isNominatingStopped(nodeId, slotIndex).map(!_)
 
   /** compute a value's hash
     */
@@ -72,8 +70,6 @@ import types._
   /** check the message to see if it's sane
     */
   def isMessageSane(message: Message): P[F, Boolean]
-  def isMessageNotSane(message: Message): P[F, Boolean] =
-    isMessageSane(message).map(!_)
 
   /** check a node set to see if they can construct a quorum for a node (configured quorum slices)
     */
@@ -82,16 +78,6 @@ import types._
   /** check a node set to see if they can construct a vblocking set for a node (configured quorum slices)
     */
   def isVBlocking(nodeId: NodeID, nodes: Set[NodeID]): P[F, Boolean]
-
-  /** check current phase to see if a message can be ignored
-    */
-  def needHandleMessage(nodeId: NodeID, slotIndex: SlotIndex, message: Message): P[F, Boolean]
-
-  /** check ballot can be commit (vote (commit b))
-    */
-  def canBallotCommitted(nodeId: NodeID, slotIndex: SlotIndex, ballot: Ballot): P[F, Boolean]
-  def cannotBallotCommitted(nodeId: NodeID, slotIndex: SlotIndex, ballot: Ballot): P[F, Boolean] =
-    canBallotCommitted(nodeId, slotIndex, ballot).map(!_)
 
   /** get values from a ballot message
     */
@@ -102,7 +88,6 @@ import types._
   def canBallotBePrepared(nodeId: NodeID, slotIndex: SlotIndex, ballot: Ballot): P[F, Boolean]
   def ballotCannotBePrepared(nodeId: NodeID, slotIndex: SlotIndex, ballot: Ballot): P[F, Boolean] =
     canBallotBePrepared(nodeId, slotIndex, ballot).map(!_)
-  
 
   /** check a ballot can be potentially raise h, be confirmed prepared, to a commit
     * @see BallotProtocol.cpp#937-938
@@ -119,14 +104,14 @@ import types._
                                          b: Ballot,
                                          newH: Ballot): P[F, Boolean]
 
-  /** check if it's neccessary to set `c` based on a new `h`
+  /** check if it's necessary to set `c` based on a new `h`
     * @see BallotProtocol.cpp#961
     */
   def needSetLowestCommitBallotUnderHigh(nodeId: NodeID,
                                          slotIndex: SlotIndex,
                                          high: Ballot): P[F, Boolean]
-  def notNeccessarySetLowestCommitBallotUnderHigh(nodeId: NodeID,
-                                                  slotIndex: SlotIndex,
-                                                  high: Ballot): P[F, Boolean] =
+  def notNecessarySetLowestCommitBallotUnderHigh(nodeId: NodeID,
+                                                 slotIndex: SlotIndex,
+                                                 high: Ballot): P[F, Boolean] =
     needSetLowestCommitBallotUnderHigh(nodeId, slotIndex, high).map(!_)
 }
