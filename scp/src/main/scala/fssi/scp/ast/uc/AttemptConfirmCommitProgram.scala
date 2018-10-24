@@ -12,6 +12,7 @@ trait AttemptConfirmCommitProgram[F[_]] extends SCP[F] with EmitProgram[F] {
   import model.nodeService._
   import model.nodeStore._
   import model.applicationService._
+  import model.logService._
 
   def attemptConfirmCommit(nodeId: NodeID,
                            slotIndex: SlotIndex,
@@ -41,6 +42,8 @@ trait AttemptConfirmCommitProgram[F[_]] extends SCP[F] with EmitProgram[F] {
               val interval = pre._1.map(_.withFirst(n)).getOrElse(CounterInterval(n))
               for {
                 accepted <- isCounterConfirmed(interval, ballot)
+                _ <- info(
+                  s"[$nodeId][$slotIndex][AttemptConfirmCommit] accepted interval: $interval, $ballot, $accepted")
               } yield (Option(interval), pre._2 || accepted, accepted)
             }
           } yield next
@@ -58,19 +61,29 @@ trait AttemptConfirmCommitProgram[F[_]] extends SCP[F] with EmitProgram[F] {
       for {
         phase      <- currentBallotPhase(nodeId, slotIndex)
         boundaries <- commitBoundaries(nodeId, slotIndex, ballot)
+        _ <- info(
+          s"[$nodeId][$slotIndex][AttemptConfirmCommit] found boundaries $boundaries at phase $phase")
         interval   <- confirmedCommitCounterInterval(boundaries, ballot)
         accepted <- ifM(interval.notAvailable, false) {
           val newC = Ballot(interval.first, ballot.value)
           val newH = Ballot(interval.second, ballot.value)
           for {
             confirmed <- confirmCommitted(nodeId, slotIndex, newC, newH)
-            _         <- ifThen(confirmed)(stopNominating(nodeId, slotIndex))
+            _ <- info(s"[$nodeId][$slotIndex][AttemptConfirmCommit] confirm ($newC - $newH), $confirmed")
+            _         <- ifThen(confirmed) {
+              for {
+                _ <- info(s"[$nodeId][$slotIndex][AttemptConfirmCommit] confirmed ($newC - $newH), stop nominating")
+                _ <- stopNominating(nodeId, slotIndex)
+              } yield ()
+            }
+
           } yield confirmed
 
         }
         phaseNow <- currentBallotPhase(nodeId, slotIndex)
         _ <- ifThen(phase == Ballot.Phase.Confirm && phaseNow == Ballot.Phase.Externalize) {
           for {
+            _ <- info(s"[$nodeId][$slotIndex][AttemptConfirmCommit] phase upgraded to Externalize")
             c <- currentConfirmedBallot(nodeId, slotIndex)
             _ <- phaseUpgradeToExternalize(nodeId, slotIndex, c)
           } yield ()

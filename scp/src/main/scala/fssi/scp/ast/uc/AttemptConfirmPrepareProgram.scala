@@ -12,6 +12,7 @@ trait AttemptConfirmPrepareProgram[F[_]] extends SCP[F] with EmitProgram[F] {
   import model.nodeService._
   import model.nodeStore._
   import model.applicationService._
+  import model.logService._
 
   def attemptConfirmPrepare(nodeId: NodeID,
                             slotIndex: SlotIndex,
@@ -95,7 +96,10 @@ trait AttemptConfirmPrepareProgram[F[_]] extends SCP[F] with EmitProgram[F] {
     ifM(ignoreByCurrentPhase, false.pureSP[F]) {
       for {
         candidates <- prepareCandidatesWithHint(nodeId, slotIndex, hint)
+        _ <- info(
+          s"[$nodeId][$slotIndex][AttemptConfirmPrepare] found prepare candidates: $candidates")
         newH       <- newHighestBallot(candidates)
+        _ <- info(s"[$nodeId][$slotIndex][AttemptConfirmPrepare] found newH: $newH")
         newC <- ifM(newH.isEmpty, Option.empty[Ballot]) {
           ifM(notNecessarySetLowestCommitBallotUnderHigh(nodeId, slotIndex, newH.get),
               Option.empty[Ballot].pureSP[F]) {
@@ -106,7 +110,9 @@ trait AttemptConfirmPrepareProgram[F[_]] extends SCP[F] with EmitProgram[F] {
             } yield c
           }
         }
+        _ <- info(s"[$nodeId][$slotIndex][AttemptConfirmPrepare] found newC: $newC")
         updated <- updateBallotStateWhenConfirmPrepare(nodeId, slotIndex, newH, newC)
+        _ <- info(s"[$nodeId][$slotIndex][AttemptConfirmPrepare] updated when confirm parepare: $updated")
         _ <- ifThen(updated) {
           for {
             msg <- createBallotMessage(nodeId, slotIndex)
