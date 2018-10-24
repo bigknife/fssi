@@ -214,6 +214,11 @@ import types._
     */
   def canConfirmCommitNow(nodeId: NodeID, slotIndex: SlotIndex, ballot: Ballot): P[F, Boolean]
 
+  /** get current confirmed ballot
+    */
+  def currentConfirmedBallot(nodeId: NodeID, slotIndex: SlotIndex): P[F, Ballot]
+  
+
   //////////////////////////////////////////////////////////////////////////////////////////////////////
   /** get current nominating round
     */

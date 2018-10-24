@@ -39,4 +39,12 @@ import types._
   /** cancel the timer
     */
   def stopDelayTimer(tag: String): P[F, Unit]
+
+  /** listener, phase upgrade to confirm
+    */
+  def phaseUpgradeToConfirm(nodeId: NodeID, slotIndex: SlotIndex, ballot: Ballot): P[F, Unit]
+
+  /** listener, phase upgrade to externalize
+    */
+  def phaseUpgradeToExternalize(nodeId: NodeID, slotIndex: SlotIndex, ballot: Ballot): P[F, Unit]
 }
