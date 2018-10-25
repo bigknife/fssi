@@ -43,7 +43,7 @@ class NodeStoreHandler extends NodeStore.Handler[Stack] {
                     case oldPrepare: Message.Prepare =>
                       val compBallot = oldPrepare.b.compare(newPrepare.b)
                       if (compBallot < 0) true
-                      else {
+                      else if (compBallot == 0) {
                         val prepareCompBallot = oldPrepare.p.compare(newPrepare.p)
                         if (prepareCompBallot < 0) true
                         else {
@@ -51,7 +51,7 @@ class NodeStoreHandler extends NodeStore.Handler[Stack] {
                           if (preparePrimeCompBallot < 0) true
                           else oldPrepare.`h.n` < newPrepare.`h.n`
                         }
-                      }
+                      } else false
                     case _ => false
                   }
                 case newConf: Message.Confirm =>
@@ -60,10 +60,10 @@ class NodeStoreHandler extends NodeStore.Handler[Stack] {
                     case oldConf: Message.Confirm =>
                       val compBallot = oldConf.b.compare(newConf.b)
                       if (compBallot < 0) true
-                      else {
+                      else if (compBallot == 0) {
                         if (oldConf.`p.n` == newConf.`p.n`) oldConf.`h.n` < newConf.`h.n`
                         else oldConf.`p.n` < newConf.`p.n`
-                      }
+                      } else false
                     case _: Message.Externalize => false
                   }
                 case _: Message.Externalize => false
@@ -81,13 +81,37 @@ class NodeStoreHandler extends NodeStore.Handler[Stack] {
     */
   override def saveEnvelope[M <: Message](nodeId: NodeID,
                                           slotIndex: SlotIndex,
-                                          envelope: Envelope[M]): Stack[Unit] = ???
+                                          envelope: Envelope[M]): Stack[Unit] = Stack {
+    envelope.statement.message match {
+      case n: Message.Nomination =>
+        val nominationStatus: NominationStatus = (nodeId, slotIndex)
+        nominationStatus.latestNominations := nominationStatus.latestNominations
+          .unsafe() + (nodeId -> envelope.copy(statement = envelope.statement.withMessage(n)))
+        ()
+      case b: Message.BallotMessage =>
+        val ballotStatus: BallotStatus = (nodeId, slotIndex)
+        ballotStatus.latestEnvelopes := ballotStatus.latestEnvelopes
+          .unsafe() + (nodeId -> envelope.copy(statement = envelope.statement.withMessage(b)))
+        ()
+    }
+  }
 
   /** remove an envelope
     */
   override def removeEnvelope[M <: Message](nodeId: NodeID,
                                             slotIndex: SlotIndex,
-                                            envelope: Envelope[M]): Stack[Unit] = ???
+                                            envelope: Envelope[M]): Stack[Unit] = Stack {
+    envelope.statement.message match {
+      case _: Message.Nomination =>
+        val nominationStatus: NominationStatus = (nodeId, slotIndex)
+        nominationStatus.latestNominations := nominationStatus.latestNominations.unsafe() - nodeId
+        ()
+      case _: Message.BallotMessage =>
+        val ballotStatus: BallotStatus = (nodeId, slotIndex)
+        ballotStatus.latestEnvelopes := ballotStatus.latestEnvelopes.unsafe() - nodeId
+        ()
+    }
+  }
 
   /** find not accepted (nominate x) from values
     * @param values given a value set
@@ -95,27 +119,39 @@ class NodeStoreHandler extends NodeStore.Handler[Stack] {
     */
   override def notAcceptedNominatingValues(nodeId: NodeID,
                                            slotIndex: SlotIndex,
-                                           values: ValueSet): Stack[ValueSet] = ???
+                                           values: ValueSet): Stack[ValueSet] = Stack {
+    val nominationStatus: NominationStatus = (nodeId, slotIndex)
+    values.diff(nominationStatus.accepted.unsafe())
+  }
 
   /** find current accepted nomination votes
     */
-  override def acceptedNominations(nodeId: NodeID, slotIndex: SlotIndex): Stack[ValueSet] = ???
+  override def acceptedNominations(nodeId: NodeID, slotIndex: SlotIndex): Stack[ValueSet] = Stack {
+    val nominationStatus: NominationStatus = (nodeId, slotIndex)
+    nominationStatus.accepted.unsafe()
+  }
 
   /** find current candidates nomination value
     */
-  override def candidateNominations(nodeId: NodeID, slotIndex: SlotIndex): Stack[ValueSet] = ???
+  override def candidateNominations(nodeId: NodeID, slotIndex: SlotIndex): Stack[ValueSet] = Stack {
+    val nominationStatus: NominationStatus = (nodeId, slotIndex)
+    nominationStatus.candidates.unsafe()
+  }
 
   /** save new values to current voted nominations
     */
   override def voteNewNominations(nodeId: NodeID,
                                   slotIndex: SlotIndex,
-                                  newVotes: ValueSet): Stack[Unit] = ???
+                                  newVotes: ValueSet): Stack[Unit] = Stack {
+    val nominationStatus: NominationStatus = (nodeId, slotIndex)
+    nominationStatus.votes := newVotes; ()
+  }
 
   /** the set of nodes which have voted(nominate x)
     */
   override def nodesVotedNomination(nodeId: NodeID,
                                     slotIndex: SlotIndex,
-                                    value: Value): Stack[Set[NodeID]] = ???
+                                    value: Value): Stack[Set[NodeID]] = Stack { ??? }
 
   /** the set of nodes which have accept(nominate x)
     */
