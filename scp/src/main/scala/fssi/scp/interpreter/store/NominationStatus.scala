@@ -49,4 +49,11 @@ object NominationStatus {
       }
       .unsafe()
   }
+
+  def clearInstance(nodeID: NodeID, slotIndex: SlotIndex): Unit = {
+    instances.map(_.get((nodeID, slotIndex))).unsafe() match {
+      case Some(_) => instances := instances.map(_ - ((nodeID, slotIndex))).unsafe()
+      case None    =>
+    }
+  }
 }

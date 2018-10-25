@@ -11,14 +11,14 @@ import bigknife.sop.implicits._
 trait HandleSCPEnvelopeProgram[F[_]] extends SCP[F] with BaseProgram[F] {
   import model.nodeService._
   import model.nodeStore._
+  import model.logService._
 
-  
   /** process message envelope from peer nodes
     */
   override def handleSCPEnvelope[M <: Message](nodeId: NodeID,
-                                      slotIndex: SlotIndex,
-                                      envelope: Envelope[M],
-                                      previousValue: Value): SP[F, Boolean] = {
+                                               slotIndex: SlotIndex,
+                                               envelope: Envelope[M],
+                                               previousValue: Value): SP[F, Boolean] = {
 
     val statement = envelope.statement
     val message   = statement.message
@@ -31,18 +31,29 @@ trait HandleSCPEnvelopeProgram[F[_]] extends SCP[F] with BaseProgram[F] {
 
     ifM(envelopeCheckingFailed, false.pureSP[F]) {
       for {
+        _ <- info(s"[$nodeId][$slotIndex] handling sane scp envelope")
         _ <- saveEnvelope(nodeId, slotIndex, envelope)
+        _ <- debug(s"[$nodeId][$slotIndex] saved sane scp envelope: $envelope")
         handled <- message match {
           case _: Message.Nomination =>
-            handleNomination(nodeId,
-                             slotIndex,
-                             previousValue,
-                             statement.asInstanceOf[Statement[Message.Nomination]])
+            for {
+              _ <- info(s"[$nodeId][$slotIndex] handling nomination envelope")
+              x <- handleNomination(nodeId,
+                                    slotIndex,
+                                    previousValue,
+                                    statement.asInstanceOf[Statement[Message.Nomination]])
+              _ <- info(s"[$nodeId][$slotIndex] handled nomination envelope: $x")
+            } yield x
+
           case _: Message.BallotMessage =>
-            handleBallotMessage(nodeId,
-                                slotIndex,
-                                previousValue,
-                                envelope.asInstanceOf[Envelope[Message.BallotMessage]])
+            for {
+              _ <- info(s"[$nodeId][$slotIndex] handling ballot envelope")
+              x <- handleBallotMessage(nodeId,
+                                       slotIndex,
+                                       previousValue,
+                                       envelope.asInstanceOf[Envelope[Message.BallotMessage]])
+              _ <- info(s"[$nodeId][$slotIndex] handled ballot envelope: $x")
+            } yield x
         }
       } yield handled
 

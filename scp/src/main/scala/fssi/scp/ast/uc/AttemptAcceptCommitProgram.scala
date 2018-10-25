@@ -12,6 +12,7 @@ trait AttemptAcceptCommitProgram[F[_]] extends SCP[F] with EmitProgram[F] {
   import model.nodeService._
   import model.nodeStore._
   import model.applicationService._
+  import model.logService._
 
   def attemptAcceptCommit(nodeId: NodeID,
                           slotIndex: SlotIndex,
@@ -47,6 +48,8 @@ trait AttemptAcceptCommitProgram[F[_]] extends SCP[F] with EmitProgram[F] {
               val interval = pre._1.map(_.withFirst(n)).getOrElse(CounterInterval(n))
               for {
                 accepted <- isCounterAccepted(interval, ballot)
+                _ <- info(
+                  s"[$nodeId][$slotIndex][AttemptAcceptCommit] accepted interval: $interval, $ballot, $accepted")
               } yield (Option(interval), pre._2 || accepted, accepted)
             }
           } yield next
@@ -63,16 +66,23 @@ trait AttemptAcceptCommitProgram[F[_]] extends SCP[F] with EmitProgram[F] {
       for {
         phase      <- currentBallotPhase(nodeId, slotIndex)
         boundaries <- commitBoundaries(nodeId, slotIndex, ballot)
-        interval   <- acceptedCommitCounterInterval(boundaries, ballot)
+        _ <- info(
+          s"[$nodeId][$slotIndex][AttemptAcceptCommit] found boundaries $boundaries at phase $phase")
+        interval <- acceptedCommitCounterInterval(boundaries, ballot)
+        _        <- info(s"[$nodeId][$slotIndex][AttemptAcceptCommit] found accepted interval: $interval")
         accepted <- ifM(interval.notAvailable, false) {
           val newC = Ballot(interval.first, ballot.value)
           val newH = Ballot(interval.second, ballot.value)
+          for {
+            x <- acceptCommitted(nodeId, slotIndex, newC, newH)
+            _ <- info(s"[$nodeId][$slotIndex][AttemptAcceptCommit] accept ($newC - $newH), $x")
+          } yield x
 
-          acceptCommitted(nodeId, slotIndex, newC, newH)
         }
         phaseNow <- currentBallotPhase(nodeId, slotIndex)
         _ <- ifThen(phase == Ballot.Phase.Prepare && phaseNow == Ballot.Phase.Confirm) {
           for {
+            _ <- info(s"[$nodeId][$slotIndex][AttemptAcceptCommit] phase upgraded to Confirm")
             c <- currentConfirmedBallot(nodeId, slotIndex)
             _ <- phaseUpgradeToConfirm(nodeId, slotIndex, c)
           } yield ()
