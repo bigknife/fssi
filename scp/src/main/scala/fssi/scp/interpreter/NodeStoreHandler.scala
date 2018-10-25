@@ -151,7 +151,9 @@ class NodeStoreHandler extends NodeStore.Handler[Stack] {
     */
   override def nodesVotedNomination(nodeId: NodeID,
                                     slotIndex: SlotIndex,
-                                    value: Value): Stack[Set[NodeID]] = Stack { ??? }
+                                    value: Value): Stack[Set[NodeID]] = Stack {
+    ???
+  }
 
   /** the set of nodes which have accept(nominate x)
     */
