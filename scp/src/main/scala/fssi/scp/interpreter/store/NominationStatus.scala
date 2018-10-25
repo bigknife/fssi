@@ -22,7 +22,7 @@ case class NominationStatus(
 object NominationStatus {
 
   def empty = NominationStatus(
-    Var.empty,
+    Var(0),
     Var(ValueSet.empty),
     Var(ValueSet.empty),
     Var(ValueSet.empty),

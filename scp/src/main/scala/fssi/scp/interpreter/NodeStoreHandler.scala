@@ -152,7 +152,12 @@ class NodeStoreHandler extends NodeStore.Handler[Stack] {
   override def nodesVotedNomination(nodeId: NodeID,
                                     slotIndex: SlotIndex,
                                     value: Value): Stack[Set[NodeID]] = Stack {
-    ???
+    val nominationStatus: NominationStatus = (nodeId, slotIndex)
+    nominationStatus.latestNominations
+      .map { map =>
+        map.keySet.filter(n => map(n).statement.message.voted.contains(value))
+      }
+      .unsafe()
   }
 
   /** the set of nodes which have accept(nominate x)
