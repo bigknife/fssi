@@ -4,7 +4,10 @@ package base
 
 /** world state is a term to indicate the determined local store state
   */
-case class WorldState(value: Array[Byte]) extends AnyVal
+case class WorldState(value: Array[Byte]) extends AnyVal {
+  def ===(that: WorldState): Boolean = value sameElements that.value
+
+}
 
 object WorldState {
   /** create an empty world state, chaos

@@ -9,7 +9,7 @@ import io.circe.syntax._
 import io.circe.generic.auto._
 import fssi.types.implicits._
 
-trait AccountJsonCodec {
+trait BizAccountJsonCodec {
   implicit val bizAccountPrivKeyEncoder: Encoder[Account.PrivKey] = (a: Account.PrivKey) =>
     a.asBytesValue.bcBase58.asJson
 
