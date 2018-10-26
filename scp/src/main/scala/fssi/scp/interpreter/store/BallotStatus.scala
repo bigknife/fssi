@@ -1,5 +1,6 @@
 package fssi.scp.interpreter.store
 
+import fssi.scp.types.Message.BallotMessage
 import fssi.scp.types._
 
 case class BallotStatus(
@@ -12,7 +13,9 @@ case class BallotStatus(
     commit: Var[Option[Ballot]], //c
     latestEnvelopes: Var[Map[NodeID, Envelope[Message.BallotMessage]]], //M
     valueOverride: Var[Option[Value]], //z
-    currentMessageLevel: Var[Int]
+    currentMessageLevel: Var[Int],
+    latestGeneratedEnvelope: Var[Envelope[BallotMessage]],
+    latestEmitEnvelope: Var[Envelope[BallotMessage]]
 )
 
 object BallotStatus {
@@ -26,7 +29,9 @@ object BallotStatus {
     commit = Var(None),
     latestEnvelopes = Var(Map.empty),
     valueOverride = Var(None),
-    currentMessageLevel = Var(0)
+    currentMessageLevel = Var(0),
+    latestGeneratedEnvelope = Var.empty,
+    latestEmitEnvelope = Var.empty
   )
   private val instances: Var[Map[(NodeID, SlotIndex), BallotStatus]] = Var(Map.empty)
 

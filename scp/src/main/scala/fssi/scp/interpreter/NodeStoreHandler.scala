@@ -412,7 +412,11 @@ class NodeStoreHandler extends NodeStore.Handler[Stack] {
   override def currentUnEmittedBallotMessage(
       nodeId: NodeID,
       slotIndex: SlotIndex): Stack[Option[Message.BallotMessage]] = Stack {
-    ???
+    val ballotStatus = BallotStatus.getInstance(nodeId, slotIndex)
+    (for {
+      e <- ballotStatus.latestEmitEnvelope
+      g <- ballotStatus.latestGeneratedEnvelope
+    } yield if (g != e) Some(g.statement.message) else None).getOrElse(None)
   }
 
   /** find candidate ballot to prepare from local stored envelopes received from other peers
@@ -722,7 +726,6 @@ class NodeStoreHandler extends NodeStore.Handler[Stack] {
                                      envelope: Envelope[M]): Stack[Boolean] = Stack {
     val ballotStatus: BallotStatus = (nodeId, slotIndex)
     val canEmit                    = !ballotStatus.currentBallot.unsafe().isBottom
-    // TODO: check local node
     val lastEnv = ballotStatus.latestEnvelopes.map(_.get(nodeId)).unsafe()
     canEmit && (lastEnv.isEmpty || lastEnv.get != envelope)
   }

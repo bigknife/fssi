@@ -105,6 +105,14 @@ class ApplicationServiceHandler extends ApplicationService.Handler[Stack] with L
   /** broadcast message envelope
     */
   override def broadcastEnvelope[M <: Message](nodeId: NodeID, slotIndex: SlotIndex, envelope: Envelope[M]): Stack[Unit] = Stack {setting =>
+
+    envelope.statement.message match {
+      case x: Message.BallotMessage =>
+        val ballotStatus = BallotStatus.getInstance(nodeId, slotIndex)
+        ballotStatus.latestEmitEnvelope := envelope.to[Message.BallotMessage]
+      case _ =>
+    }
+
     setting.applicationCallback.broadcastEnvelope(nodeId, slotIndex, envelope)
   }
 }
