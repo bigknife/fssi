@@ -31,7 +31,7 @@ trait HandleNominationProgram[F[_]] extends SCP[F] with EmitProgram[F] {
               for {
                 votedNodes <- nodesVotedNomination(nodeId, slotIndex, n)
                 x          <- isQuorum(nodeId, votedNodes ++ acceptedNodes)
-                _ <- debug(s"[$nodeId][$slotIndex] accepted $n by quorum: $x")
+                _          <- debug(s"[$nodeId][$slotIndex] accepted $n by quorum: $x")
               } yield x
             }
             _ <- ifThen(accepted) {
@@ -51,7 +51,7 @@ trait HandleNominationProgram[F[_]] extends SCP[F] with EmitProgram[F] {
             pre           <- acc
             acceptedNodes <- nodesAcceptedNomination(nodeId, slotIndex, n)
             confirmed     <- isQuorum(nodeId, acceptedNodes)
-            _             <- ifThen(confirmed){
+            _ <- ifThen(confirmed) {
               for {
                 _ <- info(s"[$nodeId][$slotIndex] confirmed nomination: $n")
                 _ <- candidateNewNomination(nodeId, slotIndex, n)
@@ -63,24 +63,6 @@ trait HandleNominationProgram[F[_]] extends SCP[F] with EmitProgram[F] {
 
       // once candidates maked, bump to ballot protocol
       // plus, if no candidate maked as so far, try to vote from nomination message.
-      def tryGetNewValueFromNomination(nom: Message.Nomination,
-                                       round: Int): SP[F, Option[Value]] = {
-        nom.allValues
-          .foldLeft((Option.empty[Value], 0L).pureSP[F]) { (acc, n) =>
-            for {
-              pre <- acc
-              validValue <- ifM(
-                validateValue(nodeId, slotIndex, n).map(_ == Value.Validity.FullyValidated),
-                Option(n).pureSP[F])(extractValidValue(nodeId, slotIndex, n))
-              next <- ifM(validValue.isEmpty, pre) {
-                for {
-                  p <- hashValue(slotIndex, previousValue, round, validValue.get)
-                } yield if (pre._1.isEmpty || p >= pre._2) (validValue, p) else pre
-              }
-            } yield next
-          }
-          .map(_._1)
-      }
 
       val nom = statement.message
       for {
@@ -93,7 +75,7 @@ trait HandleNominationProgram[F[_]] extends SCP[F] with EmitProgram[F] {
         voteNew <- ifM(haveCandidateNominations(nodeId, slotIndex), false.pureSP[F]) {
           for {
             round <- currentNominateRound(nodeId, slotIndex)
-            value <- tryGetNewValueFromNomination(nom, round)
+            value <- tryGetNewValueFromNomination(nodeId, slotIndex, previousValue, nom, round)
             x <- ifM(value.isEmpty, false) {
               for {
                 _ <- voteNewNominations(nodeId, slotIndex, ValueSet(value.get))
@@ -124,5 +106,27 @@ trait HandleNominationProgram[F[_]] extends SCP[F] with EmitProgram[F] {
         }
       } yield true
     }
+  }
+
+  private[uc] def tryGetNewValueFromNomination(nodeId: NodeID,
+                                               slotIndex: SlotIndex,
+                                               previousValue: Value,
+                                               nom: Message.Nomination,
+                                               round: Int): SP[F, Option[Value]] = {
+    nom.allValues
+      .foldLeft((Option.empty[Value], 0L).pureSP[F]) { (acc, n) =>
+        for {
+          pre <- acc
+          validValue <- ifM(
+            validateValue(nodeId, slotIndex, n).map(_ == Value.Validity.FullyValidated),
+            Option(n).pureSP[F])(extractValidValue(nodeId, slotIndex, n))
+          next <- ifM(validValue.isEmpty, pre) {
+            for {
+              p <- hashValue(slotIndex, previousValue, round, validValue.get)
+            } yield if (pre._1.isEmpty || p >= pre._2) (validValue, p) else pre
+          }
+        } yield next
+      }
+      .map(_._1)
   }
 }

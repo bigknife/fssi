@@ -99,7 +99,7 @@ trait BumpStateProgram[F[_]] extends SCP[F] with EmitProgram[F] {
       _           <- heardFromQuorum(nodeId, slotIndex, nowHeard)
       _ <- ifThen((nowHeard && !everHeard) && phase != Ballot.Phase.Externalize)(
         startBallotProtocolTimer())
-      _ <- ifThen((nowHeard && !everHeard) && phase == Ballot.Phase.Externalize)(
+      _ <- ifThen(nowHeard && phase == Ballot.Phase.Externalize)(
         stopBallotProtocolTimer())
       _ <- ifThen(!nowHeard)(stopBallotProtocolTimer())
     } yield ()

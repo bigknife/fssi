@@ -8,8 +8,6 @@ import bigknife.sop.implicits._
 import scala.collection.immutable._
 
 import types._
-
-
 @sp trait ApplicationService[F[_]] {
 
   /** validate value on application level
@@ -28,8 +26,6 @@ import types._
     */
   def extractValidValue(nodeId: NodeID, slotIndex: SlotIndex, value: Value): P[F, Option[Value]]
 
-  
-
   /** after timeout milliseconds, execute the program
     * @param tag the delay timer tag, we can cancel the timer by using this tag later.
     * @param program with type: SP[F, Unit]
@@ -47,4 +43,10 @@ import types._
   /** listener, phase upgrade to externalize
     */
   def phaseUpgradeToExternalize(nodeId: NodeID, slotIndex: SlotIndex, ballot: Ballot): P[F, Unit]
+
+  /** broadcast message envelope
+    */
+  def broadcastEnvelope[M <: Message](nodeId: NodeID,
+                                      slotIndex: SlotIndex,
+                                      envelope: Envelope[M]): P[F, Unit]
 }

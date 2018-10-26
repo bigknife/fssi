@@ -224,7 +224,7 @@ class NodeStoreHandler extends NodeStore.Handler[Stack] {
           bumpToBallot(nodeId, slotIndex, newB, check = true)
         } else {
           val commit = ballotStatus.commit.unsafe()
-          if (commit.nonEmpty && !commit.get.isCompatible(newB)) false
+          if (commit.nonEmpty && !commit.get.compatible(newB)) false
           else {
             val comp = currentBallot.compare(newB)
             if (comp < 0) bumpToBallot(nodeId, slotIndex, newB, check = true)
@@ -248,7 +248,7 @@ class NodeStoreHandler extends NodeStore.Handler[Stack] {
     val didWork = if (preparedOpt.nonEmpty) {
       val comp = preparedOpt.get.compare(newP)
       if (comp < 0) {
-        if (!preparedOpt.get.isCompatible(newP)) ballotStatus.preparedPrime := preparedOpt
+        if (!preparedOpt.get.compatible(newP)) ballotStatus.preparedPrime := preparedOpt
         ballotStatus.prepared := Option(newP); true
       } else if (comp > 0) {
         if (preparedPrimOpt.isEmpty || preparedPrimOpt.get.compare(newP) < 0) {
@@ -264,10 +264,10 @@ class NodeStoreHandler extends NodeStore.Handler[Stack] {
     val updated = if (commitOpt.nonEmpty && highBallotOpt.nonEmpty) {
       val preparedValid = preparedOpt.nonEmpty && highBallotOpt.get
         .isLess(preparedOpt.get) && !highBallotOpt.get
-        .isCompatible(preparedOpt.get)
+        .compatible(preparedOpt.get)
       val preparedPrimValid = preparedPrimOpt.nonEmpty && highBallotOpt.get
         .isLess(preparedPrimOpt.get) && !highBallotOpt.get
-        .isCompatible(preparedPrimOpt.get)
+        .compatible(preparedPrimOpt.get)
       if ((preparedValid || preparedPrimValid) && ballotStatus.phase
             .unsafe() == Ballot.Phase.Prepare) {
         ballotStatus.commit := None; true
@@ -289,7 +289,7 @@ class NodeStoreHandler extends NodeStore.Handler[Stack] {
     val highBallotOpt   = ballotStatus.highBallot.unsafe()
     val commitBallotOpt = ballotStatus.commit.unsafe()
     val didWork =
-      if (currentBallot.isBottom || (newH.nonEmpty && currentBallot.isCompatible(newH.get))) {
+      if (currentBallot.isBottom || (newH.nonEmpty && currentBallot.compatible(newH.get))) {
         val highUpdated = if (highBallotOpt.isEmpty || newH.compare(highBallotOpt) > 0) {
           ballotStatus.highBallot := newH; true
         } else false
@@ -440,26 +440,26 @@ class NodeStoreHandler extends NodeStore.Handler[Stack] {
             n.statement.message match {
               case prep: Message.Prepare =>
                 val bc =
-                  if (prep.b.isLess(top) && prep.b.isCompatible(top)) a + prep.b
+                  if (prep.b.isLess(top) && prep.b.compatible(top)) a + prep.b
                   else a
                 val bp =
-                  if (prep.p.nonEmpty && prep.p.get.isLess(top) && prep.p.get.isCompatible(top))
+                  if (prep.p.nonEmpty && prep.p.get.isLess(top) && prep.p.get.compatible(top))
                     bc + prep.p.get
                   else bc
                 val bpd =
-                  if (prep.`p'`.nonEmpty && prep.`p'`.get.isLess(top) && prep.`p'`.get.isCompatible(
+                  if (prep.`p'`.nonEmpty && prep.`p'`.get.isLess(top) && prep.`p'`.get.compatible(
                         top))
                     bp + prep.`p'`.get
                   else bp
                 bpd
               case confirm: Message.Confirm =>
-                if (top.isCompatible(confirm.b)) {
+                if (top.compatible(confirm.b)) {
                   val bt = a + top
                   if (confirm.`p.n` < top.counter) bt + Ballot(confirm.`p.n`, top.value)
                   else bt
                 } else a
               case ext: Message.Externalize =>
-                if (ext.commitableBallot.nonEmpty && top.isCompatible(top)) a + top
+                if (ext.commitableBallot.nonEmpty && top.compatible(top)) a + top
                 else a
             }
           }
@@ -478,10 +478,10 @@ class NodeStoreHandler extends NodeStore.Handler[Stack] {
       .map(map =>
         map.keySet.filter(n =>
           map(n).statement.message match {
-            case prep: Message.Prepare    => ballot.isLess(prep.b) && ballot.isCompatible(prep.b)
-            case confirm: Message.Confirm => ballot.isCompatible(confirm.b)
+            case prep: Message.Prepare    => ballot.isLess(prep.b) && ballot.compatible(prep.b)
+            case confirm: Message.Confirm => ballot.compatible(confirm.b)
             case ext: Message.Externalize =>
-              ext.commitableBallot.nonEmpty && ballot.isCompatible(ext.commitableBallot.get)
+              ext.commitableBallot.nonEmpty && ballot.compatible(ext.commitableBallot.get)
         }))
       .unsafe()
   }
@@ -498,16 +498,16 @@ class NodeStoreHandler extends NodeStore.Handler[Stack] {
         map.keySet.filter { n =>
           map(n).statement.message match {
             case prep: Message.Prepare =>
-              val prepared = prep.p.nonEmpty && ballot.isLess(prep.p.get) && ballot.isCompatible(
+              val prepared = prep.p.nonEmpty && ballot.isLess(prep.p.get) && ballot.compatible(
                 prep.p.get)
               val preparedPrim = prep.`p'`.nonEmpty && ballot.isLess(prep.`p'`.get) && ballot
-                .isCompatible(prep.`p'`.get)
+                .compatible(prep.`p'`.get)
               prepared && preparedPrim
             case confirm: Message.Confirm =>
               val prepared = Ballot(confirm.`p.n`, confirm.b.value)
-              ballot.isLess(prepared) && ballot.isCompatible(prepared)
+              ballot.isLess(prepared) && ballot.compatible(prepared)
             case ext: Message.Externalize =>
-              ext.commitableBallot.nonEmpty && ballot.isCompatible(ext.commitableBallot.get)
+              ext.commitableBallot.nonEmpty && ballot.compatible(ext.commitableBallot.get)
           }
       })
       .unsafe()
@@ -524,14 +524,14 @@ class NodeStoreHandler extends NodeStore.Handler[Stack] {
       .map(_.values.foldLeft(CounterSet.empty) { (acc, n) =>
         n.statement.message match {
           case prep: Message.Prepare =>
-            if (ballot.isCompatible(prep.b) && prep.`c.n` != 0)
+            if (ballot.compatible(prep.b) && prep.`c.n` != 0)
               acc ++ CounterSet(prep.`c.n`, prep.`h.n`)
             else acc
           case confirm: Message.Confirm =>
-            if (ballot.isCompatible(confirm.b)) acc ++ CounterSet(confirm.`c.n`, confirm.`h.n`)
+            if (ballot.compatible(confirm.b)) acc ++ CounterSet(confirm.`c.n`, confirm.`h.n`)
             else acc
           case ext: Message.Externalize =>
-            if (ext.commitableBallot.nonEmpty && ballot.isCompatible(ext.commitableBallot.get))
+            if (ext.commitableBallot.nonEmpty && ballot.compatible(ext.commitableBallot.get))
               acc ++ CounterSet(ext.commitableBallot.get.counter, ext.`h.n`, Int.MaxValue)
             else acc
         }
@@ -551,15 +551,15 @@ class NodeStoreHandler extends NodeStore.Handler[Stack] {
         map.keySet.filter(n =>
           map(n).statement.message match {
             case prep: Message.Prepare =>
-              if (ballot.isCompatible(prep.b) && prep.`c.n` != 0) {
+              if (ballot.compatible(prep.b) && prep.`c.n` != 0) {
                 prep.`c.n` <= counterInterval.first && counterInterval.second <= prep.`h.n`
               } else false
             case confirm: Message.Confirm =>
-              if (ballot.isCompatible(confirm.b)) {
+              if (ballot.compatible(confirm.b)) {
                 confirm.`c.n` <= counterInterval.first
               } else false
             case ext: Message.Externalize =>
-              if (ext.commitableBallot.nonEmpty && ballot.isCompatible(ext.commitableBallot.get)) {
+              if (ext.commitableBallot.nonEmpty && ballot.compatible(ext.commitableBallot.get)) {
                 ext.commitableBallot.get.counter <= counterInterval.first
               } else false
         }))
@@ -579,11 +579,11 @@ class NodeStoreHandler extends NodeStore.Handler[Stack] {
           map(n).statement.message match {
             case _: Message.Prepare => false
             case confirm: Message.Confirm =>
-              if (ballot.isCompatible(confirm.b)) {
+              if (ballot.compatible(confirm.b)) {
                 confirm.`c.n` <= counterInterval.first && counterInterval.second <= confirm.`h.n`
               } else false
             case ext: Message.Externalize =>
-              if (ext.commitableBallot.nonEmpty && ballot.isCompatible(ext.commitableBallot.get)) {
+              if (ext.commitableBallot.nonEmpty && ballot.compatible(ext.commitableBallot.get)) {
                 ext.commitableBallot.get.counter <= counterInterval.first
               } else false
         }))
@@ -614,7 +614,7 @@ class NodeStoreHandler extends NodeStore.Handler[Stack] {
     val phaseUpdated = if (phase == Ballot.Phase.Prepare) {
       ballotStatus.phase := Ballot.Phase.Confirm
       val bumpUpdated =
-        if (!currentBallot.isBottom && !(highest.isLess(currentBallot) && highest.isCompatible(
+        if (!currentBallot.isBottom && !(highest.isLess(currentBallot) && highest.compatible(
               currentBallot))) {
           bumpToBallot(nodeId, slotIndex, highest, check = false)
         } else true
@@ -654,7 +654,7 @@ class NodeStoreHandler extends NodeStore.Handler[Stack] {
     val phase                      = ballotStatus.phase.unsafe()
     val highBallot                 = ballotStatus.highBallot.unsafe()
     if (phase == Ballot.Phase.Externalize) false
-    else if (phase == Ballot.Phase.Confirm && (highBallot.isEmpty || !ballot.isCompatible(
+    else if (phase == Ballot.Phase.Confirm && (highBallot.isEmpty || !ballot.compatible(
                highBallot.get))) false
     else true
   }
@@ -671,7 +671,7 @@ class NodeStoreHandler extends NodeStore.Handler[Stack] {
     val commitBallotOpt            = ballotStatus.commit.unsafe()
     if (phase != Ballot.Phase.Confirm) false
     else if (highBallotOpt.isEmpty || commitBallotOpt.isEmpty) false
-    else if (!ballot.isCompatible(commitBallotOpt.get)) false
+    else if (!ballot.compatible(commitBallotOpt.get)) false
     else true
   }
 
@@ -758,7 +758,7 @@ class NodeStoreHandler extends NodeStore.Handler[Stack] {
     }
     ballotStatus.currentBallot := ballot
     val highBallotOpt = ballotStatus.highBallot.unsafe()
-    if (highBallotOpt.nonEmpty && !currentBallot.isCompatible(highBallotOpt.get)) {
+    if (highBallotOpt.nonEmpty && !currentBallot.compatible(highBallotOpt.get)) {
       ballotStatus.highBallot := None
     }
     phaseValid && currentBallotValid
@@ -774,18 +774,18 @@ class NodeStoreHandler extends NodeStore.Handler[Stack] {
     def currentBallotValid: Boolean = currentBallot.isBottom || currentBallot.counter != 0
     def prepareValid: Boolean = {
       prepared.isEmpty || preparedPrim.isEmpty ||
-      preparedPrim.get.isLess(prepared.get) && preparedPrim.get.isCompatible(prepared.get)
+      preparedPrim.get.isLess(prepared.get) && preparedPrim.get.compatible(prepared.get)
     }
     def highValid: Boolean = {
       highBallot.isEmpty ||
       !currentBallot.isBottom && highBallot.get.isLess(currentBallot) && highBallot.get
-        .isCompatible(currentBallot)
+        .compatible(currentBallot)
     }
     def commitValid: Boolean = {
       commit.isEmpty ||
       (!currentBallot.isBottom && highBallot.nonEmpty && commit.get
-        .isLess(highBallot.get) && commit.get.isCompatible(highBallot.get) && highBallot.get
-        .isLess(currentBallot) && highBallot.get.isCompatible(currentBallot))
+        .isLess(highBallot.get) && commit.get.compatible(highBallot.get) && highBallot.get
+        .isLess(currentBallot) && highBallot.get.compatible(currentBallot))
     }
     val phaseValid: Boolean = ballotStatus.phase.unsafe() match {
       case Ballot.Phase.Prepare     => true
