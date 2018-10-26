@@ -22,16 +22,16 @@ case class NominationStatus(
 object NominationStatus {
 
   def empty = NominationStatus(
-    Var(0),
-    Var(ValueSet.empty),
-    Var(ValueSet.empty),
-    Var(ValueSet.empty),
-    Var(Map.empty),
-    Var(None),
-    Var(Set.empty),
-    Var(false),
-    Var(None),
-    Var(None)
+    roundNumber = Var(0),
+    votes = Var(ValueSet.empty),
+    accepted = Var(ValueSet.empty),
+    candidates = Var(ValueSet.empty),
+    latestNominations = Var(Map.empty),
+    lastEnvelope = Var(None),
+    roundLeaders = Var(Set.empty),
+    nominationStarted = Var(false),
+    latestCompositeCandidate = Var(None),
+    previousValue = Var(None)
   )
 
   private lazy val instances: Var[Map[(NodeID, SlotIndex), NominationStatus]] = Var(Map.empty)
