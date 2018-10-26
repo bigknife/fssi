@@ -1,6 +1,8 @@
 package fssi.scp.types
 
-trait Value extends Ordered[Value]
+trait Value extends Ordered[Value] {
+  def rawBytes: Array[Byte]
+}
 
 object Value {
   sealed trait Validity

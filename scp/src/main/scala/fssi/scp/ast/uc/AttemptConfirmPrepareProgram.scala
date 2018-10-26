@@ -58,6 +58,7 @@ trait AttemptConfirmPrepareProgram[F[_]] extends SCP[F] with EmitProgram[F] {
       _loop(candidates)
     }
 
+    // filter the illegal here ballots
     def commitAsLowestBallots(candidates: BallotSet, newH: Ballot): SP[F, BallotSet] =
       // (ballotSet, stopFlat)
       candidates

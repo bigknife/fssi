@@ -20,20 +20,52 @@ trait HandleAppRequestProgram[F[_]] extends SCP[F] with EmitProgram[F] {
                        slotIndex: SlotIndex,
                        value: Value,
                        previousValue: Value): SP[F, Boolean] = {
+    handleAppRequest(nodeId, slotIndex, value, previousValue, timeout = false)
+  }
 
-    ifM(cannotNominateNewValue(nodeId, slotIndex), false.pureSP[F]) {
+  /** handle request of application
+    * @param timeout when re-nominate after a while,
+    *                this timeout should be true, for a app request, it should always be false
+    */
+  private def handleAppRequest(nodeId: NodeID,
+                       slotIndex: SlotIndex,
+                       value: Value,
+                       previousValue: Value,
+                       timeout: Boolean): SP[F, Boolean] = {
+
+    def narrowDownVotes(round: Int): SP[F, ValueSet] = {
+      for {
+        leaders <- updateAndGetNominateLeaders(nodeId, slotIndex, previousValue)
+        votes <- ifM(leaders.contains(nodeId), ValueSet(value)) {
+          leaders.foldLeft(ValueSet.empty.pureSP[F]) {(acc, n) =>
+            for {
+              pre <- acc
+              envelope <- getNominationEnvelope(nodeId, slotIndex, n)
+              next <- ifM(envelope.isEmpty, pre) {
+                for {
+                  v <- tryGetNewValueFromNomination(nodeId, slotIndex, previousValue, envelope.get.statement.message, round)
+                } yield if(v.isEmpty) pre else pre + v.get
+              }
+
+            } yield next
+          }
+        }
+      } yield votes
+    }
+
+    ifM(cannotNominateNewValue(nodeId, slotIndex, timeout), false.pureSP[F]) {
       // rate limits
       for {
         round    <- currentNominateRound(nodeId, slotIndex)
         _        <- info(s"[$nodeId][$slotIndex] handling app request at round: $round")
-        newVotes <- narrowDownVotes(nodeId, slotIndex, ValueSet(value), previousValue)
+        newVotes <- narrowDownVotes(round)
         _        <- debug(s"[$nodeId][$slotIndex] narrowdown votes: $newVotes")
         voted <- ifM(newVotes.isEmpty, right = false) {
           for {
             _        <- voteNewNominations(nodeId, slotIndex, newVotes)
             _        <- info(s"[$nodeId][$slotIndex] vote new nomination: $newVotes")
             message  <- createNominationMessage(nodeId, slotIndex)
-            envelope <- putInEnvelope(nodeId, message)
+            envelope <- putInEnvelope(nodeId, slotIndex, message)
             handled  <- handleSCPEnvelope(nodeId, slotIndex, envelope, previousValue)
             _        <- info(s"[$nodeId][$slotIndex] handle nomination envelope locally: $handled")
             _ <- ifThen(handled) {
@@ -56,4 +88,11 @@ trait HandleAppRequestProgram[F[_]] extends SCP[F] with EmitProgram[F] {
       } yield voted
     }
   }
+
+
+  private[uc] def tryGetNewValueFromNomination(nodeId: NodeID,
+                                               slotIndex: SlotIndex,
+                                               previousValue: Value,
+                                               nom: Message.Nomination,
+                                               round: Int): SP[F, Option[Value]]
 }

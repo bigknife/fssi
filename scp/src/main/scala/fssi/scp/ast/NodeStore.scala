@@ -28,6 +28,10 @@ import types._
                                  slotIndex: SlotIndex,
                                  envelope: Envelope[M]): P[F, Unit]
 
+  /** get nomination envelope from locally stored, received from peer nodes
+    */
+  def getNominationEnvelope(nodeId: NodeID, slotIndex: SlotIndex, peerNodeId: NodeID): P[F, Option[Envelope[Message.Nomination]]]
+
   /** remove an envelope
     */
   def removeEnvelope[M <: Message](nodeId: NodeID,

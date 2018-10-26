@@ -10,7 +10,7 @@ case class NominationStatus(
     // last envelope emitted by this node
     lastEnvelope: Var[Option[Envelope[Message.Nomination]]],
     // nodes from quorum set that have the highest priority this round
-    rounderLeaders: Var[Set[NodeID]],
+    roundLeaders: Var[Set[NodeID]],
     // true when nominate started
     nominationStarted: Var[Boolean],
     // the latest candidate value

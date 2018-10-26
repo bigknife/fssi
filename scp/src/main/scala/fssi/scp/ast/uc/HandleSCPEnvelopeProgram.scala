@@ -26,7 +26,7 @@ trait HandleSCPEnvelopeProgram[F[_]] extends SCP[F] with BaseProgram[F] {
     def checkEnvelope: SP[F, Boolean] =
       ifM(isOlderEnvelope(nodeId, slotIndex, envelope), false.pureSP[F])(
         ifM(isSignatureTampered(envelope), false.pureSP[F])(
-          ifM(isStatementInvalid(statement), false.pureSP[F])(isMessageSane(message))))
+          isStatementInvalid(nodeId, slotIndex, statement)))
     def envelopeCheckingFailed = checkEnvelope.map(!_)
 
     ifM(envelopeCheckingFailed, false.pureSP[F]) {

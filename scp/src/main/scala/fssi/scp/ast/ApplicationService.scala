@@ -47,4 +47,8 @@ import types._
   /** listener, phase upgrade to externalize
     */
   def phaseUpgradeToExternalize(nodeId: NodeID, slotIndex: SlotIndex, ballot: Ballot): P[F, Unit]
+
+  /** broadcast message envelope
+    */
+  def broadcastEnvelope[M <: Message](nodeId: NodeID, envelope: Envelope[M]): P[F, Unit]
 }

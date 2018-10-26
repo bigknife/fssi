@@ -18,8 +18,8 @@ case class BallotStatus(
 
 object BallotStatus {
   def empty: BallotStatus = BallotStatus(
-    heardFromQuorum = Var.empty,
-    phase = Var.empty,
+    heardFromQuorum = Var(false),
+    phase = Var(Ballot.Phase.Prepare),
     currentBallot = Var(Ballot.bottom),
     prepared = Var(None),
     preparedPrime = Var(None),

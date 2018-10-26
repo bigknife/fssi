@@ -3,14 +3,22 @@ package fssi.scp
 import org.scalatest._
 import ast.uc._
 import ast.components._
+import fssi.scp.types.QuorumSet.QuorumSlices
 import interpreter._
 import types._
 import fssi.utils._
+
 import scala.collection.immutable._
 
 class SCPSpec extends FunSuite with TestSupport {
   val scp = SCP[Model.Op]
-  val setting = Setting()
+
+
+  test("hashValue to uint64") {
+    val c = new CryptoSupport {}
+    val h = c.computeHashValue("Hello,world. Fox".getBytes())
+    info(s"${h.signum}: $h, ${h.toLong}")
+  }
 
   test("ast") {
     val nodeId = createNodeID()
@@ -18,7 +26,15 @@ class SCPSpec extends FunSuite with TestSupport {
     val value: Value = TestValue(TreeSet(1,2))
     val previousValue: Value = TestValue(TreeSet(1))
 
+    val setting = Setting(
+      quorumSet = QuorumSet.slices(
+        QuorumSet.Slices.flat(1, nodeId)
+      ),
+      privateKey = null
+    )
+
     val p = scp.handleAppRequest(nodeId, slotIndex, value, previousValue)
-    runner.runIOAttempt(p, setting).unsafeRunSync
+    val r = runner.runIO(p, setting).unsafeRunSync
+    info(s"r = $r")
   }
 }
