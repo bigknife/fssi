@@ -17,10 +17,10 @@ trait BumpStateProgram[F[_]] extends SCP[F] with EmitProgram[F] {
     * @param force force to set local state
     */
   private[uc] override def bumpState(nodeId: NodeID,
-                            slotIndex: SlotIndex,
-                            previousValue: Value,
-                            compositeValue: Value,
-                            force: Boolean): SP[F, Boolean] = {
+                                     slotIndex: SlotIndex,
+                                     previousValue: Value,
+                                     compositeValue: Value,
+                                     force: Boolean): SP[F, Boolean] = {
     // if forced to bump, check current ballot, if exists, ignore.
     for {
       b <- currentBallot(nodeId, slotIndex)
@@ -116,6 +116,6 @@ trait BumpStateProgram[F[_]] extends SCP[F] with EmitProgram[F] {
       r <- ifM(value.isEmpty, false)(
         ifM((counter == 0).pureSP[F], bumpState(nodeId, slotIndex, previousValue, value.get, true))(
           bumpState(nodeId, slotIndex, previousValue, value.get, counter)))
-    } yield true
+    } yield r
 
 }

@@ -50,7 +50,7 @@ trait AttemptConfirmPrepareProgram[F[_]] extends SCP[F] with EmitProgram[F] {
 
     def lowestCandidates(candidates: BallotSet, newH: Ballot): BallotSet = {
       def _loop(xs: BallotSet): BallotSet = {
-        val h = xs.takeRight(1)
+        val h = xs.last
         if (h == newH) xs.dropRight(1)
         else _loop(xs.dropRight(1))
       }
@@ -98,8 +98,8 @@ trait AttemptConfirmPrepareProgram[F[_]] extends SCP[F] with EmitProgram[F] {
         candidates <- prepareCandidatesWithHint(nodeId, slotIndex, hint)
         _ <- info(
           s"[$nodeId][$slotIndex][AttemptConfirmPrepare] found prepare candidates: $candidates")
-        newH       <- newHighestBallot(candidates)
-        _ <- info(s"[$nodeId][$slotIndex][AttemptConfirmPrepare] found newH: $newH")
+        newH <- newHighestBallot(candidates)
+        _    <- info(s"[$nodeId][$slotIndex][AttemptConfirmPrepare] found newH: $newH")
         newC <- ifM(newH.isEmpty, Option.empty[Ballot]) {
           ifM(notNecessarySetLowestCommitBallotUnderHigh(nodeId, slotIndex, newH.get),
               Option.empty[Ballot].pureSP[F]) {
@@ -110,9 +110,10 @@ trait AttemptConfirmPrepareProgram[F[_]] extends SCP[F] with EmitProgram[F] {
             } yield c
           }
         }
-        _ <- info(s"[$nodeId][$slotIndex][AttemptConfirmPrepare] found newC: $newC")
+        _       <- info(s"[$nodeId][$slotIndex][AttemptConfirmPrepare] found newC: $newC")
         updated <- updateBallotStateWhenConfirmPrepare(nodeId, slotIndex, newH, newC)
-        _ <- info(s"[$nodeId][$slotIndex][AttemptConfirmPrepare] updated when confirm parepare: $updated")
+        _ <- info(
+          s"[$nodeId][$slotIndex][AttemptConfirmPrepare] updated when confirm parepare: $updated")
         _ <- ifThen(updated) {
           for {
             msg <- createBallotMessage(nodeId, slotIndex)

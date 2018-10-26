@@ -25,7 +25,7 @@ trait HandleBallotMessageProgram[F[_]] extends SCP[F] with BumpStateProgram[F] {
     for {
       values   <- valuesFromBallotMessage(statement.message)
       validity <- validateValues(nodeId, slotIndex, values)
-      _ <- info(s"[$nodeId][$slotIndex] application checked ballot message: $validity")
+      _        <- info(s"[$nodeId][$slotIndex] application checked ballot message: $validity")
       r <- ifM(validity == Value.Validity.Invalid, false) {
         for {
           phase  <- currentBallotPhase(nodeId, slotIndex)
@@ -50,8 +50,8 @@ trait HandleBallotMessageProgram[F[_]] extends SCP[F] with BumpStateProgram[F] {
     def isCounterAccepted(n: Int): SP[F, Boolean] = {
       for {
         aheadNodes <- nodesAheadBallotCounter(nodeId, slotIndex, n)
-        q          <- isQuorum(nodeId, aheadNodes)
-        _ <- info(s"[$nodeId][$slotIndex] accepted counter($n): $q")
+        q          <- isVBlocking(nodeId, aheadNodes)
+        _          <- info(s"[$nodeId][$slotIndex] accepted counter($n): $q")
       } yield q
     }
     def isCounterNotAccepted(n: Int): SP[F, Boolean] = isCounterAccepted(n).map(!_)
@@ -107,13 +107,13 @@ trait HandleBallotMessageProgram[F[_]] extends SCP[F] with BumpStateProgram[F] {
 
     for {
       _                <- currentMessageLevelUp(nodeId, slotIndex)
-      _ <- info(s"[$nodeId][$slotIndex] attemp accept prepare")
+      _                <- info(s"[$nodeId][$slotIndex] attemp accept prepare")
       prepareAccepted  <- attemptAcceptPrepare(nodeId, slotIndex, previousValue, statement)
-      _ <- info(s"[$nodeId][$slotIndex] attemp confirm prepare")
+      _                <- info(s"[$nodeId][$slotIndex] attemp confirm prepare")
       prepareConfirmed <- attemptConfirmPrepare(nodeId, slotIndex, previousValue, statement)
-      _ <- info(s"[$nodeId][$slotIndex] accept commit prepare")
+      _                <- info(s"[$nodeId][$slotIndex] accept commit prepare")
       commitAccepted   <- attemptAcceptCommit(nodeId, slotIndex, previousValue, statement)
-      _ <- info(s"[$nodeId][$slotIndex] confirm commit prepare")
+      _                <- info(s"[$nodeId][$slotIndex] confirm commit prepare")
       commitConfirmed  <- attemptConfirmCommit(nodeId, slotIndex, previousValue, statement)
       didWork = prepareAccepted || prepareConfirmed || commitAccepted || commitConfirmed
       bumped <- ifM(currentMessageLevel(nodeId, slotIndex).map(_ == 1), attemptBumpMore)(
