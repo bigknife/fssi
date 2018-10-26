@@ -23,6 +23,12 @@ sealed trait Var[A] {
     apply().foreach(f)
 
   def getOrElse(default: => A): A = apply().getOrElse(default)
+  def update(f: A => A): this.type = {
+    apply().map(f) match {
+      case Some(newA) => apply(newA)
+      case _ => this
+    }
+  }
 
   def isEmpty: Boolean   = apply().isEmpty
   def nonEmpty: Boolean  = apply().nonEmpty

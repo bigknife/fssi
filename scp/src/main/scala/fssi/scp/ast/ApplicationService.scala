@@ -8,8 +8,6 @@ import bigknife.sop.implicits._
 import scala.collection.immutable._
 
 import types._
-
-
 @sp trait ApplicationService[F[_]] {
 
   /** validate value on application level
@@ -27,8 +25,6 @@ import types._
   /** extract valida value from a not fully validated value
     */
   def extractValidValue(nodeId: NodeID, slotIndex: SlotIndex, value: Value): P[F, Option[Value]]
-
-  
 
   /** after timeout milliseconds, execute the program
     * @param tag the delay timer tag, we can cancel the timer by using this tag later.
@@ -50,5 +46,7 @@ import types._
 
   /** broadcast message envelope
     */
-  def broadcastEnvelope[M <: Message](nodeId: NodeID, envelope: Envelope[M]): P[F, Unit]
+  def broadcastEnvelope[M <: Message](nodeId: NodeID,
+                                      slotIndex: SlotIndex,
+                                      envelope: Envelope[M]): P[F, Unit]
 }

@@ -30,7 +30,8 @@ class SCPSpec extends FunSuite with TestSupport {
       quorumSet = QuorumSet.slices(
         QuorumSet.Slices.flat(1, nodeId)
       ),
-      privateKey = null
+      privateKey = null,
+      applicationCallback = ApplicationCallback.unimplemented
     )
 
     val p = scp.handleAppRequest(nodeId, slotIndex, value, previousValue)

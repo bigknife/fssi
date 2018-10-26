@@ -1,0 +1,52 @@
+package fssi.scp.interpreter
+
+import java.util.concurrent.ExecutorService
+
+import fssi.scp.types._
+
+/** SCP application callback
+  *
+  */
+trait ApplicationCallback {
+  def validateValue(nodeId: NodeID, slotIndex: SlotIndex, value: Value): Value.Validity
+  def combineValues(nodeId: NodeID, slotIndex: SlotIndex, value: ValueSet): Option[Value]
+  def extractValidValue(nodeId: NodeID, slotIndex: SlotIndex, value: Value): Option[Value]
+  def scpExecutorService(): ExecutorService
+  def valueConfirmed(nodeId: NodeID, slotIndex: SlotIndex, value: Value): Unit
+  def valueExternalized(nodeId: NodeID, slotIndex: SlotIndex, value: Value): Unit
+  def broadcastEnvelope[M <: Message](nodeId: NodeID, slotIndex: SlotIndex, envelope: Envelope[M]): Unit
+}
+
+object ApplicationCallback {
+  private def warning(methodName: String): Exception = new UnsupportedOperationException(s"unimplemented method:$methodName PLEASE IMPLEMENT APPLICATION_CALLBACK")
+
+  val unimplemented: ApplicationCallback = new ApplicationCallback {
+    override def validateValue(nodeId: NodeID, slotIndex: SlotIndex, value: Value): Value.Validity = {
+      throw warning("validateValue")
+    }
+
+    override def combineValues(nodeId: NodeID, slotIndex: SlotIndex, value: ValueSet): Option[Value] = {
+      throw warning("combineValues")
+    }
+
+    override def extractValidValue(nodeId: NodeID, slotIndex: SlotIndex, value: Value): Option[Value] = {
+      throw warning("extractValidValue")
+    }
+
+    override def scpExecutorService(): ExecutorService = {
+      throw warning("scpExecutorService")
+    }
+
+    override def valueConfirmed(nodeId: NodeID, slotIndex: SlotIndex, value: Value): Unit = {
+      throw warning("valueConfirmed")
+    }
+
+    override def valueExternalized(nodeId: NodeID, slotIndex: SlotIndex, value: Value): Unit = {
+      throw warning("valueExternalized")
+    }
+
+    override def broadcastEnvelope[M <: Message](nodeId: NodeID, slotIndex: SlotIndex, envelope: Envelope[M]): Unit = {
+      throw warning("broadcastEnvelope")
+    }
+  }
+}

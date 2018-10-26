@@ -70,7 +70,7 @@ trait HandleAppRequestProgram[F[_]] extends SCP[F] with EmitProgram[F] {
             _        <- info(s"[$nodeId][$slotIndex] handle nomination envelope locally: $handled")
             _ <- ifThen(handled) {
               for {
-                _ <- broadcastEnvelope(nodeId, envelope)
+                _ <- broadcastEnvelope(nodeId, slotIndex, envelope)
                 _ <- info(s"[$nodeId][$slotIndex] boradcast nomination envelope to peers")
               } yield ()
 
