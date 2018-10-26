@@ -1,6 +1,5 @@
 package fssi.scp.interpreter.store
 
-import fssi.scp.types.Message.BallotMessage
 import fssi.scp.types._
 
 case class BallotStatus(

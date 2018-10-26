@@ -16,6 +16,10 @@ package object types {
   type StateChanged = Boolean
 
   type CounterSet = scala.collection.immutable.TreeSet[Int]
+  object CounterSet {
+    def empty: CounterSet          = scala.collection.immutable.TreeSet.empty[Int]
+    def apply(v: Int*): CounterSet = scala.collection.immutable.TreeSet(v: _*)
+  }
 
   val BALLOT_TIMER   = "ballot_timer"
   val NOMINATE_TIMER = "nominate_timer"
