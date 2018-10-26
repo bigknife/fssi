@@ -33,6 +33,7 @@ lazy val pInterperter = interpreter()
   .dependsOn(pTrie)
   .dependsOn(pSandBox)
   .dependsOn(pContractScaffold)
+  .dependsOn(pScp)
 
 lazy val pJsonRpc = jsonrpc()
 

@@ -5,14 +5,11 @@ import types._
 import exception._
 import ast._
 import org.slf4j._
-import bigknife.scalap.ast.types.{NodeID, SlotIndex}
-import bigknife.scalap.interpreter.{Setting => SCPSetting, runner => scpRunner, _}
-import bigknife.scalap.ast.usecase.SCP
-import bigknife.scalap.ast.usecase.component.{Model => SCPModel, _}
-import bigknife.scalap.ast.types.{NodeID, SlotIndex}
-import bigknife.scalap.ast.usecase.SCP
-import bigknife.scalap.ast.usecase.component._
 import fssi.interpreter.scp.{QuorumSetSyncMessage, SCPEnvelopeMessage}
+import fssi.scp.ast.uc.SCP
+import fssi.scp.types._
+import fssi.scp.ast.components._
+import fssi.scp.interpreter.{runner => scpRunner}
 
 class ConsensusEngineHandler
     extends ConsensusEngine.Handler[Stack]
@@ -20,7 +17,7 @@ class ConsensusEngineHandler
     with SCPSupport
     with LogSupport {
 
-  private val scp: SCP[SCPModel.Op] = SCP[SCPModel.Op]
+  private val scp: SCP[Model.Op] = SCP[Model.Op]
 
   /** initialize consensus engine
     */
@@ -29,7 +26,8 @@ class ConsensusEngineHandler
     setting match {
       case x: Setting.CoreNodeSetting =>
         val scpSetting = unsafeResolveSCPSetting(account, x)
-        scpRunner.runIO(scp.initialize(), scpSetting).unsafeRunSync
+
+        //scpRunner.runIO(scp.initialize(), scpSetting).unsafeRunSync
 
       case _ => // nothing to do
     }

@@ -142,7 +142,6 @@ object Common {
             libraryDependencies ++= all.scalecube,
             libraryDependencies ++= all.betterfiles,
             libraryDependencies ++= all.leveldb,
-            libraryDependencies ++= all.scalap,
             libraryDependencies ++= all.config
           )
     }

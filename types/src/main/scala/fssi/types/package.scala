@@ -3,8 +3,11 @@ package fssi
 import utils._
 
 package object types {
-  type TokenUnit    = Token.Unit
-  type UserContract = Contract.UserContract
+
+  type TransactionSet = scala.collection.immutable.TreeSet[biz.Transaction]
+  object TransactionSet {
+    def empty: TransactionSet = scala.collection.immutable.TreeSet.empty[biz.Transaction]
+  }
 
   object syntax extends BytesValue.Syntax
   object implicits
@@ -15,8 +18,4 @@ package object types {
       with biz.Contract.Version.Implicits
       with biz.Contract.UserContract.Implicits
       with biz.Block.Implicits
-      with Transaction.Implicits
-      with Contract.Implicits
-      with Token.Implicits
-
 }

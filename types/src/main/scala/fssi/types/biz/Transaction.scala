@@ -4,11 +4,24 @@ package biz
 import base._
 import fssi.types.implicits._
 
-sealed trait Transaction {
+sealed trait Transaction extends Ordered[Transaction] {
   def id: Transaction.ID
   def sender: Account.ID
   def signature: Signature
   def timestamp: Long
+
+  override def compare(that: Transaction): Int = {
+    // first compare timestamps, if they are equal, then check signature
+    val t: Long = this.timestamp - that.timestamp
+    val ct = if(t > 0) 1 else if (t == 0) 0 else -1
+    if (ct != 0) ct
+    else {
+      val sThis = BigInt(1, signature.value)
+      val sThat = BigInt(1, that.signature.value)
+      val cs = sThis - sThat
+      if (cs > 0) 1 else if (cs == 0) 0 else -1
+    }
+  }
 }
 
 object Transaction {

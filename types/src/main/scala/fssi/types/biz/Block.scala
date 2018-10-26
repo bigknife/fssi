@@ -1,15 +1,15 @@
 package fssi.types
 package biz
 
-import scala.collection._
-import base._
+import fssi.types.base._
 import fssi.types.implicits._
 
 /** block contains a head and some transactions
   */
 case class Block(
     head: Block.Head,
-    transactions: immutable.TreeSet[Transaction],
+    transactions: TransactionSet,
+    receipts: Set[Receipt],
     hash: Hash
 )
 
@@ -37,14 +37,15 @@ object Block {
       receiptState: WorldState
   )
 
-  /** block head contains state of the preivous block and current block
+  /** block head contains state of the previous block and current block
     * and additional: current block height and chainID
     */
   case class Head(
       previousStates: WorldStates,
       currentStates: WorldStates,
       height: BigInt,
-      chainId: String
+      chainId: String,
+      timestamp: Timestamp
   )
 
   trait Implicits {

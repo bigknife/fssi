@@ -1,4 +1,4 @@
-package fssi.scp
+package fssi
 package ast
 package uc
 
