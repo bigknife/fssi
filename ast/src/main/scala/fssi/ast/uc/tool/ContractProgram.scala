@@ -5,7 +5,6 @@ package tool
 
 import types._
 import utils._
-import types.syntax._
 import bigknife.sop._
 import bigknife.sop.implicits._
 

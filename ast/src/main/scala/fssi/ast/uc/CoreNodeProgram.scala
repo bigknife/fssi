@@ -3,8 +3,7 @@ package ast
 package uc
 
 import utils._
-import types._, exception._
-import types.syntax._
+import types._,  biz._
 import bigknife.sop._
 import bigknife.sop.implicits._
 import scala.collection._

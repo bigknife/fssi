@@ -4,7 +4,6 @@ package uc
 
 import utils._
 import types._, exception._
-import types.syntax._
 import bigknife.sop._
 import bigknife.sop.implicits._
 

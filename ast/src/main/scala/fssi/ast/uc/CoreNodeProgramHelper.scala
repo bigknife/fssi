@@ -3,9 +3,8 @@ package ast
 package uc
 
 import utils._
-import types._, exception._
+import types._, biz._
 import types.implicits._
-import types.syntax._
 import bigknife.sop._
 import bigknife.sop.implicits._
 import Ordered._
@@ -45,7 +44,7 @@ private[uc] trait CoreNodeProgramHelper[F[_]] extends BaseProgram[F] {
     */
   def tempRunPublishContract(
       height: BigInt,
-      publishContract: Transaction.PublishContract): SP[F, Either[Throwable, Unit]] = {
+      publishContract: Transaction.Deploy): SP[F, Either[Throwable, Unit]] = {
     // get the owner's token to check if he can afford to publish this contract
     // if he can afford, save user contract to a temp store reletived to height
     //
@@ -72,7 +71,7 @@ private[uc] trait CoreNodeProgramHelper[F[_]] extends BaseProgram[F] {
   /** run run contract
     */
   def tempRunRunContract(height: BigInt,
-                         runContract: Transaction.RunContract): SP[F, Either[Throwable, Unit]] = {
+                         runContract: Transaction.Run): SP[F, Either[Throwable, Unit]] = {
     import contractService._
     import contractStore._
     import contractDataStore._

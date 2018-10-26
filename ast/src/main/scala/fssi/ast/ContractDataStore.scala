@@ -2,7 +2,7 @@ package fssi
 package ast
 
 import contract.lib._
-import types._
+import types._,base._,biz._
 import bigknife.sop._
 import bigknife.sop.macros._
 import bigknife.sop.implicits._
@@ -25,7 +25,7 @@ import java.io._
   /** get current contract data store state
     * this state should identify current state of contract data store
     */
-  def getContractDataStoreState(): P[F, HexString]
+  def getContractDataStoreState(): P[F, WorldState]
 
   /** verify current state of contract store
     */

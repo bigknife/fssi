@@ -2,7 +2,7 @@ package fssi
 package ast
 
 import contract.lib._
-import types._, exception._
+import types._, exception._, biz._, base._
 import bigknife.sop._
 import bigknife.sop.macros._
 import bigknife.sop.implicits._
@@ -45,8 +45,8 @@ import java.io._
     */
   def invokeUserContract(context: Context,
                          contract: Contract.UserContract,
-                         method: Contract.Method,
-                         params: Contract.Parameter): P[F, Either[Throwable, Unit]]
+                         method: Contract.UserContract.Method,
+                         params: Contract.UserContract.Parameter): P[F, Either[Throwable, Unit]]
 
   /** get user contract gid
     */
@@ -58,7 +58,7 @@ import java.io._
       account: Account,
       contractFile: File,
       contractName: UniqueName,
-      contractVersion: Version): P[F, Either[FSSIException, Contract.UserContract]]
+      contractVersion: Contract.Version): P[F, Either[FSSIException, Contract.UserContract]]
 
   /** measure transfer cost
     */
@@ -66,13 +66,13 @@ import java.io._
 
   /** measure publish contract cost
     */
-  def measureCostToPublishContract(publishContract: Transaction.PublishContract): P[F, Token]
+  def measureCostToPublishContract(publishContract: Transaction.Deploy): P[F, Token]
 
   /** measure run a contract cost
     */
   def measureCostToRunContract(contract: Contract.UserContract): P[F, Token]
 
-  /** calculate bytes of user contract for beeing singed
+  /** calculate bytes of user contract for being singed
     */
-  def calculateSingedBytesOfUserContract(userContract: Contract.UserContract): P[F, BytesValue]
+  def calculateSingedBytesOfUserContract(userContract: Contract.UserContract): P[F, Signature]
 }

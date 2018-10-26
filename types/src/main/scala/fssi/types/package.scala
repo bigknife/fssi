@@ -9,7 +9,7 @@ package object types {
     def empty: TransactionSet = scala.collection.immutable.TreeSet.empty[biz.Transaction]
   }
 
-  object syntax extends BytesValue.Syntax
+  //object syntax extends BytesValue.Syntax
   object implicits
       extends base.BaseTypeImplicits
       with biz.Account.Implicits

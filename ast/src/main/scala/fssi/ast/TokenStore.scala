@@ -2,11 +2,11 @@ package fssi
 package ast
 
 import contract.lib._
-import types._
+import types._, base._
+import biz._
 import bigknife.sop._
 import bigknife.sop.macros._
 import bigknife.sop.implicits._
-
 import java.io._
 
 @sp trait TokenStore[F[_]] {
@@ -25,7 +25,7 @@ import java.io._
   /** get current token store state
     * this state should identify current state of token store
     */
-  def getTokenStoreState(): P[F, HexString]
+  def getTokenStoreState(): P[F, WorldState]
 
   /** verify current state of token store
     */

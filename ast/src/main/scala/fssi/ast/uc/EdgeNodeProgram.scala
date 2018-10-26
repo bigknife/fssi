@@ -2,8 +2,7 @@ package fssi
 package ast
 package uc
 
-import types._
-import types.syntax._
+import types._,biz._
 import bigknife.sop._
 import bigknife.sop.implicits._
 
