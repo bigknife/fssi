@@ -163,13 +163,12 @@ trait CryptoUtil {
     cipher.init(Cipher.DECRYPT_MODE, desKey, ivSpec)
     cipher.doFinal(source)
   }
-  /*
-  def ensure24Bytes(x: BytesValue): BytesValue = x match {
-    case a if a.value.length == 24 => a
-    case a if a.value.length > 24  => BytesValue(a.value.slice(0, 24))
-    case a                         => BytesValue(java.nio.ByteBuffer.allocate(24).put(a.value).array)
+
+  def ensure24Bytes(x: Array[Byte]): Array[Byte] = x match {
+    case a if a.length == 24 => a
+    case a if a.length > 24  => a.slice(0, 24)
+    case a                   => java.nio.ByteBuffer.allocate(24).put(a).array
   }
-  */
 
   def randomBytes(length: Int): Array[Byte] = {
     val sr    = new SecureRandom
