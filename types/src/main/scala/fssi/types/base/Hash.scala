@@ -4,7 +4,9 @@ package base
 
 /** hash for any data, a common hash, no more type info.
   */
-case class Hash(value: Array[Byte]) extends AnyVal
+case class Hash(value: Array[Byte]) extends AnyVal {
+  def ===(other: Hash): Boolean = value sameElements other.value
+}
 
 object Hash {
 

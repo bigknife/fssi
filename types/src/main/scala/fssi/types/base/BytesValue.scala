@@ -20,6 +20,8 @@ trait BytesValue[A] {
     case x: BytesValue[_] => x.bytes sameElements bytes
     case _                => false
   }
+
+  def ===(other: BytesValue[A]): Boolean = bytes sameElements other.bytes
 }
 
 object BytesValue {

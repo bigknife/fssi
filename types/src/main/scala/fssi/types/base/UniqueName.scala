@@ -3,7 +3,9 @@ package base
 
 /** unique name data
   */
-case class UniqueName(value: Array[Byte]) extends AnyVal
+case class UniqueName(value: Array[Byte]) extends AnyVal {
+  def ===(other: UniqueName): Boolean = value sameElements other.value
+}
 
 object UniqueName {
   def empty: UniqueName = UniqueName(Array.emptyByteArray)

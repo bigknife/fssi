@@ -4,7 +4,9 @@ package base
 /** random seeds, used to create account encrypting key. the encryting key is for 
   * protecting the private key of the account.
   */
-case class RandomSeed(value: Array[Byte]) extends AnyVal
+case class RandomSeed(value: Array[Byte]) extends AnyVal {
+  def ===(other: RandomSeed): Boolean = value sameElements other.value
+}
 
 object RandomSeed {
   trait Implicits {

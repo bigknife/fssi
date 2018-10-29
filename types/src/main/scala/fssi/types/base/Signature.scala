@@ -3,7 +3,9 @@ package base
 
 /** Signature
   */
-case class Signature(value: Array[Byte]) extends AnyVal
+case class Signature(value: Array[Byte]) extends AnyVal {
+  def ===(other: Signature): Boolean = value sameElements other.value
+}
 
 object Signature {
   def empty: Signature = Signature(Array.emptyByteArray)
