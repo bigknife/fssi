@@ -11,4 +11,7 @@ import io.circe.syntax._
 
 trait BizTokenJsonCodec {
   implicit val bizTokenEncoder: Encoder[Token] = Encoder[String].contramap(_.toString)
+
+  implicit val bizTokenDecoder: Decoder[Token] =
+    Decoder[String].map(Token.parse)
 }

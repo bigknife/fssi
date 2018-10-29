@@ -1,5 +1,6 @@
 package fssi
 
+import fssi.types.biz.Transaction
 import utils._
 
 package object types {
@@ -7,6 +8,8 @@ package object types {
   type TransactionSet = scala.collection.immutable.TreeSet[biz.Transaction]
   object TransactionSet {
     def empty: TransactionSet = scala.collection.immutable.TreeSet.empty[biz.Transaction]
+    def apply(transaction: Transaction*): TransactionSet =
+      scala.collection.immutable.TreeSet(transaction: _*)
   }
 
   //object syntax extends BytesValue.Syntax

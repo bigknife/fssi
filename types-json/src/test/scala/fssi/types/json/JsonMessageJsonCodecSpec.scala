@@ -9,7 +9,7 @@ import io.circe.generic.auto._
 import io.circe.parser._
 import json.implicits._
 
-class JsonMessageCodecSpec extends FunSuite {
+class JsonMessageJsonCodecSpec extends FunSuite {
 
   test("test json message coder") {
     val jsonMessage = JsonMessage(JsonMessage.TYPE_NAME_TRANSACTION, "send transaction")
