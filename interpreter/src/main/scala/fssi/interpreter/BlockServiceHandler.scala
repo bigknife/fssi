@@ -12,6 +12,7 @@ class BlockServiceHandler extends BlockService.Handler[Stack] with BlockCalSuppo
 
   /** create an empty block
     */
+    /*
   override def createFirstBlock(chainId: String): Stack[biz.Block] = Stack {
     biz.Block(
       head = biz.Block.Head(previousStates = biz.Block.emptyWordStates,
@@ -22,16 +23,19 @@ class BlockServiceHandler extends BlockService.Handler[Stack] with BlockCalSuppo
       hash = base.Hash.empty
     )
   }
+  */
 
   /** update hash for the block
     */
+  /*
   override def hashBlock(block: biz.Block): Stack[biz.Block] = Stack {
     // if hash is not empty, we will make it empty, and re-calclute the hash
     val b1: biz.Block =
       if (block.hash.asBytesValue.nonEmpty) block.copy(hash = base.Hash.empty) else block
     b1.copy(hash = base.Hash(b1.asBytesValue.digest.bytes))
   }
-
+*/
+  /*
   override def createGenesisBlock(chainID: String): Stack[Block] = Stack {
     val b1 = Block(
       hash = Hash.empty,
@@ -45,20 +49,24 @@ class BlockServiceHandler extends BlockService.Handler[Stack] with BlockCalSuppo
     )
     hashBlock(b1)
   }
+  */
 
   /** check the hash of a block is corrent or not
     * @param block block to be verified, the hash should calclute correctly
     * @return if correct return true, or false.
     */
+  /*
   override def verifyBlockHash(block: Block): Stack[Boolean] = Stack { setting =>
     val nb = hashBlock(block)
     nb.hash == block.hash
   }
+  */
 
   /** serialize transaction to byte array.
     * we should guarantee the serialization is determined,
     * for the same transaction, we should get the same byte array.
     */
+  /*
   private def bytesToHashForTransaction(transaction: Transaction): Array[Byte] = transaction match {
     case x: Transaction.Transfer =>
       x.id.value.getBytes("utf-8") ++
@@ -99,6 +107,7 @@ class BlockServiceHandler extends BlockService.Handler[Stack] with BlockCalSuppo
         x.signature.value.bytes ++
         BigInt(x.timestamp).toByteArray
   }
+  */
 }
 
 object BlockServiceHandler {

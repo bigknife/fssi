@@ -7,9 +7,6 @@ import ast._
 
 import scala.collection._
 
-import bigknife.scalap.ast.types.{NodeID, SlotIndex}
-import bigknife.scalap.interpreter.{Setting => SCPSetting}
-
 /** supports for integerating SCP
   */
 trait SCPSupport {

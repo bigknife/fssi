@@ -13,6 +13,7 @@ trait BlockCalSupport {
     * then, fill the `hash` field to return the new block.
     * the participating fileds include previousHash, height, transactions and chainID
     */
+  /*
   private[interpreter] def hashBlock(block: Block): Block = {
     val allBytes = block.previousHash.bytes ++
       block.previousTokenState.bytes ++
@@ -131,5 +132,5 @@ trait BlockCalSupport {
       contract.meta.methods.foldLeft(BytesValue.empty)((acc, n) =>
         acc ++ BytesValue(n.toString().getBytes("utf-8")))
   }
-
+*/
 }

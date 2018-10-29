@@ -7,7 +7,7 @@ import bigknife.sop.macros._
 import bigknife.sop.implicits._
 
 /** log service */
-@sp trait LogService[F[_]] {
+@sp trait Log[F[_]] {
   def debug(message: String, cause: Option[Throwable] = None): P[F, Unit]
   def info(message: String, cause: Option[Throwable] = None): P[F, Unit]
   def warn(message: String, cause: Option[Throwable] = None): P[F, Unit]

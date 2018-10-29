@@ -1,26 +1,20 @@
-package fssi
-package ast
-package uc
+package fssi.ast.uc
 package tool
 
-import types._
-import utils._
 import bigknife.sop._
+import bigknife.sop.macros._
 import bigknife.sop.implicits._
 
+import fssi.types.base._
+import fssi.types.biz._
 import java.io._
 
-trait ContractProgram[F[_]] extends BaseProgram[F] {
+trait ContractProgram[F[_]] extends ToolProgram[F] with BaseProgram[F] {
   import model._
 
   /** create a contract project
     */
-  def createContractProject(projectRoot: File): SP[F, Unit] = {
-    for {
-      createEither <- contractService.createContractProject(projectRoot)
-      _            <- err.either(createEither)
-    } yield ()
-  }
+  def createContractProject(root: File): SP[F, Unit] = ???
 
   /** compile contract project
     * @param projectRoot the root path of the contract project
@@ -31,21 +25,5 @@ trait ContractProgram[F[_]] extends BaseProgram[F] {
                       secretKeyFile: File,
                       projectRoot: File,
                       output: File,
-                      sandboxVersion: String): SP[F, Unit] = {
-    import contractService._
-    import accountStore._
-    import accountService._
-    for {
-      account   <- loadAccountFromFile(accountFile).right
-      secretKey <- loadAccountSecretKeyFile(secretKeyFile).right
-      privKey   <- aesDecryptPrivKey(account.encPrivKey, secretKey, account.iv).right
-      _ <- compileContractProject(account.id,
-                                  account.pubKey,
-                                  privKey,
-                                  projectRoot,
-                                  sandboxVersion,
-                                  output).right
-      _ <- checkDeterminismOfContractProject(output).right
-    } yield ()
-  }
+                      sandboxVersion: String): SP[F, Unit] = ???
 }

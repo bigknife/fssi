@@ -1,49 +1,44 @@
-package fssi
-package ast
+package fssi.ast
 
-import types._,exception._, base._
-import utils._
 import bigknife.sop._
 import bigknife.sop.macros._
 import bigknife.sop.implicits._
 
-/**
-  * Cryptography operations
-  */
+import fssi.types.biz._
+import fssi.types.base._
+
 @sp trait Crypto[F[_]] {
 
-  /**
-    * Create a public/private key pair
-    * @return a pair of bytes value
-    *         the first element is public key, the second element is private key.
+  /** create random seed
     */
-  def createKeyPair(): P[F, (OpaqueBytes, OpaqueBytes)]
+  def createRandomSeed(): P[F, RandomSeed]
 
-  /**
-    * Create IV(initialization vector) fork Des encrypt
-    * @return iv data represented by base64string
+  /** create keypair for an account
     */
-  def createIVForDes(): P[F, OpaqueBytes]
+  def createAccountKeyPair(): P[F, Account.KeyPair]
 
-  /** encrypt a private key by using iv and password
-    *
-    * @return encrypted private key, represented by base64string.
+  /** create a secret key to encrypt private key of account
     */
-  def desEncryptPrivateKey(privateKey: OpaqueBytes,
-                           iv: OpaqueBytes,
-                           password: OpaqueBytes): P[F, OpaqueBytes]
+  def createSecretKey(rnd: RandomSeed): P[F, Account.SecretKey]
 
-  /** decrypt a encrypted private key by using iv and password
+  /** create initial vector for an account, which is used to encrypt private key of account
     */
-  def desDecryptPrivateKey(encryptedPrivateKey: OpaqueBytes,
-                           iv: OpaqueBytes,
-                           password: OpaqueBytes): P[F, Either[FSSIException, OpaqueBytes]]
+  def createAccountIV(): P[F, Account.IV]
 
-  /** make a signature for source bytes by using a private key
+  /** encrypt private key of account
     */
-  def makeSignature(source: OpaqueBytes, privateKey: OpaqueBytes): P[F, Signature]
+  def encryptAccountPrivKey(privKey: Account.PrivKey,
+                            sk: Account.SecretKey,
+                            iv: Account.IV): P[F, Account.PrivKey]
 
-  /** verify signature
+  /** decrypt private key of account
     */
-  def verifySignature(source: OpaqueBytes, publicKey: OpaqueBytes, signature: Signature): P[F, Boolean]
+  def decryptAccountPrivKey(encPrivKey: Account.PrivKey,
+                            sk: Account.SecretKey,
+                            iv: Account.IV): P[F, Account.PrivKey]
+
+  /** create an account id compatible to an account of btc.
+    * double hash and wrapped into Base58check.
+    */
+  def createAccountID(pubKey: Account.PubKey): P[F, Account.ID]
 }

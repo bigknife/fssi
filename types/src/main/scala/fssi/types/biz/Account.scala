@@ -14,11 +14,23 @@ case class Account(
 )
 
 object Account {
-  case class PrivKey(value: Array[Byte])   extends AnyVal
-  case class PubKey(value: Array[Byte])    extends AnyVal
-  case class ID(value: Array[Byte])        extends AnyVal
-  case class IV(value: Array[Byte])        extends AnyVal
-  case class SecretKey(value: Array[Byte]) extends AnyVal
+  case class PrivKey(value: Array[Byte])   extends AnyVal {
+    def ===(that: PrivKey): Boolean = value sameElements that.value
+  }
+  case class PubKey(value: Array[Byte])    extends AnyVal {
+    def ===(that: PubKey): Boolean = value sameElements that.value
+  }
+  case class ID(value: Array[Byte])        extends AnyVal {
+    def ===(that: ID): Boolean = value sameElements that.value
+  }
+  case class IV(value: Array[Byte])        extends AnyVal {
+    def ===(that: IV): Boolean = value sameElements that.value
+  }
+  case class SecretKey(value: Array[Byte]) extends AnyVal {
+    def ===(that: SecretKey): Boolean = value sameElements that.value
+  }
+
+  case class KeyPair(privKey: PrivKey, pubKey: PubKey)
 
   def emptyId: ID = ID(Array.emptyByteArray)
 

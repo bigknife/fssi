@@ -9,7 +9,6 @@ import fssi.sandbox.exception.{ContractBuildException, ContractCheckException}
 import fssi.sandbox.inf._
 import fssi.sandbox.types.{ContractMeta, SandBoxVersion}
 import fssi.sandbox.visitor.clazz.DegradeClassVersionVisitor
-import fssi.types.HexString
 import fssi.types.base._
 import fssi.types.biz.Contract.UserContract._
 import fssi.types.biz.Contract.{Version => ContractVersion}
@@ -108,7 +107,7 @@ class Builder extends BaseLogger {
       } yield {
         import fssi.types.implicits._
         Contract.UserContract(
-          owner = Account.ID(HexString.decode(contractMeta.owner.value).bytes),
+          owner = Account.ID(BytesValue.decodeBcBase58(contractMeta.owner.value).get.bytes),
           name = UniqueName(contractMeta.name.value),
           version = ContractVersion(contractMeta.version.value).get,
           code = Code(codeBytes),
