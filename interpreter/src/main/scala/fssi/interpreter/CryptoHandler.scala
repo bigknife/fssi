@@ -16,10 +16,12 @@ import types.implicits._
   */
 class CryptoHandler extends Crypto.Handler[Stack] with LogSupport {
 
+  crypto.registerBC()
+
   /** create random seed
     */
   override def createRandomSeed(): Stack[RandomSeed] = Stack {
-    val bytes = crypto.randomBytes(16)
+    val bytes = crypto.randomBytes(24)
     RandomSeed(bytes)
   }
 
@@ -35,13 +37,14 @@ class CryptoHandler extends Crypto.Handler[Stack] with LogSupport {
   /** create a secret key to encrypt private key of account
     */
   override def createSecretKey(rnd: RandomSeed): Stack[Account.SecretKey] = Stack {
-    val secretKeyBytes = crypto.createAesSecretKey(rnd.value).getEncoded
+    val secretKeyBytes = crypto.createDESSecretKey(rnd.value)
     Account.SecretKey(secretKeyBytes)
   }
 
   /** create initial vector for an account, which is used to encrypt private key of account
     */
   override def createAccountIV(): Stack[Account.IV] = Stack {
+    @scala.annotation.tailrec
     def loop(i: Int, acc: Vector[Char]): Vector[Char] =
       if (i == 0) acc
       else {

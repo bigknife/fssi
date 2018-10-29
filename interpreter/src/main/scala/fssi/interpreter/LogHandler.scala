@@ -8,7 +8,7 @@ import org.slf4j.LoggerFactory
 /** log service, use logback as the backend
   *
   */
-class LogServiceHandler extends LogService.Handler[Stack] {
+class LogHandler extends Log.Handler[Stack] {
   // all ast logs use the same name: fssi.ast
   private val logger = LoggerFactory.getLogger("fssi.ast")
 
@@ -33,10 +33,10 @@ class LogServiceHandler extends LogService.Handler[Stack] {
   }
 }
 
-object LogServiceHandler {
-  private val instance = new LogServiceHandler
+object LogHandler {
+  private val instance = new LogHandler
   trait Implicits {
-    implicit val logServiceHandler: LogServiceHandler = instance
+    implicit val logServiceHandler: LogHandler = instance
   }
   object implicits extends Implicits
 }

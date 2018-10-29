@@ -143,6 +143,13 @@ trait CryptoUtil {
     kf.generatePrivate(prvSpec)
   }
 
+  def createDESSecretKey(seed: Array[Byte]): Array[Byte] = {
+    val spec       = new DESedeKeySpec(seed)
+    val keyFactory = SecretKeyFactory.getInstance(SecretKeyFactoryAlgo, ProviderName)
+    val secretKey  = keyFactory.generateSecret(spec)
+    secretKey.getEncoded
+  }
+
   def des3cbcEncrypt(source: Array[Byte], key: Array[Byte], iv: Array[Byte]): Array[Byte] = {
     val spec       = new DESedeKeySpec(key)
     val keyFactory = SecretKeyFactory.getInstance(SecretKeyFactoryAlgo, ProviderName)
