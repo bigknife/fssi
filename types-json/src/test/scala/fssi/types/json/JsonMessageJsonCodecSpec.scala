@@ -1,8 +1,8 @@
 package fssi
 package types
 package json
+import fssi.types.biz.JsonMessage
 import org.scalatest.FunSuite
-
 import io.circe._
 import io.circe.syntax._
 import io.circe.generic.auto._
