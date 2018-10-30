@@ -32,7 +32,7 @@ object ToolMain extends StackConsoleMain[CmdArgs] {
   }
   */
   override def cmdArgs(xs: Array[String]): Option[CmdArgs] = CmdArgsParser.parse(args, Empty)
-  override def program(cmdArgs: Option[CmdArgs], setting: Setting): Effect = cmdArgs match {
+  override def program(cmdArgs: Option[CmdArgs], setting: Setting): StackConsoleMain.Effect = cmdArgs match {
     case Some(result) =>
       result match {
         case CreateAccountArgs(randomSeed, accountFile, secretKeyFile) =>
