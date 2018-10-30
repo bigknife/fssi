@@ -35,7 +35,7 @@ trait CryptoUtil {
   }
 
   // create aes key
-  def createAesSecretKey(seed: Array[Byte]): SecretKey = {
+  def createAesSecretKey(seed: Array[Byte]): Array[Byte] = {
     val sr   = new SecureRandom
     val salt = Array.fill(16)(0.toByte)
     sr.nextBytes(salt)
@@ -43,7 +43,7 @@ trait CryptoUtil {
     val spec = new PBEKeySpec(seed.map(_.toChar), salt, 58, 256) //aes-256
     //Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider())
     val sf = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1", ProviderName)
-    sf.generateSecret(spec)
+    sf.generateSecret(spec).getEncoded
   }
 
   // use aes to encrypt
@@ -141,13 +141,6 @@ trait CryptoUtil {
     val prvSpec = new ECPrivateKeySpec(new BigInteger(bytesValue), ecSpec)
     val kf      = KeyFactory.getInstance(KeyFactoryAlgo, ProviderName)
     kf.generatePrivate(prvSpec)
-  }
-
-  def createDESSecretKey(seed: Array[Byte]): Array[Byte] = {
-    val spec       = new DESedeKeySpec(seed)
-    val keyFactory = SecretKeyFactory.getInstance(SecretKeyFactoryAlgo, ProviderName)
-    val secretKey  = keyFactory.generateSecret(spec)
-    secretKey.getEncoded
   }
 
   def des3cbcEncrypt(source: Array[Byte], key: Array[Byte], iv: Array[Byte]): Array[Byte] = {
