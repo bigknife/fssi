@@ -10,11 +10,49 @@ import io.scalecube.transport.{Address, Message => CubeMessage}
 
 class NetworkHandler extends Network.Handler[Stack] with LogSupport {
 
-  val clusterOnce: Once[Cluster] = Once.empty
+  val consensusOnce: Once[Cluster]   = Once.empty
+  val applicationOnce: Once[Cluster] = Once.empty
+  val serviceOnce: Once[Cluster]     = Once.empty
 
   override def startupConsensusNode(
       conf: ChainConfiguration,
       handler: Message.Handler[ConsensusMessage]): Stack[ConsensusNode] = Stack {
+    val converter: CubeMessage => ConsensusMessage = cub => cub.data[ConsensusMessage]
+    val node                                       = startP2PNode(consensusOnce, conf, converter, handler)
+    ConsensusNode(node)
+  }
+
+  override def startupApplicationNode(
+      conf: ChainConfiguration,
+      handler: Message.Handler[ApplicationMessage]): Stack[ApplicationNode] = Stack {
+    val converter: CubeMessage => ApplicationMessage = cube => cube.data[ApplicationMessage]
+    val node                                         = startP2PNode(applicationOnce, conf, converter, handler)
+    ApplicationNode(node)
+  }
+
+  override def startupServiceNode(conf: ChainConfiguration,
+                                  handler: Message.Handler[ClientMessage]): Stack[ServiceNode] =
+    Stack {
+      val converter: CubeMessage => ClientMessage = cube => cube.data[ClientMessage]
+      val node                                    = startP2PNode(serviceOnce, conf, converter, handler)
+      ServiceNode(node)
+    }
+
+  override def shutdownConsensusNode(node: ConsensusNode): Stack[Unit] = Stack {
+    shutdownP2PNode(consensusOnce)
+  }
+  override def shutdownApplicationNode(node: ApplicationNode): Stack[Unit] = Stack {
+    shutdownP2PNode(applicationOnce)
+  }
+
+  override def shutdownServiceNode(node: ServiceNode): Stack[Unit] = Stack {
+    shutdownP2PNode(serviceOnce)
+  }
+
+  private def startP2PNode[M <: Message](clusterOnce: Once[Cluster],
+                                         conf: ChainConfiguration,
+                                         converter: CubeMessage => M,
+                                         handler: Message.Handler[M]): Node = {
     val config =
       ClusterConfig
         .builder()
@@ -30,14 +68,14 @@ class NetworkHandler extends Network.Handler[Stack] with LogSupport {
       cluster.listenMembership().subscribe { membershipEvent =>
         log.info(
           s"receive P2P Membership Event: ${membershipEvent.`type`()}, ${membershipEvent.member()}")
-        printMembers()
+        printMembers(clusterOnce)
       }
 
       val subscription: CubeMessage => Unit = { gossip =>
         scala.util.Try {
-          val consensusMessage = gossip.data[ConsensusMessage]()
+          val message = converter(gossip)
           log.debug("start to handle json message by gossiping")
-          handler(consensusMessage)
+          handler(message)
           log.debug("handled json message by gossiping")
         } match {
           case scala.util.Success(_) =>
@@ -53,32 +91,21 @@ class NetworkHandler extends Network.Handler[Stack] with LogSupport {
           log.debug(s"start handle Gossip message: $gossip")
           subscription(gossip)
         }
-      ()
     }
 
     val node = Node(Node.Addr(conf.host, conf.port), conf.account)
     log.info(s"node ($node) started ")
-    ConsensusNode(node)
+    node
   }
 
-  override def startupApplicationNode(
-      conf: ChainConfiguration,
-      handler: Message.Handler[ApplicationMessage]): Stack[ApplicationNode] = ???
-
-  override def startupServiceNode(conf: ChainConfiguration,
-                                  handler: Message.Handler[ClientMessage]): Stack[ServiceNode] = ???
-
-  override def shutdownConsensusNode(node: ConsensusNode): Stack[Unit] = Stack {
+  private def shutdownP2PNode(clusterOnce: Once[Cluster]): Unit = {
     clusterOnce.foreach { cluster =>
       cluster.shutdown().get()
       log.info(s"node ${cluster.address()} shutdown")
     }
   }
-  override def shutdownApplicationNode(node: ApplicationNode): Stack[Unit] = ???
 
-  override def shutdownServiceNode(node: ServiceNode): Stack[Unit] = ???
-
-  private def printMembers(): Unit = {
+  private def printMembers(clusterOnce: Once[Cluster]): Unit = {
     log.info("current members")
     import scala.collection.JavaConverters._
     clusterOnce.unsafe().members().asScala.foreach(member => log.info(s"-- $member --"))
