@@ -10,4 +10,5 @@ import fssi.types.biz._
   def initialize(node: Node):P[F, Unit]
   def destroy(): P[F, Unit]
   def tryAgree(transaction: Transaction, receipt: Receipt): P[F, Unit]
+  def processMessage(message: ConsensusAuxMessage): P[F, Unit]
 }

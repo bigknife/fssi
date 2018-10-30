@@ -29,12 +29,27 @@ trait CoreNodeProgram[F[_]] {
   /** persist new block
     */
   def newBlockGenerated(block: Block): SP[F, Unit]
+
+  /** process message
+    */
+  def processMessage(message: ConsensusAuxMessage): SP[F, Unit]
 }
 
 object CoreNodeProgram {
-  def apply[F[_]](implicit M: blockchain.Model[F]): CoreNodeProgram[F] =
-    new CoreNodeProgram[F] with StartupProgram[F] with ShutdownProgram[F]
-    with HandleTransactionProgram[F] with NewBlockGeneratedProgram[F]{
-      private[uc] val model: blockchain.Model[F] = M
-    }
+
+  private final class Implementation[F[_]](implicit M: blockchain.Model[F])
+      extends CoreNodeProgram[F]
+      with StartupProgram[F]
+      with ShutdownProgram[F]
+      with HandleTransactionProgram[F]
+      with NewBlockGeneratedProgram[F]
+      with ProcessMessageProgram[F] {
+
+    private[uc] val model: blockchain.Model[F] = M
+
+  }
+
+  def apply[F[_]](implicit M: blockchain.Model[F]): CoreNodeProgram[F] = new Implementation[F]
+
+  def instance: CoreNodeProgram[blockchain.Model.Op] = apply[blockchain.Model.Op]
 }
