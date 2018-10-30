@@ -22,8 +22,10 @@ object CoreNodeMain extends StackConsoleMain[CoreNodeSetting] with CoreNodeJsonM
     password = Array.emptyByteArray
   )
 
-  override def cmdArgs(xs: Array[String]): Option[CoreNodeSetting] =
+  override def cmdArgs(xs: Array[String]): Option[CoreNodeSetting] = {
     CoreNodeSettingParser.parse(args, defaultCoreNodeSetting)
+  }
+
 
   override def setting(c: CoreNodeSetting): Setting = {
     _setting := c
