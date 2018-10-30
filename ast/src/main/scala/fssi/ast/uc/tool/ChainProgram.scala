@@ -16,5 +16,11 @@ trait ChainProgram[F[_]] extends ToolProgram[F] with BaseProgram[F] {
     * @param dataDir directory where the chain data saved
     * @param chainId the chain id
     */
-  def createChain(rootDir: File, chainId: String): SP[F, Unit] = ???
+  def createChain(rootDir: File, chainId: String): SP[F, Unit] =
+    for {
+      _ <- store.createChainStore(rootDir, chainId)
+      _ <- store.initialize(rootDir, chainId)
+      _ <- log.info(s"new chain $chainId created")
+    } yield ()
+    
 }

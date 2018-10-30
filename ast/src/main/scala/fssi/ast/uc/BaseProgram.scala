@@ -25,4 +25,11 @@ trait BaseProgram[F[_]] {
 
   private[uc] def ifThen(cond: Boolean)(_then: => SP[F, Unit]): SP[F, Unit] =
     ifThen(cond.pureSP[F])(_then)
+
+  /** requireM throws exception when condition is false
+    */
+  private[uc] def requireM[A <: Exception](condition: Boolean, exception: => A): SP[F, Unit] = {
+    model.err.either(Either.cond(condition, (), exception))
+  }
+
 }

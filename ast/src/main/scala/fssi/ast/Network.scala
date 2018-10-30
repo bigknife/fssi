@@ -4,6 +4,9 @@ import bigknife.sop._
 import bigknife.sop.macros._
 import bigknife.sop.implicits._
 
+import fssi.types.biz._
+
 @sp trait Network[F[_]] {
-  def placeholder():P[F, Unit]
+  def startupPeerNode(conf: ChainConfiguration, handler: JsonMessageHandler): P[F, Node]
+  def shutdown(): P[F, Unit]
 }

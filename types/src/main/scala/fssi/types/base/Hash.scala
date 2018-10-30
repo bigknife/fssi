@@ -12,6 +12,16 @@ object Hash {
 
   def empty: Hash = Hash(Array.emptyByteArray)
 
+  sealed trait VerifyResult {
+    def apply(): Boolean
+  }
+  case object Passed extends VerifyResult {
+    def apply(): Boolean = true
+  }
+  case object Tampered extends VerifyResult {
+    def apply(): Boolean = false
+  }
+
   trait Implicits {
     implicit def hashToBytesValue(x: Hash): Array[Byte] = x.value
   }

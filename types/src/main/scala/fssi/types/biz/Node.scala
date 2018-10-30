@@ -2,7 +2,7 @@ package fssi.types.biz
 
 case class Node(
   address: Node.Addr,
-  account: Option[Account]
+  account: Account
 )
 
 object Node {

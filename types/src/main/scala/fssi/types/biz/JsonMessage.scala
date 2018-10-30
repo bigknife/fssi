@@ -1,5 +1,6 @@
 package fssi
 package types
+package biz
 
 /** Json message is a simple json string message, which
   * includes a real message body and the data type.

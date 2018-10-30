@@ -41,4 +41,8 @@ import fssi.types.base._
     * double hash and wrapped into Base58check.
     */
   def createAccountID(pubKey: Account.PubKey): P[F, Account.ID]
+
+  def verifyTransactionSignature(transaction: Transaction): P[F, Signature.VerifyResult]
+
+  def verifyBlockHash(block: Block): P[F, Hash.VerifyResult]
 }
