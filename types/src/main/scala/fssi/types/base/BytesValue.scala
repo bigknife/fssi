@@ -103,11 +103,12 @@ object BytesValue {
     implicit def toOps[A](bv: BytesValue[A]): Ops[A]             = Ops(bv)
     implicit def toSyntax[A](a: A)(implicit F: A => Array[Byte]) = Syntax(a)
 
-    implicit def bigIntBytesValue(i: BigInt): Array[Byte]   = i.toByteArray
-    implicit def intToBytesValue(i: Int): Array[Byte]       = bigIntBytesValue(BigInt(i))
-    implicit def byteToBytesValue(b: Byte): Array[Byte]     = Array(b)
-    implicit def longToBytesValue(l: Long): Array[Byte]     = bigIntBytesValue(BigInt(l))
-    implicit def stringToBytesValue(s: String): Array[Byte] = s.getBytes("utf-8")
+    implicit def boolBytesValue(boolean: Boolean): Array[Byte] = (if (boolean) 1 else 0).toByte
+    implicit def bigIntBytesValue(i: BigInt): Array[Byte]      = i.toByteArray
+    implicit def intToBytesValue(i: Int): Array[Byte]          = bigIntBytesValue(BigInt(i))
+    implicit def byteToBytesValue(b: Byte): Array[Byte]        = Array(b)
+    implicit def longToBytesValue(l: Long): Array[Byte]        = bigIntBytesValue(BigInt(l))
+    implicit def stringToBytesValue(s: String): Array[Byte]    = s.getBytes("utf-8")
     implicit def arrayToBytesValue[A](a: Array[A])(implicit F: A => Array[Byte]): Array[Byte] = {
       a.foldLeft(Array.emptyByteArray) { (acc, n) =>
         acc ++ F(n)

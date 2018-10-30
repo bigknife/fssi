@@ -21,4 +21,5 @@ package object types {
       with biz.Contract.Version.Implicits
       with biz.Contract.UserContract.Implicits
       with biz.Block.Implicits
+      with biz.Receipt.Implicits
 }
