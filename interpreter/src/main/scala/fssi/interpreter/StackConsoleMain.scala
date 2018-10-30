@@ -7,7 +7,7 @@ import fssi.ast.uc.ToolProgram
 import fssi.types.base.RandomSeed
 import org.slf4j.LoggerFactory
 
-trait StackConsoleMain[C] extends App {
+trait StackConsoleMain[C]{
 
   import StackConsoleMain._
 
@@ -17,16 +17,21 @@ trait StackConsoleMain[C] extends App {
   def setting(c: C): Setting = Setting.DefaultSetting
   def program(cmdArgs: Option[C], setting: Setting): Effect
 
-  // run program
-  lazy val _c: Option[C] = cmdArgs(args)
-  lazy val _setting = _c.map(setting).getOrElse(Setting.DefaultSetting)
-  lazy val _p = program(_c, _setting)
-  runner.runIOAttempt(_p, _setting).unsafeRunSync() match {
-    case Left(t) => log.error("Main Program Error", t)
-    case Right(_) => log.info("Main Program Exit")
+  def main(args: Array[String]): Unit = {
+    // run program
+    lazy val _c: Option[C] = cmdArgs(args)
+    lazy val _setting = _c.map(setting).getOrElse(Setting.DefaultSetting)
+    lazy val _p = program(_c, _setting)
+    runner.runIOAttempt(_p, _setting).unsafeRunSync() match {
+      case Left(t) => log.error("Main Program Error", t)
+      case Right(_) => log.info("Main Program Exit")
+    }
   }
 
+
+
   implicit def lift[A](a: A): Program[A] = a.pureSP[blockchain.Model.Op]
+
 }
 
 object StackConsoleMain {

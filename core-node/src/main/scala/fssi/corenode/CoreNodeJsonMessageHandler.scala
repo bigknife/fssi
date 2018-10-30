@@ -4,16 +4,21 @@ import fssi.types.biz.{JsonMessage, JsonMessageHandler, Transaction}
 import io.circe._
 import io.circe.syntax._
 import io.circe.parser._
+import io.circe.generic.auto._
 import fssi.interpreter._
 import fssi.ast.{Effect, _}
 import fssi.types.json.implicits._
-import fssi.scp.types.{Envelope, Message}
+import fssi.scp.types.{Envelope, Message, Value}
 import org.slf4j.LoggerFactory
+import fssi.scp.interpreter.json.implicits._
 
 trait CoreNodeJsonMessageHandler extends JsonMessageHandler{
 
   private val log = LoggerFactory.getLogger(getClass)
   def setting: Setting
+
+  implicit def valueEncoder: Encoder[Value] = ???
+  implicit def valueDecoder: Decoder[Value] = ???
 
   private val acceptedTypeNames: Vector[String] = Vector(
     JsonMessage.TYPE_NAME_TRANSACTION,
