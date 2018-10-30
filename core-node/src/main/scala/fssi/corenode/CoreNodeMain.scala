@@ -12,10 +12,10 @@ import fssi.scp.interpreter.store.Var
 
 /** FSSI CoreNode Main
   */
-object CoreNodeMain extends StackConsoleMain[CoreNodeSetting] with CoreNodeJsonMessageHandler {
-  private val instance = CoreNodeProgram.instance
+object CoreNodeMain extends StackConsoleMain[CoreNodeSetting] {
+  private val instance               = CoreNodeProgram.instance
   private val _setting: Var[Setting] = Var.empty
-  override def setting: Setting = _setting.unsafe()
+  override def setting: Setting      = _setting.unsafe()
 
   val defaultCoreNodeSetting: CoreNodeSetting = CoreNodeSetting(
     workingDir = new java.io.File(new java.io.File(System.getProperty("user.home")), ".fssi"),
@@ -25,7 +25,6 @@ object CoreNodeMain extends StackConsoleMain[CoreNodeSetting] with CoreNodeJsonM
   override def cmdArgs(xs: Array[String]): Option[CoreNodeSetting] = {
     CoreNodeSettingParser.parse(args, defaultCoreNodeSetting)
   }
-
 
   override def setting(c: CoreNodeSetting): Setting = {
     _setting := c
@@ -37,10 +36,10 @@ object CoreNodeMain extends StackConsoleMain[CoreNodeSetting] with CoreNodeJsonM
     case Some(coreNodeSetting) =>
       import instance._
       for {
-        node <- startup(coreNodeSetting.workingDir, this)
+        node <- if (coreNodeSetting.isFullFunctioning) startupFull(coreNodeSetting.workingDir, consensusMessageHandler(), applicationMessageHandler()) else startupSemi(coreNodeSetting.workingDir, consensusMessageHandler())
         _ <- Runtime.getRuntime.addShutdownHook(new Thread(new Runnable {
           override def run(): Unit = {
-            shutdown(node)
+            shutdow
             ()
           }
         }))
@@ -49,6 +48,7 @@ object CoreNodeMain extends StackConsoleMain[CoreNodeSetting] with CoreNodeJsonM
     case _ =>
   }
 
+  /*
   override def handleTransaction(transaction: Transaction): Effect = {
     for {
       receipt <- instance.handleTransaction(transaction)
@@ -61,6 +61,6 @@ object CoreNodeMain extends StackConsoleMain[CoreNodeSetting] with CoreNodeJsonM
       _ <- instance.processMessage(SCPEnvelope(envelope))
     } yield ()
   }
-
+ */
 
 }

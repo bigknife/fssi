@@ -19,18 +19,21 @@ trait CoreNodeProgram[F[_]] {
     * @return node info
     */
   def startupFull(root: File,
-              consensusMessageHandler: Message.Handler[ConsensusMessage],
-              applicationMessageHandler: Message.Handler[ApplicationMessage]): SP[F, Unit]
+                  consensusMessageHandler: Message.Handler[ConsensusMessage],
+                  applicationMessageHandler: Message.Handler[ApplicationMessage])
+    : SP[F, (Node.ConsensusNode, Node.ApplicationNode)]
 
   /** Start up a semi-functioning core node.
     * runing consensus node only
     * @return node info
     */
-  def startupSemi(root: File, consensusMessageHandler: Message.Handler[ConsensusMessage]): SP[F, Unit]
+  def startupSemi(root: File,
+                  consensusMessageHandler: Message.Handler[ConsensusMessage]): SP[F, Node.ConsensusNode]
 
   /** Shutdown core node
     */
-  def shutdown(node: Node): SP[F, Unit]
+  def shutdown(consensusNode: Node.ConsensusNode, applicationNode: Option[Node.ApplicationNode]): SP[F, Unit]
+
 
   /** handle transaction
     */

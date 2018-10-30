@@ -19,7 +19,7 @@ trait StartupProgram[F[_]] extends CoreNodeProgram[F] with BaseProgram[F] {
     */
   def startupFull(root: File,
               consensusMessageHandler: Message.Handler[ConsensusMessage],
-              applicationMessageHandler: Message.Handler[ApplicationMessage]): SP[F, Unit] = {
+              applicationMessageHandler: Message.Handler[ApplicationMessage]): SP[F, (Node.ConsensusNode, Node.ApplicationNode)] = {
     for {
       _               <- contract.assertRuntime()
       _               <- contract.initializeRuntime()
@@ -33,7 +33,7 @@ trait StartupProgram[F[_]] extends CoreNodeProgram[F] with BaseProgram[F] {
       _               <- consensus.initialize(consensusNode)
       _               <- log.info("consensus engine initialized.")
       _               <- log.info("CoreNode startup!")
-    } yield ()
+    } yield (consensusNode, applicationNode)
   }
 
   /** Start up a semi-functioning core node.
@@ -41,7 +41,7 @@ trait StartupProgram[F[_]] extends CoreNodeProgram[F] with BaseProgram[F] {
     * @return node info
     */
   def startupSemi(root: File,
-              consensusMessageHandler: Message.Handler[ConsensusMessage]): SP[F, Unit] = {
+              consensusMessageHandler: Message.Handler[ConsensusMessage]): SP[F, Node.ConsensusNode] = {
     for {
       _             <- contract.assertRuntime()
       _             <- contract.initializeRuntime()
@@ -54,6 +54,6 @@ trait StartupProgram[F[_]] extends CoreNodeProgram[F] with BaseProgram[F] {
       _             <- consensus.initialize(consensusNode)
       _             <- log.info("consensus engine initialized.")
       _             <- log.info("CoreNode startup!")
-    } yield ()
+    } yield consensusNode
   }
 }
