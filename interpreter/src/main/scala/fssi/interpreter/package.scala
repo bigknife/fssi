@@ -4,6 +4,7 @@ import cats.data.Kleisli
 import cats.effect.IO
 import java.io._
 
+import bigknife.sop.SP
 import fssi.trie.Bytes
 
 package object interpreter {
