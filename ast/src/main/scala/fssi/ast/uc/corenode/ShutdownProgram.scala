@@ -17,7 +17,7 @@ trait ShutdownProgram[F[_]] extends CoreNodeProgram[F] with BaseProgram[F] {
       _ <- consensus.destroy()
       _ <- store.unload()
       _ <- contract.closeRuntime()
-      _ <- network.shutdown()
+//      _ <- network.shutdown()
     } yield ()
 
   }

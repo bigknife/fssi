@@ -3,16 +3,17 @@ package edgenode
 package handler
 
 import types._
-import interpreter._, util._
-import types.syntax._
-import ast._, uc._
+import interpreter._
 
+import util._
+import ast._
+import uc._
 import io.circe._
 import io.circe.syntax._
 import json.implicits._
 import org.slf4j._
-
 import bigknife.jsonrpc._
+import fssi.types.biz.JsonMessageHandler
 
 trait StartupHandler extends JsonMessageHandler {
   val edgeNodeProgram = EdgeNodeProgram[components.Model.Op]
