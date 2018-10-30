@@ -4,8 +4,8 @@ package interpreter
 import types._
 import utils._
 import ast._
-import fssi.types.base.{Base58Check, RandomSeed}
-import fssi.types.biz.Account
+import fssi.types.base.{Base58Check, Hash, RandomSeed, Signature}
+import fssi.types.biz.{Account, Block, Transaction}
 import types.implicits._
 
 /**
@@ -84,6 +84,15 @@ class CryptoHandler extends Crypto.Handler[Stack] with LogSupport {
     Account.ID(base58Check.asBytesValue.bytes)
   }
 
+  override def verifyTransactionSignature(transaction: Transaction): Stack[Signature.VerifyResult] =
+    ???
+
+  override def verifyBlockHash(block: Block): Stack[Hash.VerifyResult] = Stack {
+    val blockBytes =
+      block.head.asBytesValue.bytes ++ block.transactions.toArray.asBytesValue.bytes ++ block.receipts.toArray.asBytesValue.bytes
+    val hash = Hash(crypto.hash(blockBytes))
+    if (hash === block.hash) Hash.Passed else Hash.Tampered
+  }
 }
 
 object CryptoHandler {
