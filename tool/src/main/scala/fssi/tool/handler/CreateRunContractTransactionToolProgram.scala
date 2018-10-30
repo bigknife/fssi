@@ -7,7 +7,6 @@ import types.base._
 import types.implicits._
 
 import interpreter._
-import types.syntax._
 import ast._, uc._
 
 import io.circe._
@@ -18,7 +17,9 @@ import bigknife.jsonrpc._, Request.implicits._
 
 import java.io._
 
-trait CreateRunContractTransactionHandler extends BaseHandler {
+trait CreateRunContractTransactionToolProgram extends BaseToolProgram {
+  def apply(): Effect = ()
+  /*
   def apply(accountFile: File,
             secretKeyFile: File,
             contractName: UniqueName,
@@ -58,4 +59,5 @@ trait CreateRunContractTransactionHandler extends BaseHandler {
   }
 
   private def showRequest(request: Request[Transaction]): String = request.asJson.spaces2
+  */
 }

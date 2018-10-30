@@ -2,12 +2,14 @@ package fssi
 package tool
 
 import CmdArgs._
+import fssi.interpreter.{Setting, StackConsoleMain}
 import handler._
 
 /** FSSI TOOL Main
   */
-object ToolMain extends App {
+object ToolMain extends StackConsoleMain[CmdArgs] {
 
+  /*
   CmdArgsParser.parse(args, Empty) match {
     case Some(result) =>
       result match {
@@ -27,5 +29,15 @@ object ToolMain extends App {
         case _ =>
       }
     case None =>
+  }
+  */
+  override def cmdArgs(xs: Array[String]): Option[CmdArgs] = CmdArgsParser.parse(args, Empty)
+  override def program(cmdArgs: Option[CmdArgs], setting: Setting): Effect = cmdArgs match {
+    case Some(result) =>
+      result match {
+        case CreateAccountArgs(randomSeed, accountFile, secretKeyFile) =>
+          createAccount(randomSeed, accountFile, secretKeyFile)
+      }
+    case _ =>
   }
 }
