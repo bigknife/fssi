@@ -37,8 +37,7 @@ class CryptoHandler extends Crypto.Handler[Stack] with LogSupport {
   /** create a secret key to encrypt private key of account
     */
   override def createSecretKey(rnd: RandomSeed): Stack[Account.SecretKey] = Stack {
-    val ensureBytes    = crypto.ensure24Bytes(rnd.value)
-    val secretKeyBytes = crypto.createDESSecretKey(ensureBytes)
+    val secretKeyBytes = crypto.createAesSecretKey(rnd.value)
     Account.SecretKey(secretKeyBytes)
   }
 
