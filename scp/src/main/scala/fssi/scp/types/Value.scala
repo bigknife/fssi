@@ -11,4 +11,8 @@ object Value {
     case object Invalid        extends Validity
     case object MaybeValid     extends Validity
   }
+
+  trait Implicits {
+    implicit def valueToBytes(value: Value): Array[Byte] = value.rawBytes
+  }
 }

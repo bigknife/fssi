@@ -1,13 +1,24 @@
 package fssi.scp.types
 
 case class Statement[M <: Message](
-  from: NodeID,
-  slotIndex: SlotIndex,
-  timestamp: Timestamp,
-  quorumSet: QuorumSet,
-  message: M
+    from: NodeID,
+    slotIndex: SlotIndex,
+    timestamp: Timestamp,
+    quorumSet: QuorumSet,
+    message: M
 ) {
   def to[N <: Message]: Statement[N] = this.asInstanceOf[Statement[N]]
 
-  def withMessage[N <: Message](n: N): Statement[N] = Statement(from, slotIndex, timestamp, quorumSet, n)
+  def withMessage[N <: Message](n: N): Statement[N] =
+    Statement(from, slotIndex, timestamp, quorumSet, n)
+}
+
+object Statement {
+  trait Implicits {
+    import fssi.base.implicits._
+    import fssi.scp.types.implicits._
+
+    implicit def statementToBytes[M <: Message](statement: Statement[M]): Array[Byte] =
+      statement.from.asBytesValue.bytes ++ statement.slotIndex.asBytesValue.bytes ++ statement.timestamp.asBytesValue.bytes ++ statement.quorumSet.asBytesValue.bytes ++ statement.message.asBytesValue.bytes
+  }
 }

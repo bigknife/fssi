@@ -4,14 +4,16 @@ package interpreter
 package json
 
 import types._
-import utils._
 import io.circe._
+import base.implicits._
+import fssi.base.BytesValue
+import types.implicits._
 
 trait NodeIDJsonCodec {
 
   implicit val nodeIDEncoder: Encoder[NodeID] =
-    Encoder[String].contramap(x => BytesUtil.toBase64(x.value))
+    Encoder[String].contramap(x => x.asBytesValue.bcBase58)
 
   implicit val nodeIDDecoder: Decoder[NodeID] =
-    Decoder[String].map(x => NodeID(BytesUtil.decodeBase64(x)))
+    Decoder[String].map(x => NodeID(BytesValue.unsafeDecodeBcBase58(x).bytes))
 }

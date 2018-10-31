@@ -1,7 +1,8 @@
 package fssi
 package types
 package json
-import fssi.types.base.{BytesValue, Hash}
+import fssi.base.BytesValue
+import fssi.types.base.Hash
 import io.circe._
 import types.implicits._
 

@@ -10,11 +10,10 @@ enablePlugins(PackPlugin)
 lazy val pBase = base()
 
 // utils
-lazy val pUtils = utils()
+lazy val pUtils = utils().dependsOn(pBase)
 
 lazy val pTypes = types()
   .dependsOn(pUtils)
-  .dependsOn(pBase)
 
 lazy val pTypesJson = typesJson()
   .dependsOn(pTypes)
@@ -24,7 +23,6 @@ lazy val pAst = ast()
   //.dependsOn(pContractLib)
 
 lazy val pScp = scp()
-  .dependsOn(pBase)
   .dependsOn(pUtils)
 
 lazy val pInterperter = interpreter()

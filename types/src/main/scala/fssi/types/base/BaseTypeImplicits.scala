@@ -1,6 +1,7 @@
 package fssi
 package types
 package base
+import fssi.base.{Base58Check, BytesValue}
 
 trait BaseTypeImplicits
     extends BytesValue.Implicits

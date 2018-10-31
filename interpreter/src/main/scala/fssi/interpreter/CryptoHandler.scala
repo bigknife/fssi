@@ -4,7 +4,8 @@ package interpreter
 import types._
 import utils._
 import ast._
-import fssi.types.base.{Base58Check, Hash, RandomSeed, Signature}
+import fssi.base.Base58Check
+import fssi.types.base.{Hash, RandomSeed, Signature}
 import fssi.types.biz.Contract.UserContract
 import fssi.types.biz.{Account, Block, Transaction}
 import types.implicits._
