@@ -103,6 +103,7 @@ class Builder extends BaseLogger {
     if (rootPath.toFile.exists()) {
       for {
         contractMeta <- buildContractMeta(rootPath)
+        _            <- checker.isContractVersionValid(contractMeta.version)
         _            <- checker.checkDeterminism(rootPath)
       } yield {
         import fssi.types.implicits._

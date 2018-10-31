@@ -25,14 +25,12 @@ trait CreateAccountToolProgram extends BaseToolProgram {
     } yield ()
   }
 
-
   private def saveAccount(account: Account, f: File): Unit = {
-    better.files.File(f.toPath).overwrite(account.asJson.spaces2)
+    f.getParentFile.mkdirs(); better.files.File(f.toPath).overwrite(account.asJson.spaces2); ()
   }
 
-
   private def saveSecretKey(sk: Account.SecretKey, f: File): Unit = {
-    better.files.File(f.toPath).overwrite(sk.asBytesValue.bcBase58)
+    f.getParentFile.mkdirs(); better.files.File(f.toPath).overwrite(sk.asBytesValue.bcBase58); ()
   }
 
 }

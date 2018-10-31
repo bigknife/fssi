@@ -5,6 +5,7 @@ import types._
 import utils._
 import ast._
 import fssi.types.base.{Base58Check, Hash, RandomSeed, Signature}
+import fssi.types.biz.Contract.UserContract
 import fssi.types.biz.{Account, Block, Transaction}
 import types.implicits._
 
@@ -28,7 +29,7 @@ class CryptoHandler extends Crypto.Handler[Stack] with LogSupport {
   /** create keypair for an account
     */
   override def createAccountKeyPair(): Stack[Account.KeyPair] = Stack {
-    val kp        = crypto.generateECKeyPair(crypto.ECSpec)
+    val kp        = crypto.generateECKeyPair(crypto.SECP256K1)
     val privBytes = crypto.getECPrivateKey(kp)
     val pubBytes  = crypto.getECPublicKey(kp)
     Account.KeyPair(privKey = Account.PrivKey(privBytes), pubKey = Account.PubKey(pubBytes))
@@ -88,10 +89,51 @@ class CryptoHandler extends Crypto.Handler[Stack] with LogSupport {
     ???
 
   override def verifyBlockHash(block: Block): Stack[Hash.VerifyResult] = Stack {
-    val blockBytes =
-      block.head.asBytesValue.bytes ++ block.transactions.toArray.asBytesValue.bytes ++ block.receipts.toArray.asBytesValue.bytes
-    val hash = Hash(crypto.hash(blockBytes))
+    val blockBytes = calculateUnsignedBlockBytes(block)
+    val hash       = Hash(crypto.hash(blockBytes))
     if (hash === block.hash) Hash.Passed else Hash.Tampered
+  }
+
+  override def makeTransactionSignature(transaction: Transaction,
+                                        privateKey: Account.PrivKey): Stack[Signature] = Stack {
+    val source = calculateUnsignedTransactionBytes(transaction)
+    val signedBytes =
+      crypto.makeSignature(source, crypto.rebuildECPrivateKey(privateKey.value, crypto.SECP256K1))
+    Signature(signedBytes)
+  }
+
+  override def makeContractSignature(contract: UserContract,
+                                     privateKey: Account.PrivKey): Stack[Signature] = Stack {
+    val source = calculateContractBytes(contract)
+    val signedBytes =
+      crypto.makeSignature(source, crypto.rebuildECPrivateKey(privateKey.value, crypto.SECP256K1))
+    Signature(signedBytes)
+  }
+
+  private def calculateUnsignedBlockBytes(block: Block): Array[Byte] =
+    block.head.asBytesValue.bytes ++ block.transactions.toArray.asBytesValue.bytes ++ block.receipts.toArray.asBytesValue.bytes
+
+  private def calculateUnsignedTransactionBytes(transaction: Transaction): Array[Byte] = {
+    transaction match {
+      case Transaction.Transfer(id, payer, payee, token, _, timestamp) =>
+        id.asBytesValue.bytes ++ payer.asBytesValue.bytes ++ payee.asBytesValue.bytes ++ token.asBytesValue.bytes ++ timestamp.asBytesValue.bytes
+      case Transaction.Deploy(id, owner, contract, _, timestamp) =>
+        id.asBytesValue.bytes ++ owner.asBytesValue.bytes ++ contract.asBytesValue.bytes ++ timestamp.asBytesValue.bytes
+      case Transaction.Run(id,
+                           caller,
+                           contractName,
+                           contractVersion,
+                           methodAlias,
+                           contractParameter,
+                           _,
+                           timestamp) =>
+        id.asBytesValue.bytes ++ caller.asBytesValue.bytes ++ contractName.asBytesValue.bytes ++ contractVersion.asBytesValue.bytes ++ methodAlias.asBytesValue.bytes ++ contractParameter.asBytesValue.bytes ++ timestamp.asBytesValue.bytes
+    }
+  }
+
+  private def calculateContractBytes(contract: UserContract): Array[Byte] = {
+    import contract._
+    owner.asBytesValue.bytes ++ name.asBytesValue.bytes ++ version.asBytesValue.bytes ++ code.asBytesValue.bytes ++ methods.toArray.asBytesValue.bytes
   }
 }
 
