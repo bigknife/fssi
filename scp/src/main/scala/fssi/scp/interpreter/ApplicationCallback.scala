@@ -15,6 +15,10 @@ trait ApplicationCallback {
   def valueConfirmed(nodeId: NodeID, slotIndex: SlotIndex, value: Value): Unit
   def valueExternalized(nodeId: NodeID, slotIndex: SlotIndex, value: Value): Unit
   def broadcastEnvelope[M <: Message](nodeId: NodeID, slotIndex: SlotIndex, envelope: Envelope[M]): Unit
+
+  def isHashFuncProvided: Boolean = false
+  def hashNodeForPriority(nodeId: NodeID, slotIndex: SlotIndex, previousValue: Value, round: Int): Long = 0
+  def hashNodeForNeighbour(nodeId: NodeID, slotIndex: SlotIndex, previousValue: Value, round: Int): Long = 0
 }
 
 object ApplicationCallback {
