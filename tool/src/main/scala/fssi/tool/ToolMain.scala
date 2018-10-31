@@ -9,7 +9,7 @@ import handler._
   */
 object ToolMain extends StackConsoleMain[CmdArgs] {
 
-  override def cmdArgs(xs: Array[String]): Option[CmdArgs] = CmdArgsParser.parse(args, Empty)
+  override def cmdArgs(xs: Array[String]): Option[CmdArgs] = CmdArgsParser.parse(xs, Empty)
   override def program(cmdArgs: Option[CmdArgs], setting: Setting): StackConsoleMain.Effect =
     cmdArgs match {
       case Some(result) =>
@@ -52,6 +52,7 @@ object ToolMain extends StackConsoleMain[CmdArgs] {
                             projectDirectory,
                             outputFile,
                             sandboxVersion.toString)
+          case _ =>
         }
       case _ =>
     }

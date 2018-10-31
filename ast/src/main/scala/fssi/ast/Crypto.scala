@@ -6,6 +6,7 @@ import bigknife.sop.implicits._
 
 import fssi.types.biz._
 import fssi.types.base._
+import fssi.types.biz.Contract._
 
 @sp trait Crypto[F[_]] {
 
@@ -42,7 +43,12 @@ import fssi.types.base._
     */
   def createAccountID(pubKey: Account.PubKey): P[F, Account.ID]
 
+  def verifyBlockHash(block: Block): P[F, Hash.VerifyResult]
+
   def verifyTransactionSignature(transaction: Transaction): P[F, Signature.VerifyResult]
 
-  def verifyBlockHash(block: Block): P[F, Hash.VerifyResult]
+  def makeTransactionSignature(transaction: Transaction,
+                               privateKey: Account.PrivKey): P[F, Signature]
+
+  def makeContractSignature(contract: UserContract, privateKey: Account.PrivKey): P[F, Signature]
 }
