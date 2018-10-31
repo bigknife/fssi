@@ -40,6 +40,8 @@ lazy val pJsonRpc = jsonrpc()
 lazy val pTrie = trie()
   .dependsOn(pUtils)
 
+lazy val pStore = store()
+
 lazy val pContractLib = contractLib()
   .dependsOn(pTypes)
 

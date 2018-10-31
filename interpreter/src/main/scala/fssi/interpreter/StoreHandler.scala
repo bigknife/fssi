@@ -13,7 +13,9 @@ class StoreHandler extends Store.Handler[Stack] {
     * 3. store/kv/{chainId}_contract.db the contracts store
     * 4. store/kv/{chainId}_token.db the account token store
     */
-  override def createChainStore(root: File, chainId: String): Stack[Unit] = ???
+  override def createChainStore(root: File, chainId: String): Stack[Unit] = Stack {
+
+  }
 
   /** initialized an empty chain store, such as creating genesis block .
     */
