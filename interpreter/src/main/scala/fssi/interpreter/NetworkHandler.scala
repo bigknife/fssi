@@ -91,6 +91,7 @@ class NetworkHandler extends Network.Handler[Stack] with LogSupport {
           log.debug(s"start handle Gossip message: $gossip")
           subscription(gossip)
         }
+      ()
     }
 
     val node = Node(Node.Addr(conf.host, conf.port), conf.account)

@@ -14,7 +14,12 @@ trait ContractProgram[F[_]] extends ToolProgram[F] with BaseProgram[F] {
 
   /** create a contract project
     */
-  def createContractProject(root: File): SP[F, Unit] = ???
+  def createContractProject(root: File): SP[F, Unit] = {
+    for {
+      createdOrFailed <- contract.createContractProject(root)
+      _               <- err.either(createdOrFailed)
+    } yield ()
+  }
 
   /** compile contract project
     * @param projectRoot the root path of the contract project
@@ -25,5 +30,22 @@ trait ContractProgram[F[_]] extends ToolProgram[F] with BaseProgram[F] {
                       secretKeyFile: File,
                       projectRoot: File,
                       output: File,
-                      sandboxVersion: String): SP[F, Unit] = ???
+                      sandboxVersion: String): SP[F, Unit] = {
+    for {
+      accountOrFailed   <- store.loadAccountFromFile(accountFile)
+      account           <- err.either(accountOrFailed)
+      secretKeyOrFailed <- store.loadSecretKeyFromFile(secretKeyFile)
+      secretKey         <- err.either(secretKeyOrFailed)
+      privateKey        <- crypto.decryptAccountPrivKey(account.encPrivKey, secretKey, account.iv)
+      compileEither <- contract.compileContractProject(account.id,
+                                                       account.pubKey,
+                                                       privateKey,
+                                                       projectRoot,
+                                                       sandboxVersion,
+                                                       output)
+      _           <- err.either(compileEither)
+      checkEither <- contract.checkContractDeterminism(account.pubKey, output)
+      _           <- err.either(checkEither)
+    } yield ()
+  }
 }

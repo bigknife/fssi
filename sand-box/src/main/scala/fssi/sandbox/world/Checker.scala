@@ -9,13 +9,13 @@ import fssi.types.biz.Contract.UserContract.Parameter._
 import fssi.sandbox.exception.{ContractCheckException, SandBoxEnvironmentException}
 import fssi.sandbox.loader.FSSIClassLoader
 import fssi.sandbox.types.SParameterType.SContext
-import fssi.sandbox.types.{Method, SParameterType, SandBoxVersion}
+import fssi.sandbox.types.{ContractMeta, Method, SParameterType, SandBoxVersion}
 import fssi.types.biz.Contract
 import fssi.utils.FileUtil
 
 import scala.collection.mutable.ListBuffer
 import fssi.sandbox.inf._
-import fssi.sandbox.types.ContractMeta.MethodDescriptor
+import fssi.sandbox.types.ContractMeta.{MethodDescriptor, Version}
 import fssi.sandbox.types.Protocol._
 import fssi.types.exception.FSSIException
 import fssi.types.implicits._
@@ -39,6 +39,7 @@ class Checker extends BaseLogger {
         for {
           _            <- builder.degradeClassVersion(rootPath, targetPath)
           contractMeta <- builder.buildContractMeta(rootPath)
+          _            <- isContractVersionValid(contractMeta.version)
           methods      <- checkContractDescriptor(contractMeta.interfaces)
           checkClassLoader = new FSSIClassLoader(targetPath, track)
           _ <- isContractMethodExisted(checkClassLoader, methods)
@@ -328,10 +329,20 @@ class Checker extends BaseLogger {
     }
   }
 
-  def isContractOwnerValid(accountId: Array[Byte], owner: String): Either[FSSIException, Unit] = {
+  def isContractOwnerValid(accountId: Array[Byte],
+                           owner: ContractMeta.Owner): Either[FSSIException, Unit] = {
     val account = accountId.asBytesValue.bcBase58
-    val valid   = account == owner
+    val valid   = account == owner.value
     if (valid) Right(())
     else Left(new FSSIException(s"compiler owner $owner is different with contract owner $account"))
+  }
+
+  def isContractVersionValid(version: ContractMeta.Version): Either[FSSIException, Unit] = {
+    val versionOption = Contract.Version(version.value)
+    if (versionOption.nonEmpty) Right(())
+    else
+      Left(
+        new FSSIException(
+          s"contract version ${version.value} is invalid must format as (maj.min.path)"))
   }
 }
