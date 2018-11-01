@@ -59,6 +59,15 @@ object Dependencies {
       val scopt = "3.7.0"
 
       val config = "1.3.2"
+
+      val xodus = "1.2.3"
+    }
+
+    lazy val xodus = {
+      Seq(
+        Dpd("org.jetbrains.xodus", "xodus-openAPI", versions.xodus, autoScalaVersion = false),
+        Dpd("org.jetbrains.xodus", "xodus-environment", versions.xodus, autoScalaVersion = false)
+      ).map(_.libraryDependencies)
     }
 
     lazy val config = {

@@ -67,16 +67,16 @@ Xodus 已经在Jetbrain 的 [YouTrack](https://youtrack.jetbrains.com/issues) �
 * **state:** 世界状态的hash
 * **state:/{accountId}** 某个账户状态的hash
 * **state:/{accountId}/balance** 某个账户的余额信息
-* **state:/{accountId}/contract** 某个账户的智能合约信息hash
-* **state:/{accountId}/contract/{contractName}** 某个只能合约的hash
-* **state:/{accountId}/contract/{contractName}/version** 合约所有版本信息hash
-* **state:/{accountId}/contract/{contractName}/version/{versionCode}** 合约特定版本信息hash
-* **state:/{accountId}/contract/{contractName}/version/{versionCode}/desc** 合约特定版本的描述信息
-* **state:/{accountId}/contract/{contractName}/version/{versionCode}/code** 合约特定版本的代码内容
-* **state:/{accountId}/contract/{contractName}/version/{versionCode}/runtime** 合约特定版本运行时要求信息
-* **state:/{accountId}/contract/{contractName}/db** 特定合约的存储空间
-* **state:/{accountId}/contract/{contractName}/db/{applicationKey}** 合约应用层面定义的key对应的value
-* **state:/{accountId}/contract/{contractName}/invoke** 合约调用日志，内容如：transactionId@blockHeight by accountId
+* **state:/{accountId}/contracts** 某个账户的智能合约信息hash
+* **state:/{accountId}/contracts/{contractName}** 某个只能合约的hash
+* **state:/{accountId}/contracts/{contractName}/versions** 合约所有版本信息hash
+* **state:/{accountId}/contracts/{contractName}/versions/{versionCode}** 合约特定版本信息hash
+* **state:/{accountId}/contracts/{contractName}/versions/{versionCode}/desc** 合约特定版本的描述信息
+* **state:/{accountId}/contracts/{contractName}/versions/{versionCode}/code** 合约特定版本的代码内容
+* **state:/{accountId}/contracts/{contractName}/versions/{versionCode}/runtime** 合约特定版本运行时要求信息
+* **state:/{accountId}/contracts/{contractName}/db** 特定合约的存储空间
+* **state:/{accountId}/contracts/{contractName}/db/{applicationKey}** 合约应用层面定义的key对应的value
+* **state:/{accountId}/contracts/{contractName}/invoke** 合约调用日志，内容如：transactionId@blockHeight by accountId
 
 ### Value, Validated
 
