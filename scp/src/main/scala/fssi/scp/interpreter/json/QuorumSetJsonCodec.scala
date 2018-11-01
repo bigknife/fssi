@@ -6,11 +6,13 @@ package json
 import types._
 import QuorumSet.{QuorumRef, QuorumSlices, Slices}
 import QuorumSet.Slices.{Flat, Nest}
-import utils.BytesUtil
 import io.circe._
 import io.circe.syntax._
 import io.circe.generic.auto._
 import implicits._
+import fssi.base._
+import fssi.base.implicits._
+import fssi.scp.types.implicits._
 
 trait QuorumSetJsonCodec {
 
@@ -30,10 +32,10 @@ trait QuorumSetJsonCodec {
   }
 
   implicit val quorumRefEncoder: Encoder[QuorumRef] =
-    Encoder[String].contramap(x => BytesUtil.toBase64(x.ref))
+    Encoder[String].contramap(x => x.asBytesValue.bcBase58)
 
   implicit val quorumRefDecoder: Decoder[QuorumRef] =
-    Decoder[String].map(x => QuorumRef(BytesUtil.decodeBase64(x)))
+    Decoder[String].map(x => QuorumRef(BytesValue.unsafeDecodeBcBase58(x).bytes))
 
   implicit val quorumSetEncoder: Encoder[QuorumSet] = {
     case slices: QuorumSlices => slices.asJson
