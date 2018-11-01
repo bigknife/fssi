@@ -15,18 +15,18 @@ trait HandleSCPEnvelopeProgram[F[_]] extends SCP[F] with BaseProgram[F] {
 
   /** process message envelope from peer nodes
     */
-  override def handleSCPEnvelope[M <: Message](nodeId: NodeID,
-                                               slotIndex: SlotIndex,
-                                               envelope: Envelope[M],
+  override def handleSCPEnvelope[M <: Message](envelope: Envelope[M],
                                                previousValue: Value): SP[F, Boolean] = {
 
     val statement = envelope.statement
+    val nodeId = statement.from
+    val slotIndex = statement.slotIndex
     val message   = statement.message
 
     def checkEnvelope: SP[F, Boolean] =
       ifM(isOlderEnvelope(nodeId, slotIndex, envelope), false.pureSP[F])(
         ifM(isSignatureTampered(envelope), false.pureSP[F])(
-          isStatementInvalid(nodeId, slotIndex, statement)))
+          isStatementValid(nodeId, slotIndex, statement)))
     def envelopeCheckingFailed = checkEnvelope.map(!_)
 
     ifM(envelopeCheckingFailed, false.pureSP[F]) {

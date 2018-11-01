@@ -29,7 +29,7 @@ trait EmitProgram[F[_]] extends SCP[F] with BaseProgram[F] {
       _ <- ifThen(emitable) {
         for {
           _ <- info(s"[$nodeId][$slotIndex] can emit now")
-          _ <- ifThen(handleSCPEnvelope(nodeId, slotIndex, envelope, previousValue)) {
+          _ <- ifThen(handleSCPEnvelope(envelope, previousValue)) {
             for {
               _ <- info(s"[$nodeId][$slotIndex] message handled locally success")
               _ <- broadcastEnvelope(nodeId, slotIndex, envelope)
