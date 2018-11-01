@@ -23,4 +23,16 @@ package object types {
 
   val BALLOT_TIMER   = "ballot_timer"
   val NOMINATE_TIMER = "nominate_timer"
+
+  object implicits
+      extends NodeID.Implicits
+      with Signature.Implicits
+      with SlotIndex.Implicits
+      with Timestamp.Implicits
+      with Value.Implicits
+      with QuorumSet.Implicits
+      with Ballot.Implicits
+      with Message.Implicits
+      with Statement.Implicits
+      with Envelope.Implicits
 }

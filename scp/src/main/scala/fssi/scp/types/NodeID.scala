@@ -6,3 +6,10 @@ case class NodeID(value: Array[Byte]) extends AnyVal {
 
   override def toString: String = BytesUtil.toBase64(value)
 }
+
+object NodeID {
+  trait Implicits {
+
+    implicit def nodeIdToBytes(nodeId: NodeID): Array[Byte] = nodeId.value
+  }
+}

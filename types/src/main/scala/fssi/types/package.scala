@@ -4,6 +4,9 @@ import fssi.types.biz.Transaction
 import utils._
 
 package object types {
+  type ConsensusMessage = biz.Message.ConsensusMessage
+  type ApplicationMessage = biz.Message.ApplicationMessage
+  type ClientMessage = biz.Message.ClientMessage
 
   type TransactionSet = scala.collection.immutable.TreeSet[biz.Transaction]
   object TransactionSet {
@@ -21,4 +24,5 @@ package object types {
       with biz.Contract.Version.Implicits
       with biz.Contract.UserContract.Implicits
       with biz.Block.Implicits
+      with biz.Receipt.Implicits
 }

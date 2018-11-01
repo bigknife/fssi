@@ -2,9 +2,6 @@ package fssi
 
 import cats.data.Kleisli
 import cats.effect.IO
-import java.io._
-
-import fssi.trie.Bytes
 
 package object interpreter {
   type Stack[A] = Kleisli[IO, Setting, A]

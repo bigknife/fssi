@@ -2,6 +2,7 @@ package fssi
 package types
 package base
 
+import fssi.base.Base58Check
 import org.scalatest._
 import fssi.types.base.implicits._
 

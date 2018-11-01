@@ -1,8 +1,8 @@
 package fssi
 package types
+import fssi.base.BytesValue
 
 package object base {
-  type Base58Checksum = Base58Check.Checksum
   object implicits extends BaseTypeImplicits
 
   type OpaqueBytes = BytesValue[Array[Byte]]

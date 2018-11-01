@@ -6,7 +6,7 @@ import fssi.types.biz.Contract.UserContract.{Parameter, _}
 import fssi.types.biz.Account
 import org.scalatest.FunSuite
 import Parameter._
-import fssi.types.base.BytesValue
+import fssi.base.BytesValue
 import fssi.utils._
 
 class SandBoxTest extends FunSuite {

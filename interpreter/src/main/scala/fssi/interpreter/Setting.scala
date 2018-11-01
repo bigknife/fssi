@@ -5,6 +5,8 @@ import types._
 import java.io._
 import java.nio.file.{Path, Paths}
 
+import com.typesafe.config._
+
 sealed trait Setting
 
 object Setting {
@@ -30,10 +32,14 @@ object Setting {
     */
   case class CoreNodeSetting(workingDir: File, password: Array[Byte]) extends P2PNodeSetting {
     private lazy val configFile: File = new File(workingDir, "fssi.conf")
+    lazy val config: Config           = ConfigFactory.parseFile(configFile)
+
+    def isFullFunctioning: Boolean = config.getString("core-node.mode").equalsIgnoreCase("full")
   }
 
   case class EdgeNodeSetting(workingDir: File, password: Array[Byte]) extends P2PNodeSetting {
     private lazy val configFile: File = new File(workingDir, "fssi.conf")
+    lazy val config: Config           = ConfigFactory.parseFile(configFile)
   }
 
   def defaultInstance: Setting = DefaultSetting
