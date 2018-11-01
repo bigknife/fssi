@@ -79,10 +79,10 @@ class NodeServiceHandler
   override def updateAndGetNominateLeaders(nodeId: NodeID,
                                            slotIndex: SlotIndex,
                                            previousValue: Value): Stack[Set[NodeID]] = Stack {
-
-    assertSlotIndex(nodeId, slotIndex)
-    val nominationStatus = NominationStatus.getInstance(nodeId, slotIndex)
-    val round            = nominationStatus.roundNumber.unsafe
+    setting =>
+      assertSlotIndex(nodeId, slotIndex)
+      val nominationStatus = NominationStatus.getInstance(nodeId, slotIndex)
+      val round            = nominationStatus.roundNumber.unsafe
 
     // clean roundLeaders and initialized with local nodeId
     nominationStatus.roundLeaders := Set(nodeId)
@@ -93,7 +93,7 @@ class NodeServiceHandler
 
     // initialize top priority as localId
     val topPriority =
-      computeNodePriority(nodeId, slotIndex, isLocal = true, previousValue, round, normalizedQSet)
+      computeNodePriority(nodeId, slotIndex, isLocal = true, previousValue, round, normalizedQSet, setting)
     log.debug(s"topPriority: $topPriority")
 
     // find top priority nodes
@@ -101,7 +101,7 @@ class NodeServiceHandler
       normalizedQSet.allNodes.foldLeft((Set.empty[NodeID], topPriority)) { (acc, n) =>
         val (topNodes, currentTopPriority) = acc
         val nPriority =
-          computeNodePriority(n, slotIndex, isLocal = false, previousValue, round, normalizedQSet)
+          computeNodePriority(n, slotIndex, isLocal = false, previousValue, round, normalizedQSet, setting)
         if (nPriority == currentTopPriority && nPriority > 0) (topNodes + n, currentTopPriority)
         else if (nPriority > currentTopPriority) (Set(n), nPriority)
         else acc
@@ -191,7 +191,7 @@ class NodeServiceHandler
   override def isSignatureVerified[M <: Message](envelope: Envelope[M]): Stack[Boolean] = Stack {
     val signature = envelope.signature
     val fromNode  = envelope.statement.from
-    val publicKey = crypto.rebuildECPublicKey(fromNode.value, "secp256k1")
+    val publicKey = crypto.rebuildECPublicKey(fromNode.value, cryptoUtil.SECP256K1)
     val source    = fixedStatementBytes(envelope.statement)
     crypto.verifySignature(signature.value, source, publicKey)
   }
@@ -412,33 +412,40 @@ class NodeServiceHandler
   private def hashNodeForPriority(nodeId: NodeID,
                                   slotIndex: SlotIndex,
                                   previousValue: Value,
-                                  round: Int): Long = {
-
-    val bytes = slotIndex.value.toByteArray ++ previousValue.rawBytes ++ NodeServiceHandler.hash_P ++ BigInt(
-      round).toByteArray ++ nodeId.value
-    computeHashValue(bytes).toLong
-  }
+                                  round: Int,
+                                  setting: Setting): Long =
+    if (Option(setting.applicationCallback).exists(_.isHashFuncProvided)) {
+      setting.applicationCallback.hashNodeForPriority(nodeId, slotIndex, previousValue, round)
+    } else {
+      val bytes = slotIndex.value.toByteArray ++ previousValue.rawBytes ++ NodeServiceHandler.hash_P ++ BigInt(
+        round).toByteArray ++ nodeId.value
+      computeHashValue(bytes).toLong
+    }
 
   private def hashNodeForNeighbour(nodeId: NodeID,
                                    slotIndex: SlotIndex,
                                    previousValue: Value,
-                                   round: Int): Long = {
-
-    val bytes = slotIndex.value.toByteArray ++ previousValue.rawBytes ++ NodeServiceHandler.hash_P ++ BigInt(
-      round).toByteArray ++ nodeId.value
-    computeHashValue(bytes).toLong
-  }
+                                   round: Int,
+                                   setting: Setting): Long =
+    if (Option(setting.applicationCallback).exists(_.isHashFuncProvided)) {
+      setting.applicationCallback.hashNodeForNeighbour(nodeId, slotIndex, previousValue, round)
+    } else {
+      val bytes = slotIndex.value.toByteArray ++ previousValue.rawBytes ++ NodeServiceHandler.hash_P ++ BigInt(
+        round).toByteArray ++ nodeId.value
+      computeHashValue(bytes).toLong
+    }
 
   private def computeNodePriority(nodeId: NodeID,
                                   slotIndex: SlotIndex,
                                   isLocal: Boolean,
                                   previousValue: Value,
                                   round: Int,
-                                  slices: QuorumSet.Slices): Long = {
+                                  slices: QuorumSet.Slices,
+                                  setting: Setting): Long = {
     val w = computeNodeWeight(nodeId, isLocal, slices)
     // if it's a neighbour, then compute the priority, or else 0(the smallest, because hash is uint64)
-    if (hashNodeForNeighbour(nodeId, slotIndex, previousValue, round) < w)
-      hashNodeForPriority(nodeId, slotIndex, previousValue, round)
+    if (hashNodeForNeighbour(nodeId, slotIndex, previousValue, round, setting) < w)
+      hashNodeForPriority(nodeId, slotIndex, previousValue, round, setting)
     else 0
   }
 
