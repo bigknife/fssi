@@ -107,7 +107,7 @@ object Common {
       def apply(): Project =
         prj("store", "store")
           .settings(
-            libraryDependencies ++= (all.circe)
+            libraryDependencies ++= (all.xodus)
           )
     }
 
