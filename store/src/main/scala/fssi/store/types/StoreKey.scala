@@ -45,14 +45,14 @@ object StoreKey {
 
   def meta: StoreKey = _meta
 
-  def metaChainId(chainId: String): StoreKey =
-    _meta.nextLevel(chainId)
+  def metaChainId: StoreKey =
+    _meta.nextLevel("chainId")
 
-  def metaHeight(h: BigInt): StoreKey =
-    _meta.nextLevel(s"$h")
+  def metaHeight: StoreKey =
+    _meta.nextLevel("height")
 
-  def metaVersion(v: String): StoreKey =
-    _meta.nextLevel(v)
+  def metaVersion: StoreKey =
+    _meta.nextLevel("version")
 
   private def _block: Segmented = Segmented(Array("block:"))
 
