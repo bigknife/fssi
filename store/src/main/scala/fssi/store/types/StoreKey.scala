@@ -40,7 +40,7 @@ object StoreKey {
       }
       else Segmented(segs)
     }
-    Segmented(Array.empty[String])
+    else Segmented(Array.empty[String])
   }
 
   def meta: StoreKey = _meta

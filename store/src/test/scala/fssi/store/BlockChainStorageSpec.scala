@@ -18,6 +18,10 @@ class BlockChainStorageSpec extends FunSuite with BeforeAndAfter {
     val key   = StoreKey.meta
     val value = "hello,world".getBytes
     val s     = storage.put(key, value)
+    s match {
+      case Left(e) => e.printStackTrace()
+      case _ =>
+    }
     info(s"$s")
     val v1    = storage.get(key)
     assert(v1.isDefined)
