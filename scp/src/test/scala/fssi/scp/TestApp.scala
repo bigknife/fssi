@@ -1,15 +1,16 @@
 package fssi.scp
+import java.security.PrivateKey
 import java.util.concurrent.{ExecutorService, Executors}
 
 import fssi.scp.ast.components.Model
 import fssi.scp.ast.components.Model.Op
 import fssi.scp.ast.uc.SCP
-import fssi.scp.interpreter.{Setting, runner}
+import fssi.scp.interpreter.store.{BallotStatus, NominationStatus}
+import fssi.scp.interpreter.{NodeServiceHandler, QuorumSetSupport, Setting, runner}
 import fssi.scp.types.Message.Nomination
 import fssi.scp.types._
-import fssi.utils.cryptoUtil
 
-class TestApp(nodeID: NodeID, slotIndex: SlotIndex, quorumSet: QuorumSet)
+class TestApp(nodeID: NodeID, nodeKey: PrivateKey, slotIndex: SlotIndex, quorumSet: QuorumSet, previousValue: Value)
     extends interpreter.ApplicationCallback {
 
   // all statements sent to network
@@ -25,15 +26,18 @@ class TestApp(nodeID: NodeID, slotIndex: SlotIndex, quorumSet: QuorumSet)
 
   private val service = Executors.newSingleThreadExecutor()
 
-  private val setting: Setting = Setting(
+  val setting: Setting = Setting(
     quorumSet = quorumSet,
-    privateKey = cryptoUtil.generateECKeyPair(cryptoUtil.SECP256K1).getPrivate,
+    privateKey = nodeKey,
     applicationCallback = this
   )
   private val scp: SCP[Op] = SCP[Model.Op]
 
   def reset(): Unit = {
     statements = Vector.empty
+
+    NominationStatus.clearInstance(nodeID, slotIndex)
+    BallotStatus.cleanInstance(nodeID, slotIndex)
 
     expectedCandidates = ValueSet.empty
     expectedCompositeValue = None
@@ -54,7 +58,7 @@ class TestApp(nodeID: NodeID, slotIndex: SlotIndex, quorumSet: QuorumSet)
   override def extractValidValue(nodeId: NodeID,
                                  slotIndex: SlotIndex,
                                  value: Value): Option[Value] = {
-    None
+    Some(value)
   }
 
   override def scpExecutorService(): ExecutorService = {
@@ -85,6 +89,12 @@ class TestApp(nodeID: NodeID, slotIndex: SlotIndex, quorumSet: QuorumSet)
                                     round: Int): Long =
     if (nodeWithTopPriority exists (_ === nodeId)) 1000l else 0l
 
+
+  def onEnvelope[M <: Message](envelope: Envelope[M]): Unit = {
+    val p = scp.handleSCPEnvelope(envelope, previousValue)
+    runner.runIO(p, setting).unsafeRunSync
+  }
+
   def liftNodePriority(nodeID: NodeID): Unit = {
     nodeWithTopPriority = Some(nodeID)
   }
@@ -98,9 +108,26 @@ class TestApp(nodeID: NodeID, slotIndex: SlotIndex, quorumSet: QuorumSet)
     statements.lastOption map (_.copy(timestamp = started)) contains statementOf(
       Nomination(voted, accepted))
 
+  def numberOfNominations: Int = {
+    NominationStatus.getInstance(nodeID, slotIndex).latestNominations map (_.keys.size) getOrElse 0
+  }
+
   def nominate(value: Value): Boolean = {
     val p = scp.handleAppRequest(nodeID, slotIndex, value, value)
     runner.runIO(p, setting).unsafeRunSync
+  }
+
+  def makeNomination(node: NodeID, key: PrivateKey,
+                     votedValues: ValueSet,
+                     acceptedValues: ValueSet): Envelope[Nomination] = {
+    NodeServiceHandler.instance
+      .putInEnvelope(
+        node,
+        slotIndex,
+        Nomination(votedValues, acceptedValues)
+      )
+      .run(setting.copy(privateKey = key))
+      .unsafeRunSync()
   }
 
   private def isEmittedFromThisNode[M <: Message](envelope: Envelope[M]): Boolean =

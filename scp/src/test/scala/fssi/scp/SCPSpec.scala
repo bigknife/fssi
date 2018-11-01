@@ -12,7 +12,7 @@ class SCPSpec extends FunSuite with TestSupport {
   val scp = SCP[Model.Op]
 
   test("ast") {
-    val nodeId               = createNodeID()
+    val (nodeId, nodeKey)               = createNodeID()
     val slotIndex            = SlotIndex(1)
     val value: Value         = TestValue(TreeSet(1, 2))
     val previousValue: Value = TestValue(TreeSet(1))

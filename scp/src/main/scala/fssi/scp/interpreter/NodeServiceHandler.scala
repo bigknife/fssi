@@ -98,7 +98,7 @@ class NodeServiceHandler
 
     // find top priority nodes
     val (leaders, newTopPriority) =
-      normalizedQSet.allNodes.foldLeft((Set.empty[NodeID], topPriority)) { (acc, n) =>
+      normalizedQSet.allNodes.foldLeft((Set(nodeId), topPriority)) { (acc, n) =>
         val (topNodes, currentTopPriority) = acc
         val nPriority =
           computeNodePriority(n, slotIndex, isLocal = false, previousValue, round, normalizedQSet, setting)
@@ -345,7 +345,7 @@ class NodeServiceHandler
       case Message.Prepare(b, p, pPrime, nC, nH) =>
         // self is allowed to have b = 0 (as long as it never gets emitted)
         (if (statement.from === nodeId) b.counter >= 0 else b.counter > 0) &&
-          (p.isEmpty || pPrime.isEmpty || areBallotsLessAndIncompatable(pPrime.get, p.get)) &&
+          (p.isEmpty || pPrime.isEmpty || areBallotsLessAndIncompatible(pPrime.get, p.get)) &&
           (nH == 0 || (p.isDefined && nH <= p.get.counter)) &&
           (nC == 0 || (nH != 0 && b.counter >= nH && nH >= nC))
       case Message.Confirm(b, nPrepared, nCommit, nH) =>
@@ -355,7 +355,7 @@ class NodeServiceHandler
     }
   }
 
-  private def areBallotsLessAndIncompatable(b1: Ballot, b2: Ballot): Boolean =
+  private def areBallotsLessAndIncompatible(b1: Ballot, b2: Ballot): Boolean =
     b1 <= b2 && b1.incompatible(b2)
 
   private def fixedStatementBytes[M <: Message](statement: Statement[M]): Array[Byte] =
