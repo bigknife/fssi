@@ -17,7 +17,8 @@ package object types {
     }
 
     def fromBytes(bytes: Array[Byte]): StoreKeySet = {
-      apply(new String(bytes, "utf-8").split("\n").map(StoreKey.parse))
+      if (bytes.isEmpty) StoreKeySet.empty
+      else apply(new String(bytes, "utf-8").split("\n").map(StoreKey.parse))
     }
   }
 }

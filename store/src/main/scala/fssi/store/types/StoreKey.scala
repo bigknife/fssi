@@ -7,7 +7,7 @@ sealed trait StoreKey extends Ordered[StoreKey]{
   private[store] def withTag(tag: String): StoreKey
 
   override def toString: String = stringValue
-  def compare(that: StoreKey): Int = Ordering[String].compare(stringValue, that.stringValue)
+
   def ===(that: StoreKey): Boolean = stringValue == that.stringValue
   def bytesValue: Array[Byte] = stringValue.getBytes("utf-8")
 }
@@ -22,6 +22,17 @@ object StoreKey {
       else Some(Segmented(segments.dropRight(1)))
 
     def stringValue: String = segments.mkString("/") + tag.map("#" + _).getOrElse("")
+
+    def compare(that: StoreKey): Int = {
+      that match {
+        case Segmented(thatSegments, _) =>
+          val length = Ordering[Int].compare(segments.length, thatSegments.length)
+          if (length == 0) {
+            Ordering[String].compare(segments.mkString(""), thatSegments.mkString(""))
+          } else length
+        case _ => throw new RuntimeException("Not a segmented object")
+      }
+    }
   }
 
 
@@ -40,19 +51,19 @@ object StoreKey {
       }
       else Segmented(segs)
     }
-    Segmented(Array.empty[String])
+    else Segmented(Array.empty[String])
   }
 
   def meta: StoreKey = _meta
 
-  def metaChainId(chainId: String): StoreKey =
-    _meta.nextLevel(chainId)
+  def metaChainId: StoreKey =
+    _meta.nextLevel("chainId")
 
-  def metaHeight(h: BigInt): StoreKey =
-    _meta.nextLevel(s"$h")
+  def metaHeight: StoreKey =
+    _meta.nextLevel("height")
 
-  def metaVersion(v: String): StoreKey =
-    _meta.nextLevel(v)
+  def metaVersion: StoreKey =
+    _meta.nextLevel("version")
 
   private def _block: Segmented = Segmented(Array("block:"))
 

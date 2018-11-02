@@ -19,8 +19,10 @@ trait BlockChainStorage {
 
   def put(key: StoreKey, value: Array[Byte]): Either[Throwable, Unit] = {
     transactor.transact { store =>
-      _put(store, key, value)
-      ()
+      _put(store, key, value) match {
+        case Left(t) => throw t
+        case Right(x) => x
+      }
     }
   }
 
@@ -51,26 +53,53 @@ trait BlockChainStorage {
     f(rw)
   }
 
-  /** satisfy merkle tree*/
+  /** satisfy merkle tree
+    * when put a key with value, there are some effects:
+    * 0. self node, with bytes and hash, hash should be re-computed by children's hash and it's value
+    * 1. previousLevel(parentLevel) add a children key
+    * 2. parent node hash affected recursively
+    */
   private def _put(store: KVStore, key: StoreKey, value: Array[Byte]): Either[Throwable, Unit] = {
-    val bytesKey        = key.withTag("bytes").bytesValue
-    val childrenKeysKey = key.withTag("children").bytesValue
-    val hashKey         = key.withTag("hash").bytesValue
-
-    //todo: compute childrenKeys and hash
-    val (childrenKeys, hash) = {
-      (Array.emptyByteArray, Array.emptyByteArray)
-    }
-
     scala.util.Try {
-      store
-        .put(bytesKey, value)
-        .put(childrenKeysKey, childrenKeys)
-        .put(hashKey, hash)
-
-      // todo: satisfy merkle tree
+      store.put(key.withTag("bytes").bytesValue, value)
+      // update hash recursively to upside, satisfy merkle tree
+      updateHash(store, key)
+      // update parent's childrenKeys
+      key.previousLevel.foreach {parent =>
+        val parentChildrenKey = parent.withTag("children").bytesValue
+        val children = store.get(parentChildrenKey)
+          .map(StoreKeySet.fromBytes)
+          .getOrElse(StoreKeySet.empty)
+        val newKey = StoreKeySet.toBytes(children + key)
+        store.put(parentChildrenKey, newKey)
+      }
       ()
     }.toEither
+  }
+
+  private def sha256(source: Array[Byte]): Array[Byte] = {
+    java.security.MessageDigest.getInstance("SHA-256").digest(source)
+  }
+
+  private def updateHash(store: KVStore, key: StoreKey): Unit = {
+    // ensure value has been put
+    val value = store.get(key.withTag("bytes").bytesValue).get
+    val hash: Array[Byte] = {
+        val source = store.get(key.withTag("children").bytesValue)
+          .map(StoreKeySet.fromBytes)
+          .map {keySet =>
+            keySet.foldLeft(Array.emptyByteArray) {(acc, n) =>
+              acc ++ store.get(n.withTag("hash").bytesValue).get
+            }
+          }
+          .map(_ ++ value)
+          .getOrElse(value)
+        sha256(source)
+    }
+    store.put(key.withTag("hash").bytesValue, hash)
+    val parent = key.previousLevel
+    if (parent.nonEmpty) updateHash(store, parent.get)
+    else ()
   }
 
   private def _get(store: KVStore, key: StoreKey): Option[StoreValue] = {
@@ -79,7 +108,7 @@ trait BlockChainStorage {
     val hashKey         = key.withTag("hash").bytesValue
     for {
       bytes        <- store.get(bytesKey)
-      childrenKeys <- store.get(childrenKeysKey)
+      childrenKeys <- store.get(childrenKeysKey).orElse(Option(Array.emptyByteArray))
       hash         <- store.get(hashKey)
     } yield StoreValue(bytes, StoreKeySet.fromBytes(childrenKeys), hash)
   }
