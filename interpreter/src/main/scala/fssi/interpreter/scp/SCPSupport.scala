@@ -9,9 +9,9 @@ trait SCPSupport {
   def resolveSCPSetting(config: ConsensusConfig): Setting = {
     Setting(
       nodeId = NodeID(config.account.pubKey.value),
-      maxTimeoutSeconds = config.maxTimeoutSeconds,
+      maxTimeoutSeconds = config.maxTimeoutSeconds.toInt,
       quorumSet = config.quorumSet,
-      privateKey = crypto.rebuildECPrivateKey(config.account.encPrivKey, crypto.SECP256K1),
+      privateKey = crypto.rebuildECPrivateKey(config.account.encPrivKey.value, crypto.SECP256K1),
       applicationCallback = new SCPApplicationCallback
     )
   }

@@ -9,23 +9,21 @@ import fssi.types.biz.{ConsensusAuxMessage, Receipt, Transaction}
 
 class ConsensusHandler extends Consensus.Handler[Stack] with SCPSupport {
 
-  override def initialize(node: ConsensusNode): Stack[Unit] = Stack {
-    case coreNodeSetting: CoreNodeSetting =>
-      val consensusConfig                          = coreNodeSetting.config.consensusConfig
-      implicit val scpSetting: interpreter.Setting = resolveSCPSetting(consensusConfig)
-      Portal.initialize()
-    case _ =>
+  override def initialize(node: ConsensusNode): Stack[Unit] = Stack { setting =>
+    setting match {
+      case coreNodeSetting: CoreNodeSetting =>
+        val consensusConfig                          = coreNodeSetting.config.consensusConfig
+        implicit val scpSetting: interpreter.Setting = resolveSCPSetting(consensusConfig)
+        Portal.initialize
+      case _ =>
+    }
   }
 
   override def destroy(): Stack[Unit] = ???
 
   override def tryAgree(transaction: Transaction, receipt: Receipt): Stack[Unit] = ???
 
-  override def processMessage(message: ConsensusAuxMessage): Stack[Unit] = Stack {
-    case coreNodeSetting: CoreNodeSetting =>
-      val scpSetting = resolveSCPSetting(coreNodeSetting.config.consensusConfig)
-    case _ =>
-  }
+  override def processMessage(message: ConsensusAuxMessage): Stack[Unit] = ???
 }
 
 object ConsensusHandler {

@@ -14,7 +14,8 @@ import fssi.types.biz.Node._
   def startupApplicationNode(conf: ChainConfiguration,
                              handler: Message.Handler[ApplicationMessage]): P[F, ApplicationNode]
   def startupServiceNode(conf: ChainConfiguration,
-                         handler: Message.Handler[ClientMessage]): P[F, ServiceNode]
+                         handler: Message.Handler[ClientMessage],
+                         serviceResource: ServiceResource): P[F, ServiceNode]
 
   def shutdownConsensusNode(node: ConsensusNode): P[F, Unit]
   def shutdownApplicationNode(node: ApplicationNode): P[F, Unit]

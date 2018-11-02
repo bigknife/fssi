@@ -41,7 +41,7 @@ object Setting {
 
   case class EdgeNodeSetting(workingDir: File, password: Array[Byte]) extends P2PNodeSetting {
     private lazy val configFile: File = new File(workingDir, "fssi.conf")
-    lazy val config: EdgeNodeConfig   = configFile.asCoreNodeConfig
+    lazy val config: EdgeNodeConfig   = configFile.asEdgeNodeConfig
   }
 
   def defaultInstance: Setting = DefaultSetting

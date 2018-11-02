@@ -1,12 +1,13 @@
 package fssi
 
 import fssi.types.biz.Transaction
-import utils._
 
 package object types {
-  type ConsensusMessage = biz.Message.ConsensusMessage
+  type ConsensusMessage   = biz.Message.ConsensusMessage
   type ApplicationMessage = biz.Message.ApplicationMessage
-  type ClientMessage = biz.Message.ClientMessage
+  type ClientMessage      = biz.Message.ClientMessage
+
+  type ServiceResource = () => Unit
 
   type TransactionSet = scala.collection.immutable.TreeSet[biz.Transaction]
   object TransactionSet {

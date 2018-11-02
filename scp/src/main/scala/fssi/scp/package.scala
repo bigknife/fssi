@@ -9,27 +9,26 @@ package object scp {
 
   object Portal {
 
-    def initialize(implicit setting: Setting): Either[Throwable, Unit] = {
+    def initialize(implicit setting: Setting): Unit = {
       val scp     = SCP[fssi.scp.ast.components.Model.Op]
       val program = scp.initialize()
-      fssi.scp.interpreter.runner.runIOAttempt(program, setting)
+      fssi.scp.interpreter.runner.runIO(program, setting).unsafeRunSync()
     }
 
     def handleRequest(nodeId: NodeID, slotIndex: SlotIndex, previousValue: Value, value: Value)(
-        implicit setting: Setting): Either[Throwable, Boolean] = {
+        implicit setting: Setting): Boolean = {
       val scp     = SCP[fssi.scp.ast.components.Model.Op]
       val program = scp.handleAppRequest(nodeId, slotIndex, value, previousValue)
-      fssi.scp.interpreter.runner.runIOAttempt(program, setting).unsafeRunSync()
+      fssi.scp.interpreter.runner.runIO(program, setting).unsafeRunSync()
     }
 
-    def handleEnvelope[M <: Message](
-        nodeId: NodeID,
-        slotIndex: SlotIndex,
-        envelope: Envelope[M],
-        previousValue: Value)(implicit setting: Setting): Either[Throwable, Boolean] = {
+    def handleEnvelope[M <: Message](nodeId: NodeID,
+                                     slotIndex: SlotIndex,
+                                     envelope: Envelope[M],
+                                     previousValue: Value)(implicit setting: Setting): Boolean = {
       val scp     = SCP[fssi.scp.ast.components.Model.Op]
       val program = scp.handleSCPEnvelope(nodeId, slotIndex, envelope, previousValue)
-      fssi.scp.interpreter.runner.runIOAttempt(program, setting).unsafeRunSync()
+      fssi.scp.interpreter.runner.runIO(program, setting).unsafeRunSync()
     }
   }
 }

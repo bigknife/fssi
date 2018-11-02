@@ -5,7 +5,7 @@ import fssi.interpreter.Configuration.P2PConfig
 import fssi.interpreter.Setting.{CoreNodeSetting, EdgeNodeSetting}
 import fssi.types.biz.Node.{ApplicationNode, ConsensusNode, ServiceNode}
 import fssi.types.biz._
-import fssi.types.{ApplicationMessage, ClientMessage, ConsensusMessage}
+import fssi.types.{ApplicationMessage, ClientMessage, ConsensusMessage, ServiceResource}
 import fssi.utils.Once
 import io.scalecube.cluster.{Cluster, ClusterConfig}
 import io.scalecube.transport.{Address, Message => CubeMessage}
@@ -20,7 +20,7 @@ class NetworkHandler extends Network.Handler[Stack] with LogSupport {
       conf: ChainConfiguration,
       handler: Message.Handler[ConsensusMessage]): Stack[ConsensusNode] = Stack { setting =>
     val p2pConfig = setting match {
-      case coreNodeSetting: CoreNodeSetting => coreNodeSetting.config
+      case coreNodeSetting: CoreNodeSetting => coreNodeSetting.config.consensusConfig
       case _                                => throw new RuntimeException("unsupported setting to startup consensus")
     }
     val converter: CubeMessage => ConsensusMessage = cub => cub.data[ConsensusMessage]
@@ -42,7 +42,21 @@ class NetworkHandler extends Network.Handler[Stack] with LogSupport {
   }
 
   override def startupServiceNode(conf: ChainConfiguration,
-                                  handler: Message.Handler[ClientMessage]): Stack[ServiceNode] = ???
+                                  handler: Message.Handler[ClientMessage],
+                                  serviceResource: ServiceResource): Stack[ServiceNode] = Stack {
+    setting =>
+      setting match {
+        case edgeNodeSetting: EdgeNodeSetting =>
+          serviceResource()
+          val config  = edgeNodeSetting.config.jsonRPCConfig
+          val address = Node.Addr(config.host, config.port)
+          /// TODO: cope service node account
+          val account = edgeNodeSetting.config.applicationConfig.account
+          ServiceNode(Node(address, account))
+        case _ =>
+          throw new RuntimeException("unsupported edge node setting to startup service node")
+      }
+  }
 
   override def shutdownConsensusNode(node: ConsensusNode): Stack[Unit] = Stack {
     shutdownP2PNode(consensusOnce)

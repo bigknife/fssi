@@ -9,5 +9,5 @@ trait InitializeProgram[F[_]] extends SCP[F] with BaseProgram[F] {
 
   import model._
 
-  def initialize(): SP[F, Unit] = nodeService.cacheNodeQuorumSet(nodeId, quorumSet)
+  def initialize(): SP[F, Unit] = nodeService.cacheNodeQuorumSet()
 }
