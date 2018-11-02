@@ -8,7 +8,7 @@ class BlockChainStorageSpec extends FunSuite with BeforeAndAfter {
   var storage: BlockChainStorage = _
   before {
     val root = new File("/tmp/blockchain")
-    storage = BlockChainStorage.xodus(root)
+    storage = BlockChainStorage.xodus(root, "fixed")
   }
   after {
     storage.close()
@@ -23,6 +23,10 @@ class BlockChainStorageSpec extends FunSuite with BeforeAndAfter {
       case _ =>
     }
     info(s"$s")
+    s match {
+      case Left(t) => t.printStackTrace()
+      case _ =>
+    }
     val v1    = storage.get(key)
     assert(v1.isDefined)
     assert(v1.get.bytes sameElements value)
@@ -35,16 +39,16 @@ class BlockChainStorageSpec extends FunSuite with BeforeAndAfter {
     info(s"${v1prime.childrenKeys}")
   }
 
-  /*
+
   test("transaction success") {
     val k1 = StoreKey.meta
-    val v1 = StoreValue(Array.emptyByteArray, StoreKeySet.empty, Array.fill(10)(3.toByte))
+    val v1 = "hello".getBytes
 
     val k2 = StoreKey.block
-    val v2 = StoreValue(Array.emptyByteArray, StoreKeySet.empty, Array.fill(10)(2.toByte))
+    val v2 = "world".getBytes
 
     val k3 = StoreKey.stateAccount("hello")
-    val v3 = StoreValue(Array.emptyByteArray, StoreKeySet.empty, Array.fill(10)(2.toByte))
+    val v3 = "kitty".getBytes
 
     storage.transact { store =>
       store.put(k1, v1)
@@ -55,19 +59,19 @@ class BlockChainStorageSpec extends FunSuite with BeforeAndAfter {
 
     val v3p = storage.get(k3)
     assert(v3p.isDefined)
-    assert(v3p.get === v3)
+    assert(v3p.get.bytes sameElements  v3)
   }
 
 
   test("transaction fail") {
     val k1 = StoreKey.meta
-    val v1 = StoreValue(Array.emptyByteArray, StoreKeySet.empty, Array.fill(10)(10.toByte))
+    val v1 = "hello1".getBytes
 
     val k2 = StoreKey.block
-    val v2 = StoreValue(Array.emptyByteArray, StoreKeySet.empty, Array.fill(10)(20.toByte))
+    val v2 = "world1".getBytes
 
     val k3 = StoreKey.stateAccount("hello")
-    val v3 = StoreValue(Array.emptyByteArray, StoreKeySet.empty, Array.fill(10)(50.toByte))
+    val v3 = "kitty1".getBytes
 
     storage.transact { store =>
       store.put(k1, v1)
@@ -81,5 +85,4 @@ class BlockChainStorageSpec extends FunSuite with BeforeAndAfter {
     assert(v3p.isDefined)
     assert(v3p.get !== v3)
   }
-   */
 }
