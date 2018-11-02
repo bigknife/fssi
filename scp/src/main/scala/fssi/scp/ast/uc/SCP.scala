@@ -9,6 +9,10 @@ import components._
 
 trait SCP[F[_]] {
 
+  /** initialize node scp
+    */
+  def initialize(): SP[F, Unit]
+
   /** handle request of application
     */
   def handleAppRequest(nodeId: NodeID,
@@ -37,7 +41,7 @@ object SCP {
     new HandleAppRequestProgram[F] with HandleSCPEnvelopeProgram[F] with HandleNominationProgram[F]
     with HandleBallotMessageProgram[F] with BumpStateProgram[F] with AttemptAcceptPrepareProgram[F]
     with AttemptConfirmPrepareProgram[F] with AttemptAcceptCommitProgram[F]
-    with AttemptConfirmCommitProgram[F] {
+    with AttemptConfirmCommitProgram[F] with InitializeProgram[F] {
       private[uc] val model: Model[F] = M
     }
 }

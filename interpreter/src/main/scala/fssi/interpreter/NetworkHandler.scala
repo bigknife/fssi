@@ -1,7 +1,8 @@
 package fssi
 package interpreter
 import fssi.ast.Network
-import fssi.interpreter.Configuration.{CoreNodeConfig, EdgeNodeConfig, P2PConfig}
+import fssi.interpreter.Configuration.P2PConfig
+import fssi.interpreter.Setting.{CoreNodeSetting, EdgeNodeSetting}
 import fssi.types.biz.Node.{ApplicationNode, ConsensusNode, ServiceNode}
 import fssi.types.biz._
 import fssi.types.{ApplicationMessage, ClientMessage, ConsensusMessage}
@@ -17,10 +18,10 @@ class NetworkHandler extends Network.Handler[Stack] with LogSupport {
 
   override def startupConsensusNode(
       conf: ChainConfiguration,
-      handler: Message.Handler[ConsensusMessage]): Stack[ConsensusNode] = Stack {
-    val p2pConfig = conf match {
-      case coreNodeConfig: CoreNodeConfig => coreNodeConfig.consensusConfig
-      case _                              => throw new RuntimeException("unsupported chain configuration to startup consensus")
+      handler: Message.Handler[ConsensusMessage]): Stack[ConsensusNode] = Stack { setting =>
+    val p2pConfig = setting match {
+      case coreNodeSetting: CoreNodeSetting => coreNodeSetting.config
+      case _                                => throw new RuntimeException("unsupported setting to startup consensus")
     }
     val converter: CubeMessage => ConsensusMessage = cub => cub.data[ConsensusMessage]
     val node =
@@ -30,10 +31,10 @@ class NetworkHandler extends Network.Handler[Stack] with LogSupport {
 
   override def startupApplicationNode(
       conf: ChainConfiguration,
-      handler: Message.Handler[ApplicationMessage]): Stack[ApplicationNode] = Stack {
-    val applicationConfig = conf match {
-      case coreNodeConfig: CoreNodeConfig => coreNodeConfig.applicationConfig
-      case edgeNodeConfig: EdgeNodeConfig => edgeNodeConfig.applicationConfig
+      handler: Message.Handler[ApplicationMessage]): Stack[ApplicationNode] = Stack { setting =>
+    val applicationConfig = setting match {
+      case coreNodeSetting: CoreNodeSetting => coreNodeSetting.config.applicationConfig
+      case edgeNodeSetting: EdgeNodeSetting => edgeNodeSetting.config.applicationConfig
     }
     val converter: CubeMessage => ApplicationMessage = cube => cube.data[ApplicationMessage]
     val node                                         = startP2PNode(applicationOnce, applicationConfig, converter, handler)
@@ -50,9 +51,7 @@ class NetworkHandler extends Network.Handler[Stack] with LogSupport {
     shutdownP2PNode(applicationOnce)
   }
 
-  override def shutdownServiceNode(node: ServiceNode): Stack[Unit] = Stack {
-    shutdownP2PNode(serviceOnce)
-  }
+  override def shutdownServiceNode(node: ServiceNode): Stack[Unit] = ???
 
   private def startP2PNode[M <: Message](clusterOnce: Once[Cluster],
                                          p2pConfig: P2PConfig,

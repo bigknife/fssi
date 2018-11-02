@@ -2,9 +2,9 @@ package fssi
 package interpreter
 import java.io.File
 
-import fssi.scp.types.QuorumSet
-import fssi.types.biz.{Account, ChainConfiguration, Node}
 import fssi.interpreter.Configuration._
+import fssi.scp.types.QuorumSet
+import fssi.types.biz.{Account, Node}
 
 case class Configuration(
     coreNodeConfig: CoreNodeConfig,
@@ -38,14 +38,12 @@ object Configuration {
                             mode: String,
                             consensusConfig: ConsensusConfig,
                             applicationConfig: ApplicationConfig)
-      extends ChainConfiguration
 
   case class JsonRPCConfig(host: String, port: Int) extends NetWorkConfig
 
   case class EdgeNodeConfig(chainId: String,
                             jsonRPCConfig: JsonRPCConfig,
                             applicationConfig: ApplicationConfig)
-      extends ChainConfiguration
 
   final case class ConfigurationWrapper(file: File) {
     def asConfiguration: Configuration   = configFileToConfiguration(file)
