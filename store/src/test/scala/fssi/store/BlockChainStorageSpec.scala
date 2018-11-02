@@ -8,7 +8,7 @@ class BlockChainStorageSpec extends FunSuite with BeforeAndAfter {
   var storage: BlockChainStorage = _
   before {
     val root = new File("/tmp/blockchain")
-    storage = BlockChainStorage.xodus(root)
+    storage = BlockChainStorage.xodus(root, "fixed")
   }
   after {
     storage.close()
