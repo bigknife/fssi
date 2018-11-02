@@ -21,6 +21,7 @@ class SCPSpec extends FunSuite with TestSupport {
       quorumSet = QuorumSet.slices(
         QuorumSet.Slices.flat(1, nodeId)
       ),
+      localNode = nodeId,
       privateKey = null,
       applicationCallback = ApplicationCallback.unimplemented
     )

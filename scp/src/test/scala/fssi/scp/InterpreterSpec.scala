@@ -71,16 +71,16 @@ class InterpreterSpec extends FunSuite {
     val nodeId    = NodeID("nominate".getBytes)
     val slotIndex = SlotIndex(1)
 
-    val initStatus = NominationStatus.getInstance(nodeId, slotIndex)
+    val initStatus = NominationStatus.getInstance(slotIndex)
     info(s"$initStatus")
 
-    val status1 = NominationStatus.getInstance(nodeId, slotIndex)
+    val status1 = NominationStatus.getInstance(slotIndex)
     status1.roundNumber := 2
     info(s"$initStatus")
     info(s"$status1")
     assert(initStatus == status1)
 
-    val status2 = NominationStatus.getInstance(nodeId, slotIndex)
+    val status2 = NominationStatus.getInstance(slotIndex)
     val value1  = TestValue(TreeSet(10))
     val votes   = TreeSet[Value](value1)
     status2.votes := votes

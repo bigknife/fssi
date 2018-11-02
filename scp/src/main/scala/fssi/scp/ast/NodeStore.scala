@@ -30,7 +30,7 @@ import types._
 
   /** get nomination envelope from locally stored, received from peer nodes
     */
-  def getNominationEnvelope(nodeId: NodeID, slotIndex: SlotIndex, peerNodeId: NodeID): P[F, Option[Envelope[Message.Nomination]]]
+  def getNominationEnvelope(slotIndex: SlotIndex, peerNodeId: NodeID): P[F, Option[Envelope[Message.Nomination]]]
 
   /** remove an envelope
     */
@@ -42,39 +42,39 @@ import types._
     * @param values given a value set
     * @return a subset of values, the element in which is not accepted as nomination value
     */
-  def notAcceptedNominatingValues(nodeId: NodeID,
+  def notAcceptedNominatingValues(
                                   slotIndex: SlotIndex,
                                   values: ValueSet): P[F, ValueSet]
 
   /** find current accepted nomination votes
     */
-  def acceptedNominations(nodeId: NodeID, slotIndex: SlotIndex): P[F, ValueSet]
+  def acceptedNominations(slotIndex: SlotIndex): P[F, ValueSet]
 
   /** find current candidates nomination value
     */
-  def candidateNominations(nodeId: NodeID, slotIndex: SlotIndex): P[F, ValueSet]
-  def haveCandidateNominations(nodeId: NodeID, slotIndex: SlotIndex): P[F, Boolean] =
-    candidateNominations(nodeId, slotIndex).map(_.nonEmpty)
+  def candidateNominations(slotIndex: SlotIndex): P[F, ValueSet]
+  def haveCandidateNominations(slotIndex: SlotIndex): P[F, Boolean] =
+    candidateNominations(slotIndex).map(_.nonEmpty)
 
   /** save new values to current voted nominations
     */
-  def voteNewNominations(nodeId: NodeID, slotIndex: SlotIndex, newVotes: ValueSet): P[F, Unit]
+  def voteNewNominations(slotIndex: SlotIndex, newVotes: ValueSet): P[F, Unit]
 
   /** the set of nodes which have voted(nominate x)
     */
-  def nodesVotedNomination(nodeId: NodeID, slotIndex: SlotIndex, value: Value): P[F, Set[NodeID]]
+  def nodesVotedNomination(slotIndex: SlotIndex, value: Value): P[F, Set[NodeID]]
 
   /** the set of nodes which have accept(nominate x)
     */
-  def nodesAcceptedNomination(nodeId: NodeID, slotIndex: SlotIndex, value: Value): P[F, Set[NodeID]]
+  def nodesAcceptedNomination(slotIndex: SlotIndex, value: Value): P[F, Set[NodeID]]
 
   /** save a new value to current accepted nominations
     */
-  def acceptNewNomination(nodeId: NodeID, slotIndex: SlotIndex, value: Value): P[F, Unit]
+  def acceptNewNomination(slotIndex: SlotIndex, value: Value): P[F, Unit]
 
   /** save a new value to current candidated nominations
     */
-  def candidateNewNomination(nodeId: NodeID, slotIndex: SlotIndex, value: Value): P[F, Unit]
+  def candidateNewNomination(slotIndex: SlotIndex, value: Value): P[F, Unit]
 
   /** get current ballot
     */

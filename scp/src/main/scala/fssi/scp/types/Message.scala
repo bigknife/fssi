@@ -11,6 +11,11 @@ object Message {
       accepted: ValueSet
   ) extends Message {
     def allValues: ValueSet = voted ++ accepted
+
+    def isNewerThan(other: Nomination): Boolean =
+      (other.voted subsetOf voted) && (other.voted.size < voted.size) ||
+        (other.accepted subsetOf accepted) && other.accepted.size < accepted.size
+
   }
 
   sealed trait BallotMessage extends Message {

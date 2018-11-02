@@ -17,6 +17,7 @@ class NodeServiceHandler
   import log._
 
   /** compute next round timeout (in ms)
+    *
     * @see SCPDriver.cpp#79
     */
   override def computeTimeout(round: Int): Stack[Long] = Stack { setting =>
@@ -27,33 +28,33 @@ class NodeServiceHandler
 
   /** check if in-nominating and no any candidate produced
     */
-  override def canNominateNewValue(nodeId: NodeID,
-                                   slotIndex: SlotIndex,
-                                   timeout: Boolean): Stack[Boolean] = Stack {
-    assertSlotIndex(nodeId, slotIndex)
+  override def canNominateNewValue(slotIndex: SlotIndex, timeout: Boolean): Stack[Boolean] = Stack {
+    setting =>
+      assertSlotIndex(setting.localNode, slotIndex)
 
-    val nominationStatus  = NominationStatus.getInstance(nodeId, slotIndex)
-    val nominationStarted = nominationStatus.nominationStarted.getOrElse(false)
-    if (timeout && !nominationStarted) {
-      info(s"triggered by nomination timer, but nomination had been stopped")
-      false
-    } else {
-      info(s"triggered by application request")
-      true
-    }
+      val nominationStatus  = NominationStatus.getInstance(slotIndex)
+      val nominationStarted = nominationStatus.nominationStarted.getOrElse(false)
+      if (timeout && !nominationStarted) {
+        info(s"triggered by nomination timer, but nomination had been stopped")
+        false
+      } else {
+        info(s"triggered by application request")
+        true
+      }
 
   }
 
   /** check if nominating is stopped
     */
-  override def isNominatingStopped(nodeId: NodeID, slotIndex: SlotIndex): Stack[Boolean] = Stack {
-    assertSlotIndex(nodeId, slotIndex)
+  override def isNominatingStopped(slotIndex: SlotIndex): Stack[Boolean] = Stack { setting =>
+    assertSlotIndex(setting.localNode, slotIndex)
 
-    val nominationStatus = NominationStatus.getInstance(nodeId, slotIndex)
+    val nominationStatus = NominationStatus.getInstance(slotIndex)
     nominationStatus.nominationStarted.unsafe
   }
 
   /** compute a value's hash
+    *
     * @see SCPDriver.cpp#66 notice: added hash_K
     */
   override def hashValue(slotIndex: SlotIndex,
@@ -67,61 +68,73 @@ class NodeServiceHandler
 
   /** stop nomination process
     */
-  override def stopNominating(nodeId: NodeID, slotIndex: SlotIndex): Stack[Unit] = Stack {
-    assertSlotIndex(nodeId, slotIndex)
-    NominationStatus.getInstance(nodeId, slotIndex).nominationStarted := false
+  override def stopNominating(slotIndex: SlotIndex): Stack[Unit] = Stack { setting =>
+    assertSlotIndex(setting.localNode, slotIndex)
+    NominationStatus.getInstance(slotIndex).nominationStarted := false
     ()
   }
 
   /** do some rate-limits stuff to narrow down the nominating votes
+    *
     * @see NominationProtocl.cpp#476-506
     */
-  override def updateAndGetNominateLeaders(nodeId: NodeID,
-                                           slotIndex: SlotIndex,
+  override def updateAndGetNominateLeaders(slotIndex: SlotIndex,
                                            previousValue: Value): Stack[Set[NodeID]] = Stack {
     setting =>
-      assertSlotIndex(nodeId, slotIndex)
-      val nominationStatus = NominationStatus.getInstance(nodeId, slotIndex)
+      assertSlotIndex(setting.localNode, slotIndex)
+      val nominationStatus = NominationStatus.getInstance(slotIndex)
       val round            = nominationStatus.roundNumber.unsafe
 
-    // clean roundLeaders and initialized with local nodeId
-    nominationStatus.roundLeaders := Set(nodeId)
+      // clean roundLeaders and initialized with local nodeId
+      nominationStatus.roundLeaders := Set(setting.localNode)
 
-    // normalized quorumSet(slices) of nodeId
-    val myQSet         = unsafeGetSlices(nodeId)
-    val normalizedQSet = simplifySlices(deleteNodeFromSlices(myQSet, nodeId))
+      // normalized quorumSet(slices) of nodeId
+      val myQSet         = unsafeGetSlices(setting.localNode)
+      val normalizedQSet = simplifySlices(deleteNodeFromSlices(myQSet, setting.localNode))
 
-    // initialize top priority as localId
-    val topPriority =
-      computeNodePriority(nodeId, slotIndex, isLocal = true, previousValue, round, normalizedQSet, setting)
-    log.debug(s"topPriority: $topPriority")
+      // initialize top priority as localId
+      val topPriority =
+        computeNodePriority(setting.localNode,
+                            slotIndex,
+                            isLocal = true,
+                            previousValue,
+                            round,
+                            normalizedQSet,
+                            setting)
+      log.debug(s"topPriority: $topPriority")
 
-    // find top priority nodes
-    val (leaders, newTopPriority) =
-      normalizedQSet.allNodes.foldLeft((Set(nodeId), topPriority)) { (acc, n) =>
-        val (topNodes, currentTopPriority) = acc
-        val nPriority =
-          computeNodePriority(n, slotIndex, isLocal = false, previousValue, round, normalizedQSet, setting)
-        if (nPriority == currentTopPriority && nPriority > 0) (topNodes + n, currentTopPriority)
-        else if (nPriority > currentTopPriority) (Set(n), nPriority)
-        else acc
-      }
-    log.debug(s"found ${leaders.size} leaders at new top priority: $newTopPriority")
-    nominationStatus.roundLeaders := leaders
-    leaders
+      // find top priority nodes
+      val (leaders, newTopPriority) =
+        normalizedQSet.allNodes.foldLeft((Set(setting.localNode), topPriority)) { (acc, n) =>
+          val (topNodes, currentTopPriority) = acc
+          val nPriority =
+            computeNodePriority(n,
+                                slotIndex,
+                                isLocal = false,
+                                previousValue,
+                                round,
+                                normalizedQSet,
+                                setting)
+          if (nPriority == currentTopPriority && nPriority > 0) (topNodes + n, currentTopPriority)
+          else if (nPriority > currentTopPriority) (Set(n), nPriority)
+          else acc
+        }
+      log.debug(s"found ${leaders.size} leaders at new top priority: $newTopPriority")
+      nominationStatus.roundLeaders := leaders
+      leaders
   }
 
   /** create nomination message based on local state
     */
-  override def createNominationMessage(nodeId: NodeID,
-                                       slotIndex: SlotIndex): Stack[Message.Nomination] = Stack {
-    assertSlotIndex(nodeId, slotIndex)
+  override def createNominationMessage(slotIndex: SlotIndex): Stack[Message.Nomination] = Stack {
+    setting =>
+      assertSlotIndex(setting.localNode, slotIndex)
 
-    val nominationStatus = NominationStatus.getInstance(nodeId, slotIndex)
-    Message.Nomination(
-      voted = nominationStatus.votes.unsafe,
-      accepted = nominationStatus.accepted.unsafe
-    )
+      val nominationStatus = NominationStatus.getInstance(slotIndex)
+      Message.Nomination(
+        voted = nominationStatus.votes.unsafe,
+        accepted = nominationStatus.accepted.unsafe
+      )
   }
 
   /** create ballot message based on local state
@@ -160,31 +173,30 @@ class NodeServiceHandler
 
   /** make a envelope for a message
     */
-  override def putInEnvelope[M <: Message](nodeId: NodeID,
-                                           slotIndex: SlotIndex,
-                                           message: M): Stack[Envelope[M]] = Stack { setting =>
-    val statement = Statement(
-      from = nodeId,
-      slotIndex = slotIndex,
-      timestamp = Timestamp(System.currentTimeMillis()),
-      quorumSet = setting.quorumSet,
-      message = message
-    )
+  override def putInEnvelope[M <: Message](slotIndex: SlotIndex, message: M): Stack[Envelope[M]] =
+    Stack { setting =>
+      val statement = Statement(
+        from = setting.localNode,
+        slotIndex = slotIndex,
+        timestamp = Timestamp(System.currentTimeMillis()),
+        quorumSet = setting.quorumSet,
+        message = message
+      )
 
-    val signature =
-      Signature(crypto.makeSignature(fixedStatementBytes(statement), setting.privateKey))
+      val signature =
+        Signature(crypto.makeSignature(fixedStatementBytes(statement), setting.privateKey))
 
-    val env = Envelope(statement, signature)
+      val env = Envelope(statement, signature)
 
-    message match {
-      case x: Message.BallotMessage =>
-        val nominationStatus = BallotStatus.getInstance(nodeId, slotIndex)
-        nominationStatus.latestGeneratedEnvelope := env.to[Message.BallotMessage]
-      case _ =>
+      message match {
+        case x: Message.BallotMessage =>
+          val nominationStatus = BallotStatus.getInstance(setting.localNode, slotIndex)
+          nominationStatus.latestGeneratedEnvelope := env.to[Message.BallotMessage]
+        case _ =>
+      }
+
+      env
     }
-
-    env
-  }
 
   /** verify the signature of the envelope
     */
@@ -226,8 +238,7 @@ class NodeServiceHandler
       case Slices.Flat(threshold, validators) =>
         nodes.count(validators.contains) >= threshold
       case Slices.Nest(threshold, validators, inners) =>
-        val innerCount = inners.count { f =>
-          nodes.count(f.validators.contains) >= f.threshold
+        val innerCount = inners.count { f => nodes.count(f.validators.contains) >= f.threshold
         }
         val outterCount = nodes.count(validators.contains)
         (innerCount + outterCount) >= threshold
@@ -270,6 +281,7 @@ class NodeServiceHandler
   }
 
   /** check a ballot can be used as a prepared candidate based on local p , p' and phase
+    *
     * @see BallotProcotol.cpp#807-834
     */
   override def canBallotBePrepared(nodeId: NodeID,
@@ -294,6 +306,7 @@ class NodeServiceHandler
   }
 
   /** check a ballot can be potentially raise h, be confirmed prepared, to a commit
+    *
     * @see BallotProtocol.cpp#937-938
     */
   override def canBallotBeHighestCommitPotentially(nodeId: NodeID,
@@ -305,6 +318,7 @@ class NodeServiceHandler
   }
 
   /** check a ballot can be potentially raise h, be confirmed prepared, to a commit
+    *
     * @see BallotProtocol.cpp#970-973, 975-978 b should be compatible with newH
     */
   override def canBallotBeLowestCommitPotentially(nodeId: NodeID,
@@ -317,6 +331,7 @@ class NodeServiceHandler
   }
 
   /** check if it's necessary to set `c` based on a new `h`
+    *
     * @see BallotProtocol.cpp#961
     */
   override def needSetLowestCommitBallotUnderHigh(nodeId: NodeID,
@@ -336,6 +351,7 @@ class NodeServiceHandler
   /** MUST be deterministic
     */
   /** check the message to see if it's sane
+    *
     * @see BallotProcotol.cpp#247
     */
   private def isMessageSane[M <: Message](nodeId: NodeID, statement: Statement[M]): Boolean = {
@@ -362,6 +378,7 @@ class NodeServiceHandler
     statement.asBytesValue.bytes
 
   /** compute a node weight in some slices
+    *
     * @param isLocal if nodeId is local node id, true, or else flase
     */
   private def computeNodeWeight(nodeId: NodeID,

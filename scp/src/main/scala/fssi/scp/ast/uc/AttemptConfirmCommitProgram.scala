@@ -73,7 +73,7 @@ trait AttemptConfirmCommitProgram[F[_]] extends SCP[F] with EmitProgram[F] {
             _         <- ifThen(confirmed) {
               for {
                 _ <- info(s"[$nodeId][$slotIndex][AttemptConfirmCommit] confirmed ($newC - $newH), stop nominating")
-                _ <- stopNominating(nodeId, slotIndex)
+                _ <- stopNominating(slotIndex)
               } yield ()
             }
 

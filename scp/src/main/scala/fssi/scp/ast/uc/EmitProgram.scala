@@ -24,7 +24,7 @@ trait EmitProgram[F[_]] extends SCP[F] with BaseProgram[F] {
            message: Message): SP[F, Unit] =
     for {
       _        <- debug(s"[$nodeId][$slotIndex] try to emit message: $message")
-      envelope <- putInEnvelope(nodeId, slotIndex, message)
+      envelope <- putInEnvelope(slotIndex, message)
       emitable <- canEmit(nodeId, slotIndex, envelope)
       _ <- ifThen(emitable) {
         for {

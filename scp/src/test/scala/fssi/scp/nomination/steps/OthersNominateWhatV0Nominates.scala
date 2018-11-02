@@ -25,14 +25,38 @@ trait OthersNominateWhatV0Nominates extends StepSpec {
       app.makeNomination(node4, keyOfNode4, votedValues.unsafe(), acceptedValues.unsafe())
 
     // nothing happened yet
-    app.onEnvelope(nom1)
-    app.onEnvelope(nom2)
-    require(app.numberOfNominations == 1)
+    require(app.onEnvelope(nom1))
+    require(app.onEnvelope(nom2))
+    app.numberOfNominations shouldBe 1
 
     // this cause 'x' be accepted (voted in a quorum)
-    app.onEnvelope(nom3)
-    require(app.numberOfNominations == 2)
+    require(app.onEnvelope(nom3))
+    app.numberOfNominations shouldBe 2
     acceptedValues := ValueSet(xValue)
     app.hasNominated(votedValues.unsafe(), acceptedValues.unsafe()) shouldBe true
+
+    // extra message doesn't do anything
+    app.onEnvelope(nom4)
+    app.numberOfNominations shouldBe 2
+
+    val acc1: Envelope[Nomination] =
+      app.makeNomination(node1, keyOfNode1, votedValues.unsafe(), acceptedValues.unsafe())
+    val acc2: Envelope[Nomination] =
+      app.makeNomination(node2, keyOfNode2, votedValues.unsafe(), acceptedValues.unsafe())
+    val acc3: Envelope[Nomination] =
+      app.makeNomination(node3, keyOfNode3, votedValues.unsafe(), acceptedValues.unsafe())
+    val acc4: Envelope[Nomination] =
+      app.makeNomination(node4, keyOfNode4, votedValues.unsafe(), acceptedValues.unsafe())
+
+    // nothing happens
+    app.onEnvelope(acc1)
+    app.onEnvelope(acc2)
+    app.numberOfNominations shouldBe 2
+
+    app.forecastNomination(ValueSet(xValue), Some(xValue))
+    // this causes the node to send a prepare message (quorum)
+    app.onEnvelope(acc3)
+    app.numberOfNominations shouldBe 3
+
   }
 }

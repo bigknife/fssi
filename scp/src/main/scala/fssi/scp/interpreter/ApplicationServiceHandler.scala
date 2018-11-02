@@ -63,7 +63,7 @@ class ApplicationServiceHandler extends ApplicationService.Handler[Stack] with L
 
     timer.schedule(new TimerTask {
       override def run(): Unit = {
-        setting.applicationCallback.scpExecutorService().submit(new Runnable {
+        setting.applicationCallback.dispatch(tag, new Runnable {
           override def run(): Unit = {
             runner.runIOAttempt(program.asInstanceOf[SP[components.Model.Op, Unit]], setting).unsafeRunSync() match {
               case Left(t) =>
@@ -107,6 +107,9 @@ class ApplicationServiceHandler extends ApplicationService.Handler[Stack] with L
   override def broadcastEnvelope[M <: Message](nodeId: NodeID, slotIndex: SlotIndex, envelope: Envelope[M]): Stack[Unit] = Stack {setting =>
 
     envelope.statement.message match {
+      case x: Message.Nomination =>
+        val nominationStatus = NominationStatus.getInstance(slotIndex)
+        nominationStatus.lastEnvelope := Some(envelope.to[Message.Nomination])
       case x: Message.BallotMessage =>
         val ballotStatus = BallotStatus.getInstance(nodeId, slotIndex)
         ballotStatus.latestEmitEnvelope := envelope.to[Message.BallotMessage]

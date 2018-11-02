@@ -11,7 +11,7 @@ trait ApplicationCallback {
   def validateValue(nodeId: NodeID, slotIndex: SlotIndex, value: Value): Value.Validity
   def combineValues(nodeId: NodeID, slotIndex: SlotIndex, value: ValueSet): Option[Value]
   def extractValidValue(nodeId: NodeID, slotIndex: SlotIndex, value: Value): Option[Value]
-  def scpExecutorService(): ExecutorService
+  def dispatch(timer: String, task: Runnable): Unit
   def valueConfirmed(nodeId: NodeID, slotIndex: SlotIndex, value: Value): Unit
   def valueExternalized(nodeId: NodeID, slotIndex: SlotIndex, value: Value): Unit
   def broadcastEnvelope[M <: Message](nodeId: NodeID, slotIndex: SlotIndex, envelope: Envelope[M]): Unit
@@ -37,7 +37,7 @@ object ApplicationCallback {
       throw warning("extractValidValue")
     }
 
-    override def scpExecutorService(): ExecutorService = {
+    override def dispatch(timer: String, task: Runnable): Unit= {
       throw warning("scpExecutorService")
     }
 

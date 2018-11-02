@@ -34,7 +34,6 @@ trait TestBed extends FunSuite with TestSupport with BeforeAndAfterEach with Log
       node3 -> slice,
       node4 -> slice
     )
-    log.debug(s"slices cache[${QuorumSetSupport.slicesCache.unsafe().keys.head}]")
   }
   override def afterEach(): Unit = {
     QuorumSetSupport.slicesCache := Map.empty

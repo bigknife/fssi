@@ -1,16 +1,20 @@
 package fssi.scp
 import java.security.PrivateKey
-import java.util.concurrent.{ExecutorService, Executors}
 
 import fssi.scp.ast.components.Model
 import fssi.scp.ast.components.Model.Op
 import fssi.scp.ast.uc.SCP
 import fssi.scp.interpreter.store.{BallotStatus, NominationStatus}
-import fssi.scp.interpreter.{NodeServiceHandler, QuorumSetSupport, Setting, runner}
+import fssi.scp.interpreter.{NodeServiceHandler, Setting, runner}
 import fssi.scp.types.Message.Nomination
 import fssi.scp.types._
+import org.scalameta.logger
 
-class TestApp(nodeID: NodeID, nodeKey: PrivateKey, slotIndex: SlotIndex, quorumSet: QuorumSet, previousValue: Value)
+class TestApp(nodeID: NodeID,
+              nodeKey: PrivateKey,
+              slotIndex: SlotIndex,
+              quorumSet: QuorumSet,
+              previousValue: Value)
     extends interpreter.ApplicationCallback {
 
   // all statements sent to network
@@ -24,10 +28,11 @@ class TestApp(nodeID: NodeID, nodeKey: PrivateKey, slotIndex: SlotIndex, quorumS
 
   private val started: Timestamp = Timestamp(0l)
 
-  private val service = Executors.newSingleThreadExecutor()
+  private var dispatchedTimers: Map[String, Runnable] = Map.empty
 
   val setting: Setting = Setting(
     quorumSet = quorumSet,
+    localNode = nodeID,
     privateKey = nodeKey,
     applicationCallback = this
   )
@@ -36,7 +41,7 @@ class TestApp(nodeID: NodeID, nodeKey: PrivateKey, slotIndex: SlotIndex, quorumS
   def reset(): Unit = {
     statements = Vector.empty
 
-    NominationStatus.clearInstance(nodeID, slotIndex)
+    NominationStatus.clearInstance(slotIndex)
     BallotStatus.cleanInstance(nodeID, slotIndex)
 
     expectedCandidates = ValueSet.empty
@@ -61,8 +66,8 @@ class TestApp(nodeID: NodeID, nodeKey: PrivateKey, slotIndex: SlotIndex, quorumS
     Some(value)
   }
 
-  override def scpExecutorService(): ExecutorService = {
-    service
+  override def dispatch(timer: String, runnable: Runnable): Unit = {
+    dispatchedTimers = dispatchedTimers + (timer -> runnable)
   }
 
   override def valueConfirmed(nodeId: NodeID, slotIndex: SlotIndex, value: Value): Unit = {}
@@ -72,7 +77,10 @@ class TestApp(nodeID: NodeID, nodeKey: PrivateKey, slotIndex: SlotIndex, quorumS
   override def broadcastEnvelope[M <: Message](nodeId: NodeID,
                                                slotIndex: SlotIndex,
                                                envelope: Envelope[M]): Unit = {
-    if (isEmittedFromThisNode(envelope)) statements = statements :+ envelope.statement
+    if (isEmittedFromThisNode(envelope)) {
+      statements = statements :+ envelope.statement
+      logger.debug(s"size of statement in app: ${statements.size}")
+    }
   }
 
   override def isHashFuncProvided: StateChanged = true
@@ -89,8 +97,7 @@ class TestApp(nodeID: NodeID, nodeKey: PrivateKey, slotIndex: SlotIndex, quorumS
                                     round: Int): Long =
     if (nodeWithTopPriority exists (_ === nodeId)) 1000l else 0l
 
-
-  def onEnvelope[M <: Message](envelope: Envelope[M]): Unit = {
+  def onEnvelope[M <: Message](envelope: Envelope[M]): Boolean = {
     val p = scp.handleSCPEnvelope(envelope, previousValue)
     runner.runIO(p, setting).unsafeRunSync
   }
@@ -109,7 +116,7 @@ class TestApp(nodeID: NodeID, nodeKey: PrivateKey, slotIndex: SlotIndex, quorumS
       Nomination(voted, accepted))
 
   def numberOfNominations: Int = {
-    NominationStatus.getInstance(nodeID, slotIndex).latestNominations map (_.keys.size) getOrElse 0
+    statements.size
   }
 
   def nominate(value: Value): Boolean = {
@@ -117,16 +124,16 @@ class TestApp(nodeID: NodeID, nodeKey: PrivateKey, slotIndex: SlotIndex, quorumS
     runner.runIO(p, setting).unsafeRunSync
   }
 
-  def makeNomination(node: NodeID, key: PrivateKey,
+  def makeNomination(node: NodeID,
+                     key: PrivateKey,
                      votedValues: ValueSet,
                      acceptedValues: ValueSet): Envelope[Nomination] = {
     NodeServiceHandler.instance
       .putInEnvelope(
-        node,
         slotIndex,
         Nomination(votedValues, acceptedValues)
       )
-      .run(setting.copy(privateKey = key))
+      .run(setting.copy(localNode = node, privateKey = key))
       .unsafeRunSync()
   }
 
