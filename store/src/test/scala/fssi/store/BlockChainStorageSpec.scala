@@ -58,16 +58,16 @@ class BlockChainStorageSpec extends FunSuite with BeforeAndAfter {
     assert(v3p.get.bytes sameElements  v3)
   }
 
-  /*
+
   test("transaction fail") {
     val k1 = StoreKey.meta
-    val v1 = StoreValue(Array.emptyByteArray, StoreKeySet.empty, Array.fill(10)(10.toByte))
+    val v1 = "hello1".getBytes
 
     val k2 = StoreKey.block
-    val v2 = StoreValue(Array.emptyByteArray, StoreKeySet.empty, Array.fill(10)(20.toByte))
+    val v2 = "world1".getBytes
 
     val k3 = StoreKey.stateAccount("hello")
-    val v3 = StoreValue(Array.emptyByteArray, StoreKeySet.empty, Array.fill(10)(50.toByte))
+    val v3 = "kitty1".getBytes
 
     storage.transact { store =>
       store.put(k1, v1)
@@ -81,5 +81,4 @@ class BlockChainStorageSpec extends FunSuite with BeforeAndAfter {
     assert(v3p.isDefined)
     assert(v3p.get !== v3)
   }
-   */
 }
