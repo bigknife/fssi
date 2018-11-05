@@ -1,6 +1,4 @@
-package fssi.store
-
-import java.io._
+package fssi.store.core
 
 import jetbrains.exodus.ArrayByteIterable
 import jetbrains.exodus.env._

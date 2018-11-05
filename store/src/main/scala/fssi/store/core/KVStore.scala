@@ -1,6 +1,4 @@
-package fssi.store
-
-import types._
+package fssi.store.core
 
 trait KVStore {
   def get(key: Array[Byte]): Option[Array[Byte]]
