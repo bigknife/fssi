@@ -1,4 +1,5 @@
 package fssi.scp.nomination.steps
+import fssi.scp.interpreter.store.Var
 import fssi.scp.interpreter.{LogSupport, NodeServiceHandler, QuorumSetSupport, runner}
 import fssi.scp.types.Message.Nomination
 import fssi.scp.types.QuorumSet.Slices
@@ -25,6 +26,11 @@ trait TestBed extends FunSuite with TestSupport with BeforeAndAfterEach with Log
   val xValue: Value = TestValue(TreeSet(1, 2))
   val yValue: Value = TestValue(TreeSet(10, 20))
   val zValue: Value = TestValue(TreeSet(100, 200))
+
+  val votedValues: Var[ValueSet]    = Var(ValueSet.empty)
+  val acceptedValues: Var[ValueSet] = Var(ValueSet.empty)
+
+  val anotherVotedValues: Var[ValueSet] = Var(ValueSet.empty)
 
   override def beforeEach(): Unit = {
     QuorumSetSupport.slicesCache := Map(

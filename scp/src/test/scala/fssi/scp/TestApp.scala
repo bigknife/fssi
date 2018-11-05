@@ -115,9 +115,11 @@ class TestApp(nodeID: NodeID,
     statements.lastOption map (_.copy(timestamp = started)) contains statementOf(
       Nomination(voted, accepted))
 
-  def numberOfNominations: Int = {
+  def numberOfEnvelopes: Int = {
     statements.size
   }
+
+  def latestCompositeCandidateValue: Option[Value] = NominationStatus.getInstance(slotIndex).latestCompositeCandidate.unsafe()
 
   def nominate(value: Value): Boolean = {
     val p = scp.handleAppRequest(nodeID, slotIndex, value, value)
@@ -136,6 +138,9 @@ class TestApp(nodeID: NodeID,
       .run(setting.copy(localNode = node, privateKey = key))
       .unsafeRunSync()
   }
+
+  def hasPrepared(b: Ballot): Boolean =
+    statements.lastOption map (_.copy(timestamp = started)) contains statementOf(Message.prepare(b))
 
   private def isEmittedFromThisNode[M <: Message](envelope: Envelope[M]): Boolean =
     envelope.statement.from == nodeID &&

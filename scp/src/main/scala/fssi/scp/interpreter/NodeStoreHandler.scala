@@ -168,8 +168,14 @@ class NodeStoreHandler extends NodeStore.Handler[Stack] {
   /** save a new value to current accepted nominations
     */
   override def acceptNewNomination(slotIndex: SlotIndex, value: Value): Stack[Unit] = Stack {
-    val nominationStatus: NominationStatus = slotIndex
-    nominationStatus.accepted := nominationStatus.accepted.map(_ + value).unsafe(); ()
+    setting =>
+      val nominationStatus: NominationStatus = slotIndex
+
+      if (setting.applicationCallback
+            .validateValue(setting.localNode, slotIndex, value) == Value.Validity.FullyValidated)
+        nominationStatus.votes := nominationStatus.votes.map(_ + value).unsafe()
+
+      nominationStatus.accepted := nominationStatus.accepted.map(_ + value).unsafe(); ()
   }
 
   /** save a new value to current candidated nominations
@@ -767,7 +773,7 @@ class NodeStoreHandler extends NodeStore.Handler[Stack] {
     val ballotStatus: BallotStatus = (nodeId, slotIndex)
     val phase                      = ballotStatus.phase.unsafe()
     val currentBallot              = ballotStatus.currentBallot.unsafe()
-    val phaseValid                 = phase == Ballot.Phase.Externalize
+    val phaseValid                 = phase != Ballot.Phase.Externalize
     val currentBallotValid =
       if (check) currentBallot.isBottom || ballot.compare(currentBallot) >= 0 else true
     if (currentBallot.isBottom || currentBallot.counter != ballot.counter) {

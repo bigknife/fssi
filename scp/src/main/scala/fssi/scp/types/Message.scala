@@ -63,6 +63,12 @@ object Message {
     def externalizableBallot: Option[Ballot] = Some(Ballot(`h.n`, x))
   }
 
+  def prepare(b: Ballot): Prepare = Prepare(b, None, None, 0, 0)
+
+  def prepare(b: Ballot, p: Ballot): Prepare = Prepare(b, Some(p), None, 0, 0)
+
+  def prepare(b: Ballot, p: Ballot, `p'`: Ballot): Prepare = Prepare(b, Some(p), Some(`p'`), 0, 0)
+
   trait Implicits {
     import fssi.base.implicits._
     import fssi.scp.types.implicits._
