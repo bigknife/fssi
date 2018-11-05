@@ -8,7 +8,7 @@ class BlockChainStorageSpec extends FunSuite with BeforeAndAfter {
   var storage: BlockChainStorage = _
   before {
     val root = new File("/tmp/blockchain")
-    storage = BlockChainStorage.xodus(root)
+    storage = BlockChainStorage.xodus(root, "fixed")
   }
   after {
     storage.close()
@@ -18,6 +18,10 @@ class BlockChainStorageSpec extends FunSuite with BeforeAndAfter {
     val key   = StoreKey.meta
     val value = "hello,world".getBytes
     val s     = storage.put(key, value)
+    s match {
+      case Left(e) => e.printStackTrace()
+      case _ =>
+    }
     info(s"$s")
     s match {
       case Left(t) => t.printStackTrace()
