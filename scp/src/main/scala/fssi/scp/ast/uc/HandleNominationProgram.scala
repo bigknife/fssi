@@ -99,6 +99,7 @@ trait HandleNominationProgram[F[_]] extends SCP[F] with EmitProgram[F] {
               for {
                 _ <- info(
                   s"[$nodeId][$slotIndex] combined new composite value, unforcely bump to ballot: $composite")
+                _ <- candidateValueUpdated(nodeId, slotIndex, composite.get)
                 x <- bumpState(nodeId, slotIndex, previousValue, composite.get, false)
               } yield x
             }

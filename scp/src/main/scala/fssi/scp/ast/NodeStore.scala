@@ -236,6 +236,10 @@ import types._
     */
   def currentCandidateValue(nodeId: NodeID, slotIndex: SlotIndex): P[F, Option[Value]]
 
+  /** modify current candidate value
+    */
+  def candidateValueUpdated(nodeId: NodeID, slotIndex: SlotIndex, composite: Value): P[F, Unit]
+
   /** check if a envelope can be emitted
     */
   def canEmit[M <: Message](nodeId: NodeID,

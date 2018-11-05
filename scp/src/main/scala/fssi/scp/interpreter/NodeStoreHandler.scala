@@ -731,6 +731,11 @@ class NodeStoreHandler extends NodeStore.Handler[Stack] {
       nominationStatus.latestCompositeCandidate.unsafe()
     }
 
+  override def candidateValueUpdated(nodeId: NodeID, slotIndex: SlotIndex, composite: Value): Stack[Unit] = Stack {
+    val nominationStatus: NominationStatus = slotIndex
+    nominationStatus.latestCompositeCandidate := Some(composite)
+    ()
+  }
   /** check if a envelope can be emitted
     */
   override def canEmit[M <: Message](nodeId: NodeID,
