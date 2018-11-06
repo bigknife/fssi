@@ -9,6 +9,8 @@ sealed trait Key {
   def nonEmpty: Boolean = bytes.length != 0
 
   def toPath: Path = Path.PlainPath(bytes)
+
+  val length = bytes.length
 }
 
 object Key {

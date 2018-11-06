@@ -1,5 +1,7 @@
 package fssi.store.mpt
 
+import java.nio.ByteBuffer
+
 sealed trait Slot {
   def update(idx: Int, key: Key): Slot
   def update(idx: Byte, key: Key): Slot = update(idx.toInt, key)
@@ -23,5 +25,22 @@ object Slot {
 
   object Hex {
     def empty: Slot = SimpleSlot(Vector.empty)
+    def encode(slot: Slot): Array[Byte] = slot match {
+      case SimpleSlot(cells) =>
+        cells.foldLeft(Array.emptyByteArray) {(acc, n) =>
+          val bytes = {
+            // 0x30 + 4(int(idx)) + 4(int(key size)) + key bytes
+            val bb = ByteBuffer.allocate(1 + 4 + 4 + n.key.length)
+            bb.put(0x30.toByte)
+            bb.putInt(n.radix.index)
+            bb.putInt(n.key.length)
+            bb.put(n.key.bytes)
+            bb.array()
+          }
+          acc ++ bytes.array
+        }
+    }
   }
+
+
 }
