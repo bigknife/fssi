@@ -12,7 +12,6 @@ import io.circe._
 import io.circe.syntax._
 import jsonCodecs._
 import java.io._
-import java.nio.charset.Charset
 
 trait CreateAccountToolProgram extends BaseToolProgram {
   def apply(randomSeed: String, accountFile: File, secretKeyFile: File): Effect = {

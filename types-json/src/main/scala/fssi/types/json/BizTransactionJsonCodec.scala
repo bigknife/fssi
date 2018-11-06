@@ -18,21 +18,22 @@ trait BizTransactionJsonCodec {
 
   implicit val bizTransactionEncoder: Encoder[Transaction] = {
     case x: Transaction.Transfer =>
-      Json.obj("type" -> Json.fromString("Transfer"),
-               "data" -> Encoder[Transaction.Transfer].apply(x))
+      Json.obj("type"        -> Json.fromString("Transfer"),
+               "transaction" -> Encoder[Transaction.Transfer].apply(x))
     case x: Transaction.Deploy =>
-      Json.obj("type" -> Json.fromString("Deploy"), "data" -> Encoder[Transaction.Deploy].apply(x))
+      Json.obj("type"        -> Json.fromString("Deploy"),
+               "transaction" -> Encoder[Transaction.Deploy].apply(x))
     case x: Transaction.Run =>
-      Json.obj("type" -> Json.fromString("Run"), "data" -> Encoder[Transaction.Run].apply(x))
+      Json.obj("type" -> Json.fromString("Run"), "transaction" -> Encoder[Transaction.Run].apply(x))
   }
 
   implicit val bizTransactionDecoder: Decoder[Transaction] = (hCursor: HCursor) =>
     hCursor.get[String]("type") match {
       case Right(t) =>
         t match {
-          case tf if tf == "Transfer" => hCursor.get[Transaction.Transfer]("data")
-          case d if d == "Deploy"     => hCursor.get[Transaction.Deploy]("data")
-          case r if r == "Run"        => hCursor.get[Transaction.Run]("data")
+          case tf if tf == "Transfer" => hCursor.get[Transaction.Transfer]("transaction")
+          case d if d == "Deploy"     => hCursor.get[Transaction.Deploy]("transaction")
+          case r if r == "Run"        => hCursor.get[Transaction.Run]("transaction")
           case x =>
             Left(
               DecodingFailure(

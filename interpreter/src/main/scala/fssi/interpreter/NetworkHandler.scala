@@ -67,6 +67,26 @@ class NetworkHandler extends Network.Handler[Stack] with LogSupport {
 
   override def shutdownServiceNode(node: ServiceNode): Stack[Unit] = ???
 
+  override def broadcastMessage(message: Message): Stack[Unit] = Stack {
+    message match {
+      case consensusMessage: ConsensusMessage =>
+        consensusOnce.foreach { cluster =>
+          cluster.spreadGossip(CubeMessage.fromData(consensusMessage)); ()
+        }
+      case applicationMessage: ApplicationMessage =>
+        applicationOnce.foreach { cluster =>
+          cluster.spreadGossip(CubeMessage.fromData(applicationMessage)); ()
+        }
+      case clientMessage: ClientMessage =>
+        // TODO: handle client message
+        serviceOnce.foreach { cluster =>
+          cluster.spreadGossip(CubeMessage.fromData(clientMessage)); ()
+        }
+    }
+  }
+
+  override def waitForMessageResponse(message: Message): Stack[Either[Throwable, Transaction]] = ???
+
   private def startP2PNode[M <: Message](clusterOnce: Once[Cluster],
                                          p2pConfig: P2PConfig,
                                          converter: CubeMessage => M,

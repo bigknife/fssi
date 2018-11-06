@@ -1,10 +1,9 @@
 package fssi.ast
 package uc
-import fssi.types.biz.Message
+import fssi.types.biz.{Message, Transaction}
 import fssi.types.biz.Message.{ApplicationMessage, ClientMessage}
 import bigknife.sop._
 import bigknife.sop.implicits._
-import fssi.ast.BlockChain
 import fssi.ast.uc.edgenode.{
   HandleApplicationMessageProgram,
   HandleClientMessageProgram,
@@ -32,7 +31,7 @@ trait EdgeNodeProgram[F[_]] {
   /** handle client message
     * @param clientMessage message such as sponsor transaction
     */
-  def handleClientMessage(clientMessage: ClientMessage): SP[F, Unit]
+  def handleClientMessage(clientMessage: ClientMessage): SP[F, Transaction]
 
   def shutdown(applicationNode: ApplicationNode, serviceNode: ServiceNode): SP[F, Unit]
 }

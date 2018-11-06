@@ -19,11 +19,14 @@ object EdgeNodeMain extends StackConsoleMain[EdgeNodeSetting] {
 
   def resource: EdgeNodeSetting => ServiceResource =
     edgeNodeSetting =>
-      server.run(name = "edge",
-                 version = "v1",
-                 resource = EdgeJsonRpcResource,
-                 port = edgeNodeSetting.config.jsonRPCConfig.port,
-                 host = edgeNodeSetting.config.jsonRPCConfig.host)
+      () =>
+        server.run(
+          name = "edge",
+          version = "v1",
+          resource = EdgeJsonRpcResource(edgeNodeSetting),
+          port = edgeNodeSetting.config.jsonRPCConfig.port,
+          host = edgeNodeSetting.config.jsonRPCConfig.host
+    )
 
   override def cmdArgs(xs: Array[String]): Option[EdgeNodeSetting] =
     EdgeNodeSettingParser.parse(xs, defaultEdgeNodeSetting)

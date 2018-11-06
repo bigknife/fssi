@@ -6,5 +6,5 @@ trait ApplicationMessageHandler {
   private val handler = Message.handler[ApplicationMessage] { message =>
     }
 
-  def apply(): ApplicationMessageHandler = handler
+  def apply(): Message.Handler[ApplicationMessage] = handler
 }

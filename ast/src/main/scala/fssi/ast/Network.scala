@@ -20,4 +20,6 @@ import fssi.types.biz.Node._
   def shutdownConsensusNode(node: ConsensusNode): P[F, Unit]
   def shutdownApplicationNode(node: ApplicationNode): P[F, Unit]
   def shutdownServiceNode(node: ServiceNode): P[F, Unit]
+  def broadcastMessage(message: Message): P[F, Unit]
+  def waitForMessageResponse(message: Message): P[F, Either[Throwable, Transaction]]
 }
