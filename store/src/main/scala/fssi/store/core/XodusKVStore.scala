@@ -24,7 +24,7 @@ class XodusKVStore(storeName: String, environment: Environment, transaction: Opt
       store.put(txn, new ArrayByteIterable(key), new ArrayByteIterable(value))
     }
     if (transaction.isEmpty) {
-      runInTransaction(txn){
+      runInTransaction(txn) {
         block()
       }
 
@@ -42,7 +42,7 @@ class XodusKVStore(storeName: String, environment: Environment, transaction: Opt
       store.delete(txn, new ArrayByteIterable(key))
     }
     if (transaction.isEmpty) {
-      runInTransaction(txn){
+      runInTransaction(txn) {
         block()
       }
     } else {
@@ -53,18 +53,18 @@ class XodusKVStore(storeName: String, environment: Environment, transaction: Opt
   }
 
   override def keyIterator: Iterator[Array[Byte]] = {
-    val txn = transaction.getOrElse(environment.beginTransaction())
-    val store = environment.openStore(storeName, StoreConfig.WITHOUT_DUPLICATES, txn)
+    val txn    = transaction.getOrElse(environment.beginTransaction())
+    val store  = environment.openStore(storeName, StoreConfig.WITHOUT_DUPLICATES, txn)
     val cursor = store.openCursor(txn)
     new Iterator[Array[Byte]] {
-      override def hasNext: Boolean = cursor.getNext
+      override def hasNext: Boolean    = cursor.getNext
       override def next(): Array[Byte] = cursor.getKey.getBytesUnsafe
     }
   }
 
-  private def runInTransaction[A](txn: Transaction)(block:  => A): Either[Throwable, A] = {
+  private def runInTransaction[A](txn: Transaction)(block: => A): Either[Throwable, A] = {
     def _loop(): A = {
-      val r: A = block()
+      val r: A = block
       if (txn.flush()) r
       else {
         txn.revert()
@@ -72,16 +72,40 @@ class XodusKVStore(storeName: String, environment: Environment, transaction: Opt
       }
     }
 
-    scala.util.Try {
-      val res = _loop()
-      val r = txn.commit()
-      if (!r) throw new RuntimeException("transaction not flushed, nothing committed")
-      else res
-    }.recover {
-      case x: Throwable =>
-        txn.abort()
-        throw x
-    }.toEither
+    scala.util
+      .Try {
+        val res = _loop()
+        val r   = txn.commit()
+        if (!r) throw new RuntimeException("transaction not flushed, nothing committed")
+        else res
+      }
+      .recover {
+        case x: Throwable =>
+          txn.abort()
+          throw x
+      }
+      .toEither
   }
 
+  override def transact[A](f: Proxy => A): Either[Throwable, A] = {
+    val txn = transaction.getOrElse(environment.beginTransaction())
+    runInTransaction(txn) {
+      val proxy = new Proxy {
+        override def get(key: Array[Byte]): Option[Array[Byte]] = {
+          val store = environment.openStore(storeName, StoreConfig.WITHOUT_DUPLICATES, txn)
+          Option(store.get(txn, new ArrayByteIterable(key))).map(_.getBytesUnsafe)
+        }
+        override def put(key: Array[Byte], value: Array[Byte]): Boolean = {
+          val store = environment.openStore(storeName, StoreConfig.WITHOUT_DUPLICATES, txn)
+          store.put(txn, new ArrayByteIterable(key), new ArrayByteIterable(value))
+        }
+
+        override def delete(key: Array[Byte]): Boolean = {
+          val store = environment.openStore(storeName, StoreConfig.WITHOUT_DUPLICATES, txn)
+          store.delete(txn, new ArrayByteIterable(key))
+        }
+      }
+      f(proxy)
+    }
+  }
 }
