@@ -96,6 +96,15 @@ class NodeStoreHandler extends NodeStore.Handler[Stack] {
     }
   }
 
+  /** get nomination envelope from locally stored, received from peer nodes
+    */
+  override def getNominationEnvelope(
+      slotIndex: SlotIndex,
+      peerNodeId: NodeID): Stack[Option[Envelope[Message.Nomination]]] = Stack {
+    val nominationStatus: NominationStatus = slotIndex
+    nominationStatus.latestNominations.map(_.get(peerNodeId)).unsafe()
+  }
+
   /** remove an envelope
     */
   override def removeEnvelope[M <: Message](nodeId: NodeID,

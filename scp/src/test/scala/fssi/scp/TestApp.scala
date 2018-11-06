@@ -27,6 +27,8 @@ class TestApp(nodeID: NodeID,
 
   private var nodeWithTopPriority: Option[NodeID] = None
 
+  private var valueHashes: Map[Value, Long] = Map.empty
+
   private val started: Timestamp = Timestamp(0l)
 
   private var dispatchedTimers: Map[String, Runnable] = Map.empty
@@ -102,6 +104,10 @@ class TestApp(nodeID: NodeID,
 
   def liftNodePriority(nodeID: NodeID): Unit = {
     nodeWithTopPriority = Some(nodeID)
+  }
+
+  def hashOfValue(hash: (Value, Long)*): Unit = {
+    valueHashes = valueHashes ++ hash
   }
 
   def forecastNomination(candidates: ValueSet, compositeValue: Option[Value]): Unit = {

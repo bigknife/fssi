@@ -27,13 +27,14 @@ trait HandleNominationProgram[F[_]] extends SCP[F] with EmitProgram[F] {
           for {
             pre           <- acc
             acceptedNodes <- nodesAcceptedNomination(slotIndex, n)
-            accepted<- ifM(hasNominationValueAccepted(slotIndex, n), false.pureSP[F]) {
+            accepted <- ifM(hasNominationValueAccepted(slotIndex, n), false.pureSP[F]) {
               for {
                 agreed <- ifM(isVBlocking(nodeId, acceptedNodes), true.pureSP[F]) {
                   for {
                     votedNodes <- nodesVotedNomination(slotIndex, n)
                     x          <- isQuorum(nodeId, votedNodes ++ acceptedNodes)
-                    _          <- debug(s"[$nodeId][$slotIndex] accepted $n by quorum: $x")
+                    _          <- if(x) debug(s"[$nodeId][$slotIndex] accepted $n by quorum")
+                    else debug(s"[$nodeId][$slotIndex] did not accept $n by quorum")
                   } yield x
                 }
               } yield agreed
@@ -70,27 +71,29 @@ trait HandleNominationProgram[F[_]] extends SCP[F] with EmitProgram[F] {
 
       val nom = statement.message
       for {
-        toVotes      <- notAcceptedNominatingValues(slotIndex, nom.voted)
-        acceptNew    <- tryAcceptVotes(toVotes)
-        _            <- info(s"[$nodeId][$slotIndex] accepted new votes: $toVotes")
-        accepted     <- acceptedNominations(slotIndex)
-        candidateNew <- tryCandidate(accepted)
-        _            <- info(s"[$nodeId][$slotIndex] produced new candidate: $candidateNew")
-        votedFromLeader <- isLeader(nodeId, slotIndex)
+        toVotes   <- notAcceptedNominatingValues(slotIndex, nom.voted)
+        acceptNew <- tryAcceptVotes(toVotes)
+        _ <- if (acceptNew) info(s"[$nodeId][$slotIndex] accepted new votes: $toVotes")
+        else info(s"[$nodeId][$slotIndex] votes: $toVotes not accepted")
+        accepted        <- acceptedNominations(slotIndex)
+        candidateNew    <- tryCandidate(accepted)
+        _               <- if (candidateNew) info(s"[$nodeId][$slotIndex] produced new candidate: $candidateNew")
+        else info(s"[$nodeId][$slotIndex] no new candidates from votes: $toVotes")
         voteNew <- ifM(haveCandidateNominations(slotIndex), false.pureSP[F]) {
-          for {
-            round <- currentNominateRound(nodeId, slotIndex)
-            value <- tryGetNewValueFromNomination(nodeId, slotIndex, previousValue, nom, round)
-            x <- ifM(value.isEmpty, false) {
-              for {
-                _ <- voteNewNominations(slotIndex, ValueSet(value.get))
-                _ <- info(
-                  s"[$nodeId][$slotIndex] when no candidates, voted new nomination: ${value.get}")
-              } yield true
-            }
-          } yield x
+          ifM(isNotLeader(nodeId, slotIndex), false.pureSP[F]) {
+            for {
+              round <- currentNominateRound(nodeId, slotIndex)
+              value <- tryGetNewValueFromNomination(nodeId, slotIndex, previousValue, nom, round)
+              x <- ifM(value.isEmpty, false) {
+                for {
+                  _ <- voteNewNominations(slotIndex, ValueSet(value.get))
+                  _ <- info(s"[$nodeId][$slotIndex] when no candidates, voted new nomination: ${value.get}")
+                } yield true
+              }
+            } yield x
+          }
         }
-        _ <- ifThen(acceptNew || (votedFromLeader && voteNew)) {
+        _ <- ifThen(acceptNew || voteNew) {
           for {
             nomMsg <- createNominationMessage(slotIndex)
             _      <- emit(nodeId, slotIndex, previousValue, nomMsg)
@@ -128,7 +131,9 @@ trait HandleNominationProgram[F[_]] extends SCP[F] with EmitProgram[F] {
           validValue <- ifM(
             validateValue(nodeId, slotIndex, n).map(_ == Value.Validity.FullyValidated),
             Option(n).pureSP[F])(extractValidValue(nodeId, slotIndex, n))
-          next <- ifM(validValue.isEmpty || nominationStatus.votes.exists(_.contains(validValue.get)), pre) {
+          next <- ifM(
+            validValue.isEmpty || nominationStatus.votes.exists(_.contains(validValue.get)),
+            pre) {
             for {
               p <- hashValue(slotIndex, previousValue, round, validValue.get)
             } yield if (pre._1.isEmpty || p >= pre._2) (validValue, p) else pre

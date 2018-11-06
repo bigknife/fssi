@@ -59,6 +59,8 @@ import types._
     candidateNominations(slotIndex).map(_.nonEmpty)
 
 def isLeader(nodeID: NodeID, slotIndex: SlotIndex): P[F, Boolean]
+def isNotLeader(nodeID: NodeID, slotIndex: SlotIndex): P[F, Boolean] =
+    isLeader(nodeID, slotIndex).map(leader => !leader)
 
 
   /** save new values to current voted nominations

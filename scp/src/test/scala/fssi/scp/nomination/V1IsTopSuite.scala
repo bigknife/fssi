@@ -1,9 +1,10 @@
 package fssi.scp.nomination
-import fssi.scp.nomination.steps.TestBed
+import org.scalatest.Suites
 
-class V1IsTopSuite extends TestBed {
-  test("other nominate and others follow") {
+class V1IsTopSuite extends Suites(
+  new WaitForV1Suite()
+){
 
-  }
+  override def suiteName: String = "v1 is top node"
 
 }

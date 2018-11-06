@@ -60,10 +60,14 @@ class NodeServiceHandler
   override def hashValue(slotIndex: SlotIndex,
                          previousValue: Value,
                          round: Int,
-                         value: Value): Stack[Long] = Stack {
-    computeHashValue(
-      slotIndex.value.toByteArray ++ previousValue.rawBytes ++ NodeServiceHandler.hash_K ++ BigInt(
-        round).toByteArray ++ value.rawBytes).toLong
+                         value: Value): Stack[Long] = Stack { setting =>
+    if (Option(setting.applicationCallback).exists(_.isHashFuncProvided)) {
+      setting.applicationCallback.hashValue(slotIndex, previousValue, round, value)
+    } else {
+      computeHashValue(
+        slotIndex.value.toByteArray ++ previousValue.rawBytes ++ NodeServiceHandler.hash_K ++ BigInt(
+          round).toByteArray ++ value.rawBytes).toLong
+    }
   }
 
   /** stop nomination process
@@ -275,7 +279,7 @@ class NodeServiceHandler
     msg match {
       case Message.Prepare(b, Some(p), _, _, _) if b.counter > 0 => ValueSet(b.value, p.value)
       case Message.Prepare(_, Some(p), _, _, _)                  => ValueSet(p.value)
-      case Message.Prepare(b, None, _, _, _)                  => ValueSet(b.value)
+      case Message.Prepare(b, None, _, _, _)                     => ValueSet(b.value)
       case Message.Confirm(b, _, _, _)                           => ValueSet(b.value)
       case Message.Externalize(x, _, _)                          => ValueSet(x)
     }

@@ -19,6 +19,7 @@ trait ApplicationCallback {
   def isHashFuncProvided: Boolean = false
   def hashNodeForPriority(nodeId: NodeID, slotIndex: SlotIndex, previousValue: Value, round: Int): Long = 0
   def hashNodeForNeighbour(nodeId: NodeID, slotIndex: SlotIndex, previousValue: Value, round: Int): Long = 0
+  def hashValue(slotIndex: SlotIndex, previousValue: Value, round: Int, value: Value): Long = 0
 }
 
 object ApplicationCallback {
