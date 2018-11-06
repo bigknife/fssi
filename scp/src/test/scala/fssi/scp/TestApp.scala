@@ -5,9 +5,10 @@ import fssi.scp.ast.components.Model
 import fssi.scp.ast.components.Model.Op
 import fssi.scp.ast.uc.SCP
 import fssi.scp.interpreter.store.{BallotStatus, NominationStatus}
-import fssi.scp.interpreter.{NodeServiceHandler, Setting, runner}
-import fssi.scp.types.Message.Nomination
-import fssi.scp.types._
+import fssi.scp.interpreter.{NodeServiceHandler, NodeStoreHandler, Setting, runner}
+import fssi.scp.types.Ballot.Phase
+import fssi.scp.types.Message.{Nomination, Prepare}
+import fssi.scp.types.{Message, _}
 import org.scalameta.logger
 
 class TestApp(nodeID: NodeID,
@@ -40,9 +41,6 @@ class TestApp(nodeID: NodeID,
 
   def reset(): Unit = {
     statements = Vector.empty
-
-    NominationStatus.clearInstance(slotIndex)
-    BallotStatus.cleanInstance(nodeID, slotIndex)
 
     expectedCandidates = ValueSet.empty
     expectedCompositeValue = None
@@ -119,7 +117,8 @@ class TestApp(nodeID: NodeID,
     statements.size
   }
 
-  def latestCompositeCandidateValue: Option[Value] = NominationStatus.getInstance(slotIndex).latestCompositeCandidate.unsafe()
+  def latestCompositeCandidateValue: Option[Value] =
+    NominationStatus.getInstance(slotIndex).latestCompositeCandidate.unsafe()
 
   def nominate(value: Value): Boolean = {
     val p = scp.handleAppRequest(nodeID, slotIndex, value, value)
@@ -139,8 +138,52 @@ class TestApp(nodeID: NodeID,
       .unsafeRunSync()
   }
 
+  def makePrepare(node: NodeID,
+                  key: PrivateKey,
+                  current: Ballot,
+                  prepare: Option[Ballot] = None,
+                  cn: Int = 0,
+                  hn: Int = 0,
+                  preparePrime: Option[Ballot] = None): Envelope[Prepare] = {
+    NodeServiceHandler.instance
+      .putInEnvelope(
+        slotIndex,
+        Prepare(current, prepare, preparePrime, cn, hn)
+      )
+      .run(setting.copy(localNode = node, privateKey = key))
+      .unsafeRunSync()
+  }
   def hasPrepared(b: Ballot): Boolean =
     statements.lastOption map (_.copy(timestamp = started)) contains statementOf(Message.prepare(b))
+
+  def setStatusFromMessage[M <: Message](m: M): Unit = {
+    val p = for {
+      envelope <- NodeServiceHandler.instance.putInEnvelope(slotIndex, m)
+      _        <- NodeStoreHandler.instance.saveEnvelope(nodeID, slotIndex, envelope)
+    } yield ()
+
+    p.run(setting).unsafeRunSync()
+
+    m match {
+      case Nomination(votedValues, acceptedValues) =>
+        val nominationStatus = NominationStatus.getInstance(slotIndex)
+        nominationStatus.votes := votedValues
+        nominationStatus.accepted := acceptedValues
+
+      case Prepare(b, p, pPrime, cn, hn) =>
+        val ballotStatus = BallotStatus.getInstance(nodeID, slotIndex)
+        NodeStoreHandler.instance
+          .updateBallotStateWhenBumpNewBallot(nodeID, slotIndex, b)
+          .run(setting)
+          .unsafeRunSync()
+        ballotStatus.prepared := p
+        ballotStatus.preparedPrime := pPrime
+        if (hn > 0) ballotStatus.highBallot := Some(Ballot(hn, b.value))
+        if (cn > 0) ballotStatus.commit := Some(Ballot(cn, b.value))
+        ballotStatus.phase := Phase.Prepare
+    }
+  }
+
 
   private def isEmittedFromThisNode[M <: Message](envelope: Envelope[M]): Boolean =
     envelope.statement.from == nodeID &&

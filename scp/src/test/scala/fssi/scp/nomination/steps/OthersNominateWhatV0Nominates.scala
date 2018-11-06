@@ -8,18 +8,18 @@ trait OthersNominateWhatV0Nominates extends StepSpec {
   def othersNominateWhatV0Nominate(): Unit = {
     require(app.nominate(xValue))
 
-    votedValues := ValueSet(xValue)
+    votes := ValueSet(xValue)
     app.numberOfEnvelopes shouldBe 1
-    app.hasNominated(votedValues.unsafe(), acceptedValues.unsafe()) shouldBe true
+    app.hasNominated(votes.unsafe(), accepted.unsafe()) shouldBe true
 
     val nom1: Envelope[Nomination] =
-      app.makeNomination(node1, keyOfNode1, votedValues.unsafe(), acceptedValues.unsafe())
+      app.makeNomination(node1, keyOfNode1, votes.unsafe(), accepted.unsafe())
     val nom2: Envelope[Nomination] =
-      app.makeNomination(node2, keyOfNode2, votedValues.unsafe(), acceptedValues.unsafe())
+      app.makeNomination(node2, keyOfNode2, votes.unsafe(), accepted.unsafe())
     val nom3: Envelope[Nomination] =
-      app.makeNomination(node3, keyOfNode3, votedValues.unsafe(), acceptedValues.unsafe())
+      app.makeNomination(node3, keyOfNode3, votes.unsafe(), accepted.unsafe())
     val nom4: Envelope[Nomination] =
-      app.makeNomination(node4, keyOfNode4, votedValues.unsafe(), acceptedValues.unsafe())
+      app.makeNomination(node4, keyOfNode4, votes.unsafe(), accepted.unsafe())
 
     // nothing happened yet
     require(app.onEnvelope(nom1))
@@ -29,21 +29,21 @@ trait OthersNominateWhatV0Nominates extends StepSpec {
     // this cause 'x' be accepted (voted in a quorum)
     require(app.onEnvelope(nom3))
     app.numberOfEnvelopes shouldBe 2
-    acceptedValues := ValueSet(xValue)
-    app.hasNominated(votedValues.unsafe(), acceptedValues.unsafe()) shouldBe true
+    accepted := ValueSet(xValue)
+    app.hasNominated(votes.unsafe(), accepted.unsafe()) shouldBe true
 
     // extra message doesn't do anything
     app.onEnvelope(nom4)
     app.numberOfEnvelopes shouldBe 2
 
     val acc1: Envelope[Nomination] =
-      app.makeNomination(node1, keyOfNode1, votedValues.unsafe(), acceptedValues.unsafe())
+      app.makeNomination(node1, keyOfNode1, votes.unsafe(), accepted.unsafe())
     val acc2: Envelope[Nomination] =
-      app.makeNomination(node2, keyOfNode2, votedValues.unsafe(), acceptedValues.unsafe())
+      app.makeNomination(node2, keyOfNode2, votes.unsafe(), accepted.unsafe())
     val acc3: Envelope[Nomination] =
-      app.makeNomination(node3, keyOfNode3, votedValues.unsafe(), acceptedValues.unsafe())
+      app.makeNomination(node3, keyOfNode3, votes.unsafe(), accepted.unsafe())
     val acc4: Envelope[Nomination] =
-      app.makeNomination(node4, keyOfNode4, votedValues.unsafe(), acceptedValues.unsafe())
+      app.makeNomination(node4, keyOfNode4, votes.unsafe(), accepted.unsafe())
 
     // nothing happens
     app.onEnvelope(acc1)
@@ -59,6 +59,6 @@ trait OthersNominateWhatV0Nominates extends StepSpec {
     app.onEnvelope(acc4)
     app.numberOfEnvelopes shouldBe 3
 
-    anotherVotedValues := ValueSet(xValue, yValue)
+    votes2 := ValueSet(xValue, yValue)
   }
 }

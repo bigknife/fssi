@@ -8,13 +8,13 @@ trait OthersAcceptYAfterXPrepared extends StepSpec {
   def thenOthersAcceptY(): Unit = {
 
     val acc1: Envelope[Nomination] =
-      app.makeNomination(node1, keyOfNode1, anotherVotedValues.unsafe(), anotherVotedValues.unsafe())
+      app.makeNomination(node1, keyOfNode1, votes2.unsafe(), votes2.unsafe())
     val acc2: Envelope[Nomination] =
-      app.makeNomination(node2, keyOfNode2, anotherVotedValues.unsafe(), anotherVotedValues.unsafe())
+      app.makeNomination(node2, keyOfNode2, votes2.unsafe(), votes2.unsafe())
     val acc3: Envelope[Nomination] =
-      app.makeNomination(node3, keyOfNode3, anotherVotedValues.unsafe(), anotherVotedValues.unsafe())
+      app.makeNomination(node3, keyOfNode3, votes2.unsafe(), votes2.unsafe())
     val acc4: Envelope[Nomination] =
-      app.makeNomination(node4, keyOfNode4, anotherVotedValues.unsafe(), anotherVotedValues.unsafe())
+      app.makeNomination(node4, keyOfNode4, votes2.unsafe(), votes2.unsafe())
 
     app.onEnvelope(acc1)
     app.numberOfEnvelopes shouldBe 3
@@ -22,9 +22,9 @@ trait OthersAcceptYAfterXPrepared extends StepSpec {
     // v-blocking
     app.onEnvelope(acc2)
     app.numberOfEnvelopes shouldBe 4
-    app.hasNominated(anotherVotedValues.unsafe(), anotherVotedValues.unsafe()) shouldBe true
+    app.hasNominated(votes2.unsafe(), votes2.unsafe()) shouldBe true
 
-    app.forecastNomination(anotherVotedValues.unsafe(), Some(zValue))
+    app.forecastNomination(votes2.unsafe(), Some(zValue))
 
     // this updates the composite value to use next time
     // but does not prepare it

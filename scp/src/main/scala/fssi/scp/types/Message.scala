@@ -26,10 +26,10 @@ object Message {
 
   case class Prepare(
       b: Ballot,
-      p: Option[Ballot],
-      `p'`: Option[Ballot],
-      `c.n`: Int,
-      `h.n`: Int
+      p: Option[Ballot] = None,
+      `p'`: Option[Ballot] = None,
+      `c.n`: Int = 0,
+      `h.n`: Int = 0
   ) extends BallotMessage {
     def workingBallot: Ballot = b
     def commitableBallot: Option[Ballot] =

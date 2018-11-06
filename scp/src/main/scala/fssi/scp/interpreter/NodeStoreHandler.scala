@@ -131,6 +131,11 @@ class NodeStoreHandler extends NodeStore.Handler[Stack] {
     nominationStatus.accepted.unsafe()
   }
 
+  override def hasNominationValueAccepted(slotIndex: SlotIndex, value: Value): Stack[Boolean] = Stack {
+    val nominationStatus: NominationStatus = slotIndex
+    nominationStatus.accepted.unsafe().contains(value)
+  }
+
   /** find current candidates nomination value
     */
   override def candidateNominations(slotIndex: SlotIndex): Stack[ValueSet] = Stack {

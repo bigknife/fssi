@@ -6,15 +6,15 @@ import fssi.scp.nomination.steps.{
 }
 import org.scalatest.FunSuite
 
-class SelfXOthersXSpec
+class AcceptYSuite
     extends FunSuite
     with V0IsTop
     with OthersNominateWhatV0Nominates
     with OthersAcceptYAfterXPrepared {
 
-  override def suiteName: String = "others nominate what v0 says (x) -> prepare x"
+  override def suiteName: String = "nominate x -> accept x -> prepare (x) ; others accepted y"
 
-  test("nominate x -> accept x -> prepare (x) ; others accepted y -> update latest to (z=x+y)") {
+  test("update latest to (z=x+y)") {
     v0IsTop()
     othersNominateWhatV0Nominate()
     thenOthersAcceptY()

@@ -30,7 +30,8 @@ import types._
 
   /** get nomination envelope from locally stored, received from peer nodes
     */
-  def getNominationEnvelope(slotIndex: SlotIndex, peerNodeId: NodeID): P[F, Option[Envelope[Message.Nomination]]]
+  def getNominationEnvelope(slotIndex: SlotIndex,
+                            peerNodeId: NodeID): P[F, Option[Envelope[Message.Nomination]]]
 
   /** remove an envelope
     */
@@ -39,16 +40,17 @@ import types._
                                    envelope: Envelope[M]): P[F, Unit]
 
   /** find not accepted (nominate x) from values
+    *
     * @param values given a value set
     * @return a subset of values, the element in which is not accepted as nomination value
     */
-  def notAcceptedNominatingValues(
-                                  slotIndex: SlotIndex,
-                                  values: ValueSet): P[F, ValueSet]
+  def notAcceptedNominatingValues(slotIndex: SlotIndex, values: ValueSet): P[F, ValueSet]
 
   /** find current accepted nomination votes
     */
   def acceptedNominations(slotIndex: SlotIndex): P[F, ValueSet]
+
+  def hasNominationValueAccepted(slotIndex: SlotIndex, value: Value): P[F, Boolean]
 
   /** find current candidates nomination value
     */
@@ -89,6 +91,7 @@ import types._
                       counter: Int): P[F, Ballot]
 
   /** update local state when a new ballot was bumped into
+    *
     * @see BallotProtocol.cpp#399
     */
   def updateBallotStateWhenBumpNewBallot(nodeId: NodeID,
@@ -96,6 +99,7 @@ import types._
                                          newB: Ballot): P[F, Boolean]
 
   /** update local state when a ballot would be accepted as being prepared
+    *
     * @see BallotProtocol.cpp#879
     */
   def updateBallotStateWhenAcceptPrepare(nodeId: NodeID,
@@ -103,6 +107,7 @@ import types._
                                          newP: Ballot): P[F, Boolean]
 
   /** update local state when a new high ballot and a new low ballot would be confirmed as being prepared
+    *
     * @see BallotProtocol.cpp#1031
     */
   def updateBallotStateWhenConfirmPrepare(nodeId: NodeID,
@@ -115,6 +120,7 @@ import types._
   def nodesAheadLocal(nodeId: NodeID, slotIndex: SlotIndex): P[F, Set[NodeID]]
 
   /** find nodes ballot is ahead of a counter n
+    *
     * @see BallotProtocol#1385
     */
   def nodesAheadBallotCounter(nodeId: NodeID, slotIndex: SlotIndex, counter: Int): P[F, Set[NodeID]]
@@ -144,6 +150,7 @@ import types._
   def currentMessageLevelDown(nodeId: NodeID, slotIndex: SlotIndex): P[F, Unit]
 
   /** find all counters from received ballot message envelopes
+    *
     * @see BallotProtocol.cpp#1338
     */
   def allCountersFromBallotEnvelopes(nodeId: NodeID, slotIndex: SlotIndex): P[F, CounterSet]
@@ -155,6 +162,7 @@ import types._
 
   /** find candidate ballot to prepare from local stored envelopes received from other peers
     * if the ballot is prepared, should be ignored.
+    *
     * @see BallotProtocol.cpp#getPrepareCandidates
     */
   def prepareCandidatesWithHint(nodeId: NodeID,
@@ -162,16 +170,19 @@ import types._
                                 hint: Statement[Message.BallotMessage]): P[F, BallotSet]
 
   /** the set of nodes which have vote(prepare b)
+    *
     * @see BallotProtocol.cpp#839-866
     */
   def nodesVotedPrepare(nodeId: NodeID, slotIndex: SlotIndex, ballot: Ballot): P[F, Set[NodeID]]
 
   /** the set of nodes which have accepted(prepare b)
+    *
     * @see BallotProtocol.cpp#1521
     */
   def nodesAcceptedPrepare(nodeId: NodeID, slotIndex: SlotIndex, ballot: Ballot): P[F, Set[NodeID]]
 
   /** find all the commitable counters in recieved envelopes
+    *
     * @see BallotProtocol.cpp#1117
     */
   def commitBoundaries(nodeId: NodeID, slotIndex: SlotIndex, ballot: Ballot): P[F, CounterSet]
@@ -191,6 +202,7 @@ import types._
                           counterInterval: CounterInterval): P[F, Set[NodeID]]
 
   /** accept ballots(low and high) as committed
+    *
     * @see BallotProtocol.cpp#1292
     */
   def acceptCommitted(nodeId: NodeID,
@@ -199,6 +211,7 @@ import types._
                       highest: Ballot): P[F, StateChanged]
 
   /** confirm ballots(low and high) as committed
+    *
     * @see BallotProtocol.cpp#1292
     */
   def confirmCommitted(nodeId: NodeID,
@@ -207,11 +220,13 @@ import types._
                        highest: Ballot): P[F, StateChanged]
 
   /** check if it's able to accept commit a ballot now
+    *
     * @see BallotProtocol.cpp#1169-1172, 1209-1215
     */
   def canAcceptCommitNow(nodeId: NodeID, slotIndex: SlotIndex, ballot: Ballot): P[F, Boolean]
 
   /** check if it's able to confirm commit a ballot now
+    *
     * @see BallotProtocol.cpp#1434-1443, 1470-1473
     */
   def canConfirmCommitNow(nodeId: NodeID, slotIndex: SlotIndex, ballot: Ballot): P[F, Boolean]

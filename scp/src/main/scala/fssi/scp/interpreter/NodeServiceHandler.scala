@@ -190,8 +190,8 @@ class NodeServiceHandler
 
       message match {
         case x: Message.BallotMessage =>
-          val nominationStatus = BallotStatus.getInstance(setting.localNode, slotIndex)
-          nominationStatus.latestGeneratedEnvelope := env.to[Message.BallotMessage]
+          val ballotStatus = BallotStatus.getInstance(setting.localNode, slotIndex)
+          ballotStatus.latestGeneratedEnvelope := env.to[Message.BallotMessage]
         case _ =>
       }
 

@@ -27,12 +27,16 @@ trait HandleNominationProgram[F[_]] extends SCP[F] with EmitProgram[F] {
           for {
             pre           <- acc
             acceptedNodes <- nodesAcceptedNomination(slotIndex, n)
-            accepted <- ifM(isVBlocking(nodeId, acceptedNodes), true.pureSP[F]) {
+            accepted<- ifM(hasNominationValueAccepted(slotIndex, n), false.pureSP[F]) {
               for {
-                votedNodes <- nodesVotedNomination(slotIndex, n)
-                x          <- isQuorum(nodeId, votedNodes ++ acceptedNodes)
-                _          <- debug(s"[$nodeId][$slotIndex] accepted $n by quorum: $x")
-              } yield x
+                agreed <- ifM(isVBlocking(nodeId, acceptedNodes), true.pureSP[F]) {
+                  for {
+                    votedNodes <- nodesVotedNomination(slotIndex, n)
+                    x          <- isQuorum(nodeId, votedNodes ++ acceptedNodes)
+                    _          <- debug(s"[$nodeId][$slotIndex] accepted $n by quorum: $x")
+                  } yield x
+                }
+              } yield agreed
             }
             _ <- ifThen(accepted) {
               for {
