@@ -131,10 +131,11 @@ class NodeStoreHandler extends NodeStore.Handler[Stack] {
     nominationStatus.accepted.unsafe()
   }
 
-  override def hasNominationValueAccepted(slotIndex: SlotIndex, value: Value): Stack[Boolean] = Stack {
-    val nominationStatus: NominationStatus = slotIndex
-    nominationStatus.accepted.unsafe().contains(value)
-  }
+  override def hasNominationValueAccepted(slotIndex: SlotIndex, value: Value): Stack[Boolean] =
+    Stack {
+      val nominationStatus: NominationStatus = slotIndex
+      nominationStatus.accepted.unsafe().contains(value)
+    }
 
   /** find current candidates nomination value
     */
@@ -188,6 +189,11 @@ class NodeStoreHandler extends NodeStore.Handler[Stack] {
   override def candidateNewNomination(slotIndex: SlotIndex, value: Value): Stack[Unit] = Stack {
     val nominationStatus: NominationStatus = slotIndex
     nominationStatus.candidates := nominationStatus.candidates.map(_ + value).unsafe(); ()
+  }
+
+  override def isLeader(nodeID: NodeID, slotIndex: SlotIndex): Stack[Boolean] = Stack {
+    val nominationStatus: NominationStatus = NominationStatus.getInstance(slotIndex)
+    nominationStatus.roundLeaders.exists(_.contains(nodeID))
   }
 
   /** get current ballot
@@ -736,11 +742,14 @@ class NodeStoreHandler extends NodeStore.Handler[Stack] {
       nominationStatus.latestCompositeCandidate.unsafe()
     }
 
-  override def candidateValueUpdated(nodeId: NodeID, slotIndex: SlotIndex, composite: Value): Stack[Unit] = Stack {
+  override def candidateValueUpdated(nodeId: NodeID,
+                                     slotIndex: SlotIndex,
+                                     composite: Value): Stack[Unit] = Stack {
     val nominationStatus: NominationStatus = slotIndex
     nominationStatus.latestCompositeCandidate := Some(composite)
     ()
   }
+
   /** check if a envelope can be emitted
     */
   override def canEmit[M <: Message](nodeId: NodeID,

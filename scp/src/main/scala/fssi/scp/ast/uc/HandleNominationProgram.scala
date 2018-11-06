@@ -76,6 +76,7 @@ trait HandleNominationProgram[F[_]] extends SCP[F] with EmitProgram[F] {
         accepted     <- acceptedNominations(slotIndex)
         candidateNew <- tryCandidate(accepted)
         _            <- info(s"[$nodeId][$slotIndex] produced new candidate: $candidateNew")
+        votedFromLeader <- isLeader(nodeId, slotIndex)
         voteNew <- ifM(haveCandidateNominations(slotIndex), false.pureSP[F]) {
           for {
             round <- currentNominateRound(nodeId, slotIndex)
@@ -89,7 +90,7 @@ trait HandleNominationProgram[F[_]] extends SCP[F] with EmitProgram[F] {
             }
           } yield x
         }
-        _ <- ifThen(acceptNew || voteNew) {
+        _ <- ifThen(acceptNew || (votedFromLeader && voteNew)) {
           for {
             nomMsg <- createNominationMessage(slotIndex)
             _      <- emit(nodeId, slotIndex, previousValue, nomMsg)
