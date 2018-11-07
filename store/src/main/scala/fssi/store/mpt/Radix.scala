@@ -18,10 +18,9 @@ object Radix {
     def ofRepr(b: Byte): Option[Radix] = ofRepr(b.toChar)
     def ofRepr(i: Int): Option[Radix]  = ofRepr(i.toChar)
     def ofRepr(c: Char): Option[Radix] =
-      if (c >= bases.head && c <= bases(bases.last)) {
+      if (c >= bases.head && c <= bases.last) {
         Some(new Radix {
           override def index: Int = bases.indexOf(c)
-
           override def representation: String = c.toString
         })
       } else None

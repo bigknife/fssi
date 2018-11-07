@@ -13,4 +13,7 @@ object Hash {
   def encode(source: Array[Byte]): Hash = new Hash {
     override def bytes: Array[Byte] = new SHA3.Digest256().digest(source)
   }
+  def wrap(b: Array[Byte]): Hash = new Hash {
+    override def bytes: Array[Byte] = b
+  }
 }

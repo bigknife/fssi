@@ -17,7 +17,7 @@ sealed trait Path {
   def nonEmpty: Boolean = segments.nonEmpty
   def head: Byte = segments.head
   def prefix(that: Path): Path = {
-    val max = scala.math.max(segments.length, that.segments.length)
+    val min = scala.math.min(segments.length, that.segments.length)
 
     def _loop(acc: Array[Byte], i: Int, max: Int, bytes1: Array[Byte], bytes2: Array[Byte]): Array[Byte] = {
       if (i == max) acc
@@ -25,7 +25,7 @@ sealed trait Path {
       else acc
     }
 
-    Path.PlainPath(_loop(Array.emptyByteArray, 0, max, segments, that.segments))
+    Path.PlainPath(_loop(Array.emptyByteArray, 0, min, segments, that.segments))
   }
   def hasPrefix(that: Path): Boolean = this.segments(0) == that.segments(0)
   def length: Int = segments.length
@@ -33,6 +33,8 @@ sealed trait Path {
   def asExtensionPath: Path.ExtensionPath = Path.ExtensionPath(segments)
   def asLeafPath: Path.LeafPath = Path.LeafPath(segments)
   def asPlainPath: Path.PlainPath = Path.PlainPath(segments)
+
+  override def toString: String = new String(segments, "utf-8")
 }
 
 object Path {

@@ -2,14 +2,17 @@ package fssi.store.core
 
 import jetbrains.exodus.ArrayByteIterable
 import jetbrains.exodus.env._
+import org.slf4j.LoggerFactory
 
 class XodusKVStore(storeName: String, environment: Environment, transaction: Option[Transaction])
     extends KVStore {
 
+  private val log = LoggerFactory.getLogger(getClass)
+
   override def get(key: Array[Byte]): Option[Array[Byte]] = {
     val txn = transaction.getOrElse(environment.beginReadonlyTransaction())
+    val store = environment.openStore(storeName, StoreConfig.WITHOUT_DUPLICATES, txn)
     def block: Option[Array[Byte]] = {
-      val store = environment.openStore(storeName, StoreConfig.WITHOUT_DUPLICATES, txn)
       Option(store.get(txn, new ArrayByteIterable(key))).map(_.getBytesUnsafe)
     }
     val r = block
@@ -65,7 +68,8 @@ class XodusKVStore(storeName: String, environment: Environment, transaction: Opt
   private def runInTransaction[A](txn: Transaction)(block: => A): Either[Throwable, A] = {
     def _loop(): A = {
       val r: A = block
-      if (txn.flush()) r
+      val flushed = txn.flush()
+      if (flushed) r
       else {
         txn.revert()
         _loop()
@@ -89,19 +93,19 @@ class XodusKVStore(storeName: String, environment: Environment, transaction: Opt
 
   override def transact[A](f: Proxy => A): Either[Throwable, A] = {
     val txn = transaction.getOrElse(environment.beginTransaction())
+    val store = environment.openStore(storeName, StoreConfig.WITHOUT_DUPLICATES, txn)
     runInTransaction(txn) {
       val proxy = new Proxy {
         override def get(key: Array[Byte]): Option[Array[Byte]] = {
-          val store = environment.openStore(storeName, StoreConfig.WITHOUT_DUPLICATES, txn)
+          log.debug(s"store: get -> ${new String(key, "utf-8")}")
           Option(store.get(txn, new ArrayByteIterable(key))).map(_.getBytesUnsafe)
         }
         override def put(key: Array[Byte], value: Array[Byte]): Boolean = {
-          val store = environment.openStore(storeName, StoreConfig.WITHOUT_DUPLICATES, txn)
+          log.debug(s"store: put -> ${new String(key, "utf-8")}")
           store.put(txn, new ArrayByteIterable(key), new ArrayByteIterable(value))
         }
 
         override def delete(key: Array[Byte]): Boolean = {
-          val store = environment.openStore(storeName, StoreConfig.WITHOUT_DUPLICATES, txn)
           store.delete(txn, new ArrayByteIterable(key))
         }
       }
