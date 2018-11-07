@@ -40,6 +40,30 @@ object Slot {
           acc ++ bytes.array
         }
     }
+    def decode(bytes: Array[Byte]): Option[Slot] = {
+      val bb = ByteBuffer.wrap(bytes)
+
+      def _loop(bb: ByteBuffer, acc: Vector[Cell]): Vector[Cell] = {
+        if(bb.position() == bb.limit()) acc
+        else {
+          val flag = Array(0.toByte)
+          bb.get(flag)
+          if(flag(0) != 0x30) throw new RuntimeException("Slot Cell should start with 0x30")
+          else {
+            val idx = bb.getInt
+            val radix = Radix.Hex.ofIndex(idx)
+            val keyLength = bb.getInt
+            val keyBytes = Array.fill(keyLength)(0.toByte)
+            val key = Key.wrap(keyBytes)
+            acc :+ Cell(radix, key)
+          }
+        }
+      }
+
+      scala.util.Try {
+        SimpleSlot(_loop(bb, Vector.empty))
+      }.toOption
+    }
   }
 
 

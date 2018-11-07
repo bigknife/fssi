@@ -7,6 +7,7 @@ sealed trait Data {
 
   val hash: Hash = Hash.encode(bytes)
   val length: Int = bytes.length
+  def isEmpty: Boolean = bytes.isEmpty
 
   def toNode: Option[Node] = Data.decode(this)
 }
@@ -56,5 +57,45 @@ object Data {
       buf.put(data.bytes)
       Data.wrap(buf.array())
   }
-  def decode(data: Data): Option[Node] = ???
+  def decode(data: Data): Option[Node] = {
+    if (data.isEmpty) Some(Node.Null)
+    else {
+      val buf = ByteBuffer.wrap(data.bytes)
+
+      val flag = Array(0.toByte)
+      buf.get(flag)
+      flag(0) match {
+        case 0x01 => // leaf
+          val pathLength = buf.getInt
+          val dataLength = buf.getInt
+          val pathBytes = Array.fill(pathLength)(0.toByte)
+          buf.get(pathBytes)
+          val dataBytes = Array.fill(dataLength)(0.toByte)
+          buf.get(dataBytes)
+          Some(Node.leaf(Path.plain(pathBytes), Data.wrap(dataBytes)))
+
+        case 0x02 => // extension
+          val pathLength = buf.getInt
+          val keyLength = buf.getInt
+          val pathBytes = Array.fill(pathLength)(0.toByte)
+          buf.get(pathBytes)
+          val keyBytes = Array.fill(keyLength)(0.toByte)
+          buf.get(keyBytes)
+          Some(Node.extension(Path.plain(pathBytes), Key.wrap(keyBytes)))
+
+        case 0x03 => // branch
+          val slotLength = buf.getInt
+          val dataLength = buf.getInt
+          val slotBytes = Array.fill(slotLength)(0.toByte)
+          buf.get(slotBytes)
+          val dataBytes = Array.fill(dataLength)(0.toByte)
+          buf.get(dataBytes)
+          for {
+            slot <- Slot.Hex.decode(slotBytes)
+          } yield Node.branch(slot, Data.wrap(dataBytes))
+
+        case _ => None
+      }
+    }
+  }
 }
