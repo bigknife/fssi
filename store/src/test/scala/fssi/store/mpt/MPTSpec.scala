@@ -15,7 +15,8 @@ class MPTSpec extends FunSuite with BeforeAndAfter {
   }
 
   test("put and get") {
-    for (_ <- 1 to 100000) {
+    val times = 10
+    for (_ <- 1 to times) {
       val key = Array.fill(32)(0.toByte)
       Random.nextBytes(key)
 
@@ -24,7 +25,7 @@ class MPTSpec extends FunSuite with BeforeAndAfter {
 
       mpt.put(key, value)
 
-      val value1 = mpt.get(key)
+      val value1 = mpt.get(key).right.get
       assert(value1.isDefined)
       assert(value1.get sameElements value)
     }
@@ -40,6 +41,21 @@ class MPTSpec extends FunSuite with BeforeAndAfter {
     mpt.rootHash.map(Key.encode).foreach(k =>
     info(s"$k")
     )
+  }
+
+  test("transact") {
+    val k1: Array[Byte] = Array(0, 0, 0, 0, 0, 0, 0, 1)
+    val k2: Array[Byte] = Array(0, 0, 0, 0, 0, 0, 0, 2)
+    val v: Array[Byte] = Array(1,1,1,1)
+
+    val t =  mpt.transact { proxy =>
+      //proxy.put(k1, v)
+      proxy.put(k2, v)
+    }
+    assert(t.isRight)
+    val v1 = mpt.get(k2)
+    assert(v1.isRight && v1.right.get.isDefined && v1.right.get.get.sameElements(v))
+
   }
 
 }

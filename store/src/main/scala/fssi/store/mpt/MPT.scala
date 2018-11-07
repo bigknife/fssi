@@ -9,51 +9,74 @@ trait MPT {
   private[mpt] lazy val log = LoggerFactory.getLogger(getClass)
 
   // user's method, put
-  def put(k: Array[Byte], v: Array[Byte]): Unit = {
+  def put(k: Array[Byte], v: Array[Byte]): Either[Throwable, Unit] = {
     val hash = Hash.encode(k)
     val key  = Key.encode(hash)
-    insertTrie(key, Data.wrap(v))
+    store.transact { proxy =>
+      insertTrie(key, Data.wrap(v), proxy)
+    }
   }
   // user's method, get
-  def get(k: Array[Byte]): Option[Array[Byte]] = {
+  def get(k: Array[Byte]): Either[Throwable, Option[Array[Byte]]] = {
     val hash = Hash.encode(k)
     val key  = Key.encode(hash)
-    fetchTrie(key).map(_.bytes)
+    store.transact { proxy =>
+      fetchTrie(key, proxy).map(_.bytes)
+    }
   }
   // root hash
   def rootKey: Option[Key] = {
-    store.transact {proxy =>
-      for {
-        key <- proxy.get(name.getBytes("utf-8")).map(Key.wrap)
-      } yield key
-    }.toOption.flatten
+    store
+      .transact { proxy =>
+        for {
+          key <- proxy.get(name.getBytes("utf-8")).map(Key.wrap)
+        } yield key
+      }
+      .toOption
+      .flatten
   }
   def rootHash: Option[Hash] = {
     rootKey.map(Key.decode)
   }
 
-  private def insertTrie(key: Key, data: Data): Unit = {
-    store.transact { proxy =>
-      val (n, k)          = rootNode(proxy).getOrElse((Node.Null, Key.empty))
-      val leaf            = Node.leaf(key.toPath, data)
-      val (_, newRootKey) = saveNode(combineNode(leaf, n, proxy), proxy)
-      if (k.nonEmpty) {
-        proxy.delete(k.bytes)
-      }
-      // set new root node
-      proxy.put(name.getBytes("utf-8"), newRootKey.bytes)
-      log.debug(s"update new root: $name -> ${new String(newRootKey.bytes, "utf-8")}")
-
-    } match {
-      case Left(t) => throw t
-      case _       => ()
-    }
-
+  trait Proxy {
+    def put(k: Array[Byte], v: Array[Byte]): Unit
+    def get(k: Array[Byte]): Option[Array[Byte]]
   }
 
-  private def fetchTrie(key: Key): Option[Data] = {
+  def transact[A](f: Proxy => A): Either[Throwable, A] = {
+    store.transact { proxy =>
+      val p = new Proxy {
+        override def put(k: Array[Byte], v: Array[Byte]): Unit = {
+          val hash = Hash.encode(k)
+          val key  = Key.encode(hash)
+          insertTrie(key, Data.wrap(v), proxy)
+        }
+        override def get(k: Array[Byte]): Option[Array[Byte]] = {
+          val hash = Hash.encode(k)
+          val key  = Key.encode(hash)
+          fetchTrie(key, proxy).map(_.bytes)
+        }
+      }
+      f(p)
+    }
+  }
 
-    def _fetch(path: Path, node: Node, proxy: KVStore#Proxy): Option[Data] = node match {
+  private def insertTrie(key: Key, data: Data, proxy: KVStore#Proxy): Unit = {
+    val (n, k)          = rootNode(proxy).getOrElse((Node.Null, Key.empty))
+    val leaf            = Node.leaf(key.toPath, data)
+    val (_, newRootKey) = saveNode(combineNode(leaf, n, proxy), proxy)
+    if (k.nonEmpty) {
+      proxy.delete(k.bytes)
+    }
+    // set new root node
+    proxy.put(name.getBytes("utf-8"), newRootKey.bytes)
+    log.debug(s"update new root: $name -> ${new String(newRootKey.bytes, "utf-8")}")
+  }
+
+  private def fetchTrie(key: Key, proxy: KVStore#Proxy): Option[Data] = {
+
+    def _fetch(path: Path, node: Node): Option[Data] = node match {
       case Node.Null                            => None
       case Node.Leaf(p, data) if path === p     => Some(data)
       case Node.Leaf(_, _)                      => None
@@ -63,11 +86,11 @@ trait MPT {
         if (cell.key.isEmpty) None
         else {
           val next = for {
-            data <- store.get(cell.key.bytes).map(Data.wrap)
+            data <- proxy.get(cell.key.bytes).map(Data.wrap)
             n    <- data.toNode
           } yield n
           if (next.isEmpty) None
-          else _fetch(path.dropHead, next.get, proxy)
+          else _fetch(path.dropHead, next.get)
         }
       case Node.Extension(p, k) if p.length == 0 && path.length == 0 =>
         val next = for {
@@ -75,43 +98,34 @@ trait MPT {
           n    <- data.toNode
         } yield n
         if (next.isEmpty) None
-        else _fetch(path, next.get, proxy)
+        else _fetch(path, next.get)
       case Node.Extension(p, _) if !p.hasPrefix(path) => None
       case Node.Extension(p, k) =>
         val prefix = p.prefix(path)
         if (p.length > prefix.length) {
-          _fetch(path.drop(prefix), Node.extension(p.drop(prefix), k), proxy)
-        }
-        else {
+          _fetch(path.drop(prefix), Node.extension(p.drop(prefix), k))
+        } else {
           val nextNode = for {
             data <- proxy.get(k.bytes).map(Data.wrap)
-            n <- data.toNode
+            n    <- data.toNode
           } yield n
           nextNode match {
             case None => None
             case Some(n) =>
-              _fetch(path.drop(prefix), n, proxy)
+              _fetch(path.drop(prefix), n)
           }
         }
 
     }
 
-    store
-      .transact { proxy =>
-        val n = rootNode(proxy)
-        n.flatMap(x => _fetch(Path.plain(key.bytes), x._1, proxy)) match {
-          case Some(x) => Some(x)
-          case None =>
-            log.warn(s"not found data for key: ${new String(key.bytes, "utf-8")}")
-            None
-        }
-      } match {
-      case Left(t) =>
-        log.warn(s"not found data for key: ${new String(key.bytes, "utf-8")}", t)
+    val n = rootNode(proxy)
+    n.flatMap(x => _fetch(Path.plain(key.bytes), x._1)) match {
+      case Some(x) => Some(x)
+      case None =>
+        log.warn(s"not found data for key: ${new String(key.bytes, "utf-8")}")
         None
-      case Right(x) => x
-
     }
+
   }
 
   private def combineNode(node1: Node, node2: Node, proxy: KVStore#Proxy): Node = {
@@ -213,8 +227,8 @@ trait MPT {
           data <- proxy.get(slotCell.key.bytes).map(Data.wrap)
           node <- data.toNode
         } yield node
-        val (_, newSlotKey) = saveNode(combineNode(leaf, old.get, proxy), proxy)
         proxy.delete(slotCell.key.bytes)
+        val (_, newSlotKey) = saveNode(combineNode(leaf, old.get, proxy), proxy)
         val newSlot = node2.slot.update(node1head, newSlotKey)
         Node.branch(newSlot, node2.data)
       } else {
