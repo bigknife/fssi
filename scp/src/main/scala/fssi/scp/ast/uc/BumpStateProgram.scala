@@ -16,7 +16,7 @@ trait BumpStateProgram[F[_]] extends SCP[F] with EmitProgram[F] {
   /** a bridge function, nomination process can bump to ballot process
     * @param force force to set local state
     */
-  private[uc] override def bumpState(nodeId: NodeID,
+  private[scp] override def bumpState(nodeId: NodeID,
                                      slotIndex: SlotIndex,
                                      previousValue: Value,
                                      compositeValue: Value,
@@ -60,7 +60,7 @@ trait BumpStateProgram[F[_]] extends SCP[F] with EmitProgram[F] {
   private[uc] def checkHeardFromQuorum(nodeId: NodeID,
                                        slotIndex: SlotIndex,
                                        previousValue: Value): SP[F, Unit] = {
-    def totallyQuoromNodes(xs: Set[NodeID]): SP[F, Set[NodeID]] = {
+    def totallyQuorumNodes(xs: Set[NodeID]): SP[F, Set[NodeID]] = {
 
       def deleteM(xs: Set[NodeID]): SP[F, Set[NodeID]] =
         xs.foldLeft(xs.pureSP[F]) { (acc, n) =>
@@ -93,12 +93,13 @@ trait BumpStateProgram[F[_]] extends SCP[F] with EmitProgram[F] {
     for {
       phase       <- currentBallotPhase(nodeId, slotIndex)
       aheads      <- nodesAheadLocal(nodeId, slotIndex)
-      quorumNodes <- totallyQuoromNodes(aheads)
+      quorumNodes <- totallyQuorumNodes(aheads)
       nowHeard    <- isQuorum(nodeId, quorumNodes)
       everHeard   <- isHeardFromQuorum(nodeId, slotIndex)
       _           <- heardFromQuorum(nodeId, slotIndex, nowHeard)
       _ <- ifThen((nowHeard && !everHeard) && phase != Ballot.Phase.Externalize)(
         startBallotProtocolTimer())
+      _ <- ifThen(nowHeard && !everHeard)(ballotDidHearFromQuorum(nodeId, slotIndex))
       _ <- ifThen(nowHeard && phase == Ballot.Phase.Externalize)(
         stopBallotProtocolTimer())
       _ <- ifThen(!nowHeard)(stopBallotProtocolTimer())

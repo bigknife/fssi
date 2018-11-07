@@ -63,7 +63,7 @@ class ApplicationServiceHandler extends ApplicationService.Handler[Stack] with L
 
     timer.schedule(new TimerTask {
       override def run(): Unit = {
-        setting.applicationCallback.dispatch(tag, new Runnable {
+        setting.applicationCallback.dispatch(tag, timeout, new Runnable {
           override def run(): Unit = {
             runner.runIOAttempt(program.asInstanceOf[SP[components.Model.Op, Unit]], setting).unsafeRunSync() match {
               case Left(t) =>

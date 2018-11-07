@@ -1,6 +1,7 @@
 package fssi.scp
 import java.security.PrivateKey
 
+import fssi.scp.TestApp.ScheduledTask
 import fssi.scp.ast.components.Model
 import fssi.scp.ast.components.Model.Op
 import fssi.scp.ast.uc.SCP
@@ -31,7 +32,10 @@ class TestApp(nodeID: NodeID,
 
   private val started: Timestamp = Timestamp(0l)
 
-  private var dispatchedTimers: Map[String, Runnable] = Map.empty
+  private var dispatchedTimers: Map[String, ScheduledTask] = Map.empty
+  private var currentTime: Long                            = 0
+
+  private var heardFromQuorums: Vector[Ballot] = Vector.empty
 
   val setting: Setting = Setting(
     quorumSet = quorumSet,
@@ -46,6 +50,11 @@ class TestApp(nodeID: NodeID,
 
     expectedCandidates = ValueSet.empty
     expectedCompositeValue = None
+
+    dispatchedTimers = Map.empty
+    currentTime = 0
+
+    heardFromQuorums = Vector.empty
   }
 
   override def validateValue(nodeId: NodeID, slotIndex: SlotIndex, value: Value): Value.Validity = {
@@ -66,8 +75,8 @@ class TestApp(nodeID: NodeID,
     Some(value)
   }
 
-  override def dispatch(timer: String, runnable: Runnable): Unit = {
-    dispatchedTimers = dispatchedTimers + (timer -> runnable)
+  override def dispatch(timer: String, timeout: Long, runnable: Runnable): Unit = {
+    dispatchedTimers = dispatchedTimers + (timer -> ScheduledTask(currentTime + timeout, runnable))
   }
 
   override def valueConfirmed(nodeId: NodeID, slotIndex: SlotIndex, value: Value): Unit = {}
@@ -96,6 +105,26 @@ class TestApp(nodeID: NodeID,
                                     previousValue: Value,
                                     round: Int): Long =
     if (nodeWithTopPriority exists (_ === nodeId)) 1000l else 0l
+
+  override def ballotDidHearFromQuorum(slot: SlotIndex, ballot: Ballot): Unit = {
+    if(slot == slotIndex) heardFromQuorums = heardFromQuorums :+ ballot
+  }
+
+  def bumpTimeOffset(): Unit = {
+    currentTime = currentTime + 5 * 3600
+  }
+
+  def hasBallotTimerUpcoming: Boolean = {
+    dispatchedTimers.get(BALLOT_TIMER).exists(_.when > currentTime)
+  }
+
+  def hasBallotTimer: Boolean = {
+    dispatchedTimers.contains(BALLOT_TIMER)
+  }
+
+  def hasHeardFromQuorum(b: Ballot): Boolean = heardFromQuorums.lastOption.contains(b)
+
+  def hasHeardNothingFromQuorum: Boolean = heardFromQuorums.isEmpty
 
   def onEnvelope[M <: Message](envelope: Envelope[M]): Boolean = {
     val p = scp.handleSCPEnvelope(envelope, previousValue)
@@ -159,8 +188,14 @@ class TestApp(nodeID: NodeID,
       .run(setting.copy(localNode = node, privateKey = key))
       .unsafeRunSync()
   }
-  def hasPrepared(b: Ballot): Boolean =
-    statements.lastOption map (_.copy(timestamp = started)) contains statementOf(Message.prepare(b))
+
+  def bumpState(value: Value): Boolean = {
+    val p = scp.bumpState(nodeID, slotIndex, value, value, force = true)
+    runner.runIO(p, setting).unsafeRunSync()
+  }
+
+  def hasPrepared(b: Ballot, p: Option[Ballot] = None, cn: Int = 0, hn: Int = 0, pPrime: Option[Ballot] = None): Boolean =
+    statements.lastOption map (_.copy(timestamp = started)) contains statementOf(Prepare(b, p, pPrime, cn, hn))
 
   def setStatusFromMessage[M <: Message](m: M): Unit = {
     val p = for {
@@ -190,7 +225,6 @@ class TestApp(nodeID: NodeID,
     }
   }
 
-
   private def isEmittedFromThisNode[M <: Message](envelope: Envelope[M]): Boolean =
     envelope.statement.from == nodeID &&
       envelope.statement.slotIndex == slotIndex && envelope.statement.quorumSet == quorumSet
@@ -202,4 +236,8 @@ class TestApp(nodeID: NodeID,
     quorumSet,
     message
   )
+}
+
+object TestApp {
+  case class ScheduledTask(when: Long, what: Runnable)
 }

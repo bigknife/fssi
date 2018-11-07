@@ -22,7 +22,7 @@ trait SCP[F[_]] {
 
   /** a bridge function, nomination process can bump to ballot process
     */
-  private[uc] def bumpState(nodeId: NodeID,
+  private[scp] def bumpState(nodeId: NodeID,
                             slotIndex: SlotIndex,
                             previousValue: Value,
                             compositeValue: Value,

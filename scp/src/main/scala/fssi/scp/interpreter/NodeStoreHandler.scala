@@ -374,6 +374,12 @@ class NodeStoreHandler extends NodeStore.Handler[Stack] {
     ballotStatus.heardFromQuorum.unsafe()
   }
 
+  override def ballotDidHearFromQuorum(nodeId: NodeID, slotIndex: SlotIndex): Stack[Unit] = Stack {
+    setting =>
+    val ballotStatus: BallotStatus = (nodeId, slotIndex)
+    setting.applicationCallback.ballotDidHearFromQuorum(slotIndex, ballotStatus.currentBallot.unsafe())
+  }
+
   /** get current ballot phase
     */
   override def currentBallotPhase(nodeId: NodeID, slotIndex: SlotIndex): Stack[Ballot.Phase] =

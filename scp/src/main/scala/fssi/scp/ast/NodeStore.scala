@@ -138,6 +138,8 @@ def isNotLeader(nodeID: NodeID, slotIndex: SlotIndex): P[F, Boolean] =
     */
   def isHeardFromQuorum(nodeId: NodeID, slotIndex: SlotIndex): P[F, Boolean]
 
+  def ballotDidHearFromQuorum(nodeId: NodeID, slotIndex: SlotIndex): P[F, Unit]
+
   /** get current ballot phase
     */
   def currentBallotPhase(nodeId: NodeID, slotIndex: SlotIndex): P[F, Ballot.Phase]
