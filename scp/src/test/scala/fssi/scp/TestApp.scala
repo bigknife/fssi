@@ -243,6 +243,8 @@ class TestApp(nodeID: NodeID,
     }
   }
 
+  def currentBallotStatus: BallotStatus = BallotStatus.getInstance(slotIndex)
+
   private def isEmittedFromThisNode[M <: Message](envelope: Envelope[M]): Boolean =
     envelope.statement.from == nodeID &&
       envelope.statement.slotIndex == slotIndex && envelope.statement.quorumSet == quorumSet

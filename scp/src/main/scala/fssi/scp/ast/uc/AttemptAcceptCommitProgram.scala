@@ -21,8 +21,9 @@ trait AttemptAcceptCommitProgram[F[_]] extends SCP[F] with EmitProgram[F] {
     val ballotToCommit = hint.message.commitableBallot
 
     lazy val ignoreByCurrentPhase: SP[F, Boolean] =
-      ifM(ballotToCommit.isEmpty, true)(
-        canAcceptCommitNow(slotIndex, ballotToCommit.get): SP[F, Boolean])
+      ifM(ballotToCommit.isEmpty, true)(for {
+        canAccept <- canAcceptCommitNow(slotIndex, ballotToCommit.get)
+      } yield !canAccept)
 
     def isCounterAccepted(interval: CounterInterval, ballot: Ballot): SP[F, Boolean] = {
       for {
@@ -54,7 +55,7 @@ trait AttemptAcceptCommitProgram[F[_]] extends SCP[F] with EmitProgram[F] {
           } yield next
       }
       x.map {
-        case (Some(interval), true, false) => interval
+        case (Some(interval), true, _) => interval
 
         case _ => CounterInterval()
       }
@@ -65,10 +66,9 @@ trait AttemptAcceptCommitProgram[F[_]] extends SCP[F] with EmitProgram[F] {
       for {
         phase      <- currentBallotPhase(slotIndex)
         boundaries <- commitBoundaries(slotIndex, ballot)
-        _ <- info(
-          s"[$slotIndex][AttemptAcceptCommit] found boundaries $boundaries at phase $phase")
-        interval <- acceptedCommitCounterInterval(boundaries, ballot)
-        _        <- info(s"[$slotIndex][AttemptAcceptCommit] found accepted interval: $interval")
+        _          <- info(s"[$slotIndex][AttemptAcceptCommit] found boundaries $boundaries at phase $phase")
+        interval   <- acceptedCommitCounterInterval(boundaries, ballot)
+        _          <- info(s"[$slotIndex][AttemptAcceptCommit] found accepted interval: $interval")
         accepted <- ifM(interval.notAvailable, false) {
           val newC = Ballot(interval.first, ballot.value)
           val newH = Ballot(interval.second, ballot.value)

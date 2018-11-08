@@ -215,17 +215,16 @@ class NodeStoreHandler extends NodeStore.Handler[Stack] {
   /** given a ballot, get next ballot to try base on local state (z)
     * if there is a value stored in z, use <z, counter>, or use <attempt, counter>
     */
-  override def nextBallotToTry(slotIndex: SlotIndex,
-                               attempt: Value,
-                               counter: Int): Stack[Ballot] = Stack {
-    val ballotStatus: BallotStatus = slotIndex
-    ballotStatus.valueOverride
-      .map {
-        case Some(v) => Ballot(counter, v)
-        case None    => Ballot(counter, attempt)
-      }
-      .unsafe()
-  }
+  override def nextBallotToTry(slotIndex: SlotIndex, attempt: Value, counter: Int): Stack[Ballot] =
+    Stack {
+      val ballotStatus: BallotStatus = slotIndex
+      ballotStatus.valueOverride
+        .map {
+          case Some(v) => Ballot(counter, v)
+          case None    => Ballot(counter, attempt)
+        }
+        .unsafe()
+    }
 
   /** update local state when a new ballot was bumped into
     *
@@ -303,18 +302,20 @@ class NodeStoreHandler extends NodeStore.Handler[Stack] {
                                                    newC: Option[Ballot]): Stack[Boolean] = Stack {
     val ballotStatus: BallotStatus = slotIndex
     ballotStatus.valueOverride := newH.map(_.value)
-    val currentBallot   = ballotStatus.currentBallot.unsafe()
-    val highBallotOpt   = ballotStatus.highBallot.unsafe()
-    val commitBallotOpt = ballotStatus.commit.unsafe()
+    val currentBallot = ballotStatus.currentBallot.unsafe()
+    val highBallotOpt = ballotStatus.highBallot.unsafe()
+
     val didWork =
       if (currentBallot.isBottom || (newH.nonEmpty && currentBallot.compatible(newH.get))) {
         val highUpdated = if (highBallotOpt.isEmpty || newH.compare(highBallotOpt) > 0) {
           ballotStatus.highBallot := newH; true
         } else false
+
         val commitUpdated =
-          if (newC.nonEmpty && newC.get.counter != 0 && commitBallotOpt.nonEmpty) {
+          if (newC.nonEmpty && newC.get.counter != 0) {
             ballotStatus.commit := newC; true
           } else false
+
         highUpdated || commitUpdated
       } else false
 
@@ -341,19 +342,19 @@ class NodeStoreHandler extends NodeStore.Handler[Stack] {
     *
     * @see BallotProtocol#1385
     */
-  override def nodesAheadBallotCounter(slotIndex: SlotIndex,
-                                       counter: Int): Stack[Set[NodeID]] = Stack {
-    val ballotStatus: BallotStatus = slotIndex
-    ballotStatus.latestEnvelopes
-      .map(map =>
-        map.keySet.filter(n =>
-          map(n).statement.message match {
-            case prep: Message.Prepare    => counter < prep.b.counter
-            case confirm: Message.Confirm => counter < confirm.b.counter
-            case _: Message.Externalize   => counter != Int.MaxValue
-        }))
-      .unsafe()
-  }
+  override def nodesAheadBallotCounter(slotIndex: SlotIndex, counter: Int): Stack[Set[NodeID]] =
+    Stack {
+      val ballotStatus: BallotStatus = slotIndex
+      ballotStatus.latestEnvelopes
+        .map(map =>
+          map.keySet.filter(n =>
+            map(n).statement.message match {
+              case prep: Message.Prepare    => counter < prep.b.counter
+              case confirm: Message.Confirm => counter < confirm.b.counter
+              case _: Message.Externalize   => counter != Int.MaxValue
+          }))
+        .unsafe()
+    }
 
   /** set heard from quorum
     */
@@ -370,10 +371,10 @@ class NodeStoreHandler extends NodeStore.Handler[Stack] {
     ballotStatus.heardFromQuorum.unsafe()
   }
 
-  override def ballotDidHearFromQuorum(slotIndex: SlotIndex): Stack[Unit] = Stack {
-    setting =>
+  override def ballotDidHearFromQuorum(slotIndex: SlotIndex): Stack[Unit] = Stack { setting =>
     val ballotStatus: BallotStatus = slotIndex
-    setting.applicationCallback.ballotDidHearFromQuorum(slotIndex, ballotStatus.currentBallot.unsafe())
+    setting.applicationCallback.ballotDidHearFromQuorum(slotIndex,
+                                                        ballotStatus.currentBallot.unsafe())
   }
 
   /** get current ballot phase
@@ -499,8 +500,7 @@ class NodeStoreHandler extends NodeStore.Handler[Stack] {
     *
     * @see BallotProtocol.cpp#839-866
     */
-  override def nodesVotedPrepare(slotIndex: SlotIndex,
-                                 ballot: Ballot): Stack[Set[NodeID]] = Stack {
+  override def nodesVotedPrepare(slotIndex: SlotIndex, ballot: Ballot): Stack[Set[NodeID]] = Stack {
     val ballotStatus: BallotStatus = slotIndex
     ballotStatus.latestEnvelopes
       .map(map =>
@@ -518,35 +518,34 @@ class NodeStoreHandler extends NodeStore.Handler[Stack] {
     *
     * @see BallotProtocol.cpp#1521
     */
-  override def nodesAcceptedPrepare(slotIndex: SlotIndex,
-                                    ballot: Ballot): Stack[Set[NodeID]] = Stack {
-    val ballotStatus: BallotStatus = slotIndex
-    ballotStatus.latestEnvelopes
-      .map(map =>
-        map.keySet.filter { n =>
-          map(n).statement.message match {
-            case prep: Message.Prepare =>
-              val prepared = prep.p.nonEmpty && ballot.isLess(prep.p.get) && ballot.compatible(
-                prep.p.get)
-              val preparedPrim = prep.`p'`.nonEmpty && ballot.isLess(prep.`p'`.get) && ballot
-                .compatible(prep.`p'`.get)
-              prepared || preparedPrim
-            case confirm: Message.Confirm =>
-              val prepared = Ballot(confirm.`p.n`, confirm.b.value)
-              ballot.isLess(prepared) && ballot.compatible(prepared)
-            case ext: Message.Externalize =>
-              ext.commitableBallot.nonEmpty && ballot.compatible(ext.commitableBallot.get)
-          }
-      })
-      .unsafe()
-  }
+  override def nodesAcceptedPrepare(slotIndex: SlotIndex, ballot: Ballot): Stack[Set[NodeID]] =
+    Stack {
+      val ballotStatus: BallotStatus = slotIndex
+      ballotStatus.latestEnvelopes
+        .map(map =>
+          map.keySet.filter { n =>
+            map(n).statement.message match {
+              case prep: Message.Prepare =>
+                val prepared = prep.p.nonEmpty && ballot.isLess(prep.p.get) && ballot.compatible(
+                  prep.p.get)
+                val preparedPrim = prep.`p'`.nonEmpty && ballot.isLess(prep.`p'`.get) && ballot
+                  .compatible(prep.`p'`.get)
+                prepared || preparedPrim
+              case confirm: Message.Confirm =>
+                val prepared = Ballot(confirm.`p.n`, confirm.b.value)
+                ballot.isLess(prepared) && ballot.compatible(prepared)
+              case ext: Message.Externalize =>
+                ext.commitableBallot.nonEmpty && ballot.compatible(ext.commitableBallot.get)
+            }
+        })
+        .unsafe()
+    }
 
   /** find all the commitable counters in recieved envelopes
     *
     * @see BallotProtocol.cpp#1117
     */
-  override def commitBoundaries(slotIndex: SlotIndex,
-                                ballot: Ballot): Stack[CounterSet] = Stack {
+  override def commitBoundaries(slotIndex: SlotIndex, ballot: Ballot): Stack[CounterSet] = Stack {
     val ballotStatus: BallotStatus = slotIndex
     ballotStatus.latestEnvelopes
       .map(_.values.foldLeft(CounterSet.empty) { (acc, n) =>
@@ -624,9 +623,12 @@ class NodeStoreHandler extends NodeStore.Handler[Stack] {
                                lowest: Ballot,
                                highest: Ballot): Stack[StateChanged] = Stack {
     val ballotStatus: BallotStatus = slotIndex
+
     ballotStatus.valueOverride := Option(highest.value)
+
     val highestBallotOpt = ballotStatus.highBallot.unsafe()
     val commitBallotOpt  = ballotStatus.commit.unsafe()
+
     val highestUpdated =
       if (highestBallotOpt.isEmpty || commitBallotOpt.isEmpty || highestBallotOpt.get.compare(
             highest) != 0 || commitBallotOpt.get.compare(lowest) != 0) {
@@ -637,22 +639,27 @@ class NodeStoreHandler extends NodeStore.Handler[Stack] {
 
     val phase         = ballotStatus.phase.unsafe()
     val currentBallot = ballotStatus.currentBallot.unsafe()
+
     val phaseUpdated = if (phase == Ballot.Phase.Prepare) {
       ballotStatus.phase := Ballot.Phase.Confirm
+
       val bumpUpdated =
         if (!currentBallot.isBottom && !(highest.isLess(currentBallot) && highest.compatible(
               currentBallot))) {
           bumpToBallot(slotIndex, highest, check = false)
         } else true
+
       ballotStatus.preparedPrime := None
+
       bumpUpdated
     } else false
+
     val didWork = highestUpdated || phaseUpdated
-    val updated =
-      if (didWork) {
-        highestBallotOpt.isEmpty || updateCurrentIfNeed(slotIndex, highestBallotOpt.get)
-      } else true
-    didWork && updated
+
+    if (didWork)
+      updateCurrentIfNeed(slotIndex, highestBallotOpt.get)
+
+    didWork
   }
 
   /** confirm ballots(low and high) as committed
@@ -674,8 +681,7 @@ class NodeStoreHandler extends NodeStore.Handler[Stack] {
     *
     * @see BallotProtocol.cpp#1169-1172, 1209-1215
     */
-  override def canAcceptCommitNow(slotIndex: SlotIndex,
-                                  ballot: Ballot): Stack[Boolean] = Stack {
+  override def canAcceptCommitNow(slotIndex: SlotIndex, ballot: Ballot): Stack[Boolean] = Stack {
     val ballotStatus: BallotStatus = slotIndex
     val phase                      = ballotStatus.phase.unsafe()
     val highBallot                 = ballotStatus.highBallot.unsafe()
@@ -689,8 +695,7 @@ class NodeStoreHandler extends NodeStore.Handler[Stack] {
     *
     * @see BallotProtocol.cpp#1434-1443, 1470-1473
     */
-  override def canConfirmCommitNow(slotIndex: SlotIndex,
-                                   ballot: Ballot): Stack[Boolean] = Stack {
+  override def canConfirmCommitNow(slotIndex: SlotIndex, ballot: Ballot): Stack[Boolean] = Stack {
     val ballotStatus: BallotStatus = slotIndex
     val phase                      = ballotStatus.phase.unsafe()
     val highBallotOpt              = ballotStatus.highBallot.unsafe()
@@ -725,8 +730,7 @@ class NodeStoreHandler extends NodeStore.Handler[Stack] {
 
   /** save new values to current accepted nominations
     */
-  override def acceptNewNominations(slotIndex: SlotIndex,
-                                    values: ValueSet): Stack[Unit] = Stack {
+  override def acceptNewNominations(slotIndex: SlotIndex, values: ValueSet): Stack[Unit] = Stack {
     val nominationStatus: NominationStatus = slotIndex
     nominationStatus.accepted := values
     ()
@@ -740,8 +744,7 @@ class NodeStoreHandler extends NodeStore.Handler[Stack] {
       nominationStatus.latestCompositeCandidate.unsafe()
     }
 
-  override def candidateValueUpdated(slotIndex: SlotIndex,
-                                     composite: Value): Stack[Unit] = Stack {
+  override def candidateValueUpdated(slotIndex: SlotIndex, composite: Value): Stack[Unit] = Stack {
     val nominationStatus: NominationStatus = slotIndex
     nominationStatus.latestCompositeCandidate := Some(composite)
     ()
@@ -749,25 +752,23 @@ class NodeStoreHandler extends NodeStore.Handler[Stack] {
 
   /** check if a envelope can be emitted
     */
-  override def canEmit[M <: Message](slotIndex: SlotIndex,
-                                     envelope: Envelope[M]): Stack[Boolean] = Stack {
-    envelope.statement.message match {
-      case n: Nomination =>
-        val nominationStatus: NominationStatus = slotIndex
-        val lastEnv                            = nominationStatus.lastEnvelope
-        lastEnv.isEmpty || lastEnv.unsafe().isEmpty || n.isNewerThan(
-          lastEnv.unsafe().get.statement.message)
-      case _ =>
-        val ballotStatus: BallotStatus = slotIndex
-        val canEmit                    = !ballotStatus.currentBallot.unsafe().isBottom
-        val lastEnv                    = ballotStatus.latestEmitEnvelope.unsafe()
-        canEmit && (lastEnv.isEmpty || lastEnv.get != envelope)
+  override def canEmit[M <: Message](slotIndex: SlotIndex, envelope: Envelope[M]): Stack[Boolean] =
+    Stack {
+      envelope.statement.message match {
+        case n: Nomination =>
+          val nominationStatus: NominationStatus = slotIndex
+          val lastEnv                            = nominationStatus.lastEnvelope
+          lastEnv.isEmpty || lastEnv.unsafe().isEmpty || n.isNewerThan(
+            lastEnv.unsafe().get.statement.message)
+        case _ =>
+          val ballotStatus: BallotStatus = slotIndex
+          val canEmit                    = !ballotStatus.currentBallot.unsafe().isBottom
+          val lastEnv                    = ballotStatus.latestEmitEnvelope.unsafe()
+          canEmit && (lastEnv.isEmpty || lastEnv.get != envelope)
+      }
     }
-  }
 
-  override def localNode(): Stack[NodeID] = Stack {
-    setting =>
-    setting.localNode
+  override def localNode(): Stack[NodeID] = Stack { setting => setting.localNode
   }
 
   implicit def getNominationStatus(slotIndex: SlotIndex): NominationStatus = {
@@ -786,9 +787,7 @@ class NodeStoreHandler extends NodeStore.Handler[Stack] {
     } else false
   }
 
-  private def bumpToBallot(slotIndex: SlotIndex,
-                           ballot: Ballot,
-                           check: Boolean): Boolean = {
+  private def bumpToBallot(slotIndex: SlotIndex, ballot: Ballot, check: Boolean): Boolean = {
     val ballotStatus: BallotStatus = slotIndex
     val phase                      = ballotStatus.phase.unsafe()
     val currentBallot              = ballotStatus.currentBallot.unsafe()
