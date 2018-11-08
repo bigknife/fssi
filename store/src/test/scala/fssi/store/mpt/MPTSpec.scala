@@ -2,7 +2,7 @@ package fssi.store.mpt
 
 import java.io.{File, FileNotFoundException}
 
-import fssi.store.core.{KVStore, XodusKVStore}
+import fssi.store.core.{KVStore, RouteXodusKVStore, XodusKVStore}
 import jetbrains.exodus.env.{Environment, Environments}
 import org.scalatest._
 
@@ -14,8 +14,7 @@ class MPTSpec extends FunSuite with BeforeAndAfter {
   var environment: Environment = _
   var mpt: MPT = _
 
-  before {
-    rootFile = {
+  before {    rootFile = {
       val bytes = Array.fill(32)(0.toByte)
       scala.util.Random.nextBytes(bytes)
       bytes.map("%02x" format _).mkString("")
@@ -24,8 +23,11 @@ class MPTSpec extends FunSuite with BeforeAndAfter {
     new File(rootPath).mkdirs()
     info(s"current working dir is $rootPath")
     environment = Environments.newInstance(rootPath)
-    implicit val store: KVStore  = new XodusKVStore("test", environment, None)
-    mpt = MPT("state")
+    implicit val store: KVStore  = new RouteXodusKVStore(environment, None) {
+      override def routeStoreName(key: Array[Byte]): String = new String(key.take(5))
+      override def routeStoreKey(key: Array[Byte]): Array[Byte] = key.drop(5)
+    }
+    mpt = MPT(keys => "state")
   }
   after {
     environment.close()
@@ -59,16 +61,15 @@ class MPTSpec extends FunSuite with BeforeAndAfter {
   }
 
   test("root key") {
-    mpt.rootKey.foreach { k =>
+    mpt.rootKey("state").foreach { k =>
       info(s"$k")
     }
   }
 
   test("root node") {
-    val s = mpt.rootNode.map { n =>
+    mpt.rootNode("state").map { n =>
       info(s"$n")
     }
-    assert(s.isDefined)
   }
 
   test("transact") {

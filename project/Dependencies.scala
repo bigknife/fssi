@@ -61,6 +61,13 @@ object Dependencies {
       val config = "1.3.2"
 
       val xodus = "1.2.3"
+      
+      val apacheHc = "4.5.5"
+    }
+    
+    lazy val apacheHc = {
+      Seq(Dpd("org.apache.httpcomponents", "httpclient", versions.apacheHc, autoScalaVersion = false))
+        .map(_.libraryDependencies)
     }
 
     lazy val xodus = {
