@@ -16,12 +16,11 @@ object BCSKey {
     if (str.startsWith("meta:snapshot:")) {
       str.drop("meta:snapshot://".length) match {
         case "chainId" => Some(MetaKey.ChainID)
-        case "height" => Some(MetaKey.Height)
+        case "height"  => Some(MetaKey.Height)
         case "version" => Some(MetaKey.Version)
-        case _ => None
+        case _         => None
       }
-    }
-    else None
+    } else None
   }
 
   private[types] trait BCSUrlKey extends BCSKey {
@@ -39,20 +38,51 @@ object BCSKey {
         .getBytes("utf-8")
     }
   }
+
   sealed trait MetaKey extends BCSKey
   object MetaKey {
-    val ChainID: MetaKey = new MetaKey with BCSUrlKey {
-      override val scheme: String          = "meta"
+    private abstract class _MetaKey() extends MetaKey with BCSUrlKey {
+      override val scheme: String = "meta"
+    }
+
+    val ChainID: MetaKey = new _MetaKey {
       override val segments: Array[String] = Array("chainId")
     }
-    val Height: MetaKey = new MetaKey with BCSUrlKey {
+    val Height: MetaKey = new _MetaKey {
       override val scheme: String          = "meta"
       override val segments: Array[String] = Array("height")
     }
-    val Version: MetaKey = new MetaKey with BCSUrlKey {
+    val Version: MetaKey = new _MetaKey {
       override val scheme: String          = "meta"
       override val segments: Array[String] = Array("version")
     }
   }
 
+  sealed trait BlockKey extends BCSKey
+  object BlockKey {
+    private abstract class _BlockKey(height: BigInt) extends BlockKey with BCSUrlKey {
+      override val scheme: String = s"block:$height"
+    }
+
+    def preHash(height: BigInt): BlockKey = new _BlockKey(height) {
+      override val segments: Array[String] = Array("preHash")
+    }
+
+    def curHash(height: BigInt): BlockKey = new _BlockKey(height) {
+      override val segments: Array[String] = Array("curHash")
+    }
+
+    def state(height: BigInt): BlockKey = new _BlockKey(height) {
+      override val segments: Array[String] = Array("state")
+    }
+
+    def receipt(height: BigInt): BlockKey = new _BlockKey(height) {
+      override val segments: Array[String] = Array("receipt")
+    }
+
+    def transaction(height: BigInt): BlockKey = new _BlockKey(height) {
+      override val segments: Array[String] = Array("transaction")
+    }
+
+  }
 }

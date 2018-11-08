@@ -33,23 +33,19 @@ Xodus 已经在Jetbrain 的 [YouTrack](https://youtrack.jetbrains.com/issues) �
 
 元数据。
 
-* **meta:** 元数据完整信息的hash
-* **meta:/chainId** 当前链的标志
-* **meta:/height** 当前链的高度
-* **meta:/version** 当前链的版本
+* **meta://chainId** 当前链的标志
+* **meta://height** 当前链的高度
+* **meta://version** 当前链的版本
 
 #### block:
 
 块数据。
 
-* **block:** 所有块的hash信息
-* **block:/{height}** 当前块所有的数据Key列表
-* **block:/{height}/preHash** 前一个块的Hash
-* **block:/{height}/curHash** 当前块的Hash
-* **block:/{height}/state** 当前块对应的全局状态hash
-* **block:/{height}/receipt** 当前块对应的执行结果的Hash
-* **block:/{height}/transactions** 当前块包含的交易ID有序列表
-* **block:/{height}/transactions/{transactionId}** 当前块交易的内容
+* **block:{height}://preHash** 前一个块的Hash
+* **block:{height}://curHash** 当前块的Hash
+* **block:{height}://state** 当前块对应的全局状态hash
+* **block:{height}://receipt** 当前块对应的执行结果的Hash
+* **block:{height}://transaction** 当前块包含的交易ID有序列表
 
 #### recepit:
 
