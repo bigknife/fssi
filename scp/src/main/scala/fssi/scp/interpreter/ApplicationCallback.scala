@@ -23,6 +23,7 @@ trait ApplicationCallback {
 
   def canDispatch: Boolean = false
   def dispatch(timer: String, timeout: Long, task: Runnable): Unit
+  def cancel(timer: String): Unit
 }
 
 object ApplicationCallback {
@@ -42,7 +43,11 @@ object ApplicationCallback {
     }
 
     override def dispatch(timer: String, timeout: Long, task: Runnable): Unit= {
-      throw warning("scpExecutorService")
+      throw warning("dispatch")
+    }
+
+    override def cancel(timer: String): Unit= {
+      throw warning("cancel")
     }
 
     override def valueConfirmed(slotIndex: SlotIndex, value: Value): Unit = {

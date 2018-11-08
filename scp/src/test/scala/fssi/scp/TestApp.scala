@@ -85,6 +85,10 @@ class TestApp(nodeID: NodeID,
     dispatchedTimers = dispatchedTimers + (timer -> ScheduledTask(currentTime + timeout, runnable))
   }
 
+  override def cancel(timer: String): Unit = {
+    dispatchedTimers = dispatchedTimers - timer
+  }
+
   override def valueConfirmed(slotIndex: SlotIndex, value: Value): Unit = {}
 
   override def valueExternalized(slotIndex: SlotIndex, value: Value): Unit = {

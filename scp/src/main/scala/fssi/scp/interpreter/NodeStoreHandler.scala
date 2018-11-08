@@ -317,7 +317,8 @@ class NodeStoreHandler extends NodeStore.Handler[Stack] {
           } else false
         highUpdated || commitUpdated
       } else false
-    didWork && newH.nonEmpty && updateCurrentIfNeed(slotIndex, newH.get)
+
+    didWork || newH.nonEmpty && updateCurrentIfNeed(slotIndex, newH.get)
   }
 
   /** check received ballot envelope, find nodes which are ahead of local node
@@ -529,7 +530,7 @@ class NodeStoreHandler extends NodeStore.Handler[Stack] {
                 prep.p.get)
               val preparedPrim = prep.`p'`.nonEmpty && ballot.isLess(prep.`p'`.get) && ballot
                 .compatible(prep.`p'`.get)
-              prepared && preparedPrim
+              prepared || preparedPrim
             case confirm: Message.Confirm =>
               val prepared = Ballot(confirm.`p.n`, confirm.b.value)
               ballot.isLess(prepared) && ballot.compatible(prepared)

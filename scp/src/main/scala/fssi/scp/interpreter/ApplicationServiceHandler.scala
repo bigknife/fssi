@@ -59,7 +59,6 @@ class ApplicationServiceHandler extends ApplicationService.Handler[Stack] with L
     */
   override def delayExecuteProgram(tag: String, program: Any, timeout: Long): Stack[Unit] = Stack {
     setting =>
-      val timer = new Timer()
       val task = new Runnable {
         override def run(): Unit = {
           runner
@@ -73,27 +72,33 @@ class ApplicationServiceHandler extends ApplicationService.Handler[Stack] with L
         }
       }
 
-      timerCache.update { m =>
-        if (m.contains(tag)) m + (tag -> (m(tag) :+ timer))
-        else m + (tag                 -> Vector(timer))
-      }
-
       if (setting.applicationCallback.canDispatch)
         setting.applicationCallback.dispatch(tag, timeout, task)
-      else
+      else {
+        val timer = new Timer()
+
+        timerCache.update { m =>
+          if (m.contains(tag)) m + (tag -> (m(tag) :+ timer))
+          else m + (tag                 -> Vector(timer))
+        }
         timer.schedule(new TimerTask {
           override def run(): Unit = task.run()
         }, timeout)
+      }
   }
 
   /** cancel the timer
     */
   override def stopDelayTimer(tag: String): Stack[Unit] = Stack { setting =>
-    timerCache.foreach { m =>
-      if (m.contains(tag)) {
-        m(tag).foreach(_.cancel())
-        timerCache.update(_ - tag)
-      } else ()
+    if (setting.applicationCallback.canDispatch) {
+      setting.applicationCallback.cancel(tag)
+    } else {
+      timerCache.foreach { m =>
+        if (m.contains(tag)) {
+          m(tag).foreach(_.cancel())
+          timerCache.update(_ - tag)
+        } else ()
+      }
     }
   }
 

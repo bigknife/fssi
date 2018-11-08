@@ -10,6 +10,8 @@ class AcceptMoreCommitA3Suite extends FunSuite with AcceptMoreCommitA3{
 
     start1X()
     preparedA1()
+    preparedA2()
+    confirmPreparedA2()
   }
 
   test("Quorum externalize A3") {}

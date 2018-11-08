@@ -47,15 +47,6 @@ trait AttemptConfirmPrepareProgram[F[_]] extends SCP[F] with EmitProgram[F] {
 
     }
 
-    def lowestCandidates(candidates: BallotSet, newH: Ballot): BallotSet = {
-      def _loop(xs: BallotSet): BallotSet = {
-        val h = xs.last
-        if (h == newH) xs.dropRight(1)
-        else _loop(xs.dropRight(1))
-      }
-
-      _loop(candidates)
-    }
 
     // filter the illegal here ballots
     def commitAsLowestBallots(candidates: BallotSet, newH: Ballot): SP[F, BallotSet] =
@@ -104,8 +95,7 @@ trait AttemptConfirmPrepareProgram[F[_]] extends SCP[F] with EmitProgram[F] {
           ifM(notNecessarySetLowestCommitBallotUnderHigh(slotIndex, newH.get),
               Option.empty[Ballot].pureSP[F]) {
             for {
-              legalLowCommits <- commitAsLowestBallots(lowestCandidates(candidates, newH.get),
-                                                       newH.get)
+              legalLowCommits <- commitAsLowestBallots(candidates, newH.get)
               c <- findLowestNewC(legalLowCommits)
             } yield c
           }

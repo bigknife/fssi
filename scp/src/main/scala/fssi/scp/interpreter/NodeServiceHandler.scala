@@ -362,7 +362,7 @@ class NodeServiceHandler
     val p            = ballotStatus.prepared.unsafe()
     val pPrime       = ballotStatus.preparedPrime.unsafe()
 
-    c.isDefined &&
+    c.isEmpty &&
     (p.isEmpty || !(high <= p.get && high.incompatible(p.get))) &&
     (pPrime.isEmpty || !(high <= pPrime.get && high.incompatible(pPrime.get)))
   }
