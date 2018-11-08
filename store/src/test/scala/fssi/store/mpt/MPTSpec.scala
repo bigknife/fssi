@@ -1,5 +1,7 @@
 package fssi.store.mpt
 
+import java.io.{File, FileNotFoundException}
+
 import fssi.store.core.{KVStore, XodusKVStore}
 import jetbrains.exodus.env.{Environment, Environments}
 import org.scalatest._
@@ -7,14 +9,40 @@ import org.scalatest._
 import scala.util.Random
 
 class MPTSpec extends FunSuite with BeforeAndAfter {
-  import MPTSpec._
+
+  var rootFile: String = _
+  var environment: Environment = _
   var mpt: MPT = _
+
   before {
+    rootFile = {
+      val bytes = Array.fill(32)(0.toByte)
+      scala.util.Random.nextBytes(bytes)
+      bytes.map("%02x" format _).mkString("")
+    }
+    val rootPath = s"/tmp/$rootFile"
+    new File(rootPath).mkdirs()
+    info(s"current working dir is $rootPath")
+    environment = Environments.newInstance(rootPath)
+    implicit val store: KVStore  = new XodusKVStore("test", environment, None)
     mpt = MPT("state")
+  }
+  after {
+    environment.close()
+    val rootPath = s"/tmp/$rootFile"
+    def delete(f: File): Unit = {
+      if (f.isDirectory) {
+        f.listFiles().foreach {f1 =>
+          delete(f1)
+        }
+      }
+      if (!f.delete()) throw new FileNotFoundException(s"Failed to delete file: $f")
+    }
+    delete(new File(rootPath))
   }
 
   test("put and get") {
-    val times = 100000
+    val times = 100
     for (_ <- 1 to times) {
       val key = Array.fill(32)(0.toByte)
       Random.nextBytes(key)
@@ -31,11 +59,6 @@ class MPTSpec extends FunSuite with BeforeAndAfter {
   }
 
   test("root key") {
-    /*
-    val key = "702183868beb89b05655c15d1a0355d3b316dda02f608f189913e730e747f7ec".getBytes("utf-8")
-    val s = mpt.store.get(key).map(Data.wrap)
-    info(s"${s.map(_.toNode)}")
-     */
     mpt.rootKey.foreach { k =>
       info(s"$k")
     }
@@ -79,6 +102,5 @@ class MPTSpec extends FunSuite with BeforeAndAfter {
 }
 
 object MPTSpec {
-  val environment: Environment = Environments.newInstance("/tmp/testmpt")
-  implicit val store: KVStore  = new XodusKVStore("test", environment, None)
+
 }
