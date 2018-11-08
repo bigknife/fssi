@@ -38,6 +38,16 @@ trait MPT {
   def rootHash: Option[Hash] = {
     rootKey.map(Key.decode)
   }
+  def rootNode: Option[Node] = {
+    store
+      .transact { proxy =>
+        rootNode(proxy)
+      }
+      .right
+      .map(_.map(_._1))
+      .toOption
+      .flatten
+  }
 
   trait Proxy {
     def put(k: Array[Byte], v: Array[Byte]): Unit
@@ -65,10 +75,10 @@ trait MPT {
   private def insertTrie(key: Key, data: Data, proxy: KVStore#Proxy): Unit = {
     val (n, k)          = rootNode(proxy).getOrElse((Node.Null, Key.empty))
     val leaf            = Node.leaf(key.toPath, data)
-    val (_, newRootKey) = saveNode(combineNode(leaf, n, proxy), proxy)
     if (k.nonEmpty) {
       proxy.delete(k.bytes)
     }
+    val (_, newRootKey) = saveNode(combineNode(leaf, n, proxy), proxy)
     // set new root node
     proxy.put(name.getBytes("utf-8"), newRootKey.bytes)
     log.debug(s"update new root: $name -> ${new String(newRootKey.bytes, "utf-8")}")
@@ -229,7 +239,7 @@ trait MPT {
         } yield node
         proxy.delete(slotCell.key.bytes)
         val (_, newSlotKey) = saveNode(combineNode(leaf, old.get, proxy), proxy)
-        val newSlot = node2.slot.update(node1head, newSlotKey)
+        val newSlot         = node2.slot.update(node1head, newSlotKey)
         Node.branch(newSlot, node2.data)
       } else {
         // if the length == 1, we have to build a empty branch node with data = node1.data, and combine old to this one
@@ -239,8 +249,8 @@ trait MPT {
         } yield node
 
         val branch            = Node.branch(Slot.Hex.empty, node1.data)
-        val (_, newBranchKey) = saveNode(combineNode(old.get, branch, proxy), proxy)
         proxy.delete(slotCell.key.bytes)
+        val (_, newBranchKey) = saveNode(combineNode(old.get, branch, proxy), proxy)
         val newSlot = node2.slot.update(node1head, newBranchKey)
         Node.branch(newSlot, node2.data)
       }
