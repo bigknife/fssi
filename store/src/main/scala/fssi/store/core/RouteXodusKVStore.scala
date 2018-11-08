@@ -61,15 +61,6 @@ abstract class RouteXodusKVStore(environment: Environment, transaction: Option[T
     }
   }
 
-  override def keyIterator: Iterator[Array[Byte]] = {
-    val txn    = transaction.getOrElse(environment.beginTransaction())
-    val store  = environment.openStore(routeStoreName(???), StoreConfig.WITHOUT_DUPLICATES, txn)
-    val cursor = store.openCursor(txn)
-    new Iterator[Array[Byte]] {
-      override def hasNext: Boolean    = cursor.getNext
-      override def next(): Array[Byte] = cursor.getKey.getBytesUnsafe
-    }
-  }
 
   private def runInTransaction[A](txn: Transaction)(block: => A): Either[Throwable, A] = {
     def _loop(): A = {
@@ -119,6 +110,31 @@ abstract class RouteXodusKVStore(environment: Environment, transaction: Option[T
           val store =
             environment.openStore(routeStoreName(key), StoreConfig.WITHOUT_DUPLICATES, txn)
           store.delete(txn, new ArrayByteIterable(routeStoreKey(key)))
+        }
+
+        /** clean store
+          *
+          * @param name if the implementation supports multi-store, name is the id of the store instance, or it doesn't make sense
+          */
+        override def clean(name: String): Unit = {
+          val store =
+            environment.openStore(name, StoreConfig.WITHOUT_DUPLICATES, txn)
+          log.debug("clean store: " + store.getName)
+          val cursor = store.openCursor(txn)
+          val cnt = cursor.count()
+
+          def _loop(c: Cursor): Unit = {
+            if (c.getNextNoDup) {
+              val key = c.getKey.getBytesUnsafe
+              log.debug(s"clean: ${new String(key, "utf-8")}")
+              c.deleteCurrent()
+              _loop(c)
+            }
+            else ()
+          }
+
+          _loop(cursor)
+
         }
       }
       f(proxy)

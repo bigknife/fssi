@@ -56,6 +56,7 @@ trait MPT {
   trait Proxy {
     def put(k: Array[Byte], v: Array[Byte]): Unit
     def get(k: Array[Byte]): Option[Array[Byte]]
+    def clean(k: Array[Byte]): Unit
   }
 
   def transact[A](f: Proxy => A): Either[Throwable, A] = {
@@ -72,6 +73,10 @@ trait MPT {
           val name = resolveStoreName(k)
           val key  = Key.encode(name, hash)
           fetchTrie(name, key, proxy).map(_.bytes)
+        }
+        override def clean(k: Array[Byte]): Unit = {
+          val name = resolveStoreName(k)
+          proxy.clean(name)
         }
       }
       f(p)
