@@ -1,12 +1,12 @@
 package fssi.scp
 package interpreter
 
-import fssi.scp.ast._
-import fssi.scp.types._
-import fssi.scp.interpreter.store._
-import fssi.utils._
-import fssi.scp.types.implicits._
 import fssi.base.implicits._
+import fssi.scp.ast._
+import fssi.scp.interpreter.store._
+import fssi.scp.types._
+import fssi.scp.types.implicits._
+import fssi.utils._
 
 class NodeServiceHandler
     extends NodeService.Handler[Stack]
@@ -50,7 +50,7 @@ class NodeServiceHandler
     assertSlotIndex(setting.localNode, slotIndex)
 
     val nominationStatus = NominationStatus.getInstance(slotIndex)
-    nominationStatus.nominationStarted.unsafe
+    nominationStatus.nominationStarted.unsafe()
   }
 
   /** compute a value's hash
@@ -87,7 +87,7 @@ class NodeServiceHandler
     setting =>
       assertSlotIndex(setting.localNode, slotIndex)
       val nominationStatus = NominationStatus.getInstance(slotIndex)
-      val round            = nominationStatus.roundNumber.unsafe
+      val round            = nominationStatus.roundNumber.unsafe()
 
       // clean roundLeaders and initialized with local nodeId
       nominationStatus.roundLeaders := Set(setting.localNode)
@@ -136,41 +136,41 @@ class NodeServiceHandler
 
       val nominationStatus = NominationStatus.getInstance(slotIndex)
       Message.Nomination(
-        voted = nominationStatus.votes.unsafe,
-        accepted = nominationStatus.accepted.unsafe
+        voted = nominationStatus.votes.unsafe(),
+        accepted = nominationStatus.accepted.unsafe()
       )
   }
 
   /** create ballot message based on local state
     */
-  override def createBallotMessage(nodeId: NodeID,
-                                   slotIndex: SlotIndex): Stack[Message.BallotMessage] = Stack {
-    assertSlotIndex(nodeId, slotIndex)
+  override def createBallotMessage(slotIndex: SlotIndex): Stack[Message.BallotMessage] = Stack {
+    setting =>
+    assertSlotIndex(setting.localNode, slotIndex)
 
-    val ballotStatus = BallotStatus.getInstance(nodeId, slotIndex)
-    val phase        = ballotStatus.phase.unsafe
+    val ballotStatus = BallotStatus.getInstance(slotIndex)
+    val phase        = ballotStatus.phase.unsafe()
 
     phase match {
       case Ballot.Phase.Prepare =>
         Message.Prepare(
-          b = ballotStatus.currentBallot.unsafe,
-          p = ballotStatus.prepared.unsafe,
-          `p'` = ballotStatus.preparedPrime.unsafe,
-          `c.n` = ballotStatus.commit.unsafe.map(_.counter).getOrElse(0),
-          `h.n` = ballotStatus.highBallot.unsafe.map(_.counter).getOrElse(0)
+          b = ballotStatus.currentBallot.unsafe(),
+          p = ballotStatus.prepared.unsafe(),
+          `p'` = ballotStatus.preparedPrime.unsafe(),
+          `c.n` = ballotStatus.commit.unsafe().map(_.counter).getOrElse(0),
+          `h.n` = ballotStatus.highBallot.unsafe().map(_.counter).getOrElse(0)
         )
       case Ballot.Phase.Confirm =>
         Message.Confirm(
-          b = ballotStatus.currentBallot.unsafe,
-          `p.n` = ballotStatus.prepared.unsafe.map(_.counter).getOrElse(0),
-          `c.n` = ballotStatus.commit.unsafe.map(_.counter).getOrElse(0),
-          `h.n` = ballotStatus.highBallot.unsafe.map(_.counter).getOrElse(0)
+          b = ballotStatus.currentBallot.unsafe(),
+          `p.n` = ballotStatus.prepared.unsafe().map(_.counter).getOrElse(0),
+          `c.n` = ballotStatus.commit.unsafe().map(_.counter).getOrElse(0),
+          `h.n` = ballotStatus.highBallot.unsafe().map(_.counter).getOrElse(0)
         )
       case Ballot.Phase.Externalize =>
         Message.Externalize(
-          x = ballotStatus.commit.unsafe.map(_.value).get,
-          `c.n` = ballotStatus.commit.unsafe.map(_.counter).get,
-          `h.n` = ballotStatus.highBallot.unsafe.map(_.counter).getOrElse(0)
+          x = ballotStatus.commit.unsafe().map(_.value).get,
+          `c.n` = ballotStatus.commit.unsafe().map(_.counter).get,
+          `h.n` = ballotStatus.highBallot.unsafe().map(_.counter).getOrElse(0)
         )
     }
   }
@@ -194,7 +194,7 @@ class NodeServiceHandler
 
       message match {
         case x: Message.BallotMessage =>
-          val ballotStatus = BallotStatus.getInstance(setting.localNode, slotIndex)
+          val ballotStatus = BallotStatus.getInstance(slotIndex)
           ballotStatus.latestGeneratedEnvelope := env.to[Message.BallotMessage]
         case _ =>
       }
@@ -236,9 +236,18 @@ class NodeServiceHandler
 
   /** check a node set to see if they can construct a quorum for a node (configured quorum slices)
     */
-  override def isQuorum(nodeId: NodeID, nodes: Set[NodeID]): Stack[Boolean] = Stack {
+  override def isLocalQuorum(nodes: Set[NodeID]): Stack[Boolean] = Stack {
+   setting =>
+    isQuorumImpl(setting.localNode, nodes)
+  }
+
+  override def isQuorum(nodeID: NodeID, nodes: Set[NodeID]): Stack[Boolean] = Stack {
+   isQuorumImpl(nodeID, nodes)
+  }
+
+  private def isQuorumImpl(nodeID: NodeID, nodes: Set[NodeID]): Boolean = {
     import QuorumSet._
-    unsafeGetSlices(nodeId) match {
+    unsafeGetSlices(nodeID) match {
       case Slices.Flat(threshold, validators) =>
         nodes.count(validators.contains) >= threshold
       case Slices.Nest(threshold, validators, inners) =>
@@ -251,19 +260,28 @@ class NodeServiceHandler
 
   /** check a node set to see if they can construct a vblocking set for a node (configured quorum slices)
     */
-  override def isVBlocking(nodeId: NodeID, nodes: Set[NodeID]): Stack[Boolean] = Stack {
+  override def isLocalVBlocking(nodes: Set[NodeID]): Stack[Boolean] = Stack {
+    setting =>
+      isVBlockingImpl(setting.localNode, nodes)
+  }
+
+  override def isVBlocking(nodeID: NodeID, nodes: Set[NodeID]): Stack[Boolean] = Stack {
+   isVBlockingImpl(nodeID, nodes)
+  }
+
+  private def isVBlockingImpl(nodeID: NodeID, nodes: Set[NodeID]): Boolean = {
     import QuorumSet._
-    unsafeGetSlices(nodeId) match {
+    unsafeGetSlices(nodeID) match {
       case x if x.threshold == 0 => false
       case Slices.Flat(threshold, validators) =>
         val blockingNum = validators.size - threshold + 1
-        // if count of the intersection between validators and nodes is `ge` blockingNum, then it's a vblocking set
+        // if count of the intersection between validators and nodes is `ge` blockingNum, then it's a v-blocking set
         nodes.count(validators.contains) >= blockingNum
       case Slices.Nest(threshold, validators, inners) =>
         val blockingNum = validators.size + inners.size - threshold + 1
-        // inners is a Vector of Flat. if any inner is not covered, then it's not vblocking set
-        // then check the outter, inner's vblocking count + outter validators' vblocking, if that number is ge blockingNum
-        //      totally, it's a vblocking set
+        // inners is a Vector of Flat. if any inner is not covered, then it's not v-blocking set
+        // then check the outter, inner's v-blocking count + outter validators' v-blocking, if that number is ge blockingNum
+        //      totally, it's a v-blocking set
         val innerBlockingCount = inners.count { f =>
           val fBlockingNum = f.validators.size - f.threshold + 1
           nodes.count(f.validators.contains) >= fBlockingNum
@@ -289,22 +307,22 @@ class NodeServiceHandler
     *
     * @see BallotProcotol.cpp#807-834
     */
-  override def canBallotBePrepared(nodeId: NodeID,
-                                   slotIndex: SlotIndex,
+  override def canBallotBePrepared(slotIndex: SlotIndex,
                                    ballot: Ballot): Stack[Boolean] = Stack {
-    assertSlotIndex(nodeId, slotIndex)
-    val ballotStatus = BallotStatus.getInstance(nodeId, slotIndex)
-    val phase        = ballotStatus.phase.unsafe
+    setting =>
+    assertSlotIndex(setting.localNode, slotIndex)
+    val ballotStatus = BallotStatus.getInstance(slotIndex)
+    val phase        = ballotStatus.phase.unsafe()
 
     val b1 = if (phase == Ballot.Phase.Confirm) {
-      val p: Ballot = ballotStatus.prepared.unsafe.getOrElse(Ballot.bottom)
-      (p <= ballot && p.compatible(ballot))
+      val p: Ballot = ballotStatus.prepared.unsafe().getOrElse(Ballot.bottom)
+      p <= ballot && p.compatible(ballot)
     } else true
 
-    val pPrime = ballotStatus.preparedPrime.unsafe
+    val pPrime = ballotStatus.preparedPrime.unsafe()
     val b2     = !(pPrime.isDefined && ballot <= pPrime.get)
 
-    val p  = ballotStatus.prepared.unsafe
+    val p  = ballotStatus.prepared.unsafe()
     val b3 = !(p.isDefined && (ballot <= p.get && ballot.compatible(p.get)))
 
     b1 && b2 && b3
@@ -314,11 +332,10 @@ class NodeServiceHandler
     *
     * @see BallotProtocol.cpp#937-938
     */
-  override def canBallotBeHighestCommitPotentially(nodeId: NodeID,
-                                                   slotIndex: SlotIndex,
+  override def canBallotBeHighestCommitPotentially(slotIndex: SlotIndex,
                                                    ballot: Ballot): Stack[Boolean] = Stack {
-    val ballotStatus = BallotStatus.getInstance(nodeId, slotIndex)
-    val h            = ballotStatus.highBallot.unsafe
+    val ballotStatus = BallotStatus.getInstance(slotIndex)
+    val h            = ballotStatus.highBallot.unsafe()
     h.isEmpty || ballot > h.get
   }
 
@@ -326,26 +343,24 @@ class NodeServiceHandler
     *
     * @see BallotProtocol.cpp#970-973, 975-978 b should be compatible with newH
     */
-  override def canBallotBeLowestCommitPotentially(nodeId: NodeID,
-                                                  slotIndex: SlotIndex,
+  override def canBallotBeLowestCommitPotentially(slotIndex: SlotIndex,
                                                   b: Ballot,
                                                   newH: Ballot): Stack[Boolean] = Stack {
-    val ballotStatus  = BallotStatus.getInstance(nodeId, slotIndex)
-    val currentBallot = ballotStatus.currentBallot.unsafe
-    (b >= currentBallot) && (b.compatible(newH))
+    val ballotStatus  = BallotStatus.getInstance(slotIndex)
+    val currentBallot = ballotStatus.currentBallot.unsafe()
+    (b >= currentBallot) && b.compatible(newH)
   }
 
   /** check if it's necessary to set `c` based on a new `h`
     *
     * @see BallotProtocol.cpp#961
     */
-  override def needSetLowestCommitBallotUnderHigh(nodeId: NodeID,
-                                                  slotIndex: SlotIndex,
+  override def needSetLowestCommitBallotUnderHigh(slotIndex: SlotIndex,
                                                   high: Ballot): Stack[Boolean] = Stack {
-    val ballotStatus = BallotStatus.getInstance(nodeId, slotIndex)
-    val c            = ballotStatus.commit.unsafe
-    val p            = ballotStatus.prepared.unsafe
-    val pPrime       = ballotStatus.preparedPrime.unsafe
+    val ballotStatus = BallotStatus.getInstance(slotIndex)
+    val c            = ballotStatus.commit.unsafe()
+    val p            = ballotStatus.prepared.unsafe()
+    val pPrime       = ballotStatus.preparedPrime.unsafe()
 
     c.isDefined &&
     (p.isEmpty || !(high <= p.get && high.incompatible(p.get))) &&

@@ -14,8 +14,7 @@ trait AttemptAcceptCommitProgram[F[_]] extends SCP[F] with EmitProgram[F] {
   import model.applicationService._
   import model.logService._
 
-  def attemptAcceptCommit(nodeId: NodeID,
-                          slotIndex: SlotIndex,
+  def attemptAcceptCommit(slotIndex: SlotIndex,
                           previousValue: Value,
                           hint: Statement[Message.BallotMessage]): SP[F, Boolean] = {
 
@@ -23,15 +22,15 @@ trait AttemptAcceptCommitProgram[F[_]] extends SCP[F] with EmitProgram[F] {
 
     lazy val ignoreByCurrentPhase: SP[F, Boolean] =
       ifM(ballotToCommit.isEmpty, true)(
-        canAcceptCommitNow(nodeId, slotIndex, ballotToCommit.get): SP[F, Boolean])
+        canAcceptCommitNow(slotIndex, ballotToCommit.get): SP[F, Boolean])
 
     def isCounterAccepted(interval: CounterInterval, ballot: Ballot): SP[F, Boolean] = {
       for {
-        acceptedNodes <- nodesAcceptedCommit(nodeId, slotIndex, ballot, interval)
-        accepted <- ifM(isVBlocking(nodeId, acceptedNodes), true.pureSP[F]) {
+        acceptedNodes <- nodesAcceptedCommit(slotIndex, ballot, interval)
+        accepted <- ifM(isLocalVBlocking(acceptedNodes), true.pureSP[F]) {
           for {
-            votedNodes <- nodesVotedCommit(nodeId, slotIndex, ballot, interval)
-            q          <- isQuorum(nodeId, votedNodes ++ acceptedNodes)
+            votedNodes <- nodesVotedCommit(slotIndex, ballot, interval)
+            q          <- isLocalQuorum(votedNodes ++ acceptedNodes)
           } yield q
         }
       } yield accepted
@@ -49,7 +48,7 @@ trait AttemptAcceptCommitProgram[F[_]] extends SCP[F] with EmitProgram[F] {
               for {
                 accepted <- isCounterAccepted(interval, ballot)
                 _ <- info(
-                  s"[$nodeId][$slotIndex][AttemptAcceptCommit] accepted interval: $interval, $ballot, $accepted")
+                  s"[$slotIndex][AttemptAcceptCommit] accepted interval: $interval, $ballot, $accepted")
               } yield (Option(interval), pre._2 || accepted, accepted)
             }
           } yield next
@@ -64,33 +63,33 @@ trait AttemptAcceptCommitProgram[F[_]] extends SCP[F] with EmitProgram[F] {
     ifM(ignoreByCurrentPhase, false.pureSP[F]) {
       val ballot: Ballot = ballotToCommit.get
       for {
-        phase      <- currentBallotPhase(nodeId, slotIndex)
-        boundaries <- commitBoundaries(nodeId, slotIndex, ballot)
+        phase      <- currentBallotPhase(slotIndex)
+        boundaries <- commitBoundaries(slotIndex, ballot)
         _ <- info(
-          s"[$nodeId][$slotIndex][AttemptAcceptCommit] found boundaries $boundaries at phase $phase")
+          s"[$slotIndex][AttemptAcceptCommit] found boundaries $boundaries at phase $phase")
         interval <- acceptedCommitCounterInterval(boundaries, ballot)
-        _        <- info(s"[$nodeId][$slotIndex][AttemptAcceptCommit] found accepted interval: $interval")
+        _        <- info(s"[$slotIndex][AttemptAcceptCommit] found accepted interval: $interval")
         accepted <- ifM(interval.notAvailable, false) {
           val newC = Ballot(interval.first, ballot.value)
           val newH = Ballot(interval.second, ballot.value)
           for {
-            x <- acceptCommitted(nodeId, slotIndex, newC, newH)
-            _ <- info(s"[$nodeId][$slotIndex][AttemptAcceptCommit] accept ($newC - $newH), $x")
+            x <- acceptCommitted(slotIndex, newC, newH)
+            _ <- info(s"[$slotIndex][AttemptAcceptCommit] accept ($newC - $newH), $x")
           } yield x
 
         }
-        phaseNow <- currentBallotPhase(nodeId, slotIndex)
+        phaseNow <- currentBallotPhase(slotIndex)
         _ <- ifThen(phase == Ballot.Phase.Prepare && phaseNow == Ballot.Phase.Confirm) {
           for {
-            _ <- info(s"[$nodeId][$slotIndex][AttemptAcceptCommit] phase upgraded to Confirm")
-            c <- currentConfirmedBallot(nodeId, slotIndex)
-            _ <- phaseUpgradeToConfirm(nodeId, slotIndex, c)
+            _ <- info(s"[$slotIndex][AttemptAcceptCommit] phase upgraded to Confirm")
+            c <- currentConfirmedBallot(slotIndex)
+            _ <- phaseUpgradeToConfirm(slotIndex, c)
           } yield ()
         }
         _ <- ifThen(accepted) {
           for {
-            msg <- createBallotMessage(nodeId, slotIndex)
-            _   <- emit(nodeId, slotIndex, previousValue, msg)
+            msg <- createBallotMessage(slotIndex)
+            _   <- emit(slotIndex, previousValue, msg)
           } yield ()
         }
       } yield accepted

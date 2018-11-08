@@ -18,22 +18,21 @@ trait EmitProgram[F[_]] extends SCP[F] with BaseProgram[F] {
     * first, let the envelope be processed locally
     * if processed, then broadcast to scp network.
     */
-  def emit(nodeId: NodeID,
-           slotIndex: SlotIndex,
+  def emit(slotIndex: SlotIndex,
            previousValue: Value,
            message: Message): SP[F, Unit] =
     for {
-      _        <- debug(s"[$nodeId][$slotIndex] try to emit message: $message")
+      _        <- debug(s"[$slotIndex] try to emit message: $message")
       envelope <- putInEnvelope(slotIndex, message)
-      emitable <- canEmit(nodeId, slotIndex, envelope)
+      emitable <- canEmit(slotIndex, envelope)
       _ <- ifThen(emitable) {
         for {
-          _ <- info(s"[$nodeId][$slotIndex] can emit now")
+          _ <- info(s"[$slotIndex] can emit now")
           _ <- ifThen(handleSCPEnvelope(envelope, previousValue)) {
             for {
-              _ <- info(s"[$nodeId][$slotIndex] message handled locally success")
-              _ <- broadcastEnvelope(nodeId, slotIndex, envelope)
-              _ <- info(s"[$nodeId][$slotIndex] broadcast message to peers")
+              _ <- info(s"[$slotIndex] message handled locally success")
+              _ <- broadcastEnvelope(slotIndex, envelope)
+              _ <- info(s"[$slotIndex] broadcast message to peers")
             } yield ()
           }
         } yield ()

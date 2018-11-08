@@ -49,17 +49,8 @@ trait TestBed extends FunSuite with TestSupport with BeforeAndAfterEach with Log
     NominationStatus.clearInstance(slot0)
     NominationStatus.clearInstance(slot1)
 
-    BallotStatus.cleanInstance(node0, slot0)
-    BallotStatus.cleanInstance(node1, slot0)
-    BallotStatus.cleanInstance(node2, slot0)
-    BallotStatus.cleanInstance(node3, slot0)
-    BallotStatus.cleanInstance(node4, slot0)
-
-    BallotStatus.cleanInstance(node0, slot1)
-    BallotStatus.cleanInstance(node1, slot1)
-    BallotStatus.cleanInstance(node2, slot1)
-    BallotStatus.cleanInstance(node3, slot1)
-    BallotStatus.cleanInstance(node4, slot1)
+    BallotStatus.cleanInstance(slot0)
+    BallotStatus.cleanInstance(slot1)
 
     NodeServiceHandler.instance.resetSlotIndex(node0)
     NodeServiceHandler.instance.resetSlotIndex(node1)

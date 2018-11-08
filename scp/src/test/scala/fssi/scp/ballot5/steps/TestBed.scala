@@ -4,6 +4,7 @@ import java.security.PrivateKey
 
 import fssi.scp.interpreter.store.{BallotStatus, NominationStatus, Var}
 import fssi.scp.interpreter.{LogSupport, NodeServiceHandler, QuorumSetSupport}
+import fssi.scp.types.Message.Prepare
 import fssi.scp.types.QuorumSet.Slices
 import fssi.scp.types._
 import fssi.scp.{TestApp, TestSupport, TestValue}
@@ -49,11 +50,7 @@ trait TestBed extends FunSuite with TestSupport with BeforeAndAfterEach with Log
 
     NominationStatus.clearInstance(slot0)
 
-    BallotStatus.cleanInstance(node0, slot0)
-    BallotStatus.cleanInstance(node1, slot0)
-    BallotStatus.cleanInstance(node2, slot0)
-    BallotStatus.cleanInstance(node3, slot0)
-    BallotStatus.cleanInstance(node4, slot0)
+    BallotStatus.cleanInstance(slot0)
 
     NodeServiceHandler.instance.resetSlotIndex(node0)
     NodeServiceHandler.instance.resetSlotIndex(node1)
@@ -67,10 +64,11 @@ trait TestBed extends FunSuite with TestSupport with BeforeAndAfterEach with Log
     app.reset()
   }
 
-  def onEnvelopesFromVBlockingWithChecks[M <: Message](gen: PrivateKey => Envelope[M],
-                                                       withChecks: Boolean): Unit = {
-    val e1: Envelope[M] = gen(keyOfNode1)
-    val e2: Envelope[M] = gen(keyOfNode2)
+  def onEnvelopesFromVBlockingChecks[M <: Message](
+      envGenerator: (NodeID, PrivateKey) => Envelope[M],
+      withChecks: Boolean): Unit = {
+    val e1: Envelope[M] = envGenerator(node1, keyOfNode1)
+    val e2: Envelope[M] = envGenerator(node2, keyOfNode2)
 
     app.bumpTimeOffset()
     val current: Int = app.numberOfEnvelopes
@@ -82,17 +80,17 @@ trait TestBed extends FunSuite with TestSupport with BeforeAndAfterEach with Log
     if (withChecks) app.numberOfEnvelopes shouldBe (current + 1)
   }
 
-  def onEnvelopesFromVBlocking[M <: Message](gen: PrivateKey => Envelope[M]): Unit =
-    onEnvelopesFromVBlockingWithChecks(gen, withChecks = true)
+  def onEnvelopesFromVBlocking[M <: Message](gen: (NodeID, PrivateKey) => Envelope[M]): Unit =
+    onEnvelopesFromVBlockingChecks(gen, withChecks = true)
 
-  def onEnvelopesFromQuorumWithChecksEx[M <: Message](gen: PrivateKey => Envelope[M],
-                                                    checkEnvelopes: Boolean,
-                                                    isQuorumDelayed: Boolean,
-                                                    checkTimers: Boolean): Unit = {
-    val e1: Envelope[M] = gen(keyOfNode1)
-    val e2: Envelope[M] = gen(keyOfNode2)
-    val e3: Envelope[M] = gen(keyOfNode1)
-    val e4: Envelope[M] = gen(keyOfNode2)
+  def onEnvelopesFromQuorumChecksEx[M <: Message](envGenerator: (NodeID, PrivateKey) => Envelope[M],
+                                                  checkEnvelopes: Boolean,
+                                                  isQuorumDelayed: Boolean,
+                                                  checkTimers: Boolean): Unit = {
+    val e1: Envelope[M] = envGenerator(node1, keyOfNode1)
+    val e2: Envelope[M] = envGenerator(node2, keyOfNode2)
+    val e3: Envelope[M] = envGenerator(node3, keyOfNode3)
+    val e4: Envelope[M] = envGenerator(node4, keyOfNode4)
 
     app.bumpTimeOffset()
 
@@ -118,22 +116,24 @@ trait TestBed extends FunSuite with TestSupport with BeforeAndAfterEach with Log
     }
   }
 
+  def onEnvelopesFromQuorumChecks[M <: Message](gen: (NodeID, PrivateKey) => Envelope[M],
+                                                checkEnvelopes: Boolean,
+                                                isQuorumDelayed: Boolean): Unit =
+    onEnvelopesFromQuorumChecksEx(gen, checkEnvelopes, isQuorumDelayed, checkTimers = false)
 
-  def onEnvelopesFromQuorumWithChecks[M <: Message](gen: PrivateKey => Envelope[M],
-                                                    checkEnvelopes: Boolean,
-                                                    isQuorumDelayed: Boolean): Unit = onEnvelopesFromQuorumWithChecksEx(gen, checkEnvelopes, isQuorumDelayed, checkTimers = false)
+  def onEnvelopesFromQuorumEx[M <: Message](gen: (NodeID, PrivateKey) => Envelope[M],
+                                            checkTimers: Boolean): Unit =
+    onEnvelopesFromQuorumChecksEx(gen, checkEnvelopes = true, isQuorumDelayed = false, checkTimers)
 
-  def onEnvelopesFromQuorumWithEx[M <: Message](gen: PrivateKey => Envelope[M],
-                                                checkTimers: Boolean): Unit = onEnvelopesFromQuorumWithChecksEx(gen, checkEnvelopes = true, isQuorumDelayed = false, checkTimers)
-
-  def onEnvelopesFromQuorum[M <: Message](gen: PrivateKey => Envelope[M]): Unit = onEnvelopesFromQuorumWithEx(gen, checkTimers = false)
+  def onEnvelopesFromQuorum[M <: Message](gen: (NodeID, PrivateKey) => Envelope[M]): Unit =
+    onEnvelopesFromQuorumEx(gen, checkTimers = false)
 
   def nodesAllPledgeToCommit(): Unit = {
-    val b: Ballot = Ballot(1, xValue)
-    val prepare1: Envelope[Message.Prepare] = app.makePrepare(node1, keyOfNode1, b )
-    val prepare2: Envelope[Message.Prepare] = app.makePrepare(node2, keyOfNode2, b )
-    val prepare3: Envelope[Message.Prepare] = app.makePrepare(node3, keyOfNode3, b )
-    val prepare4: Envelope[Message.Prepare] = app.makePrepare(node4, keyOfNode4, b )
+    val b: Ballot                           = Ballot(1, xValue)
+    val prepare1: Envelope[Message.Prepare] = app.makePrepare(node1, keyOfNode1, b)
+    val prepare2: Envelope[Message.Prepare] = app.makePrepare(node2, keyOfNode2, b)
+    val prepare3: Envelope[Message.Prepare] = app.makePrepare(node3, keyOfNode3, b)
+    val prepare4: Envelope[Message.Prepare] = app.makePrepare(node4, keyOfNode4, b)
 
     app.bumpState(xValue) shouldBe true
     app.numberOfEnvelopes shouldBe 1
@@ -159,9 +159,9 @@ trait TestBed extends FunSuite with TestSupport with BeforeAndAfterEach with Log
     app.numberOfEnvelopes shouldBe 2
 
     val prepared1: Envelope[Message.Prepare] = app.makePrepare(node1, keyOfNode1, b, Some(b))
-    val prepared2: Envelope[Message.Prepare] = app.makePrepare(node2, keyOfNode2, b, Some(b) )
-    val prepared3: Envelope[Message.Prepare] = app.makePrepare(node3, keyOfNode3, b, Some(b) )
-    val prepared4: Envelope[Message.Prepare] = app.makePrepare(node4, keyOfNode4, b, Some(b) )
+    val prepared2: Envelope[Message.Prepare] = app.makePrepare(node2, keyOfNode2, b, Some(b))
+    val prepared3: Envelope[Message.Prepare] = app.makePrepare(node3, keyOfNode3, b, Some(b))
+    val prepared4: Envelope[Message.Prepare] = app.makePrepare(node4, keyOfNode4, b, Some(b))
 
     app.onEnvelope(prepared4)
     app.onEnvelope(prepared3)
@@ -177,4 +177,8 @@ trait TestBed extends FunSuite with TestSupport with BeforeAndAfterEach with Log
     app.onEnvelope(prepared1)
     app.numberOfEnvelopes shouldBe 3
   }
+
+  def makePrepareGen(b: Ballot, p: Option[Ballot] = None, cn: Int = 0, hn: Int = 0): (NodeID, PrivateKey) => Envelope[Prepare] =
+      app.makePrepare(_: NodeID, _: PrivateKey, b, p, cn, hn)
+
 }

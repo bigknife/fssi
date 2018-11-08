@@ -82,7 +82,7 @@ trait HandleNominationProgram[F[_]] extends SCP[F] with EmitProgram[F] {
         voteNew <- ifM(haveCandidateNominations(slotIndex), false.pureSP[F]) {
           ifM(isNotLeader(nodeId, slotIndex), false.pureSP[F]) {
             for {
-              round <- currentNominateRound(nodeId, slotIndex)
+              round <- currentNominateRound(slotIndex)
               value <- tryGetNewValueFromNomination(nodeId, slotIndex, previousValue, nom, round)
               x <- ifM(value.isEmpty, false) {
                 for {
@@ -96,7 +96,7 @@ trait HandleNominationProgram[F[_]] extends SCP[F] with EmitProgram[F] {
         _ <- ifThen(acceptNew || voteNew) {
           for {
             nomMsg <- createNominationMessage(slotIndex)
-            _      <- emit(nodeId, slotIndex, previousValue, nomMsg)
+            _      <- emit(slotIndex, previousValue, nomMsg)
           } yield ()
         }
         _ <- ifThen(candidateNew) {
@@ -106,9 +106,9 @@ trait HandleNominationProgram[F[_]] extends SCP[F] with EmitProgram[F] {
             _ <- ifM(composite.isEmpty, false) {
               for {
                 _ <- info(
-                  s"[$nodeId][$slotIndex] combined new composite value, unforcely bump to ballot: $composite")
-                _ <- candidateValueUpdated(nodeId, slotIndex, composite.get)
-                x <- bumpState(nodeId, slotIndex, previousValue, composite.get, false)
+                  s"[$nodeId][$slotIndex] combined new composite value, un-forcefully bump to ballot: $composite")
+                _ <- candidateValueUpdated(slotIndex, composite.get)
+                x <- bumpState(slotIndex, previousValue, composite.get, force = false)
               } yield x
             }
           } yield ()

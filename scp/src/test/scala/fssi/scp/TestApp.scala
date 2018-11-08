@@ -8,7 +8,7 @@ import fssi.scp.ast.uc.SCP
 import fssi.scp.interpreter.store.{BallotStatus, NominationStatus}
 import fssi.scp.interpreter.{NodeServiceHandler, NodeStoreHandler, Setting, runner}
 import fssi.scp.types.Ballot.Phase
-import fssi.scp.types.Message.{Nomination, Prepare}
+import fssi.scp.types.Message.{Confirm, Nomination, Prepare}
 import fssi.scp.types.{Message, _}
 import org.scalameta.logger
 
@@ -37,6 +37,8 @@ class TestApp(nodeID: NodeID,
 
   private var heardFromQuorums: Vector[Ballot] = Vector.empty
 
+  private var externalizedValues: Vector[Value] = Vector.empty
+
   val setting: Setting = Setting(
     quorumSet = quorumSet,
     localNode = nodeID,
@@ -55,6 +57,8 @@ class TestApp(nodeID: NodeID,
     currentTime = 0
 
     heardFromQuorums = Vector.empty
+
+    externalizedValues = Vector.empty
   }
 
   override def validateValue(nodeId: NodeID, slotIndex: SlotIndex, value: Value): Value.Validity = {
@@ -75,16 +79,19 @@ class TestApp(nodeID: NodeID,
     Some(value)
   }
 
+  override def canDispatch: StateChanged = true
+
   override def dispatch(timer: String, timeout: Long, runnable: Runnable): Unit = {
     dispatchedTimers = dispatchedTimers + (timer -> ScheduledTask(currentTime + timeout, runnable))
   }
 
-  override def valueConfirmed(nodeId: NodeID, slotIndex: SlotIndex, value: Value): Unit = {}
+  override def valueConfirmed(slotIndex: SlotIndex, value: Value): Unit = {}
 
-  override def valueExternalized(nodeId: NodeID, slotIndex: SlotIndex, value: Value): Unit = {}
+  override def valueExternalized(slotIndex: SlotIndex, value: Value): Unit = {
+    externalizedValues = externalizedValues :+ value
+  }
 
-  override def broadcastEnvelope[M <: Message](nodeId: NodeID,
-                                               slotIndex: SlotIndex,
+  override def broadcastEnvelope[M <: Message](slotIndex: SlotIndex,
                                                envelope: Envelope[M]): Unit = {
     if (isEmittedFromThisNode(envelope)) {
       statements = statements :+ envelope.statement
@@ -190,12 +197,19 @@ class TestApp(nodeID: NodeID,
   }
 
   def bumpState(value: Value): Boolean = {
-    val p = scp.bumpState(nodeID, slotIndex, value, value, force = true)
+    val p = scp.bumpState(slotIndex, value, value, force = true)
     runner.runIO(p, setting).unsafeRunSync()
   }
 
   def hasPrepared(b: Ballot, p: Option[Ballot] = None, cn: Int = 0, hn: Int = 0, pPrime: Option[Ballot] = None): Boolean =
     statements.lastOption map (_.copy(timestamp = started)) contains statementOf(Prepare(b, p, pPrime, cn, hn))
+
+  def hasConfirmed(pn: Int, b: Ballot, cn: Int = 0, hn: Int = 0): Boolean =
+    statements.lastOption map (_.copy(timestamp = started)) contains statementOf(Confirm(b, pn,  cn, hn))
+
+  def numberOfExternalizedValues: Int = externalizedValues.size
+
+  def hasExternalized(value: Value): Boolean = externalizedValues.lastOption.contains(value)
 
   def setStatusFromMessage[M <: Message](m: M): Unit = {
     val p = for {
@@ -212,9 +226,9 @@ class TestApp(nodeID: NodeID,
         nominationStatus.accepted := acceptedValues
 
       case Prepare(b, p, pPrime, cn, hn) =>
-        val ballotStatus = BallotStatus.getInstance(nodeID, slotIndex)
+        val ballotStatus = BallotStatus.getInstance(slotIndex)
         NodeStoreHandler.instance
-          .updateBallotStateWhenBumpNewBallot(nodeID, slotIndex, b)
+          .updateBallotStateWhenBumpNewBallot(slotIndex, b)
           .run(setting)
           .unsafeRunSync()
         ballotStatus.prepared := p

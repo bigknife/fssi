@@ -61,7 +61,7 @@ trait HandleAppRequestProgram[F[_]] extends SCP[F] with EmitProgram[F] {
     ifM(cannotNominateNewValue(slotIndex, timeout), false.pureSP[F]) {
       // rate limits
       for {
-        round    <- currentNominateRound(nodeId, slotIndex)
+        round    <- currentNominateRound(slotIndex)
         _        <- info(s"[$nodeId][$slotIndex] handling app request at round: $round")
         newVotes <- narrowDownVotes(round)
         _        <- debug(s"[$nodeId][$slotIndex] narrowdown votes: $newVotes")
@@ -75,7 +75,7 @@ trait HandleAppRequestProgram[F[_]] extends SCP[F] with EmitProgram[F] {
             _        <- info(s"[$nodeId][$slotIndex] handle nomination envelope locally: $handled")
             _ <- ifThen(handled) {
               for {
-                _ <- emit(nodeId, slotIndex, previousValue, message)
+                _ <- emit(slotIndex, previousValue, message)
                 _ <- info(s"[$nodeId][$slotIndex] broadcast nomination envelope to peers")
               } yield ()
 
@@ -84,7 +84,7 @@ trait HandleAppRequestProgram[F[_]] extends SCP[F] with EmitProgram[F] {
         }
 
         timeout <- computeTimeout(round)
-        _       <- gotoNextNominateRound(nodeId, slotIndex)
+        _       <- gotoNextNominateRound(slotIndex)
         _       <- info(s"[$nodeId][$slotIndex] has gone to next round")
         _ <- delayExecuteProgram(NOMINATE_TIMER,
                                  handleAppRequest(nodeId, slotIndex, value, previousValue),

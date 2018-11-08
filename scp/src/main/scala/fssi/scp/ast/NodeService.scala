@@ -48,7 +48,7 @@ import types._
 
   /** create ballot message based on local state
     */
-  def createBallotMessage(nodeId: NodeID, slotIndex: SlotIndex): P[F, Message.BallotMessage]
+  def createBallotMessage(slotIndex: SlotIndex): P[F, Message.BallotMessage]
 
   /** make a envelope for a message
     */
@@ -72,11 +72,13 @@ import types._
 
   /** check a node set to see if they can construct a quorum for a node (configured quorum slices)
     */
-  def isQuorum(nodeId: NodeID, nodes: Set[NodeID]): P[F, Boolean]
+  def isLocalQuorum(nodes: Set[NodeID]): P[F, Boolean]
+  def isQuorum(nodeID: NodeID, nodes: Set[NodeID]): P[F, Boolean]
 
   /** check a node set to see if they can construct a vblocking set for a node (configured quorum slices)
     */
-  def isVBlocking(nodeId: NodeID, nodes: Set[NodeID]): P[F, Boolean]
+  def isLocalVBlocking(nodes: Set[NodeID]): P[F, Boolean]
+  def isVBlocking(nodeID: NodeID, nodes: Set[NodeID]): P[F, Boolean]
 
   /** get values from a ballot message
     */
@@ -84,24 +86,22 @@ import types._
 
   /** check a ballot can be used as a prepared candidate based on local p , p' and phase
     */
-  def canBallotBePrepared(nodeId: NodeID, slotIndex: SlotIndex, ballot: Ballot): P[F, Boolean]
-  def ballotCannotBePrepared(nodeId: NodeID, slotIndex: SlotIndex, ballot: Ballot): P[F, Boolean] =
-    canBallotBePrepared(nodeId, slotIndex, ballot).map(!_)
+  def canBallotBePrepared(slotIndex: SlotIndex, ballot: Ballot): P[F, Boolean]
+  def ballotCannotBePrepared(slotIndex: SlotIndex, ballot: Ballot): P[F, Boolean] =
+    canBallotBePrepared(slotIndex, ballot).map(!_)
 
   /** check a ballot can be potentially raise h, be confirmed prepared, to a commit
     *
     * @see BallotProtocol.cpp#937-938
     */
-  def canBallotBeHighestCommitPotentially(nodeId: NodeID,
-                                          slotIndex: SlotIndex,
+  def canBallotBeHighestCommitPotentially(slotIndex: SlotIndex,
                                           ballot: Ballot): P[F, Boolean]
 
   /** check a ballot can be potentially raise h, be confirmed prepared, to a commit
     *
     * @see BallotProtocol.cpp#970-973, 975-978 b should be compatible with newH
     */
-  def canBallotBeLowestCommitPotentially(nodeId: NodeID,
-                                         slotIndex: SlotIndex,
+  def canBallotBeLowestCommitPotentially(slotIndex: SlotIndex,
                                          b: Ballot,
                                          newH: Ballot): P[F, Boolean]
 
@@ -109,11 +109,9 @@ import types._
     *
     * @see BallotProtocol.cpp#961
     */
-  def needSetLowestCommitBallotUnderHigh(nodeId: NodeID,
-                                         slotIndex: SlotIndex,
+  def needSetLowestCommitBallotUnderHigh(slotIndex: SlotIndex,
                                          high: Ballot): P[F, Boolean]
-  def notNecessarySetLowestCommitBallotUnderHigh(nodeId: NodeID,
-                                                 slotIndex: SlotIndex,
+  def notNecessarySetLowestCommitBallotUnderHigh(slotIndex: SlotIndex,
                                                  high: Ballot): P[F, Boolean] =
-    needSetLowestCommitBallotUnderHigh(nodeId, slotIndex, high).map(!_)
+    needSetLowestCommitBallotUnderHigh(slotIndex, high).map(!_)
 }
