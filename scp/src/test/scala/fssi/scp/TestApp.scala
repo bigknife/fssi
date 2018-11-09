@@ -8,7 +8,7 @@ import fssi.scp.ast.uc.SCP
 import fssi.scp.interpreter.store.{BallotStatus, NominationStatus}
 import fssi.scp.interpreter.{NodeServiceHandler, NodeStoreHandler, Setting, runner}
 import fssi.scp.types.Ballot.Phase
-import fssi.scp.types.Message.{Confirm, Nomination, Prepare}
+import fssi.scp.types.Message.{Confirm, Externalize, Nomination, Prepare}
 import fssi.scp.types.{Message, _}
 import org.scalameta.logger
 
@@ -118,7 +118,7 @@ class TestApp(nodeID: NodeID,
     if (nodeWithTopPriority exists (_ === nodeId)) 1000l else 0l
 
   override def ballotDidHearFromQuorum(slot: SlotIndex, ballot: Ballot): Unit = {
-    if(slot == slotIndex) heardFromQuorums = heardFromQuorums :+ ballot
+    if (slot == slotIndex) heardFromQuorums = heardFromQuorums :+ ballot
   }
 
   def bumpTimeOffset(): Unit = {
@@ -200,20 +200,46 @@ class TestApp(nodeID: NodeID,
       .unsafeRunSync()
   }
 
+  def makeConfirm(node: NodeID,
+                  key: PrivateKey,
+                  pn: Int,
+                  current: Ballot,
+                  cn: Int,
+                  hn: Int): Envelope[Confirm] = {
+    NodeServiceHandler.instance
+      .putInEnvelope(
+        slotIndex,
+        Confirm(current, pn, cn, hn)
+      )
+      .run(setting.copy(localNode = node, privateKey = key))
+      .unsafeRunSync()
+  }
+
   def bumpState(value: Value): Boolean = {
     val p = scp.bumpState(slotIndex, value, value, force = true)
     runner.runIO(p, setting).unsafeRunSync()
   }
 
-  def hasPrepared(b: Ballot, p: Option[Ballot] = None, cn: Int = 0, hn: Int = 0, pPrime: Option[Ballot] = None): Boolean =
-    statements.lastOption map (_.copy(timestamp = started)) contains statementOf(Prepare(b, p, pPrime, cn, hn))
+  def hasPrepared(b: Ballot,
+                  p: Option[Ballot] = None,
+                  cn: Int = 0,
+                  hn: Int = 0,
+                  pPrime: Option[Ballot] = None): Boolean =
+    statements.lastOption map (_.copy(timestamp = started)) contains statementOf(
+      Prepare(b, p, pPrime, cn, hn))
 
   def hasConfirmed(pn: Int, b: Ballot, cn: Int = 0, hn: Int = 0): Boolean =
-    statements.lastOption map (_.copy(timestamp = started)) contains statementOf(Confirm(b, pn,  cn, hn))
+    statements.lastOption map (_.copy(timestamp = started)) contains statementOf(
+      Confirm(b, pn, cn, hn))
 
   def numberOfExternalizedValues: Int = externalizedValues.size
 
-  def hasExternalized(value: Value): Boolean = externalizedValues.lastOption.contains(value)
+  def lastExternalizedValue: Option[Value] = externalizedValues.lastOption
+
+  def hasExternalized(commit: Ballot, hn: Int): Boolean = {
+    statements.lastOption map (_.copy(timestamp = started)) contains statementOf(
+      Externalize(commit.value, commit.counter, hn))
+  }
 
   def setStatusFromMessage[M <: Message](m: M): Unit = {
     val p = for {

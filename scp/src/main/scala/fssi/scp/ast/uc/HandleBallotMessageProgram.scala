@@ -115,17 +115,16 @@ trait HandleBallotMessageProgram[F[_]] extends SCP[F] with BumpStateProgram[F] {
       _                <- info(s"[$slotIndex] confirm commit prepare")
       commitConfirmed  <- attemptConfirmCommit(slotIndex, previousValue, statement)
       didWork = prepareAccepted || prepareConfirmed || commitAccepted || commitConfirmed
-      bumped <- ifM(currentMessageLevel(slotIndex).map(_ == 1), attemptBumpMore)(
-        false.pureSP[F])
+      bumped <- ifM(currentMessageLevel(slotIndex).map(_ == 1), attemptBumpMore)(false.pureSP[F])
       _ <- ifM(currentMessageLevel(slotIndex).map(_ == 1),
                checkHeardFromQuorum(slotIndex, previousValue))(().pureSP[F])
-      _ <- ifThen(didWork || bumped) {
+      _ <- currentMessageLevelDown(slotIndex)
+      currentLevel <- currentMessageLevel(slotIndex)
+      _ <- ifThen((didWork || bumped) && currentLevel == 0) {
         for {
-          unEmitted <- currentUnEmittedBallotMessage(slotIndex)
-          _         <- ifThen(unEmitted.isDefined)(emit(slotIndex, previousValue, unEmitted.get))
+          _         <- sendLatestEnvelope(slotIndex)
         } yield ()
       }
-      _ <- currentMessageLevelDown(slotIndex)
     } yield ()
   }
 

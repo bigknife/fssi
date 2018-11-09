@@ -190,16 +190,7 @@ class NodeServiceHandler
       val signature =
         Signature(crypto.makeSignature(fixedStatementBytes(statement), setting.privateKey))
 
-      val env = Envelope(statement, signature)
-
-      message match {
-        case x: Message.BallotMessage =>
-          val ballotStatus = BallotStatus.getInstance(slotIndex)
-          ballotStatus.latestGeneratedEnvelope := env.to[Message.BallotMessage]
-        case _ =>
-      }
-
-      env
+      Envelope(statement, signature)
     }
 
   /** verify the signature of the envelope

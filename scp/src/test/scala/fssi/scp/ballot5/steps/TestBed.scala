@@ -4,7 +4,7 @@ import java.security.PrivateKey
 
 import fssi.scp.interpreter.store.{BallotStatus, NominationStatus, Var}
 import fssi.scp.interpreter.{LogSupport, NodeServiceHandler, QuorumSetSupport}
-import fssi.scp.types.Message.Prepare
+import fssi.scp.types.Message.{Confirm, Prepare}
 import fssi.scp.types.QuorumSet.Slices
 import fssi.scp.types._
 import fssi.scp.{TestApp, TestSupport, TestValue}
@@ -178,7 +178,15 @@ trait TestBed extends FunSuite with TestSupport with BeforeAndAfterEach with Log
     app.numberOfEnvelopes shouldBe 3
   }
 
-  def makePrepareGen(b: Ballot, p: Option[Ballot] = None, cn: Int = 0, hn: Int = 0): (NodeID, PrivateKey) => Envelope[Prepare] =
-      app.makePrepare(_: NodeID, _: PrivateKey, b, p, cn, hn)
+  def makePrepareGen(b: Ballot,
+                     p: Option[Ballot] = None,
+                     cn: Int = 0,
+                     hn: Int = 0): (NodeID, PrivateKey) => Envelope[Prepare] =
+    app.makePrepare(_: NodeID, _: PrivateKey, b, p, cn, hn)
 
+  def makeConfirmGen(pn: Int,
+                     b: Ballot,
+                     cn: Int,
+                     hn: Int): (NodeID, PrivateKey) => Envelope[Confirm] =
+    app.makeConfirm(_: NodeID, _: PrivateKey, pn, b, cn, hn)
 }

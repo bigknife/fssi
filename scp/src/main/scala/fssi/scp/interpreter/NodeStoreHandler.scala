@@ -2,8 +2,8 @@ package fssi.scp
 package interpreter
 
 import fssi.scp.ast._
-import fssi.scp.interpreter.store.{BallotStatus, NominationStatus}
-import fssi.scp.types.Message.Nomination
+import fssi.scp.interpreter.store.{BallotStatus, NominationStatus, Var}
+import fssi.scp.types.Message.{BallotMessage, Nomination}
 import fssi.scp.types._
 
 import scala.collection.immutable.Set
@@ -31,44 +31,13 @@ class NodeStoreHandler extends NodeStore.Handler[Stack] {
             case None => true
           }
         }
-      case b: Message.BallotMessage =>
+      case coming: Message.BallotMessage =>
         val ballotStatus: BallotStatus = slotIndex
+
         ballotStatus.latestEnvelopes.map {
           _.get(nodeId) match {
-            case Some(env) =>
-              val isDiff = b != env.statement.message
-              val isGrow = b match {
-                case newPrepare: Message.Prepare =>
-                  env.statement.message match {
-                    case oldPrepare: Message.Prepare =>
-                      val compBallot = oldPrepare.b.compare(newPrepare.b)
-                      if (compBallot < 0) true
-                      else if (compBallot == 0) {
-                        val prepareCompBallot = oldPrepare.p.compare(newPrepare.p)
-                        if (prepareCompBallot < 0) true
-                        else {
-                          val preparePrimeCompBallot = oldPrepare.`p'`.compare(newPrepare.`p'`)
-                          if (preparePrimeCompBallot < 0) true
-                          else oldPrepare.`h.n` < newPrepare.`h.n`
-                        }
-                      } else false
-                    case _ => false
-                  }
-                case newConf: Message.Confirm =>
-                  env.statement.message match {
-                    case _: Message.Prepare => true
-                    case oldConf: Message.Confirm =>
-                      val compBallot = oldConf.b.compare(newConf.b)
-                      if (compBallot < 0) true
-                      else if (compBallot == 0) {
-                        if (oldConf.`p.n` == newConf.`p.n`) oldConf.`h.n` < newConf.`h.n`
-                        else oldConf.`p.n` < newConf.`p.n`
-                      } else false
-                    case _: Message.Externalize => false
-                  }
-                case _: Message.Externalize => false
-              }
-              isDiff && isGrow
+            case Some(old) =>
+              isNewerBallotMessage(coming, old.statement.message)
             case None => true
           }
         }
@@ -657,7 +626,7 @@ class NodeStoreHandler extends NodeStore.Handler[Stack] {
     val didWork = highestUpdated || phaseUpdated
 
     if (didWork)
-      updateCurrentIfNeed(slotIndex, highestBallotOpt.get)
+      updateCurrentIfNeed(slotIndex, ballotStatus.highBallot.unsafe().get)
 
     didWork
   }
@@ -670,11 +639,15 @@ class NodeStoreHandler extends NodeStore.Handler[Stack] {
                                 lowest: Ballot,
                                 highest: Ballot): Stack[StateChanged] = Stack {
     val ballotStatus: BallotStatus = slotIndex
+
     ballotStatus.commit := Option(lowest)
     ballotStatus.highBallot := Option(highest)
-    val updated = updateCurrentIfNeed(slotIndex, highest)
-    if (updated) ballotStatus.phase := Ballot.Phase.Externalize
-    updated
+
+    updateCurrentIfNeed(slotIndex, highest)
+
+    ballotStatus.phase := Ballot.Phase.Externalize
+
+    true
   }
 
   /** check if it's able to accept commit a ballot now
@@ -760,13 +733,38 @@ class NodeStoreHandler extends NodeStore.Handler[Stack] {
           val lastEnv                            = nominationStatus.lastEnvelope
           lastEnv.isEmpty || lastEnv.unsafe().isEmpty || n.isNewerThan(
             lastEnv.unsafe().get.statement.message)
-        case _ =>
+        case b: BallotMessage =>
           val ballotStatus: BallotStatus = slotIndex
           val canEmit                    = !ballotStatus.currentBallot.unsafe().isBottom
-          val lastEnv                    = ballotStatus.latestEmitEnvelope.unsafe()
-          canEmit && (lastEnv.isEmpty || lastEnv.get != envelope)
+          val lastEnv                    = ballotStatus.latestGeneratedEnvelope.map(_.statement.message)
+          canEmit && (lastEnv.isEmpty || isNewerBallotMessage(b, lastEnv.unsafe()))
       }
     }
+
+  override def shouldProcess[M <: Message](slotIndex: SlotIndex,
+                                           envelope: Envelope[M]): Stack[Boolean] =
+    Stack {
+      setting =>
+      envelope.statement.message match {
+        case _: BallotMessage =>
+          val ballotStatus: BallotStatus = slotIndex
+          val lastEnv: Var[Option[Envelope[BallotMessage]]] = ballotStatus.latestEnvelopes.map(_.get(setting.localNode))
+          lastEnv.isEmpty || !lastEnv.unsafe().contains(envelope)
+        case _ => false
+      }
+    }
+
+  override def envelopeReadyToBeEmitted[M <: Message](slotIndex: SlotIndex,
+                                                      envelope: Envelope[M]): Stack[Unit] = Stack {
+    envelope.statement.message match {
+      case _: BallotMessage =>
+        val ballotStatus = slotIndex
+        ballotStatus.latestGeneratedEnvelope := envelope.asInstanceOf[Envelope[BallotMessage]]
+      case _ =>
+    }
+
+    ()
+  }
 
   override def localNode(): Stack[NodeID] = Stack { setting => setting.localNode
   }
@@ -834,6 +832,47 @@ class NodeStoreHandler extends NodeStore.Handler[Stack] {
       case Ballot.Phase.Externalize => commit.nonEmpty && highBallot.nonEmpty
     }
     currentBallotValid && prepareValid && highValid && commitValid && phaseValid
+  }
+
+  def isNewerBallotMessage(current: BallotMessage, old: BallotMessage): Boolean = {
+    val isDiff = current != old
+
+    val isGrow = current match {
+      case newPrepare: Message.Prepare =>
+        old match {
+          case oldPrepare: Message.Prepare =>
+            val compBallot = oldPrepare.b.compare(newPrepare.b)
+            if (compBallot < 0) true
+            else if (compBallot == 0) {
+              val prepareCompBallot = oldPrepare.p.compare(newPrepare.p)
+              if (prepareCompBallot < 0) true
+              else {
+                val preparePrimeCompBallot = oldPrepare.`p'`.compare(newPrepare.`p'`)
+                if (preparePrimeCompBallot < 0) true
+                else oldPrepare.`h.n` < newPrepare.`h.n`
+              }
+            } else false
+          case _ => false
+        }
+      case newConf: Message.Confirm =>
+        old match {
+          case _: Message.Prepare => true
+          case oldConf: Message.Confirm =>
+            val compBallot = oldConf.b.compare(newConf.b)
+            if (compBallot < 0) true
+            else if (compBallot == 0) {
+              if (oldConf.`p.n` == newConf.`p.n`) oldConf.`h.n` < newConf.`h.n`
+              else oldConf.`p.n` < newConf.`p.n`
+            } else false
+          case _: Message.Externalize => false
+        }
+      case _: Message.Externalize =>
+        old match {
+          case _: Message.Externalize => false
+          case _                      => true
+        }
+    }
+    isDiff && isGrow
   }
 }
 

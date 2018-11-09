@@ -20,17 +20,21 @@ trait AttemptConfirmCommitProgram[F[_]] extends SCP[F] with EmitProgram[F] {
 
     val ballotToExternalize = hint.message.externalizableBallot
     lazy val ignoreByCurrentPhase: SP[F, Boolean] =
-      ifM(ballotToExternalize.isEmpty, true)(
-        canConfirmCommitNow(slotIndex, ballotToExternalize.get))
+      ifM(ballotToExternalize.isEmpty, true)(for {
+        canConfirm <- canConfirmCommitNow(slotIndex, ballotToExternalize.get)
+      } yield !canConfirm)
 
-    def isCounterConfirmed(nodeId: NodeID, interval: CounterInterval, ballot: Ballot): SP[F, Boolean] = {
+    def isCounterConfirmed(nodeId: NodeID,
+                           interval: CounterInterval,
+                           ballot: Ballot): SP[F, Boolean] = {
       for {
         acceptedNodes <- nodesAcceptedCommit(slotIndex, ballot, interval)
         accepted      <- isQuorum(nodeId, acceptedNodes)
       } yield accepted
     }
 
-    def confirmedCommitCounterInterval(nodeId: NodeID, boundaries: CounterSet,
+    def confirmedCommitCounterInterval(nodeId: NodeID,
+                                       boundaries: CounterSet,
                                        ballot: Ballot): SP[F, CounterInterval] = {
       // Option[interval], everAccepted, lastAccepted
       val x = boundaries.foldRight((Option.empty[CounterInterval], false, false).pureSP[F]) {
@@ -42,13 +46,13 @@ trait AttemptConfirmCommitProgram[F[_]] extends SCP[F] with EmitProgram[F] {
               for {
                 accepted <- isCounterConfirmed(nodeId, interval, ballot)
                 _ <- info(
-                  s"[$slotIndex][AttemptConfirmCommit] accepted interval: $interval, $ballot, $accepted")
+                  s"[$slotIndex][AttemptConfirmCommit] confirmed interval: $interval, $ballot, $accepted")
               } yield (Option(interval), pre._2 || accepted, accepted)
             }
           } yield next
       }
       x.map {
-        case (Some(interval), true, false) => interval
+        case (Some(interval), true, _) => interval
 
         case _ => CounterInterval()
       }
@@ -62,22 +66,23 @@ trait AttemptConfirmCommitProgram[F[_]] extends SCP[F] with EmitProgram[F] {
         boundaries <- commitBoundaries(slotIndex, ballot)
         _ <- info(
           s"[$slotIndex][AttemptConfirmCommit] found boundaries $boundaries at phase $phase")
-        localNode <- localNode
-        interval   <- confirmedCommitCounterInterval(localNode, boundaries, ballot)
-        accepted <- ifM(interval.notAvailable, false) {
+        localNode <- localNode()
+        interval  <- confirmedCommitCounterInterval(localNode, boundaries, ballot)
+        confirmed <- ifM(interval.notAvailable, false) {
           val newC = Ballot(interval.first, ballot.value)
           val newH = Ballot(interval.second, ballot.value)
           for {
-            confirmed <- confirmCommitted(slotIndex, newC, newH)
-            _ <- info(s"[$slotIndex][AttemptConfirmCommit] confirm ($newC - $newH), $confirmed")
-            _         <- ifThen(confirmed) {
+            transferred <- confirmCommitted(slotIndex, newC, newH)
+            _         <- info(s"[$slotIndex][AttemptConfirmCommit] confirm ($newC - $newH), $transferred")
+            _ <- ifThen(transferred) {
               for {
-                _ <- info(s"[$slotIndex][AttemptConfirmCommit] confirmed ($newC - $newH), stop nominating")
+                _ <- info(
+                  s"[$slotIndex][AttemptConfirmCommit] confirmed ($newC - $newH), stop nominating")
                 _ <- stopNominating(slotIndex)
               } yield ()
             }
 
-          } yield confirmed
+          } yield transferred
 
         }
         phaseNow <- currentBallotPhase(slotIndex)
@@ -88,13 +93,13 @@ trait AttemptConfirmCommitProgram[F[_]] extends SCP[F] with EmitProgram[F] {
             _ <- phaseUpgradeToExternalize(slotIndex, c)
           } yield ()
         }
-        _ <- ifThen(accepted) {
+        _ <- ifThen(confirmed) {
           for {
             msg <- createBallotMessage(slotIndex)
             _   <- emit(slotIndex, previousValue, msg)
           } yield ()
         }
-      } yield accepted
+      } yield confirmed
     }
   }
 }

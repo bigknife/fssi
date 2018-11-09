@@ -4,9 +4,9 @@ package ast
 import bigknife.sop._
 import bigknife.sop.macros._
 import bigknife.sop.implicits._
+import fssi.scp.types.Message.BallotMessage
 
 import scala.collection.immutable._
-
 import types._
 
 @sp trait NodeStore[F[_]] {
@@ -58,10 +58,9 @@ import types._
   def haveCandidateNominations(slotIndex: SlotIndex): P[F, Boolean] =
     candidateNominations(slotIndex).map(_.nonEmpty)
 
-def isLeader(nodeID: NodeID, slotIndex: SlotIndex): P[F, Boolean]
-def isNotLeader(nodeID: NodeID, slotIndex: SlotIndex): P[F, Boolean] =
+  def isLeader(nodeID: NodeID, slotIndex: SlotIndex): P[F, Boolean]
+  def isNotLeader(nodeID: NodeID, slotIndex: SlotIndex): P[F, Boolean] =
     isLeader(nodeID, slotIndex).map(leader => !leader)
-
 
   /** save new values to current voted nominations
     */
@@ -90,23 +89,19 @@ def isNotLeader(nodeID: NodeID, slotIndex: SlotIndex): P[F, Boolean] =
   /** given a ballot, get next ballot to try base on local state (z)
     * if there is a value stored in z, use <z, counter>, or use <attempt, counter>
     */
-  def nextBallotToTry(slotIndex: SlotIndex,
-                      attempt: Value,
-                      counter: Int): P[F, Ballot]
+  def nextBallotToTry(slotIndex: SlotIndex, attempt: Value, counter: Int): P[F, Ballot]
 
   /** update local state when a new ballot was bumped into
     *
     * @see BallotProtocol.cpp#399
     */
-  def updateBallotStateWhenBumpNewBallot(slotIndex: SlotIndex,
-                                         newB: Ballot): P[F, Boolean]
+  def updateBallotStateWhenBumpNewBallot(slotIndex: SlotIndex, newB: Ballot): P[F, Boolean]
 
   /** update local state when a ballot would be accepted as being prepared
     *
     * @see BallotProtocol.cpp#879
     */
-  def updateBallotStateWhenAcceptPrepare(slotIndex: SlotIndex,
-                                         newP: Ballot): P[F, Boolean]
+  def updateBallotStateWhenAcceptPrepare(slotIndex: SlotIndex, newP: Ballot): P[F, Boolean]
 
   /** update local state when a new high ballot and a new low ballot would be confirmed as being prepared
     *
@@ -204,17 +199,13 @@ def isNotLeader(nodeID: NodeID, slotIndex: SlotIndex): P[F, Boolean] =
     *
     * @see BallotProtocol.cpp#1292
     */
-  def acceptCommitted(slotIndex: SlotIndex,
-                      lowest: Ballot,
-                      highest: Ballot): P[F, StateChanged]
+  def acceptCommitted(slotIndex: SlotIndex, lowest: Ballot, highest: Ballot): P[F, StateChanged]
 
   /** confirm ballots(low and high) as committed
     *
     * @see BallotProtocol.cpp#1292
     */
-  def confirmCommitted(slotIndex: SlotIndex,
-                       lowest: Ballot,
-                       highest: Ballot): P[F, StateChanged]
+  def confirmCommitted(slotIndex: SlotIndex, lowest: Ballot, highest: Ballot): P[F, StateChanged]
 
   /** check if it's able to accept commit a ballot now
     *
@@ -254,8 +245,11 @@ def isNotLeader(nodeID: NodeID, slotIndex: SlotIndex): P[F, Boolean] =
 
   /** check if a envelope can be emitted
     */
-  def canEmit[M <: Message](slotIndex: SlotIndex,
-                            envelope: Envelope[M]): P[F, Boolean]
+  def canEmit[M <: Message](slotIndex: SlotIndex, envelope: Envelope[M]): P[F, Boolean]
+
+  def envelopeReadyToBeEmitted[M <: Message](slotIndex: SlotIndex, envelope: Envelope[M]): P[F, Unit]
+
+  def shouldProcess[M <: Message](slotIndex: SlotIndex, envelope: Envelope[M]): P[F, Boolean]
 
   def localNode(): P[F, NodeID]
 }

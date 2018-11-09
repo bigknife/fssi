@@ -122,14 +122,32 @@ class ApplicationServiceHandler extends ApplicationService.Handler[Stack] with L
       envelope.statement.message match {
         case x: Message.Nomination =>
           val nominationStatus = NominationStatus.getInstance(slotIndex)
+
           nominationStatus.lastEnvelope := Some(envelope.to[Message.Nomination])
-        case x: Message.BallotMessage =>
-          val ballotStatus = BallotStatus.getInstance(slotIndex)
-          ballotStatus.latestEmitEnvelope := Some(envelope.to[Message.BallotMessage])
+          setting.applicationCallback.broadcastEnvelope(slotIndex, envelope)
+
+        case _: Message.BallotMessage =>
+          sendLatestBallotEnvelope(setting, slotIndex)
         case _ =>
       }
+  }
 
-      setting.applicationCallback.broadcastEnvelope(slotIndex, envelope)
+  override def sendLatestEnvelope(slotIndex: SlotIndex): Stack[Unit] = Stack { setting =>
+    sendLatestBallotEnvelope(setting, slotIndex)
+  }
+
+  private def sendLatestBallotEnvelope(setting: Setting, slotIndex: SlotIndex): Unit = {
+    val ballotStatus = BallotStatus.getInstance(slotIndex)
+
+    if (ballotStatus.currentMessageLevel
+          .unsafe() == 0 && ballotStatus.latestGeneratedEnvelope.isDefined) {
+      if (!ballotStatus.latestEmitEnvelope
+            .exists(_.contains(ballotStatus.latestGeneratedEnvelope))) {
+        ballotStatus.latestEmitEnvelope := Some(ballotStatus.latestGeneratedEnvelope.unsafe())
+        setting.applicationCallback
+          .broadcastEnvelope(slotIndex, ballotStatus.latestGeneratedEnvelope.unsafe())
+      }
+    }
   }
 }
 
