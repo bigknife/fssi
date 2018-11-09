@@ -23,10 +23,19 @@ object Key {
   def empty: Key = new Key {
     override def bytes: Array[Byte] = Array.emptyByteArray
   }
+  /*
   def encode(prefix: String, hash: Hash): Key = new Key {
     override def bytes: Array[Byte] = {
       // separator is \n
       val str = prefix + "\n" + hash.bytes.map("%02x" format _).mkString("")
+      str.getBytes("utf-8")
+    }
+  }
+  */
+  def encode(hash: Hash): Key = new Key {
+    override def bytes: Array[Byte] = {
+      // separator is \n
+      val str = hash.bytes.map("%02x" format _).mkString("")
       str.getBytes("utf-8")
     }
   }

@@ -27,7 +27,7 @@ class MPTSpec extends FunSuite with BeforeAndAfter {
       override def routeStoreName(key: Array[Byte]): String = new String(key.take(5))
       override def routeStoreKey(key: Array[Byte]): Array[Byte] = key.drop(5)
     }
-    mpt = MPT(keys => "state")
+    mpt = MPT(keys => "state", (storeName, keys) => "state".getBytes() ++ keys)
   }
   after {
     environment.close()

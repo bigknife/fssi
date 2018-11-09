@@ -28,9 +28,9 @@ class BCSSpec extends FunSuite with BeforeAndAfter {
 
   test("put and commit") {
 
-    bcs.putMeta(1, MetaKey.ChainID, MetaData("testnet1".getBytes("utf-8")))
-    bcs.putMeta(1, MetaKey.Height, MetaData(BigInt(1).toByteArray))
-    bcs.putMeta(1, MetaKey.Version, MetaData("1.0".getBytes("utf-8")))
+    bcs.putMeta(1, MetaKey.ChainID, BlockData("testnet1".getBytes("utf-8")))
+    bcs.putMeta(1, MetaKey.Height, BlockData(BigInt(1).toByteArray))
+    bcs.putMeta(1, MetaKey.Version, BlockData("1.0".getBytes("utf-8")))
 
     val chainIdSnapshot = bcs.getSnapshotMeta(MetaKey.ChainID)
     val heightSnapshot  = bcs.getSnapshotMeta(MetaKey.Height)
@@ -68,9 +68,9 @@ class BCSSpec extends FunSuite with BeforeAndAfter {
   }
 
   test("put and rollback") {
-    bcs.putMeta(1, MetaKey.ChainID, MetaData("testnet1".getBytes("utf-8")))
-    bcs.putMeta(1, MetaKey.Height, MetaData(BigInt(1).toByteArray))
-    bcs.putMeta(1, MetaKey.Version, MetaData("1.0".getBytes("utf-8")))
+    bcs.putMeta(1, MetaKey.ChainID, BlockData("testnet1".getBytes("utf-8")))
+    bcs.putMeta(1, MetaKey.Height, BlockData(BigInt(1).toByteArray))
+    bcs.putMeta(1, MetaKey.Version, BlockData("1.0".getBytes("utf-8")))
 
     val chainIdSnapshot = bcs.getSnapshotMeta(MetaKey.ChainID)
     val heightSnapshot  = bcs.getSnapshotMeta(MetaKey.Height)
@@ -121,5 +121,41 @@ class BCSSpec extends FunSuite with BeforeAndAfter {
       assert(heightAfterRollback.isRight)
       assert(heightAfterRollback.right.get.isEmpty)
     }
+  }
+
+  test("snapshot transact") {
+    // update accountId1.balance + 100 and accountId2.balance - 100
+    val accountId1 = "accountId1"
+    val accountId2 = "accountId2"
+
+    val b10 = bcs.getSnapshotState(StateKey.balance(accountId1)).right.get
+    val b20 = bcs.getSnapshotState(StateKey.balance(accountId2)).right.get
+
+    assert(b10.isEmpty)
+    assert(b20.isEmpty)
+
+    bcs.snapshotTransact {proxy =>
+      val b1 = proxy.getBalance(accountId1)
+      val b2 = proxy.getBalance(accountId2)
+
+      proxy.putBalance(accountId1, b1 + 100)
+      proxy.putBalance(accountId2, b2 - 100)
+    }
+
+    val b11 = bcs.getSnapshotState(StateKey.balance(accountId1)).right.get
+    val b21 = bcs.getSnapshotState(StateKey.balance(accountId2)).right.get
+
+    assert(b11.isDefined)
+    assert(b21.isDefined)
+
+    info(s"accountId1 balance in snapshot now is ${BigInt(b11.get.bytes)}")
+    info(s"accountId2 balance in snapshot now is ${BigInt(b21.get.bytes)}")
+
+    // persisted area is old, cause not committed now
+    val b12 = bcs.getPersistedState(StateKey.balance(accountId1)).right.get
+    val b22 = bcs.getPersistedState(StateKey.balance(accountId2)).right.get
+
+    assert(b12.isEmpty)
+    assert(b22.isEmpty)
   }
 }
