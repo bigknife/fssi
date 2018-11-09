@@ -25,9 +25,10 @@ Xodus 已经在Jetbrain 的 [YouTrack](https://youtrack.jetbrains.com/issues) �
 我们采用统一资源定位符（URL）的形式对数据进行寻址定位。在FSSI里，需要存储4大类数据，我们分别使用4个Scheme来标志：
 
 1. **meta:** 元数据，存储FSSI区块链实例的元信息，如chainId、version、height等。
-2. **block:** 区块数据，存储区块数据，包含前一个区块的hash，当前区块hash，交易列表等。
-3. **receipt:** 交易执行结果数据，存储区块数据中交易列表执行产生的结果数据。
-4. **state:** 全局世界状态数据，存储账户相关数据，包含余额、合约、合约数据等。
+2. **block:** 区块数据，存储区块数据，包含前一个区块的hash，当前区块hash，交易hash，receipt hash等。
+3. **transaction:** 区块的交易列表
+4. **receipt:** 交易执行结果数据，存储区块数据中交易列表执行产生的结果数据。
+5. **state:** 全局世界状态数据，存储账户相关数据，包含余额、合约、合约数据等。
 
 #### meta:
 
@@ -47,38 +48,34 @@ Xodus 已经在Jetbrain 的 [YouTrack](https://youtrack.jetbrains.com/issues) �
 * **block:{height}://receipt** 当前块对应的执行结果的Hash
 * **block:{height}://transaction** 当前块包含的交易ID有序列表
 
+#### transaction:
+
+交易列表。
+
+* **transaction:{height}://{transactionId}** 某个区块（height标志）中某个交易
+
 #### recepit:
 
 执行凭证，执行结果信息。
 
-* **receipt:** 所有receipt的hash信息
-* **receipt:/{height}** 当前块所有交易执行结果信息
-* **receipt:/{height}/{transactionId}** 具体某个交易的执行结果信息
-* **receipt:/{height}/{transactionId}/result** 执行结果，成功或者失败
-* **receipt:/{height}/{transactionId}/cost** 执行成本测量数据
-* **receipt:/{height}/{transactionId}/logs** 执行日志信息
+* **receipt:{height}://{transactionId}/result** 执行结果，成功或者失败
+* **receipt:{height}://{transactionId}/cost** 执行成本测量数据
+* **receipt:{height}://{transactionId}/logs** 执行日志信息
 
 #### state:
 
 世界状态。
 
-* **state:** 世界状态的hash
-* **state:/{accountId}** 某个账户状态的hash
-* **state:/{accountId}/balance** 某个账户的余额信息
-* **state:/{accountId}/contracts** 某个账户的智能合约信息hash
-* **state:/{accountId}/contracts/{contractName}** 某个只能合约的hash
-* **state:/{accountId}/contracts/{contractName}/versions** 合约所有版本信息hash
-* **state:/{accountId}/contracts/{contractName}/versions/{versionCode}** 合约特定版本信息hash
-* **state:/{accountId}/contracts/{contractName}/versions/{versionCode}/desc** 合约特定版本的描述信息
-* **state:/{accountId}/contracts/{contractName}/versions/{versionCode}/code** 合约特定版本的代码内容
-* **state:/{accountId}/contracts/{contractName}/versions/{versionCode}/runtime** 合约特定版本运行时要求信息
-* **state:/{accountId}/contracts/{contractName}/db** 特定合约的存储空间
-* **state:/{accountId}/contracts/{contractName}/db/{applicationKey}** 合约应用层面定义的key对应的value
-* **state:/{accountId}/contracts/{contractName}/invoke** 合约调用日志，内容如：transactionId@blockHeight by accountId
+* **state://{accountId}/balance** 某个账户的余额信息
+* **state://{accountId}/contracts/{contractName}/versions/{versionCode}/desc** 合约特定版本的描述信息
+* **state://{accountId}/contracts/{contractName}/versions/{versionCode}/code** 合约特定版本的代码内容
+* **state://{accountId}/contracts/{contractName}/versions/{versionCode}/runtime** 合约特定版本运行时要求信息
+* **state://{accountId}/contracts/{contractName}/db/{applicationKey}** 合约应用层面定义的key对应的value
+* **state://{accountId}/contracts/{contractName}/invoke** 合约调用日志，内容如：transactionId@blockHeight by accountId
 
 ### Value, Validated
 
-对于存储来说，数据仅是一个字节块，但为了快速验证，或者是为了零知识证明，每个`Value`都附加一个`Hash`，该`Hash`的内容来源于当前节点的`Value`以及下一级节点的`Hash` 。当一个节点的值发生变化了，应该将Hash值向上传递，达到类似于`Merkle`树的效果。
+对于存储来说，数据仅是一个字节块，但为了快速验证，或者是为了零知识证明，每个`Value`都附加一个`Hash`，该`Hash`的内容来源于当前节点的`Value`以及下一级节点的`Hash` 。当一个节点的值发生变化了，应该将Hash值向上传递，达到类似于`Merkle`树的效果 
 
 `Value` 形如：
 

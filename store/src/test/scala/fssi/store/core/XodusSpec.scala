@@ -1,6 +1,5 @@
-package fssi.store
+package fssi.store.core
 
-import fssi.store.core.{KVStore, XodusKVStore}
 import jetbrains.exodus.env.{Environment, Environments}
 import org.scalatest.FunSuite
 
