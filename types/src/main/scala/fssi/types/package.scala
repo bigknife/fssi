@@ -18,7 +18,7 @@ package object types {
 
   //object syntax extends BytesValue.Syntax
   object implicits
-      extends fssi.base.BytesValue.Implicits
+      extends fssi.types.base.BaseTypeImplicits
       with biz.Account.Implicits
       with biz.Transaction.Implicits
       with biz.Token.Implicits

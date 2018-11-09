@@ -39,6 +39,7 @@ lazy val pTrie = trie()
   .dependsOn(pUtils)
 
 lazy val pStore = store()
+  .dependsOn(pBase)
 
 lazy val pContractLib = contractLib()
   .dependsOn(pTypes)

@@ -3,6 +3,7 @@ package tool
 
 import scopt._
 import CmdArgs._
+import fssi.base.BytesValue
 import types.biz._
 import types.base._
 import interpreter.jsonCodecs._
