@@ -792,12 +792,15 @@ class NodeStoreHandler extends NodeStore.Handler[Stack] {
     val phaseValid                 = phase != Ballot.Phase.Externalize
     val currentBallotValid =
       if (check) currentBallot.isBottom || ballot.compare(currentBallot) >= 0 else true
+
     if (currentBallot.isBottom || currentBallot.counter != ballot.counter) {
       ballotStatus.heardFromQuorum := false
     }
+
     ballotStatus.currentBallot := ballot
+
     val highBallotOpt = ballotStatus.highBallot.unsafe()
-    if (highBallotOpt.nonEmpty && !currentBallot.compatible(highBallotOpt.get)) {
+    if (highBallotOpt.nonEmpty && !ballot.compatible(highBallotOpt.get)) {
       ballotStatus.highBallot := None
     }
     phaseValid && currentBallotValid

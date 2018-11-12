@@ -1,4 +1,5 @@
-package fssi.scp.ballot5.start1x
+package fssi.scp.ballot5.start1x.quorumA2
+
 import fssi.scp.ballot5.start1x.steps.VBlockingAcceptMoreA3
 import org.scalatest.FunSuite
 import org.scalatest.Matchers._

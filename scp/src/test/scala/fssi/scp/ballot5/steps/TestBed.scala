@@ -181,8 +181,9 @@ trait TestBed extends FunSuite with TestSupport with BeforeAndAfterEach with Log
   def makePrepareGen(b: Ballot,
                      p: Option[Ballot] = None,
                      cn: Int = 0,
-                     hn: Int = 0): (NodeID, PrivateKey) => Envelope[Prepare] =
-    app.makePrepare(_: NodeID, _: PrivateKey, b, p, cn, hn)
+                     hn: Int = 0,
+                     pPrime: Option[Ballot] = None): (NodeID, PrivateKey) => Envelope[Prepare] =
+    app.makePrepare(_: NodeID, _: PrivateKey, b, p, cn, hn, pPrime)
 
   def makeConfirmGen(pn: Int,
                      b: Ballot,

@@ -1,4 +1,4 @@
-package fssi.scp.ballot5.start1x
+package fssi.scp.ballot5.start1x.quorumA2
 import org.scalatest.Suites
 
 class QuorumPreparedA3Suites

@@ -1,7 +1,7 @@
-package fssi.scp.ballot5.start1x
+package fssi.scp.ballot5.start1x.quorumA2
+
 import fssi.scp.ballot5.start1x.steps.AcceptMoreCommitA3
 import org.scalatest.FunSuite
-
 import org.scalatest.Matchers._
 
 class AcceptMoreCommitA3Suite extends FunSuite with AcceptMoreCommitA3{
