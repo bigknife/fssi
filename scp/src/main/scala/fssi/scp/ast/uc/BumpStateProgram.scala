@@ -43,7 +43,7 @@ trait BumpStateProgram[F[_]] extends SCP[F] with EmitProgram[F] {
       _ <- ifThen(updated) {
         for {
           msg <- createBallotMessage(slotIndex)
-          _   <- emit(slotIndex, previousValue, msg)
+          _   <- emitBallot(slotIndex, previousValue, msg)
           _   <- checkHeardFromQuorum(slotIndex, previousValue)
         } yield ()
       }

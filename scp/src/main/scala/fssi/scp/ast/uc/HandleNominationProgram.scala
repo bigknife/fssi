@@ -96,7 +96,7 @@ trait HandleNominationProgram[F[_]] extends SCP[F] with EmitProgram[F] {
         _ <- ifThen(acceptNew || voteNew) {
           for {
             nomMsg <- createNominationMessage(slotIndex)
-            _      <- emit(slotIndex, previousValue, nomMsg)
+            _      <- emitNomination(slotIndex, previousValue, nomMsg)
           } yield ()
         }
         _ <- ifThen(candidateNew) {

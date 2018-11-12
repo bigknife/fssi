@@ -65,7 +65,7 @@ trait AttemptAcceptPrepareProgram[F[_]] extends SCP[F] with EmitProgram[F] {
         _ <- ifThen(highestAccepted) {
           for {
             msg <- createBallotMessage(slotIndex)
-            _   <- emit(slotIndex, previousValue, msg)
+            _   <- emitBallot(slotIndex, previousValue, msg)
           } yield ()
         }
       } yield highestAccepted

@@ -96,7 +96,7 @@ trait AttemptConfirmCommitProgram[F[_]] extends SCP[F] with EmitProgram[F] {
         _ <- ifThen(confirmed) {
           for {
             msg <- createBallotMessage(slotIndex)
-            _   <- emit(slotIndex, previousValue, msg)
+            _   <- emitBallot(slotIndex, previousValue, msg)
           } yield ()
         }
       } yield confirmed
