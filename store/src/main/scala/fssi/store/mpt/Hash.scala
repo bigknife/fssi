@@ -16,4 +16,8 @@ object Hash {
   def wrap(b: Array[Byte]): Hash = new Hash {
     override def bytes: Array[Byte] = b
   }
+
+  trait Implicits {
+    implicit def mptHashToBytesValue(a: Hash): Array[Byte] = a.bytes
+  }
 }
