@@ -18,8 +18,9 @@ trait StartupProgram[F[_]] extends CoreNodeProgram[F] with BaseProgram[F] {
     * @return node info
     */
   def startupFull(root: File,
-              consensusMessageHandler: Message.Handler[ConsensusMessage],
-              applicationMessageHandler: Message.Handler[ApplicationMessage]): SP[F, (Node.ConsensusNode, Node.ApplicationNode)] = {
+                  consensusMessageHandler: Message.Handler[ConsensusMessage],
+                  applicationMessageHandler: Message.Handler[ApplicationMessage])
+    : SP[F, (Node.ConsensusNode, Node.ApplicationNode)] = {
     for {
       _               <- contract.assertRuntime()
       _               <- contract.initializeRuntime()
@@ -40,8 +41,9 @@ trait StartupProgram[F[_]] extends CoreNodeProgram[F] with BaseProgram[F] {
     * runing consensus node only
     * @return node info
     */
-  def startupSemi(root: File,
-              consensusMessageHandler: Message.Handler[ConsensusMessage]): SP[F, Node.ConsensusNode] = {
+  def startupSemi(
+      root: File,
+      consensusMessageHandler: Message.Handler[ConsensusMessage]): SP[F, Node.ConsensusNode] = {
     for {
       _             <- contract.assertRuntime()
       _             <- contract.initializeRuntime()

@@ -10,7 +10,7 @@ import io.circe.parser._
 import fssi.types.json.implicits._
 import io.circe.generic.auto._
 import better.files._
-import fssi.types.base.BytesValue
+import fssi.base.BytesValue
 
 import scala.util.Try
 

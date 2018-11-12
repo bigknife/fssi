@@ -46,4 +46,13 @@ object Ballot {
     case object Confirm     extends Phase
     case object Externalize extends Phase
   }
+
+  trait Implicits {
+    import fssi.base.implicits._
+    import fssi.scp.types.implicits._
+    implicit def ballotToBytes(ballot: Ballot): Array[Byte] = {
+      if (ballot.isBottom) ballot.counter.asBytesValue.bytes
+      else ballot.counter.asBytesValue.bytes ++ ballot.value.asBytesValue.bytes
+    }
+  }
 }

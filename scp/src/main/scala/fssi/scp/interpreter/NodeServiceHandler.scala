@@ -1,12 +1,12 @@
 package fssi.scp
 package interpreter
 
-import bigknife.sop._
-
 import fssi.scp.ast._
 import fssi.scp.types._
 import fssi.scp.interpreter.store._
 import fssi.utils._
+import fssi.scp.types.implicits._
+import fssi.base.implicits._
 
 class NodeServiceHandler
     extends NodeService.Handler[Stack]
@@ -15,6 +15,13 @@ class NodeServiceHandler
     with CryptoSupport
     with QuorumSetSupport {
   import log._
+
+  override def cacheNodeQuorumSet(): Stack[Unit] = Stack { setting =>
+    setting.quorumSet match {
+      case QuorumSet.QuorumSlices(slices) => addNodeSlices(setting.nodeId, slices)
+      case QuorumSet.QuorumRef(_)         =>
+    }
+  }
 
   /** compute next round timeout (in ms)
     * @see SCPDriver.cpp#79
@@ -358,7 +365,8 @@ class NodeServiceHandler
   private def areBallotsLessAndIncompatable(b1: Ballot, b2: Ballot): Boolean =
     b1 <= b2 && b1.incompatible(b2)
 
-  private def fixedStatementBytes[M <: Message](statement: Statement[M]): Array[Byte] = ???
+  private def fixedStatementBytes[M <: Message](statement: Statement[M]): Array[Byte] =
+    statement.asBytesValue.bytes
 
   /** compute a node weight in some slices
     * @param isLocal if nodeId is local node id, true, or else flase

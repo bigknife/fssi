@@ -13,7 +13,6 @@ import scala.collection.immutable._
 class SCPSpec extends FunSuite with TestSupport {
   val scp = SCP[Model.Op]
 
-
   test("hashValue to uint64") {
     val c = new CryptoSupport {}
     val h = c.computeHashValue("Hello,world. Fox".getBytes())
@@ -21,12 +20,13 @@ class SCPSpec extends FunSuite with TestSupport {
   }
 
   test("ast") {
-    val nodeId = createNodeID()
-    val slotIndex = SlotIndex(1)
-    val value: Value = TestValue(TreeSet(1,2))
+    val nodeId               = createNodeID()
+    val slotIndex            = SlotIndex(1)
+    val value: Value         = TestValue(TreeSet(1, 2))
     val previousValue: Value = TestValue(TreeSet(1))
 
     val setting = Setting(
+      nodeId = nodeId,
       quorumSet = QuorumSet.slices(
         QuorumSet.Slices.flat(1, nodeId)
       ),

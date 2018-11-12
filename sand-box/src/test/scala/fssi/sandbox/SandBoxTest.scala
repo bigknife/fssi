@@ -2,12 +2,12 @@ package fssi
 package sandbox
 import java.nio.file.Paths
 
-import fssi.types.biz.Contract.UserContract.{Parameter, _}
+import fssi.base.Base58
 import fssi.types.biz.Account
-import org.scalatest.FunSuite
-import Parameter._
-import fssi.types.base.BytesValue
+import fssi.types.biz.Contract.UserContract.Parameter._
+import fssi.types.biz.Contract.UserContract._
 import fssi.utils._
+import org.scalatest.FunSuite
 
 class SandBoxTest extends FunSuite {
 
@@ -15,51 +15,57 @@ class SandBoxTest extends FunSuite {
 
   val sandBox = new SandBox
 
-  val account         = "12BFTJnXQYtiEEu42qqpqngVhntN1gSzcF"
-  val publicKey       = "p4Dy6tfK5iJ1WMPUmqNYyTsWyszjpDCgMHaXYhD6JhtA"
-  val entryPrivateKey = "ozdSkJVEDER2Tk12xTRpNeWvxxo9aHjusRauewpdPDcjFqGAXQsCakQ7HfjAQ8BTX"
-  val key             = "BgpLjEqGFw3Zj7HK13gHns8MUXkEwkYpdQnhJHiS6kVw"
-  val iv              = "BMzTqHsaPTtTZ26xEhmbQX"
+  val account         = "1o3LkGMAf6VajBCR479sgFP6xYenQUFgk"
+  val publicKey       = "yydpyqKHPi1QDUgGrBrZvshqYNu4zQLoYwnM5qV1zWcU"
+  val entryPrivateKey = "4NsYxMHaCFAT37Azud5nRmd3A1BSLC7eFuzBDJkK3mtfrWeAKd4ShWN"
+  val key             = "DZzZ8NTFaeGYVAkUeKQ2kpqpJ51zpAQ2TLNSZnb59CLP"
+  val iv              = "M9VGT9TcJ54"
   val privateKey =
-    crypto.aesDecryptPrivKey(BytesValue.decodeBcBase58(iv).get.bytes,
-                             BytesValue.decodeBcBase58(key).get.bytes,
-                             BytesValue.decodeBcBase58(entryPrivateKey).get.bytes)
-  val accountId = Account.ID(BytesValue.decodeBcBase58(account).get.bytes)
-  val pubKey    = Account.PubKey(BytesValue.decodeBcBase58(publicKey).get.bytes)
+    crypto.des3cbcDecrypt(Base58.decode(entryPrivateKey).get,
+                          Base58.decode(key).get,
+                          Base58.decode(iv).get)
+  val accountId = Account.ID(Base58.decode(account).get)
+  val pubKey    = Account.PubKey(Base58.decode(publicKey).get)
   val prvKey    = Account.PrivKey(privateKey)
 
-  val project    = "/tmp/fssi_scaffold"
+  val account1 = "18yqbuuBHmp5gc5gwUUVk88JMRDDXbwbJp"
+
+  val project    = "/tmp/fssi/contract"
   val projectDir = Paths.get(project)
-  val output     = "/tmp/banana.contract"
+  val output     = "/tmp/fssi/test_contract"
   val outputFile = Paths.get(output).toFile
   val version    = "1.0.0"
 
-  ignore("test compile contract") {
+  test("test compile contract") {
     sandBox.compileContract(accountId, pubKey, prvKey, projectDir, version, outputFile) match {
       case Right(_) => println("SUCCESS: compile project success")
       case Left(e)  => e.printStackTrace()
     }
   }
 
-  ignore("check contract determinism") {
+  test("check contract determinism") {
     sandBox.checkContractDeterminism(pubKey, outputFile) match {
       case Right(_) => println("SUCCESS: check project success")
       case Left(e)  => e.printStackTrace()
     }
   }
 
-  ignore("run smart contract") {
+  test("run smart contract") {
     val context    = new TestContext
-    val methodName = "registerBanana"
-    val full       = ""
-    val parameter  = PArray(PString("hh"), PBigDecimal(123))
-    sandBox.executeContract(pubKey, context, outputFile, Method(methodName, full), parameter) match {
+    val methodName = "tokenQuery"
+    val full       = "com.fssi.sample.InterfaceSample#tokenQuerySample(Context,String)"
+    val parameter  = PString(account1)
+    val r = for {
+      contract <- sandBox.buildUnsignedContract(pubKey, outputFile)
+      _        <- sandBox.executeContract(pubKey, context, contract, Method(methodName, full), parameter)
+    } yield ()
+    r match {
       case Right(_) => println("SUCCESS: run contract success")
       case Left(e)  => e.printStackTrace()
     }
   }
 
-  ignore("test crypto") {
+  test("test crypto") {
     val str   = "11111111122222222222233333333444444455565"
     val bytes = str.getBytes("utf-8")
     val signature =

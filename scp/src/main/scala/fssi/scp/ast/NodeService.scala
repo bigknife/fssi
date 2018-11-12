@@ -10,6 +10,8 @@ import scala.collection.immutable._
 import types._
 @sp trait NodeService[F[_]] {
 
+  def cacheNodeQuorumSet(): P[F, Unit]
+
   /** compute next round timeout (in ms)
     * @see SCPDriver.cpp#79
     */
@@ -53,8 +55,9 @@ import types._
 
   /** make a envelope for a message
     */
-  def putInEnvelope[M <: Message](nodeId: NodeID,slotIndex: SlotIndex, message: M): P[F, Envelope[M]]
-
+  def putInEnvelope[M <: Message](nodeId: NodeID,
+                                  slotIndex: SlotIndex,
+                                  message: M): P[F, Envelope[M]]
 
   /** verify the signature of the envelope
     */
@@ -64,8 +67,12 @@ import types._
 
   /** check the statement to see if it is illegal
     */
-  def isStatementValid[M <: Message](nodeId: NodeID, slotIndex: SlotIndex, statement: Statement[M]): P[F, Boolean]
-  def isStatementInvalid[M <: Message](nodeId: NodeID, slotIndex: SlotIndex, statement: Statement[M]): P[F, Boolean] =
+  def isStatementValid[M <: Message](nodeId: NodeID,
+                                     slotIndex: SlotIndex,
+                                     statement: Statement[M]): P[F, Boolean]
+  def isStatementInvalid[M <: Message](nodeId: NodeID,
+                                       slotIndex: SlotIndex,
+                                       statement: Statement[M]): P[F, Boolean] =
     isStatementValid(nodeId, slotIndex, statement).map(!_)
 
   /** check a node set to see if they can construct a quorum for a node (configured quorum slices)

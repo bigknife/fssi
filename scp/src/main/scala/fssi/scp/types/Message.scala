@@ -28,7 +28,7 @@ object Message {
   ) extends BallotMessage {
     def workingBallot: Ballot = b
     def commitableBallot: Option[Ballot] =
-      if(`c.n` != 0) Some(Ballot(`h.n`, b.value))
+      if (`c.n` != 0) Some(Ballot(`h.n`, b.value))
       else None
 
     def externalizableBallot: Option[Ballot] = None
@@ -41,7 +41,7 @@ object Message {
       `c.n`: Int,
       `h.n`: Int
   ) extends BallotMessage {
-    def workingBallot: Ballot = Ballot(`c.n`, b.value)
+    def workingBallot: Ballot            = Ballot(`c.n`, b.value)
     def commitableBallot: Option[Ballot] = Some(Ballot(`h.n`, b.value))
 
     def externalizableBallot: Option[Ballot] = Some(Ballot(`h.n`, b.value))
@@ -52,10 +52,29 @@ object Message {
       `c.n`: Int,
       `h.n`: Int
   ) extends BallotMessage {
-    def workingBallot: Ballot = Ballot(`c.n`, x)
+    def workingBallot: Ballot            = Ballot(`c.n`, x)
     def commitableBallot: Option[Ballot] = Some(Ballot(`h.n`, x))
 
     def externalizableBallot: Option[Ballot] = Some(Ballot(`h.n`, x))
+  }
+
+  trait Implicits {
+    import fssi.base.implicits._
+    import fssi.scp.types.implicits._
+    implicit def messageToBytes(message: Message): Array[Byte] = message match {
+      case Message.Nomination(voted, accepted) =>
+        voted.toArray.asBytesValue.bytes ++ accepted.toArray.asBytesValue.bytes
+
+      case ballotMessage: BallotMessage =>
+        ballotMessage match {
+          case prepare: Prepare =>
+            prepare.b.asBytesValue.bytes ++ prepare.p.asBytesValue.bytes ++ prepare.`p'`.asBytesValue.bytes ++ prepare.`c.n`.asBytesValue.bytes ++ prepare.`h.n`.asBytesValue.bytes
+          case confirm: Confirm =>
+            confirm.b.asBytesValue.bytes ++ confirm.`p.n`.asBytesValue.bytes ++ confirm.`c.n`.asBytesValue.bytes ++ confirm.`h.n`.asBytesValue.bytes
+          case ext: Externalize =>
+            ext.x.asBytesValue.bytes ++ ext.`c.n`.asBytesValue.bytes ++ ext.`h.n`.asBytesValue.bytes
+        }
+    }
   }
 
 }

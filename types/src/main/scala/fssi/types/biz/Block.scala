@@ -1,6 +1,7 @@
 package fssi.types
 package biz
 
+import fssi.base.BytesValue
 import fssi.types.base._
 import fssi.types.implicits._
 
