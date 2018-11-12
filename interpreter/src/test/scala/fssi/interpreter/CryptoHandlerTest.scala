@@ -3,7 +3,6 @@ package interpreter
 
 import utils._
 import org.scalatest._
-import types.{base, _}
 
 class CryptoHandlerTest extends FunSuite with GivenWhenThen {
   val setting = Setting.DefaultSetting

@@ -1,8 +1,8 @@
 package fssi
-package types
 package base
 
 /** Base58Check encoding
+  *
   * @see https://github.com/bitcoinbook/bitcoinbook/blob/develop/ch04.asciidoc#base58check_encoding
   */
 case class Base58Check(
@@ -32,18 +32,20 @@ object Base58Check {
     }
   }
   def emptyChecksum: Checksum = Checksum.Empty
-  def doubleSHA256(source: Array[Byte]): Checksum = if (source.isEmpty) emptyChecksum else {
-    val sha256 = java.security.MessageDigest.getInstance("SHA-256")
-    import sha256._
-    val b4 = digest(digest(source)).take(4)
-    Checksum.DoubleSHA256((b4(0), b4(1), b4(2), b4(3)))
-  }
+  def doubleSHA256(source: Array[Byte]): Checksum =
+    if (source.isEmpty) emptyChecksum
+    else {
+      val sha256 = java.security.MessageDigest.getInstance("SHA-256")
+      import sha256._
+      val b4 = digest(digest(source)).take(4)
+      Checksum.DoubleSHA256((b4(0), b4(1), b4(2), b4(3)))
+    }
   def doubleSHA256[A](source: BytesValue[A]): Checksum = doubleSHA256(source.bytes)
 
   trait Implicits {
     implicit def base58checkToBytesValue(x: Base58Check): Array[Byte] = x match {
-      case x0@Base58Check(_, _, Checksum.Empty) =>  x0.uncheckedBytes
-      case x0@Base58Check(_, _, x1@Checksum.DoubleSHA256(_)) => x0.uncheckedBytes ++ x1.array
+      case x0 @ Base58Check(_, _, Checksum.Empty)                => x0.uncheckedBytes
+      case x0 @ Base58Check(_, _, x1 @ Checksum.DoubleSHA256(_)) => x0.uncheckedBytes ++ x1.array
     }
   }
 }

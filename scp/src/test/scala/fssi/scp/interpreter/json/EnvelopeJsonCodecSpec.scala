@@ -28,7 +28,7 @@ class EnvelopeJsonCodecSpec extends FunSuite {
   val timestamp            = Timestamp(1)
   val slices: Slices       = Slices.flat(1, from)
   val quorumSet: QuorumSet = QuorumSet.slices(slices)
-  val testValue1           = TestValue(TreeSet(1, 2, 3, 4, 5))
+  val testValue1           = TestValue(TreeSet(0, 1, 2, 3, 4, 5))
   val testValue2           = TestValue(TreeSet(6, 7, 8, 9, 10))
   val voted                = ValueSet(testValue1, testValue2)
   val accepted             = ValueSet(testValue2, testValue1)
