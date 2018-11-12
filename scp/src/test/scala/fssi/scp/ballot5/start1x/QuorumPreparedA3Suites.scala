@@ -3,7 +3,8 @@ import org.scalatest.Suites
 
 class QuorumPreparedA3Suites
     extends Suites(
-      new AcceptMoreCommitA3Suite()
+      new AcceptMoreCommitA3Suite(),
+      new VBlockingAcceptMoreA3Suite()
     ) {
   override def suiteName: String = "Quorum prepared A3"
 }

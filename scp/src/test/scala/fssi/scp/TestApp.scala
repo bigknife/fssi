@@ -215,6 +215,19 @@ class TestApp(nodeID: NodeID,
       .unsafeRunSync()
   }
 
+  def makeExternalize(node: NodeID,
+                      key: PrivateKey,
+                      commit: Ballot,
+                      hn: Int): Envelope[Externalize] = {
+    NodeServiceHandler.instance
+      .putInEnvelope(
+        slotIndex,
+        Message.Externalize(commit.value, commit.counter, hn)
+      )
+      .run(setting.copy(localNode = node, privateKey = key))
+      .unsafeRunSync()
+  }
+
   def bumpState(value: Value): Boolean = {
     val p = scp.bumpState(slotIndex, value, value, force = true)
     runner.runIO(p, setting).unsafeRunSync()

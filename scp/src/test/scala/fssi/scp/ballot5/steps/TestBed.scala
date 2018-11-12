@@ -4,7 +4,7 @@ import java.security.PrivateKey
 
 import fssi.scp.interpreter.store.{BallotStatus, NominationStatus, Var}
 import fssi.scp.interpreter.{LogSupport, NodeServiceHandler, QuorumSetSupport}
-import fssi.scp.types.Message.{Confirm, Prepare}
+import fssi.scp.types.Message.{Confirm, Externalize, Prepare}
 import fssi.scp.types.QuorumSet.Slices
 import fssi.scp.types._
 import fssi.scp.{TestApp, TestSupport, TestValue}
@@ -189,4 +189,7 @@ trait TestBed extends FunSuite with TestSupport with BeforeAndAfterEach with Log
                      cn: Int,
                      hn: Int): (NodeID, PrivateKey) => Envelope[Confirm] =
     app.makeConfirm(_: NodeID, _: PrivateKey, pn, b, cn, hn)
+
+  def makeExternalizeGen(commit: Ballot, hn: Int): (NodeID, PrivateKey) => Envelope[Externalize] =
+    app.makeExternalize(_: NodeID, _: PrivateKey, commit, hn)
 }
