@@ -183,6 +183,14 @@ object Common {
           )
     }
 
+    object wallet {
+      def apply(): Project =
+        prj("wallet", "wallet")
+        .settings(
+          libraryDependencies ++= (all.scalafx ++ all.jfoenix)
+        )
+    }
+
     object coreNode {
       def apply(): Project =
         prj("coreNode", "core-node")

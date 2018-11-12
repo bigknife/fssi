@@ -58,6 +58,8 @@ lazy val pTool = tool()
     packMain := Map("tool" -> "fssi.tool.ToolMain")
   )
 
+lazy val pWallet = wallet()
+
 lazy val pCoreNode = coreNode()
   .dependsOn(pInterperter)
   .settings(
