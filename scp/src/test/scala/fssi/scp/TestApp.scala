@@ -11,6 +11,7 @@ import fssi.scp.types.Ballot.Phase
 import fssi.scp.types.Message.{Confirm, Externalize, Nomination, Prepare}
 import fssi.scp.types.{Message, _}
 import org.scalameta.logger
+import org.scalatest.Matchers._
 
 class TestApp(nodeID: NodeID,
               nodeKey: PrivateKey,
@@ -99,7 +100,8 @@ class TestApp(nodeID: NodeID,
                                                envelope: Envelope[M]): Unit = {
     if (isEmittedFromThisNode(envelope)) {
       statements = statements :+ envelope.statement
-      logger.debug(s"size of statement in app: ${statements.size}, latest message: ${envelope.statement.message}")
+      logger.debug(
+        s"size of statement in app: ${statements.size}, latest message: ${envelope.statement.message}")
     }
   }
 
@@ -125,17 +127,29 @@ class TestApp(nodeID: NodeID,
     currentTime = currentTime + 5 * 3600
   }
 
-  def hasBallotTimerUpcoming: Boolean = {
-    dispatchedTimers.get(BALLOT_TIMER).exists(_.when > currentTime)
+  def shouldBallotTimerUpcoming(): Unit = {
+    dispatchedTimers.get(BALLOT_TIMER).exists(_.when > currentTime) shouldBe true
   }
 
-  def hasBallotTimer: Boolean = {
-    dispatchedTimers.contains(BALLOT_TIMER)
+  def shouldBallotTimerFallBehind(): Unit = {
+    dispatchedTimers.get(BALLOT_TIMER).exists(_.when > currentTime) shouldBe false
   }
 
-  def hasHeardFromQuorum(b: Ballot): Boolean = heardFromQuorums.lastOption.contains(b)
+  def shouldHaveBallotTimer(): Unit = {
+    dispatchedTimers.contains(BALLOT_TIMER) shouldBe true
+  }
 
-  def hasHeardNothingFromQuorum: Boolean = heardFromQuorums.isEmpty
+  def shouldNotHaveBallotTimer(): Unit = {
+    dispatchedTimers.contains(BALLOT_TIMER) shouldBe false
+  }
+
+  def shouldHaveHeardFromQuorum(b: Ballot): Unit = {
+    heardFromQuorums.lastOption.contains(b) shouldBe true
+  }
+
+  def shouldHaveHeardNothingFromQuorum(): Unit = {
+    heardFromQuorums.isEmpty shouldBe true
+  }
 
   def onEnvelope[M <: Message](envelope: Envelope[M]): Boolean = {
     val p = scp.handleSCPEnvelope(envelope, previousValue)
@@ -233,25 +247,26 @@ class TestApp(nodeID: NodeID,
     runner.runIO(p, setting).unsafeRunSync()
   }
 
-  def hasPrepared(b: Ballot,
-                  p: Option[Ballot] = None,
-                  cn: Int = 0,
-                  hn: Int = 0,
-                  pPrime: Option[Ballot] = None): Boolean =
+  def shouldHavePrepared(b: Ballot,
+                         p: Option[Ballot] = None,
+                         cn: Int = 0,
+                         hn: Int = 0,
+                         pPrime: Option[Ballot] = None): Unit = {
     statements.lastOption map (_.copy(timestamp = started)) contains statementOf(
-      Prepare(b, p, pPrime, cn, hn))
+      Prepare(b, p, pPrime, cn, hn)) shouldBe true
+  }
 
-  def hasConfirmed(pn: Int, b: Ballot, cn: Int = 0, hn: Int = 0): Boolean =
+  def shouldHaveConfirmed(pn: Int, b: Ballot, cn: Int = 0, hn: Int = 0): Unit =
     statements.lastOption map (_.copy(timestamp = started)) contains statementOf(
-      Confirm(b, pn, cn, hn))
+      Confirm(b, pn, cn, hn)) shouldBe true
 
   def numberOfExternalizedValues: Int = externalizedValues.size
 
   def lastExternalizedValue: Option[Value] = externalizedValues.lastOption
 
-  def hasExternalized(commit: Ballot, hn: Int): Boolean = {
+  def shouldHaveExternalized(commit: Ballot, hn: Int): Unit = {
     statements.lastOption map (_.copy(timestamp = started)) contains statementOf(
-      Externalize(commit.value, commit.counter, hn))
+      Externalize(commit.value, commit.counter, hn)) shouldBe true
   }
 
   def setStatusFromMessage[M <: Message](m: M): Unit = {

@@ -8,6 +8,6 @@ trait PreparedA1 extends Start1X {
     onEnvelopesFromQuorumEx(makePrepareGen(A1), checkTimers = true)
 
     app.numberOfEnvelopes shouldBe 2
-    app.hasPrepared(A1, Some(A1))
+    app.shouldHavePrepared(A1, Some(A1))
   }
 }

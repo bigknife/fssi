@@ -24,8 +24,8 @@ class AcceptMoreCommitA3Suite extends FunSuite with AcceptMoreCommitA3{
     onEnvelopesFromQuorum(makeConfirmGen(pn = 3, A3, cn = 2, hn = 3))
 
     app.numberOfEnvelopes shouldBe 10
-    app.hasExternalized(A2, hn = 3) shouldBe true
-    app.hasBallotTimer shouldBe false
+    app.shouldHaveExternalized(A2, hn = 3)
+    app.shouldNotHaveBallotTimer()
 //
     app.numberOfExternalizedValues shouldBe 1
     app.lastExternalizedValue.contains(aValue) shouldBe true

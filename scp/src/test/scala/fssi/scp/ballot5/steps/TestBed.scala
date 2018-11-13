@@ -104,7 +104,7 @@ trait TestBed extends FunSuite with TestSupport with BeforeAndAfterEach with Log
       app.numberOfEnvelopes shouldBe expect
     }
     if (checkTimers && !isQuorumDelayed) {
-      app.hasBallotTimerUpcoming shouldBe true
+      app.shouldBallotTimerUpcoming()
     }
     // nothing happens with an extra vote (unless we're in delayedQuorum)
     app.onEnvelope(e4)
@@ -112,7 +112,7 @@ trait TestBed extends FunSuite with TestSupport with BeforeAndAfterEach with Log
       app.numberOfEnvelopes shouldBe expect
     }
     if (checkTimers && isQuorumDelayed) {
-      app.hasBallotTimerUpcoming shouldBe true
+      app.shouldBallotTimerUpcoming()
     }
   }
 
@@ -137,23 +137,23 @@ trait TestBed extends FunSuite with TestSupport with BeforeAndAfterEach with Log
 
     app.bumpState(xValue) shouldBe true
     app.numberOfEnvelopes shouldBe 1
-    app.hasPrepared(b)
+    app.shouldHavePrepared(b)
 
     app.onEnvelope(prepare1)
     app.numberOfEnvelopes shouldBe 1
-    app.hasHeardNothingFromQuorum shouldBe true
+    app.shouldHaveHeardNothingFromQuorum()
 
     app.onEnvelope(prepare2)
     app.numberOfEnvelopes shouldBe 1
-    app.hasHeardNothingFromQuorum shouldBe true
+    app.shouldHaveHeardNothingFromQuorum()
 
     app.onEnvelope(prepare3)
     app.numberOfEnvelopes shouldBe 2
-    app.hasHeardFromQuorum(b) shouldBe true
+    app.shouldHaveHeardFromQuorum(b)
 
     // We have a quorum including us
 
-    app.hasPrepared(b, Some(b))
+    app.shouldHavePrepared(b, Some(b))
 
     app.onEnvelope(prepare4)
     app.numberOfEnvelopes shouldBe 2
@@ -171,7 +171,7 @@ trait TestBed extends FunSuite with TestSupport with BeforeAndAfterEach with Log
     app.numberOfEnvelopes shouldBe 3
 
     // confirms prepared
-    app.hasPrepared(b, Some(b), b.counter, b.counter)
+    app.shouldHavePrepared(b, Some(b), b.counter, b.counter)
 
     // extra statement doesn't do anything
     app.onEnvelope(prepared1)

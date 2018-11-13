@@ -7,12 +7,12 @@ trait QuorumPreparedA3 extends QuorumA2{
     onEnvelopesFromVBlocking(makePrepareGen(A3, Some(A2), cn = 2, hn = 2))
 
     app.numberOfEnvelopes shouldBe 7
-    app.hasConfirmed(pn = 2, b = A3, cn = 2, hn = 2)
-    app.hasBallotTimer shouldBe false
+    app.shouldHaveConfirmed(pn = 2, b = A3, cn = 2, hn = 2)
+    app.shouldNotHaveBallotTimer()
 
     onEnvelopesFromQuorumEx(makePrepareGen(A3, Some(A2), cn = 2, hn =2), checkTimers = true)
 
     app.numberOfEnvelopes shouldBe 8
-    app.hasConfirmed(pn = 3, A3, cn = 2, hn = 2)
+    app.shouldHaveConfirmed(pn = 3, A3, cn = 2, hn = 2)
   }
 }

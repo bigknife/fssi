@@ -21,23 +21,23 @@ class VBlockingSuite extends QuorumA2 {
     onEnvelopesFromVBlocking(makePrepareGen(A3, Some(A3), cn = 2, hn = 2))
 
     app.numberOfEnvelopes shouldBe 7
-    app.hasConfirmed(pn = 3, A3, cn = 2, hn = 2) shouldBe true
-    app.hasBallotTimer shouldBe false
+    app.shouldHaveConfirmed(pn = 3, A3, cn = 2, hn = 2)
+    app.shouldNotHaveBallotTimer()
   }
 
   test("prepared A3 + B3") {
     onEnvelopesFromVBlocking(makePrepareGen(A3, Some(B3), cn = 2, hn = 2, Some(A3)))
 
     app.numberOfEnvelopes shouldBe 7
-    app.hasConfirmed(pn = 3, A3, cn = 2, hn = 2) shouldBe true
-    app.hasBallotTimer shouldBe false
+    app.shouldHaveConfirmed(pn = 3, A3, cn = 2, hn = 2)
+    app.shouldNotHaveBallotTimer()
   }
 
   test("confirm A3") {
     onEnvelopesFromVBlocking(makeConfirmGen(pn = 3, A3, cn = 2, hn = 2))
 
     app.numberOfEnvelopes shouldBe 7
-    app.hasConfirmed(pn = 3, A3, cn = 2, hn = 2) shouldBe true
-    app.hasBallotTimer shouldBe false
+    app.shouldHaveConfirmed(pn = 3, A3, cn = 2, hn = 2)
+    app.shouldNotHaveBallotTimer()
   }
 }

@@ -54,7 +54,7 @@ trait OthersNominateWhatV0Nominates extends StepSpec {
     // this causes the node to send a prepare message (quorum)
     app.onEnvelope(acc3)
     app.numberOfEnvelopes shouldBe 3
-    app.hasPrepared(Ballot(1, xValue))
+    app.shouldHavePrepared(Ballot(1, xValue))
 
     app.onEnvelope(acc4)
     app.numberOfEnvelopes shouldBe 3

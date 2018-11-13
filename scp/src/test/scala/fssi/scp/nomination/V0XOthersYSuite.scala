@@ -66,7 +66,7 @@ class V0XOthersYSuite extends FunSuite with BeforeAndAfterEach with V0IsTop with
     // this causes the node to send a prepare message (quorum)
     app.onEnvelope(acc3)
     app.numberOfEnvelopes shouldBe 3
-    app.hasPrepared(Ballot(1, yValue))
+    app.shouldHavePrepared(Ballot(1, yValue))
 
     app.onEnvelope(acc4)
     app.numberOfEnvelopes shouldBe 3

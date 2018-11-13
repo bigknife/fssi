@@ -8,7 +8,7 @@ trait QuorumA2 extends AcceptCommit{
     onEnvelopesFromQuorum(makePrepareGen(A2, Some(A2), cn = 2, hn = 2))
 
     app.numberOfEnvelopes shouldBe 6
-    app.hasConfirmed(pn = 2, b = A2, cn = 2, hn = 2)
-    app.hasBallotTimerUpcoming shouldBe false
+    app.shouldHaveConfirmed(pn = 2, b = A2, cn = 2, hn = 2)
+    app.shouldBallotTimerFallBehind()
   }
 }

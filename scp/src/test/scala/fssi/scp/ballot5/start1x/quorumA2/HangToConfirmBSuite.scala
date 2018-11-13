@@ -20,8 +20,8 @@ class HangToConfirmBSuite extends QuorumA2 {
     onEnvelopesFromVBlocking(makeExternalizeGen(B2, hn = 3))
 
     app.numberOfEnvelopes shouldBe 7
-    app.hasConfirmed(pn = 2, AInf, cn = 2, hn = 2) shouldBe true
-    app.hasBallotTimer shouldBe false
+    app.shouldHaveConfirmed(pn = 2, AInf, cn = 2, hn = 2)
+    app.shouldNotHaveBallotTimer()
 
     // stuck
     onEnvelopesFromQuorumChecks(makeExternalizeGen(B2, hn = 3), checkEnvelopes = false, isQuorumDelayed = false)
@@ -30,7 +30,7 @@ class HangToConfirmBSuite extends QuorumA2 {
     app.numberOfExternalizedValues shouldBe 0
     // timer scheduled as there is a quorum
     // with (2, *)
-    app.hasBallotTimerUpcoming shouldBe true
+    app.shouldBallotTimerUpcoming()
   }
 
   test("Network CONFIRMS other ballot at same counter") {
@@ -41,15 +41,15 @@ class HangToConfirmBSuite extends QuorumA2 {
 
     app.numberOfEnvelopes shouldBe 6
     app.numberOfExternalizedValues shouldBe 0
-    app.hasBallotTimerUpcoming shouldBe false
+    app.shouldBallotTimerFallBehind()
   }
 
   test("Network CONFIRMS other ballot at a different counter") {
     onEnvelopesFromVBlocking(makeConfirmGen(pn = 3, B3, cn = 3, hn =3))
 
     app.numberOfEnvelopes shouldBe 7
-    app.hasConfirmed(pn = 2, A3, cn = 2, hn = 2) shouldBe true
-    app.hasBallotTimer shouldBe false
+    app.shouldHaveConfirmed(pn = 2, A3, cn = 2, hn = 2)
+    app.shouldNotHaveBallotTimer()
 
     onEnvelopesFromQuorumChecks(makeConfirmGen(pn = 3, B3, cn = 3, hn = 3), checkEnvelopes = false, isQuorumDelayed = false)
 
@@ -57,6 +57,6 @@ class HangToConfirmBSuite extends QuorumA2 {
     app.numberOfExternalizedValues shouldBe 0
     // timer scheduled as there is a quorum
     // with (3, *)
-    app.hasBallotTimerUpcoming shouldBe true
+    app.shouldBallotTimerUpcoming()
   }
 }

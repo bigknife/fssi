@@ -29,7 +29,7 @@ class RestoreSuite
     restoreNomination()
 
     app2.numberOfEnvelopes shouldBe 2
-    app2.hasPrepared(Ballot(1, xValue))
+    app2.shouldHavePrepared(Ballot(1, xValue))
   }
 
   test("ballot started (on value z)") {

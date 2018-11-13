@@ -26,31 +26,31 @@ class VBlockingAcceptMoreA3Suite extends FunSuite with VBlockingAcceptMoreA3 {
     onEnvelopesFromVBlocking(makeConfirmGen(pn = 3, A3, cn = 2, hn = 3))
 
     app.numberOfEnvelopes shouldBe 9
-    app.hasConfirmed(pn =3, A3, cn = 2, hn = 3) shouldBe true
-    app.hasBallotTimerUpcoming shouldBe false
+    app.shouldHaveConfirmed(pn =3, A3, cn = 2, hn = 3)
+    app.shouldBallotTimerFallBehind()
   }
 
   test("Externalize A3") {
     onEnvelopesFromVBlocking(makeExternalizeGen(A2, hn = 3))
 
     app.numberOfEnvelopes shouldBe 9
-    app.hasConfirmed(pn = Int.MaxValue, AInf,  cn = 2, hn = Int.MaxValue) shouldBe true
-    app.hasBallotTimer shouldBe false
+    app.shouldHaveConfirmed(pn = Int.MaxValue, AInf,  cn = 2, hn = Int.MaxValue)
+    app.shouldNotHaveBallotTimer()
   }
 
   test("Other nodes confirm A4..A5") {
     onEnvelopesFromVBlocking(makeConfirmGen(pn = 3, A5, cn = 4, hn = 5))
 
     app.numberOfEnvelopes shouldBe 9
-    app.hasConfirmed(pn = 3, A5, cn = 4, hn = 5) shouldBe true
-    app.hasBallotTimer shouldBe false
+    app.shouldHaveConfirmed(pn = 3, A5, cn = 4, hn = 5)
+    app.shouldNotHaveBallotTimer()
   }
 
   test("Other nodes externalize A4..A5") {
     onEnvelopesFromVBlocking(makeExternalizeGen(A4, hn = 5))
 
     app.numberOfEnvelopes shouldBe 9
-    app.hasConfirmed(pn = Int.MaxValue, AInf, cn = 4, hn = Int.MaxValue) shouldBe true
-    app.hasBallotTimer shouldBe false
+    app.shouldHaveConfirmed(pn = Int.MaxValue, AInf, cn = 4, hn = Int.MaxValue)
+    app.shouldNotHaveBallotTimer()
   }
 }

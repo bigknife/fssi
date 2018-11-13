@@ -9,11 +9,11 @@ trait PreparedA2 extends PreparedA1 {
 
     app.bumpState(aValue) shouldBe true
     app.numberOfEnvelopes shouldBe 3
-    app.hasPrepared(A2, Some(A1))
-    app.hasBallotTimer shouldBe false
+    app.shouldHavePrepared(A2, Some(A1))
+    app.shouldNotHaveBallotTimer()
 
     onEnvelopesFromQuorumEx(makePrepareGen(A2), checkTimers = true)
     app.numberOfEnvelopes shouldBe 4
-    app.hasPrepared(A2, Some(A2))
+    app.shouldHavePrepared(A2, Some(A2))
   }
 }

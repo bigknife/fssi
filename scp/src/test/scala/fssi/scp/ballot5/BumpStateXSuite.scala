@@ -15,6 +15,6 @@ class BumpStateXSuite extends FunSuite with TestBed{
     app.bumpState(xValue) shouldBe true
     app.numberOfEnvelopes shouldBe 1
 
-    app.hasPrepared(Ballot(1, xValue))
+    app.shouldHavePrepared(Ballot(1, xValue))
   }
 }

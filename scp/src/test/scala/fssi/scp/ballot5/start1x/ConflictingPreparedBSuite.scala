@@ -20,26 +20,26 @@ override def beforeEach(): Unit = {
     onEnvelopesFromVBlocking(makePrepareGen(B2, Some(B2)))
 
     app.numberOfEnvelopes shouldBe 6
-    app.hasPrepared(A2, Some(B2), cn = 0, hn = 2, Some(A2)) shouldBe true
-    app.hasBallotTimerUpcoming shouldBe false
+    app.shouldHavePrepared(A2, Some(B2), cn = 0, hn = 2, Some(A2))
+    app.shouldBallotTimerFallBehind()
 
     onEnvelopesFromQuorum(makePrepareGen(B2, Some(B2), cn = 2, hn = 2))
 
     app.numberOfEnvelopes shouldBe 7
-    app.hasConfirmed(pn = 2, B2, cn =2, hn =2) shouldBe true
-    app.hasBallotTimerUpcoming shouldBe false
+    app.shouldHaveConfirmed(pn = 2, B2, cn =2, hn =2)
+    app.shouldBallotTimerFallBehind()
   }
 
   test("higher counter") {
     onEnvelopesFromVBlocking(makePrepareGen(B3, Some(B2), cn = 2, hn = 2))
 
     app.numberOfEnvelopes shouldBe 6
-    app.hasPrepared(A3, Some(B2), cn = 0, hn = 2, Some(A2)) shouldBe true
-    app.hasBallotTimer shouldBe false
+    app.shouldHavePrepared(A3, Some(B2), cn = 0, hn = 2, Some(A2))
+    app.shouldNotHaveBallotTimer()
 
     onEnvelopesFromQuorumChecksEx(makePrepareGen(B3, Some(B2), cn = 2, hn = 2), checkEnvelopes = true, isQuorumDelayed = true, checkTimers = true)
 
     app.numberOfEnvelopes shouldBe 7
-    app.hasConfirmed(pn = 3, B3, cn =2, hn =2) shouldBe true
+    app.shouldHaveConfirmed(pn = 3, B3, cn =2, hn =2)
   }
 }

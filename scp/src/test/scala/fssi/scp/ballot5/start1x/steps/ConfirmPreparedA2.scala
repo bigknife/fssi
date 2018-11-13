@@ -8,7 +8,7 @@ trait ConfirmPreparedA2 extends PreparedA2{
     onEnvelopesFromQuorum(makePrepareGen(A2, Some(A2)))
 
     app.numberOfEnvelopes shouldBe 5
-    app.hasPrepared(A2, Some(A2), cn = 2, hn = 2)
-    app.hasBallotTimerUpcoming shouldBe false
+    app.shouldHavePrepared(A2, Some(A2), cn = 2, hn = 2)
+    app.shouldBallotTimerFallBehind()
   }
 }

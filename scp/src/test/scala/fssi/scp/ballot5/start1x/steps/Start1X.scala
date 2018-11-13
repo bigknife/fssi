@@ -26,6 +26,6 @@ trait Start1X extends StepSpec{
   def start1X(): Unit = {
     app.bumpState(aValue) shouldBe true
     app.numberOfEnvelopes shouldBe 1
-    app.hasBallotTimer shouldBe false
+    app.shouldNotHaveBallotTimer()
   }
 }

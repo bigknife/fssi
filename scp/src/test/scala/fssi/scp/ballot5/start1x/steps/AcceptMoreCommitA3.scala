@@ -7,8 +7,8 @@ trait AcceptMoreCommitA3 extends QuorumPreparedA3{
     onEnvelopesFromQuorum(makePrepareGen(A3, Some(A3), cn = 2, hn = 3))
 
     app.numberOfEnvelopes shouldBe 9
-    app.hasConfirmed(pn = 3, A3, cn = 2, hn = 3)
-    app.hasBallotTimerUpcoming shouldBe false
+    app.shouldHaveConfirmed(pn = 3, A3, cn = 2, hn = 3)
+    app.shouldBallotTimerFallBehind()
     app.numberOfExternalizedValues shouldBe 0
   }
 }

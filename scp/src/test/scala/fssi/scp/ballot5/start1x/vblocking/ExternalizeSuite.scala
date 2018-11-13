@@ -21,15 +21,15 @@ class ExternalizeSuite extends VBlocking {
     onEnvelopesFromVBlocking(makeExternalizeGen(A2, hn = 2))
 
     app.numberOfEnvelopes shouldBe 6
-    app.hasConfirmed(pn = Int.MaxValue, AInf, cn = 2, hn = Int.MaxValue) shouldBe true
-    app.hasBallotTimer shouldBe false
+    app.shouldHaveConfirmed(pn = Int.MaxValue, AInf, cn = 2, hn = Int.MaxValue)
+    app.shouldNotHaveBallotTimer()
   }
 
   test("EXTERNALIZE B2") {
     onEnvelopesFromVBlocking(makeExternalizeGen(B2, hn = 2))
 
     app.numberOfEnvelopes shouldBe 6
-    app.hasConfirmed(pn = Int.MaxValue, BInf, cn = 2, hn = Int.MaxValue) shouldBe true
-    app.hasBallotTimer shouldBe false
+    app.shouldHaveConfirmed(pn = Int.MaxValue, BInf, cn = 2, hn = Int.MaxValue)
+    app.shouldNotHaveBallotTimer()
   }
 }
