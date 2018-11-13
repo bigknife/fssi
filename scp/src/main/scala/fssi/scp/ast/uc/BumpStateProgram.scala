@@ -12,6 +12,7 @@ trait BumpStateProgram[F[_]] extends SCP[F] with EmitProgram[F] {
   import model.applicationService._
   import model.nodeService._
   import model.nodeStore._
+  import model.logService._
 
   /** a bridge function, nomination process can bump to ballot process
     * @param force force to set local state
@@ -42,10 +43,16 @@ trait BumpStateProgram[F[_]] extends SCP[F] with EmitProgram[F] {
       updated <- updateBallotStateWhenBumpNewBallot(slotIndex, newB)
       _ <- ifThen(updated) {
         for {
+          _ <- info(s"bumped to new ballot: $newB")
           msg <- createBallotMessage(slotIndex)
           _   <- emitBallot(slotIndex, previousValue, msg)
           _   <- checkHeardFromQuorum(slotIndex, previousValue)
         } yield ()
+      }
+      _ <- ifThen(!updated) {
+        for {
+          _ <- info(s"failed to bump to new ballot: $newB")
+        } yield()
       }
     } yield updated
   }
@@ -112,7 +119,7 @@ trait BumpStateProgram[F[_]] extends SCP[F] with EmitProgram[F] {
       value <- ifM(candidate.isDefined, candidate)(
         currentBallot(slotIndex).map(_.map(_.value)))
       r <- ifM(value.isEmpty, false)(
-        ifM((counter == 0).pureSP[F], bumpState(slotIndex, previousValue, value.get, true))(
+        ifM((counter == 0).pureSP[F], bumpState(slotIndex, previousValue, value.get, force = true))(
           bumpState(slotIndex, previousValue, value.get, counter)))
     } yield r
 

@@ -61,7 +61,7 @@ trait AttemptAcceptPrepareProgram[F[_]] extends SCP[F] with EmitProgram[F] {
         phase           <- currentBallotPhase(slotIndex)
         highestAccepted <- tryAcceptHighestBallot(localNode, candidates, phase)
         _ <- info(
-          s"[$slotIndex][AttemptAcceptPrepare] accepted higest candidates at phase:$phase: $highestAccepted")
+          s"[$slotIndex][AttemptAcceptPrepare] accepted highest candidates at phase:$phase: $highestAccepted")
         _ <- ifThen(highestAccepted) {
           for {
             msg <- createBallotMessage(slotIndex)

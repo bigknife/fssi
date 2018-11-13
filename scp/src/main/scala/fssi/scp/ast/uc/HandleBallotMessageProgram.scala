@@ -54,6 +54,7 @@ trait HandleBallotMessageProgram[F[_]] extends SCP[F] with BumpStateProgram[F] {
       } yield q
     }
     def isCounterNotAccepted(n: Int): SP[F, Boolean] = isCounterAccepted(n).map(!_)
+
     def attemptBump: SP[F, Boolean] = {
       for {
         phase <- currentBallotPhase(slotIndex)

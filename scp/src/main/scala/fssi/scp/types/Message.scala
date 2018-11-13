@@ -58,9 +58,9 @@ object Message {
       `h.n`: Int
   ) extends BallotMessage {
     def workingBallot: Ballot            = Ballot(`c.n`, x)
-    def commitableBallot: Option[Ballot] = Some(Ballot(`h.n`, x))
+    def commitableBallot: Option[Ballot] = Some(Ballot(`c.n`, x))
 
-    def externalizableBallot: Option[Ballot] = Some(Ballot(`h.n`, x))
+    def externalizableBallot: Option[Ballot] = Some(Ballot(`c.n`, x))
   }
 
   def prepare(b: Ballot): Prepare = Prepare(b)

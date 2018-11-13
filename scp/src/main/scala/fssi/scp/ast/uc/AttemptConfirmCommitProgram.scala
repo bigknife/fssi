@@ -45,9 +45,12 @@ trait AttemptConfirmCommitProgram[F[_]] extends SCP[F] with EmitProgram[F] {
               val interval = pre._1.map(_.withFirst(n)).getOrElse(CounterInterval(n))
               for {
                 accepted <- isCounterConfirmed(nodeId, interval, ballot)
-                _ <- info(
-                  s"[$slotIndex][AttemptConfirmCommit] confirmed interval: $interval, $ballot, $accepted")
-              } yield (Option(interval), pre._2 || accepted, accepted)
+                _ <- if (accepted)
+                  info(s"[$slotIndex][AttemptConfirmCommit] confirm interval: $interval, $ballot")
+                else info(s"[$slotIndex][AttemptConfirmCommit] reject interval: $interval, $ballot")
+              } yield
+                if ((pre._1.isEmpty || pre._2) && accepted) (Option(interval), accepted, accepted)
+                else pre
             }
           } yield next
       }
@@ -73,7 +76,7 @@ trait AttemptConfirmCommitProgram[F[_]] extends SCP[F] with EmitProgram[F] {
           val newH = Ballot(interval.second, ballot.value)
           for {
             transferred <- confirmCommitted(slotIndex, newC, newH)
-            _         <- info(s"[$slotIndex][AttemptConfirmCommit] confirm ($newC - $newH), $transferred")
+            _           <- info(s"[$slotIndex][AttemptConfirmCommit] confirm ($newC - $newH), $transferred")
             _ <- ifThen(transferred) {
               for {
                 _ <- info(

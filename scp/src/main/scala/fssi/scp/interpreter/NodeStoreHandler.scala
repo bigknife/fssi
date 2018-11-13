@@ -197,19 +197,23 @@ class NodeStoreHandler extends NodeStore.Handler[Stack] {
 
   /** update local state when a new ballot was bumped into
     *
-    * @see BallotProtocol.cpp#399
+    * @see BallotProtocol.cpp::updateCurrentValue#399
     */
   override def updateBallotStateWhenBumpNewBallot(slotIndex: SlotIndex,
                                                   newB: Ballot): Stack[Boolean] = Stack {
     val ballotStatus: BallotStatus = slotIndex
+
     ballotStatus.phase.unsafe() match {
       case Ballot.Phase.Externalize => false
+
       case _ =>
         val currentBallot = ballotStatus.currentBallot.unsafe()
+
         val updated = if (currentBallot.isBottom) {
           bumpToBallot(slotIndex, newB, check = true)
         } else {
           val commit = ballotStatus.commit.unsafe()
+
           if (commit.nonEmpty && !commit.get.compatible(newB)) false
           else {
             val comp = currentBallot.compare(newB)
@@ -231,8 +235,11 @@ class NodeStoreHandler extends NodeStore.Handler[Stack] {
     val ballotStatus: BallotStatus = slotIndex
     val preparedOpt                = ballotStatus.prepared.unsafe()
     val preparedPrimOpt            = ballotStatus.preparedPrime.unsafe()
+
     val didWork = if (preparedOpt.nonEmpty) {
+
       val comp = preparedOpt.get.compare(newP)
+
       if (comp < 0) {
         if (!preparedOpt.get.compatible(newP)) ballotStatus.preparedPrime := preparedOpt
         ballotStatus.prepared := Option(newP); true
@@ -247,18 +254,25 @@ class NodeStoreHandler extends NodeStore.Handler[Stack] {
 
     val commitOpt     = ballotStatus.commit.unsafe()
     val highBallotOpt = ballotStatus.highBallot.unsafe()
+
+    def higherAndInCompatible(p: Option[Ballot], h: Ballot): Boolean = (p, h) match {
+      case (Some(prepare), h)  => h.isLess(prepare) && !h.compatible(prepare)
+      case _ => false
+    }
+
     val updated = if (commitOpt.nonEmpty && highBallotOpt.nonEmpty) {
-      val preparedValid = preparedOpt.nonEmpty && highBallotOpt.get
-        .isLess(preparedOpt.get) && !highBallotOpt.get
-        .compatible(preparedOpt.get)
-      val preparedPrimValid = preparedPrimOpt.nonEmpty && highBallotOpt.get
-        .isLess(preparedPrimOpt.get) && !highBallotOpt.get
-        .compatible(preparedPrimOpt.get)
+
+      val preparedValid = higherAndInCompatible(ballotStatus.prepared.unsafe(), highBallotOpt.get)
+
+      val preparedPrimValid = higherAndInCompatible(ballotStatus.preparedPrime.unsafe(), highBallotOpt.get)
+
       if ((preparedValid || preparedPrimValid) && ballotStatus.phase
             .unsafe() == Ballot.Phase.Prepare) {
         ballotStatus.commit := None; true
       } else false
+
     } else false
+
     didWork || updated
   }
 
@@ -813,27 +827,33 @@ class NodeStoreHandler extends NodeStore.Handler[Stack] {
     val preparedPrim                = ballotStatus.preparedPrime.unsafe()
     val commit                      = ballotStatus.commit.unsafe()
     val highBallot                  = ballotStatus.highBallot.unsafe()
+
     def currentBallotValid: Boolean = currentBallot.isBottom || currentBallot.counter != 0
+
     def prepareValid: Boolean = {
       prepared.isEmpty || preparedPrim.isEmpty ||
-      preparedPrim.get.isLess(prepared.get) && preparedPrim.get.compatible(prepared.get)
+      preparedPrim.get.isLess(prepared.get) && preparedPrim.get.incompatible(prepared.get)
     }
+
     def highValid: Boolean = {
       highBallot.isEmpty ||
       !currentBallot.isBottom && highBallot.get.isLess(currentBallot) && highBallot.get
         .compatible(currentBallot)
     }
+
     def commitValid: Boolean = {
       commit.isEmpty ||
       (!currentBallot.isBottom && highBallot.nonEmpty && commit.get
         .isLess(highBallot.get) && commit.get.compatible(highBallot.get) && highBallot.get
         .isLess(currentBallot) && highBallot.get.compatible(currentBallot))
     }
+
     val phaseValid: Boolean = ballotStatus.phase.unsafe() match {
       case Ballot.Phase.Prepare     => true
       case Ballot.Phase.Confirm     => commit.nonEmpty
       case Ballot.Phase.Externalize => commit.nonEmpty && highBallot.nonEmpty
     }
+
     currentBallotValid && prepareValid && highValid && commitValid && phaseValid
   }
 

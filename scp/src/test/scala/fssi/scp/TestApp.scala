@@ -99,7 +99,7 @@ class TestApp(nodeID: NodeID,
                                                envelope: Envelope[M]): Unit = {
     if (isEmittedFromThisNode(envelope)) {
       statements = statements :+ envelope.statement
-      logger.debug(s"size of statement in app: ${statements.size}")
+      logger.debug(s"size of statement in app: ${statements.size}, latest message: ${envelope.statement.message}")
     }
   }
 

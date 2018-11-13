@@ -45,12 +45,18 @@ trait AttemptAcceptCommitProgram[F[_]] extends SCP[F] with EmitProgram[F] {
           for {
             pre <- acc
             next <- ifM(pre._2 && !pre._3, pre) {
-              val interval = pre._1.map(_.withFirst(n)).getOrElse(CounterInterval(n))
+              val currentInterval = pre._1.map(_.withFirst(n)).getOrElse(CounterInterval(n))
               for {
-                accepted <- isCounterAccepted(interval, ballot)
-                _ <- info(
-                  s"[$slotIndex][AttemptAcceptCommit] accepted interval: $interval, $ballot, $accepted")
-              } yield (Option(interval), pre._2 || accepted, accepted)
+                accepted <- isCounterAccepted(currentInterval, ballot)
+                _ <- if (accepted)
+                  info(
+                    s"[$slotIndex][AttemptAcceptCommit] accept interval: $currentInterval, $ballot")
+                else
+                  info(
+                    s"[$slotIndex][AttemptAcceptCommit] reject interval: $currentInterval, $ballot")
+              } yield
+                if ((pre._1.isEmpty || pre._2) && accepted) (Option(currentInterval), accepted, accepted)
+                else pre
             }
           } yield next
       }

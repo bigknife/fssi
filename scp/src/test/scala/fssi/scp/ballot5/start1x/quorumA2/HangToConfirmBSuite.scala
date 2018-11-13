@@ -20,7 +20,7 @@ class HangToConfirmBSuite extends QuorumA2 {
     onEnvelopesFromVBlocking(makeExternalizeGen(B2, hn = 3))
 
     app.numberOfEnvelopes shouldBe 7
-    app.hasConfirmed(pn = 2, AInf, cn = 2, hn = 2)
+    app.hasConfirmed(pn = 2, AInf, cn = 2, hn = 2) shouldBe true
     app.hasBallotTimer shouldBe false
 
     // stuck
@@ -48,7 +48,7 @@ class HangToConfirmBSuite extends QuorumA2 {
     onEnvelopesFromVBlocking(makeConfirmGen(pn = 3, B3, cn = 3, hn =3))
 
     app.numberOfEnvelopes shouldBe 7
-    app.hasConfirmed(pn = 2, A3, cn = 2, hn = 2)
+    app.hasConfirmed(pn = 2, A3, cn = 2, hn = 2) shouldBe true
     app.hasBallotTimer shouldBe false
 
     onEnvelopesFromQuorumChecks(makeConfirmGen(pn = 3, B3, cn = 3, hn = 3), checkEnvelopes = false, isQuorumDelayed = false)

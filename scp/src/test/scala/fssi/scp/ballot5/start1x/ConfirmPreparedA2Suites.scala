@@ -3,7 +3,8 @@ import org.scalatest.Suites
 
 class ConfirmPreparedA2Suites
     extends Suites(
-      new AcceptCommitSuites()
+      new AcceptCommitSuites(),
+      new ConflictingPreparedBSuite()
     ) {
   override def suiteName: String = "confirm prepared A2"
 }
