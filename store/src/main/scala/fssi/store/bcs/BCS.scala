@@ -28,6 +28,15 @@ trait BCS {
                         appData: Array[Byte]): Unit
   }
 
+  trait State {
+    def height: BigInt
+    def metaRootHash: Array[Byte]
+    def stateRootHash: Array[Byte]
+    def blockRootHash: Array[Byte]
+    def transactionRootHash: Array[Byte]
+    def receiptRootHash: Array[Byte]
+  }
+
   def snapshotTransact[A](f: Proxy => A): Either[Throwable, A] = {
     mpt.transact { mptProxy =>
       val proxy = new Proxy {
@@ -240,6 +249,36 @@ trait BCS {
     }
   }
 
+  def temporarilyCommit[A](height: BigInt)(f: State => A): Unit = {
+    mpt.transact {proxy =>
+      getCachedKeys(proxy, height).foreach(k =>
+        proxy.get(k).foreach { data =>
+          BCSKey.parseFromSnapshot(k).foreach { bcsKey =>
+            proxy.put(bcsKey.persistedKey, data)
+          }
+        })
+
+      val h = height
+      val state: State = new State {
+        override def height: BigInt = h
+        override def metaRootHash: Array[Byte] = rootHash("meta:persisted:")
+        override def stateRootHash: Array[Byte] = rootHash("state:persisted:")
+        override def blockRootHash: Array[Byte] = rootHash(s"block:$height:persisted:")
+        override def transactionRootHash: Array[Byte] = rootHash(s"transaction:$height:persisted:")
+        override def receiptRootHash: Array[Byte] = rootHash(s"receipt:$height:persisted:")
+
+        private def rootHash(n: String): Array[Byte] = proxy.rootHash(n).get.bytes
+      }
+
+      //callback
+      f(state)
+
+      // this is a temporary, trigger rollback by throwing an exception
+      throw new RuntimeException("ignore this ecxception, for triggering the bcs rollback")
+    }
+    ()
+  }
+
   // all `put` actions are temporary, when rollback, they will be abandoned
   def rollback(height: BigInt): Either[Throwable, Unit] = {
     mpt.transact { proxy =>
@@ -256,7 +295,7 @@ trait BCS {
   def persistedMetaRootHash: Option[Hash]  = mpt.rootHash("meta:persisted")
   def persistedStateRootHash: Option[Hash] = mpt.rootHash("state:persisted")
   def persistedBlockRootHash(height: BigInt): Option[Hash] =
-    mpt.rootHash(s"block:$height:persisted")
+    mpt.rootHash(s"block:$height:persisted:")
   def persistedTransactionRootHash(height: BigInt): Option[Hash] =
     mpt.rootHash(s"transaction:$height:persisted")
   def persistedReceiptRootHash(height: BigInt): Option[Hash] =
@@ -326,7 +365,7 @@ object BCS {
           new String(key.take(key.indexOf('\n')), "utf-8")
         }
         override def routeStoreKey(key: Array[Byte]): Array[Byte] = {
-          key.drop(key.indexOf('\n'))
+          key.drop(key.indexOf('\n') + 1)
         }
       }
     }

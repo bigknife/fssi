@@ -41,8 +41,10 @@ trait MPT {
       .flatten
   }
   def rootHash(name: String): Option[Hash] = {
-    rootKey(name).map(Key.decode)
+    rootKey(name)
+      .map(x => Hash.wrap(x.bytes))
   }
+
   def rootNode(name: String): Option[Node] = {
     store
       .transact { proxy =>
@@ -58,6 +60,7 @@ trait MPT {
     def put(k: Array[Byte], v: Array[Byte]): Unit
     def get(k: Array[Byte]): Option[Array[Byte]]
     def clean(k: Array[Byte]): Unit
+    def rootHash(name: String): Option[Hash]
   }
 
   def transact[A](f: Proxy => A): Either[Throwable, A] = {
@@ -78,6 +81,12 @@ trait MPT {
         override def clean(k: Array[Byte]): Unit = {
           val name = resolveStoreName(k)
           proxy.clean(name)
+        }
+
+        override def rootHash(name: String): Option[Hash] = {
+          for {
+            key <- proxy.get(combineStoreNameAndKey(name, name.getBytes("utf-8"))).map(Key.wrap)
+          } yield Hash.wrap(key.bytes)
         }
       }
       f(p)
