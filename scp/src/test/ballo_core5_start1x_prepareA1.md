@@ -57,6 +57,8 @@
 * mixed A2
 * mixed B2
 
-## switch prepared B1
+## switch 
 
-## switch prepare B1
+* prepared B1
+
+ * prepare B1

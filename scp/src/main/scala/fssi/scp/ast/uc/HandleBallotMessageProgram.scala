@@ -61,6 +61,7 @@ trait HandleBallotMessageProgram[F[_]] extends SCP[F] with BumpStateProgram[F] {
         result <- ifM(phase == Ballot.Phase.Externalize, false) {
           for {
             counters <- allCountersFromBallotEnvelopes(slotIndex)
+            _ <- debug(s"counters available: $counters")
             r0 <- ifM(counters.isEmpty, false) {
               for {
                 b <- currentBallot(slotIndex)

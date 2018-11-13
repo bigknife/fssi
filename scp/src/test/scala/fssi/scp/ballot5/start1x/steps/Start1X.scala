@@ -9,7 +9,7 @@ trait Start1X extends StepSpec{
   val bValue: Value = yValue
 
   val A1: Ballot = Ballot(1, aValue)
-  val B1: Ballot = Ballot(2, bValue)
+  val B1: Ballot = Ballot(1, bValue)
 
 
   val A2: Ballot = Ballot(2, aValue)
