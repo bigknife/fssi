@@ -3,7 +3,8 @@ import org.scalatest.Suites
 
 class Start1XSuites
     extends Suites(
-      new PreparedA1Suites()
+      new PreparedA1Suites(),
+      new PrepareBSuite()
     ) {
   override def suiteId: String = "start <1, x>"
 }
