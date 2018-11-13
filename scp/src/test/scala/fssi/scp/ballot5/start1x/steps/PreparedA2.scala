@@ -5,7 +5,7 @@ import org.scalatest.Matchers._
 trait PreparedA2 extends PreparedA1 {
 
   def preparedA2(): Unit = {
-    app.bumpTimeOffset()
+    app.bumpTimerOffset()
 
     app.bumpState(aValue) shouldBe true
     app.numberOfEnvelopes shouldBe 3

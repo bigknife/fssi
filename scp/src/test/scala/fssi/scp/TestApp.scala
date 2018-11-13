@@ -123,7 +123,7 @@ class TestApp(nodeID: NodeID,
     if (slot == slotIndex) heardFromQuorums = heardFromQuorums :+ ballot
   }
 
-  def bumpTimeOffset(): Unit = {
+  def bumpTimerOffset(): Unit = {
     currentTime = currentTime + 5 * 3600
   }
 

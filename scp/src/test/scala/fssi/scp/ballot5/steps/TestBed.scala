@@ -70,7 +70,7 @@ trait TestBed extends FunSuite with TestSupport with BeforeAndAfterEach with Log
     val e1: Envelope[M] = envGenerator(node1, keyOfNode1)
     val e2: Envelope[M] = envGenerator(node2, keyOfNode2)
 
-    app.bumpTimeOffset()
+    app.bumpTimerOffset()
     val current: Int = app.numberOfEnvelopes
 
     app.onEnvelope(e1)
@@ -92,7 +92,7 @@ trait TestBed extends FunSuite with TestSupport with BeforeAndAfterEach with Log
     val e3: Envelope[M] = envGenerator(node3, keyOfNode3)
     val e4: Envelope[M] = envGenerator(node4, keyOfNode4)
 
-    app.bumpTimeOffset()
+    app.bumpTimerOffset()
 
     app.onEnvelope(e1)
     app.onEnvelope(e2)
