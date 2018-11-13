@@ -16,9 +16,9 @@ import fssi.scp.interpreter.store.Var
 
 import scala.util.Try
 import fssi.store.bcs._
-import fssi.store.bcs.types.BCSKey.{BlockKey, MetaKey, StateKey}
-import fssi.store.bcs.types.{BlockData, MetaData}
-import fssi.types.base.HashState
+import fssi.store.bcs.types._
+import fssi.store.bcs.types.BCSKey._
+import fssi.types.base.WorldState
 
 class StoreHandler extends Store.Handler[Stack] with LogSupport {
 
@@ -49,6 +49,7 @@ class StoreHandler extends Store.Handler[Stack] with LogSupport {
     bcsVar.foreach { bcs =>
       val height: BigInt = 0
       // meta
+      /*
       bcs.putMeta(height, MetaKey.ChainID, MetaData(chainId.getBytes("utf-8")))
       bcs.putMeta(height, MetaKey.Height, MetaData(height.toByteArray))
       bcs.putMeta(height, MetaKey.Version, MetaData(Constant.Chain_Version.getBytes("utf-8")))
@@ -63,7 +64,7 @@ class StoreHandler extends Store.Handler[Stack] with LogSupport {
       // transaction None
       // receipt None
       // state None
-
+       */
       bcs.commit(height) match {
         case Left(t)  => throw t
         case Right(_) => ()
@@ -95,86 +96,32 @@ class StoreHandler extends Store.Handler[Stack] with LogSupport {
     require(bcsVar.isDefined)
     bcsVar.foreach { bcs =>
       def checkHeight(height: BigInt): Unit = {
-        val blockPreHash     = bcs.getPersistedBlock(BlockKey.preBlockHash(height)).right.get.get
-        val blockCurrentHash = bcs.getPersistedBlock(BlockKey.curBlockHash(height)).right.get.get
-        val stateHash        = bcs.getPersistedBlock(BlockKey.curStateHash(height)).right.get.get
-        val transactionHash  = bcs.getPersistedBlock(BlockKey.curTransactionHash(height)).right.get.get
-        val receiptHash      = bcs.getPersistedBlock(BlockKey.curReceiptHash(height)).right.get.get
+        if (height > 0) {
+        val blockHeight =
+          BigInt(1, bcs.getPersistedBlock(BlockKey.blockHeight(height)).right.get.get.bytes)
+        require(blockHeight == height, "block height is not consistent")
 
-        if (height == 0) {
-          log.debug(s"check height @ $height")
+        val metaChainId = bcs.getPersistedMeta(MetaKey.ChainID).right.get.get
+        val blockChainId = bcs.getPersistedBlock(BlockKey.blockChainId(height)).right.get.get
+        require(metaChainId === blockChainId, "chain id is not consistent")
 
-          val zero = BlockData(Constant.Zero_Value.toByteArray)
-          require(blockCurrentHash === zero, "genesis block current hash should be zero")
-          require(blockPreHash === zero, "genesis block pre hash should be zero")
-          require(stateHash === zero, "genesis block state hash should be zero")
-          require(transactionHash === zero, "genesis block transaction hash should be zero")
-          require(receiptHash === zero, "genesis block receipt hash should be zero")
-        } else if (height > 0) {
-          log.debug(s"check height @ $height")
-          // current state
-          val curBlockStateHash = bcs.getPersistedBlock(BlockKey.curStateHash(height)).right.get.get
-          val curStateRootHash       = bcs.persistedStateRootHash.get
-          require(curBlockStateHash.bytes sameElements curStateRootHash.bytes,
-            "current state hash should be consistent")
+        val preWorldState = bcs.getPersistedBlock(BlockKey.preWorldState(height)).right.get.get
+        val preBlockWorldState = bcs.getPersistedBlock(BlockKey.curWorldState(height - 1)).right.get.get
+        require(preWorldState === preBlockWorldState, "preWorldState is not consistent")
 
-          // previous state
-          val preBlockStateHash = bcs.getPersistedBlock(BlockKey.preStateHash(height)).right.get.get
-          val preStateRootHash = bcs.getPersistedBlock(BlockKey.curStateHash(height - 1)).right.get.get
-          require(preBlockStateHash.bytes sameElements preStateRootHash.bytes,
-            "previous state hash should be consistent")
-
-          // pre block hash
-          val curBlockHash_pre = bcs.getPersistedBlock(BlockKey.curBlockHash(height-1)).right.get.get
-          val preBlockHash = bcs.getPersistedBlock(BlockKey.preBlockHash(height)).right.get.get
-          require(curBlockHash_pre.bytes sameElements preBlockHash.bytes,
-            "previous block hash should be consistent")
-
-          // pre receipt hash
-          // current receipt hash
-
-          // pre transaction hash
-          // current transaction hash
-
-          val blockReceiptHash  = bcs.getPersistedBlock(BlockKey.curReceiptHash(height)).right.get.get
-
-          val receiptRootHash     = bcs.persistedReceiptRootHash(height).get
-          require(blockReceiptHash.bytes sameElements receiptRootHash.bytes,
-            "receipt hash should be consistent")
-
-          val blockPreviousHash = bcs.getPersistedBlock(BlockKey.preBlockHash(height)).right.get.get
-
-          val blockTransactionHash =
-            bcs.getPersistedBlock(BlockKey.curTransactionHash(height)).right.get.get
-          val transactionRootHash = bcs.persistedTransactionRootHash(height).get
-
-          val previousBlockHash   = bcs.persistedBlockRootHash(height - 1).get
-
-
-          require(blockTransactionHash.bytes sameElements transactionRootHash.bytes,
-                  "transaction hash should be consistent")
-
-          require(blockPreviousHash.bytes sameElements previousBlockHash.bytes,
-                  "previous block hash should be consistent")
-
-          // timestamp of current height should gt the previous'
-          val currentBlockTimestamp = BigInt(
-            1,
-            bcs.getPersistedBlock(BlockKey.blockTimestamp(height)).right.get.get.bytes).toLong
-          val previousBlockTimestamp = BigInt(
-            1,
-            bcs.getPersistedBlock(BlockKey.blockTimestamp(height - 1)).right.get.get.bytes).toLong
-
-          require(currentBlockTimestamp > previousBlockTimestamp)
+        val timestamp =BigInt(1, bcs.getPersistedBlock(BlockKey.blockTimestamp(height)).right.get.get.bytes)
+        val preTimestamp =BigInt(1, bcs.getPersistedBlock(BlockKey.blockTimestamp(height - 1)).right.get.get.bytes)
+        require(preTimestamp > timestamp, "timestamp is not sane")
 
           checkHeight(height - 1)
-        } else throw new RuntimeException("height should >= 0")
+        }
+        else ()
       }
 
-      val height = BigInt(bcs.getPersistedMeta(MetaKey.Height).right.get.get.bytes)
-      checkHeight(height)
+      val currentHeight = BigInt(1, bcs.getPersistedMeta(MetaKey.Height).right.get.get)
+      if (currentHeight > 0) checkHeight(currentHeight)
+      else ()
     }
-
   }
 
   /** get conf store
@@ -193,15 +140,27 @@ class StoreHandler extends Store.Handler[Stack] with LogSupport {
       else {
         // genesis block
         // get current state root hash
-        bcs.getPersistedBlock(BlockKey.st)
+        // bcs.getPersistedBlock(BlockKey.st)
         // get previous block state root hash
         // get
       }
 
     }
+
+    ???
   }
 
-  override def persistBlock(block: Block): Stack[Unit] = ???
+  override def persistBlock(block: Block): Stack[Unit] = Stack {
+    // 1. meta height
+    // 2. block blala...
+    // 3. before block, transcation and receipt
+    require(bcsVar.isDefined)
+    bcsVar.foreach { bcs =>
+      bcs.putMeta(MetaKey.Height, MetaData(block.height.toByteArray))
+
+      ()
+    }
+  }
 
   override def loadAccountFromFile(accountFile: File): Stack[Either[FSSIException, Account]] =
     Stack {
@@ -225,6 +184,8 @@ class StoreHandler extends Store.Handler[Stack] with LogSupport {
     }.toEither.left.map(e =>
       new FSSIException(s"load secret key from file $secretKeyFile failed", Option(e)))
   }
+
+  //private def persistTransaction(bcs: BCS, transaction: Transaction): Unit = ???
 }
 
 object StoreHandler {

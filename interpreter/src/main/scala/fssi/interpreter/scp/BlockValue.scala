@@ -3,18 +3,11 @@ package fssi.interpreter.scp
 import fssi.scp.types._
 import fssi.store.mpt.Hash
 import fssi.types.TransactionSet
+import fssi.types.biz._
 import fssi.types.implicits._
 import fssi.store.implicits._
 
-case class BlockValue(
-    height: BigInt,
-    previousBlockHash: Hash,
-    currentBlockHash: Hash,
-    previousStateHash: Hash,
-    currentStateHash: Hash,
-    timestamp: Timestamp,
-    transactions: TransactionSet
-) extends Value {
+case class BlockValue(block: Block) extends Value {
 
   override def rawBytes: Array[Byte] = {
     // height + previousBlockHash + currentBlockHash +

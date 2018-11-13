@@ -1,7 +1,7 @@
 package fssi
 package types
 package json
-import fssi.types.base.{Hash, Signature, Timestamp, HashState}
+import fssi.types.base.{Hash, Signature, Timestamp, WorldState}
 import fssi.types.biz._
 import fssi.types.biz.Block.WorldStates
 import io.circe._
@@ -14,17 +14,17 @@ import io.circe.parser._
 class BlockJsonCodecSpec extends FunSuite {
 
   test("test block json coder") {
-    val previousBlockState    = HashState("previousBlockState".getBytes())
-    val previousTokenState    = HashState("previousTokenState".getBytes())
-    val previousContractState = HashState("previousContractState".getBytes())
-    val previousDataState     = HashState("previousDataState".getBytes())
-    val previousReceiptState  = HashState("previousReceiptState".getBytes())
+    val previousBlockState    = WorldState("previousBlockState".getBytes())
+    val previousTokenState    = WorldState("previousTokenState".getBytes())
+    val previousContractState = WorldState("previousContractState".getBytes())
+    val previousDataState     = WorldState("previousDataState".getBytes())
+    val previousReceiptState  = WorldState("previousReceiptState".getBytes())
 
-    val currentBlockState    = HashState("currentBlockState".getBytes())
-    val currentTokenState    = HashState("currentTokenState".getBytes())
-    val currentContractState = HashState("currentContractState".getBytes())
-    val currentDataState     = HashState("currentDataState".getBytes())
-    val currentReceiptState  = HashState("currentReceiptState".getBytes())
+    val currentBlockState    = WorldState("currentBlockState".getBytes())
+    val currentTokenState    = WorldState("currentTokenState".getBytes())
+    val currentContractState = WorldState("currentContractState".getBytes())
+    val currentDataState     = WorldState("currentDataState".getBytes())
+    val currentReceiptState  = WorldState("currentReceiptState".getBytes())
 
     val previousWorldStates = WorldStates(
       blockState = previousBlockState,

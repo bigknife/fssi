@@ -8,11 +8,11 @@ import types.implicits._
 import io.circe._
 
 trait BaseWorldStateJsonCodec {
-  implicit val worldStateJsonEncoder: Encoder[HashState] =
+  implicit val worldStateJsonEncoder: Encoder[WorldState] =
     Encoder[String].contramap(_.asBytesValue.bcBase58)
 
-  implicit val worldStateJsonDecoder: Decoder[HashState] =
+  implicit val worldStateJsonDecoder: Decoder[WorldState] =
     Decoder[String].map { x =>
-      HashState(BytesValue.decodeBcBase58(x).get.bytes)
+      WorldState(BytesValue.decodeBcBase58(x).get.bytes)
     }
 }

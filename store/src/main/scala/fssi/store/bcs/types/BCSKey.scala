@@ -86,56 +86,52 @@ object BCSKey {
       override val scheme: String = s"block:$height"
     }
 
-    def preBlockHash(height: BigInt): BlockKey = new _BlockKey(height) {
-      override val segments: Array[String] = Array("preBlockHash")
+    def preWorldState(height: BigInt): BlockKey = new _BlockKey(height) {
+      override val segments: Array[String] = Array("preBlockState")
     }
 
-    def curBlockHash(height: BigInt): BlockKey = new _BlockKey(height) {
-      override val segments: Array[String] = Array("curBlockHash")
-    }
-
-    def curStateHash(height: BigInt): BlockKey = new _BlockKey(height) {
-      override val segments: Array[String] = Array("curStateHash")
-    }
-
-    def preStateHash(height: BigInt): BlockKey = new _BlockKey(height) {
-      override val segments: Array[String] = Array("preStateHash")
-    }
-
-    def curReceiptHash(height: BigInt): BlockKey = new _BlockKey(height) {
-      override val segments: Array[String] = Array("curReceiptHash")
-    }
-
-    def preReceiptHash(height: BigInt): BlockKey = new _BlockKey(height) {
-      override val segments: Array[String] = Array("preReceiptHash")
-    }
-
-    def curTransactionHash(height: BigInt): BlockKey = new _BlockKey(height) {
-      override val segments: Array[String] = Array("curTransactionHash")
-    }
-
-    def preTransactionHash(height: BigInt): BlockKey = new _BlockKey(height) {
-      override val segments: Array[String] = Array("preTransactionHash")
+    def curWorldState(height: BigInt): BlockKey = new _BlockKey(height) {
+      override val segments: Array[String] = Array("preGlobalState")
     }
 
     def transactionList(height: BigInt): BlockKey = new _BlockKey(height) {
       override val segments: Array[String] = Array("transactions")
     }
 
+    def receiptList(height: BigInt): BlockKey = new _BlockKey(height) {
+      override val segments: Array[String] = Array("receipts")
+    }
+
     def blockTimestamp(height: BigInt): BlockKey = new _BlockKey(height) {
       override val segments: Array[String] = Array("timestamp")
     }
 
-    private val P = "block:(\\d+):snapshot://(preHash|curHash|state|receipt|transaction)".r
+    def blockHash(height: BigInt): BlockKey = new _BlockKey(height) {
+      override val segments: Array[String] = Array("hash")
+    }
+
+    def blockHeight(height: BigInt): BlockKey = new _BlockKey(height) {
+      override val segments: Array[String] = Array("height")
+    }
+
+    def blockChainId(height: BigInt): BlockKey = new _BlockKey(height) {
+      override val segments: Array[String] = Array("chainId")
+    }
+
+    private val P = ("block:(\\d+):snapshot://(height|chainId|" +
+      "preWorldState|curWorldState|transactions|receipts|timestamp|hash)").r
     def parseFromSnapshot(str: String): Option[BlockKey] = {
       //block:{height}:snapshot://preHash
       str match {
-        case P(height, key) if key == "preHash"     => Some(preBlockHash(BigInt(height)))
-        case P(height, key) if key == "curHash"     => Some(curBlockHash(BigInt(height)))
-        case P(height, key) if key == "state"       => Some(curStateHash(BigInt(height)))
-        case P(height, key) if key == "receipt"     => Some(curReceiptHash(BigInt(height)))
-        case P(height, key) if key == "transaction" => Some(curTransactionHash(BigInt(height)))
-        case _                                      => None
+        case P(height, key) if key == "height"        => Some(blockChainId(BigInt(height)))
+        case P(height, key) if key == "chainId"       => Some(blockChainId(BigInt(height)))
+        case P(height, key) if key == "preWorldState" => Some(preWorldState(BigInt(height)))
+        case P(height, key) if key == "curWorldState" => Some(preWorldState(BigInt(height)))
+        case P(height, key) if key == "transactions"  => Some(transactionList(BigInt(height)))
+        case P(height, key) if key == "receipts"      => Some(receiptList(BigInt(height)))
+        case P(height, key) if key == "timestamp"     => Some(blockTimestamp(BigInt(height)))
+        case P(height, key) if key == "hash"          => Some(blockHash(BigInt(height)))
+        case _                                        => None
       }
     }
   }

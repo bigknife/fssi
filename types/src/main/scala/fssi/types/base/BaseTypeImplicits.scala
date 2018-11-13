@@ -9,4 +9,5 @@ trait BaseTypeImplicits
     with Base58Check.Implicits
     with Signature.Implicits
     with UniqueName.Implicits
-    with HashState.Implicits
+    with WorldState.Implicits
+    with Timestamp.Implicits

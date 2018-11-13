@@ -42,15 +42,11 @@ Xodus 已经在Jetbrain 的 [YouTrack](https://youtrack.jetbrains.com/issues) �
 
 块数据。
 
-* **block:{height}://preBlockHash** 前一个块的Hash
-* **block:{height}://curBlockHash** 当前块的Hash
-* **block:{height}://preStateHash** 前一块对应的全局状态hash
-* **block:{height}://curStateHash** 前一块对应的全局状态hash
-* **block:{height}://preReceiptHash** 当前块对应的执行结果的Hash
-* **block:{height}://curReceiptHash** 前一块对应的执行结果的Hash
-* **block:{height}://preTransactionHash** 当前块对应的交易树Hash
-* **block:{height}://curTransactionHash** 前一块对应的交易树Hash
+* **block:{height}://preWorldState** 前一个块所处的世界状态，由 `meta`,`block-n`,`tranction-n`,`receipt-n`,`state` 共同构成（hash）
 * **block:{height}://transactions** 当前块包含的交易ID有序列表
+* **block:{height}://receipts** 当前块包含的receipt有序列表
+* **block:{height}://timestamp** 当前出块时间，或者当前块包含的最后一笔交易时间
+* **block:{height}://hash** 当前块的Hash值（base58或者base64）
 
 #### transaction:
 

@@ -16,6 +16,11 @@ package object types {
       scala.collection.immutable.TreeSet(transaction: _*)
   }
 
+  type ReceiptSet = scala.collection.immutable.TreeSet[biz.Receipt]
+  object ReceiptSet {
+    def empty: ReceiptSet =  scala.collection.immutable.TreeSet.empty[biz.Receipt]
+  }
+
   //object syntax extends BytesValue.Syntax
   object implicits
       extends fssi.types.base.BaseTypeImplicits

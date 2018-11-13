@@ -6,49 +6,41 @@ import fssi.types.base._
 import fssi.types.implicits._
 
 /** block contains a head and some transactions
+  * @param height height or slotIndex of current block 
+  * @param chainId chain id
+  * @param preWorldState the block, transaction and receipt state of the block before this block
+  * @param curWorldState the global state of the block before this block
   */
 case class Block(
-    head: Block.Head,
+    height: BigInt,
+    chainId: String,
+    preWorldState: WorldState,
+    curWorldState: WorldState,
     transactions: TransactionSet,
-    receipts: Set[Receipt],
+    receipts: ReceiptSet,
+    timestamp: Timestamp,
     hash: Hash
 )
 
 object Block {
 
-  /** block head contains state of the previous block and current block
-    * and additional: current block height and chainID
-    */
-  case class Head(
-      previousStates: HashState,
-      currentStates: HashState,
-      previousBlockHash: HashState,
-      currentBlockHash: HashState,
-      previousReceiptHash: HashState,
-      currentReceiptHash: HashState,
-      height: BigInt,
-      chainId: String,
-      timestamp: Timestamp
-  )
-
   trait Implicits {
-    implicit def blockHeadToBytesValue(a: Head): Array[Byte] = {
-      import a._
-      (previousStates.asBytesValue.any ++
-        currentStates.asBytesValue.any ++
-        previousBlockHash.asBytesValue.any ++
-        currentBlockHash.asBytesValue.any ++
-        previousReceiptHash.asBytesValue.any ++
-        currentReceiptHash.asBytesValue.any ++
-        height.asBytesValue.any ++
-        chainId.asBytesValue.any).bytes
-    }
 
     implicit def blockToBytesValue(a: Block): Array[Byte] = {
       import a._
-      (head.asBytesValue.any ++ transactions
-        .foldLeft(BytesValue.empty[Transaction])((acc, n) => acc ++ n.asBytesValue)
-        .any ++ hash.asBytesValue.any).bytes
+      height.toByteArray ++
+        chainId.getBytes("utf-8") ++
+        (
+          preWorldState.asBytesValue.any ++
+            curWorldState.asBytesValue.any ++
+            transactions
+              .foldLeft(BytesValue.empty[Transaction])((acc, n) => acc ++ n.asBytesValue)
+              .any ++
+            timestamp.asBytesValue.any ++
+            receipts.foldLeft(BytesValue.empty[Receipt])((acc, n) => acc ++ n.asBytesValue).any ++
+            hash.asBytesValue.any
+        ).bytes
+
     }
   }
 
