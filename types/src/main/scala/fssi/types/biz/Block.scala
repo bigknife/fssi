@@ -15,52 +15,33 @@ case class Block(
 )
 
 object Block {
-  def emptyWordStates: WorldStates = WorldStates(
-    WorldState.empty,
-    WorldState.empty,
-    WorldState.empty,
-    WorldState.empty,
-    WorldState.empty
-  )
-
-  /** a total world state
-    * include:
-    * 1. block store state
-    * 2. token store state
-    * 3. contract store state
-    * 4. receipt of transaction state
-    */
-  case class WorldStates(
-      blockState: WorldState,
-      tokenState: WorldState,
-      contractState: WorldState,
-      dataState: WorldState,
-      receiptState: WorldState
-  )
 
   /** block head contains state of the previous block and current block
     * and additional: current block height and chainID
     */
   case class Head(
-      previousStates: WorldStates,
-      currentStates: WorldStates,
+      previousStates: HashState,
+      currentStates: HashState,
+      previousBlockHash: HashState,
+      currentBlockHash: HashState,
+      previousReceiptHash: HashState,
+      currentReceiptHash: HashState,
       height: BigInt,
       chainId: String,
       timestamp: Timestamp
   )
 
   trait Implicits {
-    implicit def wordStatesToBytesValue(a: WorldStates): Array[Byte] = {
-      import a._
-      (blockState.asBytesValue ++ tokenState.asBytesValue ++
-        contractState.asBytesValue ++ dataState.asBytesValue ++
-        receiptState.asBytesValue).bytes
-    }
-
     implicit def blockHeadToBytesValue(a: Head): Array[Byte] = {
       import a._
-      (previousStates.asBytesValue.any ++ currentStates.asBytesValue.any ++
-        height.asBytesValue.any ++ chainId.asBytesValue.any).bytes
+      (previousStates.asBytesValue.any ++
+        currentStates.asBytesValue.any ++
+        previousBlockHash.asBytesValue.any ++
+        currentBlockHash.asBytesValue.any ++
+        previousReceiptHash.asBytesValue.any ++
+        currentReceiptHash.asBytesValue.any ++
+        height.asBytesValue.any ++
+        chainId.asBytesValue.any).bytes
     }
 
     implicit def blockToBytesValue(a: Block): Array[Byte] = {

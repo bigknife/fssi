@@ -12,13 +12,13 @@ import json.implicits._
 
 class TypesJsonSpec extends FunSuite {
   test("WorldState json encoder and decoder") {
-    val worldState = WorldState("Hello,world".getBytes)
+    val worldState = HashState("Hello,world".getBytes)
     val json = worldState.asJson.spaces2
     info(s"$json")
 
     val worldState1 = for {
       j <- parse(json)
-      x <- j.as[WorldState]
+      x <- j.as[HashState]
     } yield x
 
     assert(worldState1.isRight)

@@ -28,9 +28,9 @@ class BCSSpec extends FunSuite with BeforeAndAfter {
 
   test("put and commit") {
 
-    bcs.putMeta(1, MetaKey.ChainID, BlockData("testnet1".getBytes("utf-8")))
-    bcs.putMeta(1, MetaKey.Height, BlockData(BigInt(1).toByteArray))
-    bcs.putMeta(1, MetaKey.Version, BlockData("1.0".getBytes("utf-8")))
+    bcs.putMeta(1, MetaKey.ChainID, MetaData("testnet1".getBytes("utf-8")))
+    bcs.putMeta(1, MetaKey.Height, MetaData(BigInt(1).toByteArray))
+    bcs.putMeta(1, MetaKey.Version, MetaData("1.0".getBytes("utf-8")))
 
     val chainIdSnapshot = bcs.getSnapshotMeta(MetaKey.ChainID)
     val heightSnapshot  = bcs.getSnapshotMeta(MetaKey.Height)
@@ -68,9 +68,9 @@ class BCSSpec extends FunSuite with BeforeAndAfter {
   }
 
   test("put and rollback") {
-    bcs.putMeta(1, MetaKey.ChainID, BlockData("testnet1".getBytes("utf-8")))
-    bcs.putMeta(1, MetaKey.Height, BlockData(BigInt(1).toByteArray))
-    bcs.putMeta(1, MetaKey.Version, BlockData("1.0".getBytes("utf-8")))
+    bcs.putMeta(1, MetaKey.ChainID, MetaData("testnet1".getBytes("utf-8")))
+    bcs.putMeta(1, MetaKey.Height, MetaData(BigInt(1).toByteArray))
+    bcs.putMeta(1, MetaKey.Version, MetaData("1.0".getBytes("utf-8")))
 
     val chainIdSnapshot = bcs.getSnapshotMeta(MetaKey.ChainID)
     val heightSnapshot  = bcs.getSnapshotMeta(MetaKey.Height)

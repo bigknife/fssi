@@ -170,7 +170,7 @@ trait BCS {
     }
   }
 
-  def putMeta(height: BigInt, key: MetaKey, value: BlockData): Either[Throwable, Unit] = {
+  def putMeta(height: BigInt, key: MetaKey, value: MetaData): Either[Throwable, Unit] = {
     // we need cross-store transaction support
     mpt.transact { proxy =>
       val newKey = key.snapshotKey
@@ -251,6 +251,24 @@ trait BCS {
       })
     }
   }
+
+  //root hash
+  def persistedMetaRootHash: Option[Hash]  = mpt.rootHash("meta:persisted")
+  def persistedStateRootHash: Option[Hash] = mpt.rootHash("state:persisted")
+  def persistedBlockRootHash(height: BigInt): Option[Hash] =
+    mpt.rootHash(s"block:$height:persisted")
+  def persistedTransactionRootHash(height: BigInt): Option[Hash] =
+    mpt.rootHash(s"transaction:$height:persisted")
+  def persistedReceiptRootHash(height: BigInt): Option[Hash] =
+    mpt.rootHash(s"receipt:$height:persisted")
+  def snapshotMetaRootHash: Option[Hash]  = mpt.rootHash("meta:snapshot")
+  def snapshotStateRootHash: Option[Hash] = mpt.rootHash("state:snapshot")
+  def snapshotBlockRootHash(height: BigInt): Option[Hash] =
+    mpt.rootHash(s"block:$height:snapshot")
+  def snapshotTransactionRootHash(height: BigInt): Option[Hash] =
+    mpt.rootHash(s"transaction:$height:snapshot")
+  def snapshotReceiptRootHash(height: BigInt): Option[Hash] =
+    mpt.rootHash(s"receipt:$height:snapshot")
 
   private def putCachedKeys(proxy: MPT#Proxy, height: BigInt, newKey: Array[Byte]): Unit = {
     val cachedKeysKey = snapshotKeysCacheKey(height)

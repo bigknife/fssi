@@ -86,35 +86,55 @@ object BCSKey {
       override val scheme: String = s"block:$height"
     }
 
-    def preHash(height: BigInt): BlockKey = new _BlockKey(height) {
-      override val segments: Array[String] = Array("preHash")
+    def preBlockHash(height: BigInt): BlockKey = new _BlockKey(height) {
+      override val segments: Array[String] = Array("preBlockHash")
     }
 
-    def curHash(height: BigInt): BlockKey = new _BlockKey(height) {
-      override val segments: Array[String] = Array("curHash")
+    def curBlockHash(height: BigInt): BlockKey = new _BlockKey(height) {
+      override val segments: Array[String] = Array("curBlockHash")
     }
 
-    def state(height: BigInt): BlockKey = new _BlockKey(height) {
-      override val segments: Array[String] = Array("state")
+    def curStateHash(height: BigInt): BlockKey = new _BlockKey(height) {
+      override val segments: Array[String] = Array("curStateHash")
     }
 
-    def receipt(height: BigInt): BlockKey = new _BlockKey(height) {
-      override val segments: Array[String] = Array("receipt")
+    def preStateHash(height: BigInt): BlockKey = new _BlockKey(height) {
+      override val segments: Array[String] = Array("preStateHash")
     }
 
-    def transaction(height: BigInt): BlockKey = new _BlockKey(height) {
-      override val segments: Array[String] = Array("transaction")
+    def curReceiptHash(height: BigInt): BlockKey = new _BlockKey(height) {
+      override val segments: Array[String] = Array("curReceiptHash")
+    }
+
+    def preReceiptHash(height: BigInt): BlockKey = new _BlockKey(height) {
+      override val segments: Array[String] = Array("preReceiptHash")
+    }
+
+    def curTransactionHash(height: BigInt): BlockKey = new _BlockKey(height) {
+      override val segments: Array[String] = Array("curTransactionHash")
+    }
+
+    def preTransactionHash(height: BigInt): BlockKey = new _BlockKey(height) {
+      override val segments: Array[String] = Array("preTransactionHash")
+    }
+
+    def transactionList(height: BigInt): BlockKey = new _BlockKey(height) {
+      override val segments: Array[String] = Array("transactions")
+    }
+
+    def blockTimestamp(height: BigInt): BlockKey = new _BlockKey(height) {
+      override val segments: Array[String] = Array("timestamp")
     }
 
     private val P = "block:(\\d+):snapshot://(preHash|curHash|state|receipt|transaction)".r
     def parseFromSnapshot(str: String): Option[BlockKey] = {
       //block:{height}:snapshot://preHash
       str match {
-        case P(height, key) if key == "preHash"     => Some(preHash(BigInt(height)))
-        case P(height, key) if key == "curHash"     => Some(curHash(BigInt(height)))
-        case P(height, key) if key == "state"       => Some(state(BigInt(height)))
-        case P(height, key) if key == "receipt"     => Some(receipt(BigInt(height)))
-        case P(height, key) if key == "transaction" => Some(transaction(BigInt(height)))
+        case P(height, key) if key == "preHash"     => Some(preBlockHash(BigInt(height)))
+        case P(height, key) if key == "curHash"     => Some(curBlockHash(BigInt(height)))
+        case P(height, key) if key == "state"       => Some(curStateHash(BigInt(height)))
+        case P(height, key) if key == "receipt"     => Some(curReceiptHash(BigInt(height)))
+        case P(height, key) if key == "transaction" => Some(curTransactionHash(BigInt(height)))
         case _                                      => None
       }
     }
