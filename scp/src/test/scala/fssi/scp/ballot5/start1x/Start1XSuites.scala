@@ -4,7 +4,8 @@ import org.scalatest.Suites
 class Start1XSuites
     extends Suites(
       new PreparedA1Suites(),
-      new PrepareBSuite()
+      new PrepareBSuite(),
+      new ConfirmVBlockingSuite()
     ) {
   override def suiteId: String = "start <1, x>"
 }
