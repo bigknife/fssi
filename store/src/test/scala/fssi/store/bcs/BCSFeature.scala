@@ -2,9 +2,10 @@ package fssi.store.bcs
 
 import java.io.{File, FileNotFoundException}
 
-import fssi.store.bcs.types.BCSKey.StateKey
-import fssi.store.bcs.types.StateData
+import fssi.store.bcs.types.BCSKey.{BlockKey, StateKey}
+import fssi.store.bcs.types.{BlockData, StateData}
 import org.scalatest.{BeforeAndAfter, FeatureSpec, GivenWhenThen}
+import fssi.base.implicits._
 
 class BCSFeature extends FeatureSpec with BeforeAndAfter with GivenWhenThen {
 
@@ -146,6 +147,50 @@ class BCSFeature extends FeatureSpec with BeforeAndAfter with GivenWhenThen {
       val b2P = bcs.getPersistedBalance(accountId2)
       assert(b1P.right.get == 100)
       assert(b2P.right.get == 100)
+    }
+  }
+
+  feature("temporarily commit") {
+    scenario("temporarily commit a block, then get a temporary root hash, and it's equal to the hash after committed") {
+      Given("a height to test")
+      val height = 1
+      val now = System.currentTimeMillis()
+
+      When("put some block data")
+      bcs.putBlock(BlockKey.blockTimestamp(height), BlockData(BigInt(now).toByteArray))
+      bcs.putBlock(BlockKey.blockChainId(height), BlockData("testnet".getBytes))
+      bcs.commit(height)
+      val n = bcs.getPersistedBlock(BlockKey.blockTimestamp(height))
+      assert(BigInt(n.right.get.get.bytes).toLong == now)
+      assert(new String(bcs.getPersistedBlock(BlockKey.blockChainId(height)).right.get.get.bytes) == "testnet")
+
+      Then("get block root hash")
+      val blockRootHash1 = bcs.persistedBlockRootHash(height).get.bytes
+      info(s"init root hash = ${blockRootHash1.asBytesValue.bcBase58}")
+
+      When("put some other block data and temporarily commit")
+      bcs.putBlock(BlockKey.blockHash(height), BlockData("a test hash".getBytes))
+      var tempHash: Array[Byte] = Array()
+      bcs.temporarilyCommit(height) {state =>
+        tempHash = state.blockRootHash
+      }
+
+      Then("get a temporary block root hash")
+      info(s"temp root hash = ${tempHash.asBytesValue.bcBase58}")
+
+      Then("and, the persisted block root hash not changed now")
+      val blockRootHash2 = bcs.persistedBlockRootHash(height).get.bytes
+      assert(blockRootHash2 sameElements blockRootHash1)
+      info(s"after temporarily commit, root hash = ${blockRootHash2.asBytesValue.bcBase58}")
+
+      When("now, commit bcs")
+      bcs.commit(height)
+      assert(new String(bcs.getPersistedBlock(BlockKey.blockHash(height)).right.get.get.bytes) == "a test hash")
+
+      Then("the block persisted root hash will be same as the temporary")
+      val blockRootHash3 = bcs.persistedBlockRootHash(height).get.bytes
+      assert(blockRootHash3 sameElements tempHash)
+      info(s"after commit, root hash = ${blockRootHash3.asBytesValue.bcBase58}")
     }
   }
 }
