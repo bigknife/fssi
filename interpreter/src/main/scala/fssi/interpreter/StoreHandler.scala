@@ -177,6 +177,8 @@ class StoreHandler extends Store.Handler[Stack] with LogSupport {
           bcs.putReceipt(ReceiptKey.receiptLogs(height, transactionId), serializeReceiptLogs(r.logs))
         }
       }
+
+      bcs.commit(height)
       ()
     }
   }
