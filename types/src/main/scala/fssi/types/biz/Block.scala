@@ -24,6 +24,17 @@ case class Block(
 
 object Block {
 
+  def genesis(chainId: String): Block =  Block(
+    height = 0,
+    chainId = chainId,
+    preWorldState = WorldState.empty,
+    curWorldState = WorldState.empty,
+    transactions = TransactionSet.empty,
+    receipts = ReceiptSet.empty,
+    timestamp = Timestamp(System.currentTimeMillis),
+    hash = Hash.empty
+  )
+
   trait Implicits {
 
     implicit def blockToBytesValue(a: Block): Array[Byte] = {

@@ -47,16 +47,7 @@ class StoreHandler extends Store.Handler[Stack] with LogSupport {
     }
 
     // genesis block
-    val block: Block = Block(
-      height = 0,
-      chainId = chainId,
-      preWorldState = WorldState.empty,
-      curWorldState = WorldState.empty,
-      transactions = TransactionSet.empty,
-      receipts = ReceiptSet.empty,
-      timestamp = Timestamp(System.currentTimeMillis),
-      hash = Hash.empty
-    )
+    val block: Block = Block.genesis(chainId)
 
     for {
       _ <- persistBlock(block)
@@ -129,14 +120,63 @@ class StoreHandler extends Store.Handler[Stack] with LogSupport {
     require(bcsVar.isDefined)
     bcsVar.map { bcs =>
       // get current height
-      val height = BigInt(bcs.getPersistedMeta(MetaKey.Height).right.get.get.bytes)
+      val height  = BigInt(bcs.getPersistedMeta(MetaKey.Height).right.get.get.bytes)
+      val chainId = new String(bcs.getPersistedMeta(MetaKey.ChainID).right.get.get.bytes, "utf-8")
       if (height < 0) throw new RuntimeException(s"insane block chain store. height is $height")
+      else if (height == 0) Block.genesis(chainId)
       else {
         // genesis block
-        // get current state root hash
-        // bcs.getPersistedBlock(BlockKey.st)
-        // get previous block state root hash
-        // get
+        val preWorldState =
+          WorldState(bcs.getPersistedBlock(BlockKey.preWorldState(height)).right.get.get.bytes)
+        val curWorldState =
+          WorldState(bcs.getPersistedBlock(BlockKey.curWorldState(height)).right.get.get.bytes)
+        val timestamp =
+          Timestamp(BigInt(
+            1,
+            bcs.getPersistedBlock(BlockKey.blockTimestamp(height)).right.get.get.bytes).toLong)
+        val hash =
+          Hash(bcs.getPersistedBlock(BlockKey.blockHash(height)).right.get.get.bytes)
+
+        val transactionIds: Array[String] = { // bcBase58
+          val s =
+            new String(bcs.getPersistedBlock(BlockKey.transactionList(height)).right.get.get.bytes)
+          s.split("\n").filter(_.length > 0)
+        }
+
+        val transactions: TransactionSet = TransactionSet(transactionIds.map { tid =>
+          // tid is base58 of transaction id
+          deserializeTransaction(
+            bcs.getPersistedTransaction(TransactionKey.transaction(height, tid)).right.get.get)
+        }: _*)
+
+        val receipts: ReceiptSet = ReceiptSet(transactionIds.map { tid =>
+          // tid is base58 of transaction id
+          val result = 1 == BigInt(
+            1,
+            bcs.getPersistedReceipt(ReceiptKey.receiptResult(height, tid)).right.get.get.bytes)
+          val costs = BigInt(
+            1,
+            bcs.getPersistedReceipt(ReceiptKey.receiptCost(height, tid)).right.get.get.bytes).toInt
+          val logs = deserializeReceiptLogs(
+            bcs.getPersistedReceipt(ReceiptKey.receiptLogs(height, tid)).right.get.get)
+          Receipt(
+            transactionId = Transaction.ID(BytesValue.decodeBcBase58(tid).get.bytes),
+            success = result,
+            logs = logs,
+            costs = costs
+          )
+        }: _*)
+
+        Block(
+          height = height,
+          chainId = chainId,
+          preWorldState = preWorldState,
+          curWorldState = curWorldState,
+          transactions = transactions,
+          receipts = receipts,
+          timestamp = timestamp,
+          hash = hash
+        )
       }
 
     }
@@ -157,9 +197,12 @@ class StoreHandler extends Store.Handler[Stack] with LogSupport {
       bcs.putMeta(height, MetaKey.Height, MetaData(block.height.toByteArray))
       bcs.putBlock(BlockKey.preWorldState(height), BlockData(block.preWorldState.value))
       bcs.putBlock(BlockKey.curWorldState(height), BlockData(block.curWorldState.value))
-      bcs.putBlock(
-        BlockKey.transactionList(height),
-        BlockData(block.transactions.map(_.id.value.asBytesValue.bcBase58).mkString("\n").getBytes))
+      bcs.putBlock(BlockKey.transactionList(height),
+                   BlockData(
+                     block.transactions
+                       .map(_.id.value.asBytesValue.bcBase58)
+                       .mkString("\n")
+                       .getBytes("utf-8")))
       bcs.putBlock(BlockKey.blockTimestamp(height), BlockData(block.timestamp.asBytesValue.bytes))
       bcs.putBlock(BlockKey.blockHash(height), BlockData(block.hash.asBytesValue.bytes))
 
@@ -178,6 +221,9 @@ class StoreHandler extends Store.Handler[Stack] with LogSupport {
           bcs.putReceipt(ReceiptKey.receiptLogs(height, transactionId),
                          serializeReceiptLogs(r.logs))
         }
+
+      //todo: if the transaction is deploy, then persist the contract
+
       }
 
       bcs.commit(height)
@@ -210,10 +256,53 @@ class StoreHandler extends Store.Handler[Stack] with LogSupport {
 
   //private def persistTransaction(bcs: BCS, transaction: Transaction): Unit = ???
 
-  private def serializeTransaction(t: Transaction): TransactionData     = ???
-  private def deserializeTransaction(b: TransactionData): Transaction   = ???
-  private def serializeReceiptLogs(t: Vector[Receipt.Log]): ReceiptData = ???
-  private def deserializeReceipt(b: ReceiptData): Vector[Receipt]       = ???
+  // transaction protocol:
+  // first line used to express types
+  // following lines used to express every fields
+  private def serializeTransaction(t: Transaction): TransactionData = t match {
+    case x: Transaction.Transfer =>
+      TransactionData(
+        Vector(
+          "transfer",
+          x.id.asBytesValue.bcBase58,
+          x.payer.asBytesValue.bcBase58,
+          x.payee.asBytesValue.bcBase58,
+          x.token.asBytesValue.bcBase58,
+          x.signature.asBytesValue.bcBase58,
+          x.timestamp.asBytesValue.bcBase58
+        ).mkString("\n").getBytes("utf-8"))
+    case x: Transaction.Deploy =>
+      TransactionData(
+        Vector(
+          "deploy",
+          x.id.asBytesValue.bcBase58,
+          x.owner.asBytesValue.bcBase58,
+          x.contract.asBytesValue.bcBase58,
+          x.signature.asBytesValue.bcBase58,
+          x.timestamp.asBytesValue.bcBase58
+        ).mkString("\n").getBytes("utf-8"))
+    case x: Transaction.Run =>
+      TransactionData(
+        Vector(
+          "run",
+          x.id.asBytesValue.bcBase58,
+          x.caller.asBytesValue.bcBase58,
+          x.contractName.asBytesValue.bcBase58,
+          x.contractVersion.asBytesValue.bcBase58,
+          x.methodAlias.asBytesValue.bcBase58,
+          x.contractParameter.asBytesValue.bcBase58,
+          x.signature.asBytesValue.bcBase58,
+          x.timestamp.asBytesValue.bcBase58
+        ).mkString("\n").getBytes("utf-8"))
+
+    case _ => TransactionData(Array.emptyByteArray)
+  }
+  private def deserializeTransaction(b: TransactionData): Transaction = {
+    ???
+  }
+
+  private def serializeReceiptLogs(t: Vector[Receipt.Log]): ReceiptData   = ???
+  private def deserializeReceiptLogs(b: ReceiptData): Vector[Receipt.Log] = ???
 }
 
 object StoreHandler {
