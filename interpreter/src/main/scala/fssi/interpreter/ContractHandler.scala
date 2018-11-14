@@ -75,31 +75,43 @@ class ContractHandler extends Contract.Handler[Stack] {
 
   override def createTransferTransaction(transactionId: Transaction.ID,
                                          payer: Account.ID,
+                                         publicKey: Account.PubKey,
                                          payee: Account.ID,
-                                         token: Token): Stack[Transaction.Transfer] = Stack {
-    Transaction.Transfer(transactionId,
-                         payer,
-                         payee,
-                         token,
-                         Signature.empty,
-                         System.currentTimeMillis())
-  }
+                                         token: Token): Stack[Transaction.Transfer] =
+    Stack {
+      Transaction.Transfer(transactionId,
+                           payer,
+                           publicKey,
+                           payee,
+                           token,
+                           Signature.empty,
+                           System.currentTimeMillis())
+    }
 
   override def createDeployTransaction(transactionId: Transaction.ID,
                                        owner: Account.ID,
-                                       contract: UserContract): Stack[Transaction.Deploy] = Stack {
-    Transaction.Deploy(transactionId, owner, contract, Signature.empty, System.currentTimeMillis())
-  }
+                                       publicKey: Account.PubKey,
+                                       contract: UserContract): Stack[Transaction.Deploy] =
+    Stack {
+      Transaction.Deploy(transactionId,
+                         owner,
+                         publicKey,
+                         contract,
+                         Signature.empty,
+                         System.currentTimeMillis())
+    }
 
   override def createRunTransaction(
       transactionId: Transaction.ID,
       caller: Account.ID,
+      publicKey: Account.PubKey,
       contractName: UniqueName,
       contractVersion: Version,
       methodAlias: String,
       contractParameter: Option[UserContract.Parameter]): Stack[Transaction.Run] = Stack {
     Transaction.Run(transactionId,
                     caller,
+                    publicKey,
                     contractName,
                     contractVersion,
                     methodAlias,

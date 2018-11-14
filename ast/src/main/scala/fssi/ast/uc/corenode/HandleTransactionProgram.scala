@@ -14,10 +14,12 @@ trait HandleTransactionProgram[F[_]] extends CoreNodeProgram[F] with BaseProgram
 
   def handleTransaction(transaction: Transaction): SP[F, Receipt] = {
     for {
-      verifyResult <- crypto.verifyTransactionSignature(transaction)
-      _ <- requireM(verifyResult(), new RuntimeException("transaction signature tampered"))
-      receipt <- contract.runTransaction(transaction)
-      _ <- consensus.tryAgree(transaction, receipt)
+      verifyResult      <- crypto.verifyTransactionSignature(transaction)
+      _                 <- requireM(verifyResult(), new RuntimeException("transaction signature tampered"))
+      receipt           <- contract.runTransaction(transaction)
+      determinedBlock   <- store.getLatestDeterminedBlock()
+      currentWorldState <- store.getCurrentWorldState()
+      _                 <- consensus.tryAgree(transaction, receipt, determinedBlock, currentWorldState)
     } yield receipt
   }
 }

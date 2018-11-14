@@ -6,6 +6,7 @@ import bigknife.sop.implicits._
 import fssi.types.biz._
 import java.io._
 
+import fssi.types.base.WorldState
 import fssi.types.exception.FSSIException
 
 @sp trait Store[F[_]] {
@@ -48,6 +49,8 @@ import fssi.types.exception.FSSIException
   def getChainConfiguration(): P[F, ChainConfiguration]
 
   def getLatestDeterminedBlock(): P[F, Block]
+
+  def getCurrentWorldState(): P[F, WorldState]
 
   def persistBlock(block: Block): P[F, Unit]
 

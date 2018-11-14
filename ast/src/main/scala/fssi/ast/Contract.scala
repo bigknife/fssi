@@ -33,13 +33,16 @@ import fssi.types.biz.Contract._
   def generateTransactionID(): P[F, Transaction.ID]
   def createTransferTransaction(transactionId: Transaction.ID,
                                 payer: Account.ID,
+                                publicKey: Account.PubKey,
                                 payee: Account.ID,
                                 token: Token): P[F, Transaction.Transfer]
   def createDeployTransaction(transactionId: Transaction.ID,
                               owner: Account.ID,
+                              publicKey: Account.PubKey,
                               contract: UserContract): P[F, Transaction.Deploy]
   def createRunTransaction(transactionId: Transaction.ID,
                            caller: Account.ID,
+                           publicKey: Account.PubKey,
                            contractName: UniqueName,
                            contractVersion: Version,
                            methodAlias: String,

@@ -24,7 +24,7 @@ class BCSFeature extends FeatureSpec with BeforeAndAfter with GivenWhenThen {
       }
       if (!f.delete()) throw new FileNotFoundException(s"Failed to delete file: $f")
     }
-    delete(new File("/tmp/mybcs"))
+//    delete(new File("/tmp/mybcs"))
   }
 
   info("As a BCS(BlockChainStore)")
@@ -134,7 +134,8 @@ class BCSFeature extends FeatureSpec with BeforeAndAfter with GivenWhenThen {
         else ()
       }
 
-      Then("transaction failed, no changes. in snapshot area, the balance of account1 is 0, and the balance of account2 is 0")
+      Then(
+        "transaction failed, no changes. in snapshot area, the balance of account1 is 0, and the balance of account2 is 0")
       val b1S = bcs.getSnapshotBalance(accountId1)
       val b2S = bcs.getSnapshotBalance(accountId2)
       assert(b1S.right.get == 0)

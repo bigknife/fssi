@@ -97,28 +97,31 @@ class StoreHandler extends Store.Handler[Stack] with LogSupport {
     bcsVar.foreach { bcs =>
       def checkHeight(height: BigInt): Unit = {
         if (height > 0) {
-        val blockHeight =
-          BigInt(1, bcs.getPersistedBlock(BlockKey.blockHeight(height)).right.get.get.bytes)
-        require(blockHeight == height, "block height is not consistent")
+          val blockHeight =
+            BigInt(1, bcs.getPersistedBlock(BlockKey.blockHeight(height)).right.get.get.bytes)
+          require(blockHeight == height, "block height is not consistent")
 
-        val metaChainId = bcs.getPersistedMeta(MetaKey.ChainID).right.get.get
-        val blockChainId = bcs.getPersistedBlock(BlockKey.blockChainId(height)).right.get.get
-        require(metaChainId === blockChainId, "chain id is not consistent")
+          val metaChainId  = bcs.getPersistedMeta(MetaKey.ChainID).right.get.get
+          val blockChainId = bcs.getPersistedBlock(BlockKey.blockChainId(height)).right.get.get
+          require(metaChainId === blockChainId, "chain id is not consistent")
 
-        val preWorldState = bcs.getPersistedBlock(BlockKey.preWorldState(height)).right.get.get
-        val preBlockWorldState = bcs.getPersistedBlock(BlockKey.curWorldState(height - 1)).right.get.get
-        require(preWorldState === preBlockWorldState, "preWorldState is not consistent")
+          val preWorldState = bcs.getPersistedBlock(BlockKey.preWorldState(height)).right.get.get
+          val preBlockWorldState =
+            bcs.getPersistedBlock(BlockKey.curWorldState(height - 1)).right.get.get
+          require(preWorldState === preBlockWorldState, "preWorldState is not consistent")
 
-        val timestamp =BigInt(1, bcs.getPersistedBlock(BlockKey.blockTimestamp(height)).right.get.get.bytes)
-        val preTimestamp =BigInt(1, bcs.getPersistedBlock(BlockKey.blockTimestamp(height - 1)).right.get.get.bytes)
-        require(preTimestamp > timestamp, "timestamp is not sane")
+          val timestamp =
+            BigInt(1, bcs.getPersistedBlock(BlockKey.blockTimestamp(height)).right.get.get.bytes)
+          val preTimestamp =
+            BigInt(1,
+                   bcs.getPersistedBlock(BlockKey.blockTimestamp(height - 1)).right.get.get.bytes)
+          require(preTimestamp > timestamp, "timestamp is not sane")
 
           checkHeight(height - 1)
-        }
-        else ()
+        } else ()
       }
 
-      val currentHeight = BigInt(1, bcs.getPersistedMeta(MetaKey.Height).right.get.get)
+      val currentHeight = BigInt(1, bcs.getPersistedMeta(MetaKey.Height).right.get.get.bytes)
       if (currentHeight > 0) checkHeight(currentHeight)
       else ()
     }
@@ -149,6 +152,8 @@ class StoreHandler extends Store.Handler[Stack] with LogSupport {
 
     ???
   }
+
+  override def getCurrentWorldState(): Stack[WorldState] = ???
 
   override def persistBlock(block: Block): Stack[Unit] = Stack {
     // 1. meta height
