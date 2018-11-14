@@ -220,6 +220,9 @@ class StoreHandler extends Store.Handler[Stack] with LogSupport {
           bcs.putReceipt(ReceiptKey.receiptLogs(height, transactionId),
                          serializeReceiptLogs(r.logs))
         }
+
+        //todo: if the transaction is deploy, then persist the contract
+
       }
 
       bcs.commit(height)
@@ -252,10 +255,54 @@ class StoreHandler extends Store.Handler[Stack] with LogSupport {
 
   //private def persistTransaction(bcs: BCS, transaction: Transaction): Unit = ???
 
-  private def serializeTransaction(t: Transaction): TransactionData     = ???
-  private def deserializeTransaction(b: TransactionData): Transaction   = ???
-  private def serializeReceiptLogs(t: Vector[Receipt.Log]): ReceiptData = ???
-  private def deserializeReceiptLogs(b: ReceiptData): Vector[Receipt.Log]       = ???
+  // transaction protocol:
+  // first line used to express types
+  // following lines used to express every fields
+  private def serializeTransaction(t: Transaction): TransactionData = t match {
+    case x: Transaction.Transfer =>
+      TransactionData(
+        Vector(
+          "transfer",
+          x.id.asBytesValue.bcBase58,
+          x.payer.asBytesValue.bcBase58,
+          x.payee.asBytesValue.bcBase58,
+          x.token.asBytesValue.bcBase58,
+          x.signature.asBytesValue.bcBase58,
+          x.timestamp.asBytesValue.bcBase58
+        ).mkString("\n").getBytes("utf-8"))
+    case x: Transaction.Deploy =>
+      TransactionData(
+        Vector(
+          "deploy",
+          x.id.asBytesValue.bcBase58,
+          x.owner.asBytesValue.bcBase58,
+          x.contract.asBytesValue.bcBase58,
+          x.signature.asBytesValue.bcBase58,
+          x.timestamp.asBytesValue.bcBase58
+        ).mkString("\n").getBytes("utf-8"))
+    case x: Transaction.Run =>
+      TransactionData(
+        Vector(
+          "run",
+          x.id.asBytesValue.bcBase58,
+          x.caller.asBytesValue.bcBase58,
+          x.contractName.asBytesValue.bcBase58,
+          x.contractVersion.asBytesValue.bcBase58,
+          x.methodAlias.asBytesValue.bcBase58,
+          x.contractParameter.asBytesValue.bcBase58,
+          x.signature.asBytesValue.bcBase58,
+          x.timestamp.asBytesValue.bcBase58
+        ).mkString("\n").getBytes("utf-8"))
+  
+    case _ => TransactionData(Array.emptyByteArray)
+  }
+  private def deserializeTransaction(b: TransactionData): Transaction     = {
+    ???
+  }
+
+
+  private def serializeReceiptLogs(t: Vector[Receipt.Log]): ReceiptData   = ???
+  private def deserializeReceiptLogs(b: ReceiptData): Vector[Receipt.Log] = ???
 }
 
 object StoreHandler {
