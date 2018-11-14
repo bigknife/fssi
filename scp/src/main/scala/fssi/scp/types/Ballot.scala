@@ -3,11 +3,14 @@ package fssi.scp.types
 sealed trait Ballot extends Ordered[Ballot] {
   def counter: Int
   def value: Value
-  def isLess(other: Ballot): Boolean = counter <= other.counter
+
+  def isLess(other: Ballot): Boolean = compare(other) <= 0
+
   def isBottom: Boolean
 
   def compatible(b2: Ballot): Boolean   = value == b2.value
   def incompatible(b2: Ballot): Boolean = value != b2.value
+
 }
 
 object Ballot {
