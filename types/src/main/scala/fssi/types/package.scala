@@ -1,6 +1,6 @@
 package fssi
 
-import fssi.types.biz.Transaction
+import fssi.types.biz._
 
 package object types {
   type ConsensusMessage   = biz.Message.ConsensusMessage
@@ -12,13 +12,15 @@ package object types {
   type TransactionSet = scala.collection.immutable.TreeSet[biz.Transaction]
   object TransactionSet {
     def empty: TransactionSet = scala.collection.immutable.TreeSet.empty[biz.Transaction]
-    def apply(transaction: Transaction*): TransactionSet =
-      scala.collection.immutable.TreeSet(transaction: _*)
+    def apply(transactions: Transaction*): TransactionSet =
+      scala.collection.immutable.TreeSet(transactions: _*)
   }
 
   type ReceiptSet = scala.collection.immutable.TreeSet[biz.Receipt]
   object ReceiptSet {
     def empty: ReceiptSet =  scala.collection.immutable.TreeSet.empty[biz.Receipt]
+    def apply(receipts: Receipt*): ReceiptSet =
+      scala.collection.immutable.TreeSet(receipts: _*)
   }
 
   //object syntax extends BytesValue.Syntax
