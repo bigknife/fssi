@@ -9,27 +9,15 @@ import fssi.store.implicits._
 
 case class BlockValue(block: Block) extends Value {
 
-  override def rawBytes: Array[Byte] = {
-    // height + previousBlockHash + currentBlockHash +
-    // previousStateHash + currentStateHash + timestamp + transactions
-    val transactionBytes = transactions.foldLeft(Array.emptyByteArray) { (acc, n) =>
-      acc ++ n.asBytesValue.bytes
-    }
-
-    (height.asBytesValue.any ++ previousBlockHash.asBytesValue.any ++
-      currentBlockHash.asBytesValue.any ++ previousStateHash.asBytesValue.any ++
-      currentStateHash.asBytesValue.any ++ timestamp.value.asBytesValue.any).bytes ++
-      transactionBytes
-
-  }
+  override def rawBytes: Array[Byte] = block.asBytesValue.bytes
 
   override def compare(v: Value): Int =
     v match {
       case that: BlockValue =>
-        val heightOrder = Ordering[BigInt].compare(this.height, that.height)
+        val heightOrder = Ordering[BigInt].compare(this.block.height, that.block.height)
         if (heightOrder != 0) heightOrder
         else {
-          val tsOrder = Ordering[Long].compare(this.timestamp.value, that.timestamp.value)
+          val tsOrder = Ordering[Long].compare(this.block.timestamp.value, that.block.timestamp.value)
           if (tsOrder != 0) tsOrder
           else {
             val thisEncoding = rawBytes.asBytesValue.bcBase58

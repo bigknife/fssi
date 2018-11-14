@@ -8,7 +8,6 @@ import fssi.types.implicits._
 case class Receipt(
     transactionId: Transaction.ID,
     success: Boolean,
-    exception: Option[Vector[StackTraceElement]],
     logs: Vector[Receipt.Log],
     costs: Int
 ) extends Ordered[Receipt] {
@@ -36,9 +35,6 @@ object Receipt {
     implicit def receiptToBytesValue(receipt: Receipt): Array[Byte] =
       receipt.transactionId.asBytesValue.bytes ++
         receipt.success.asBytesValue.bytes ++
-        receipt.exception
-          .map(_.foldLeft(Array.emptyByteArray)((acc, n) => acc ++ n.asBytesValue.bytes))
-          .getOrElse(Array.emptyByteArray) ++
         receipt.logs.foldLeft(Array.emptyByteArray)((acc, n) => acc ++ n.asBytesValue.bytes) ++
         receipt.costs.asBytesValue.bytes
   }

@@ -111,8 +111,8 @@ class CryptoHandler extends Crypto.Handler[Stack] with LogSupport {
     Signature(signedBytes)
   }
 
-  private def calculateUnsignedBlockBytes(block: Block): Array[Byte] =
-    block.head.asBytesValue.bytes ++ block.transactions.toArray.asBytesValue.bytes ++ block.receipts.toArray.asBytesValue.bytes
+  private def calculateUnsignedBlockBytes(block: Block): Array[Byte] = ???
+    //block.head.asBytesValue.bytes ++ block.transactions.toArray.asBytesValue.bytes ++ block.receipts.toArray.asBytesValue.bytes
 
   private def calculateUnsignedTransactionBytes(transaction: Transaction): Array[Byte] = {
     transaction match {
