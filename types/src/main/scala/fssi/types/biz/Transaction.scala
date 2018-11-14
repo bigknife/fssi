@@ -26,7 +26,9 @@ sealed trait Transaction extends Ordered[Transaction] {
 }
 
 object Transaction {
-  case class ID(value: Array[Byte]) extends AnyVal
+  case class ID(value: Array[Byte]) extends AnyVal {
+    def ===(that: ID): Boolean = this.value sameElements that.value
+  }
   def emptyId: ID = ID(Array.emptyByteArray)
 
   /** Transfer is a  transaction to transfer payer's token to payee's token

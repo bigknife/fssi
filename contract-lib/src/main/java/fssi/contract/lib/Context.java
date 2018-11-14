@@ -10,11 +10,6 @@ public interface Context {
     KVStore kvStore();
 
     /**
-     * return a running-time specified sql store
-     */
-    SqlStore sqlStore();
-
-    /**
      * return a running-time specified token querier.
      */
     TokenQuery tokenQuery();

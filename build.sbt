@@ -20,7 +20,7 @@ lazy val pTypesJson = typesJson()
 
 lazy val pAst = ast()
   .dependsOn(pTypes)
-  //.dependsOn(pContractLib)
+  .dependsOn(pContractLib)
 
 lazy val pScp = scp()
   .dependsOn(pUtils)

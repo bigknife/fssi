@@ -18,17 +18,16 @@ import scala.util.Try
 import fssi.store.bcs._
 import fssi.store.bcs.types._
 import fssi.store.bcs.types.BCSKey._
-import fssi.types.base.WorldState
+import fssi.types.base._
+import fssi.types._
+import fssi.types.biz._
+import fssi.types.implicits._
 
 class StoreHandler extends Store.Handler[Stack] with LogSupport {
 
   val bcsVar: Var[BCS] = Var.empty
 
-  /** create store for a chain, include data store, chain configuration store, etc. logically:
-    * 1. chain.conf configuration store
-    * 2. store/kv/{chainId}_block.db the block chain store
-    * 3. store/kv/{chainId}_contract.db the contracts store
-    * 4. store/kv/{chainId}_token.db the account token store
+  /** create store for a chain, include data store, chain configuration store, etc.
     */
   override def createChainStore(root: File, chainId: String): Stack[Unit] = Stack {
     // create chainId file in the root.
@@ -42,34 +41,26 @@ class StoreHandler extends Store.Handler[Stack] with LogSupport {
 
   /** initialized an empty chain store, such as creating genesis block .
     */
-  override def initialize(root: File, chainId: String): Stack[Unit] = Stack {
+  override def initialize(root: File, chainId: String): Stack[Unit] = {
     if (bcsVar.isEmpty) {
       bcsVar := BCS(root.getAbsolutePath)
     }
-    bcsVar.foreach { bcs =>
-      val height: BigInt = 0
-      // meta
-      /*
-      bcs.putMeta(height, MetaKey.ChainID, MetaData(chainId.getBytes("utf-8")))
-      bcs.putMeta(height, MetaKey.Height, MetaData(height.toByteArray))
-      bcs.putMeta(height, MetaKey.Version, MetaData(Constant.Chain_Version.getBytes("utf-8")))
 
-      // block
-      bcs.putBlock(BlockKey.preBlockHash(height), BlockData(Constant.Zero_Value.toByteArray))
-      bcs.putBlock(BlockKey.curBlockHash(height), BlockData(Constant.Zero_Value.toByteArray))
-      bcs.putBlock(BlockKey.curTransactionHash(height), BlockData(Constant.Zero_Value.toByteArray))
-      bcs.putBlock(BlockKey.curReceiptHash(height), BlockData(Constant.Zero_Value.toByteArray))
-      bcs.putBlock(BlockKey.curStateHash(height), BlockData(Constant.Zero_Value.toByteArray))
+    // genesis block
+    val block: Block = Block(
+      height = 0,
+      chainId = chainId,
+      preWorldState = WorldState.empty,
+      curWorldState = WorldState.empty,
+      transactions = TransactionSet.empty,
+      receipts = ReceiptSet.empty,
+      timestamp = Timestamp(System.currentTimeMillis),
+      hash = Hash.empty
+    )
 
-      // transaction None
-      // receipt None
-      // state None
-       */
-      bcs.commit(height) match {
-        case Left(t)  => throw t
-        case Right(_) => ()
-      }
-    }
+    for {
+      _ <- persistBlock(block)
+    } yield ()
   }
 
   /** load from an exist store
@@ -103,7 +94,7 @@ class StoreHandler extends Store.Handler[Stack] with LogSupport {
 
           val metaChainId  = bcs.getPersistedMeta(MetaKey.ChainID).right.get.get
           val blockChainId = bcs.getPersistedBlock(BlockKey.blockChainId(height)).right.get.get
-          require(metaChainId === blockChainId, "chain id is not consistent")
+          require(metaChainId.bytes sameElements blockChainId.bytes, "chain id is not consistent")
 
           val preWorldState = bcs.getPersistedBlock(BlockKey.preWorldState(height)).right.get.get
           val preBlockWorldState =
@@ -158,11 +149,38 @@ class StoreHandler extends Store.Handler[Stack] with LogSupport {
   override def persistBlock(block: Block): Stack[Unit] = Stack {
     // 1. meta height
     // 2. block blala...
-    // 3. before block, transcation and receipt
+    // 3. transcation and receipt
     require(bcsVar.isDefined)
     bcsVar.foreach { bcs =>
-      bcs.putMeta(MetaKey.Height, MetaData(block.height.toByteArray))
+      val height = block.height
+      //block
+      bcs.putMeta(height, MetaKey.Height, MetaData(block.height.toByteArray))
+      bcs.putBlock(BlockKey.preWorldState(height), BlockData(block.preWorldState.value))
+      bcs.putBlock(BlockKey.curWorldState(height), BlockData(block.curWorldState.value))
+      bcs.putBlock(
+        BlockKey.transactionList(height),
+        BlockData(block.transactions.map(_.id.value.asBytesValue.bcBase58).mkString("\n").getBytes))
+      bcs.putBlock(BlockKey.blockTimestamp(height), BlockData(block.timestamp.asBytesValue.bytes))
+      bcs.putBlock(BlockKey.blockHash(height), BlockData(block.hash.asBytesValue.bytes))
 
+      //transaction
+      block.transactions.foreach { transaction =>
+        val transactionId = transaction.id.value.asBytesValue.bcBase58
+        bcs.putTransaction(TransactionKey.transaction(height, transactionId),
+                           serializeTransaction(transaction))
+        // receipt
+        val receipt = block.receipts.find(_.transactionId === transaction.id)
+        receipt.foreach { r =>
+          val result = if (r.success) BigInt(1).toByteArray else BigInt(0).toByteArray
+          val cost   = BigInt(r.costs).toByteArray
+          bcs.putReceipt(ReceiptKey.receiptResult(height, transactionId), ReceiptData(result))
+          bcs.putReceipt(ReceiptKey.receiptCost(height, transactionId), ReceiptData(cost))
+          bcs.putReceipt(ReceiptKey.receiptLogs(height, transactionId),
+                         serializeReceiptLogs(r.logs))
+        }
+      }
+
+      bcs.commit(height)
       ()
     }
   }
@@ -191,6 +209,11 @@ class StoreHandler extends Store.Handler[Stack] with LogSupport {
   }
 
   //private def persistTransaction(bcs: BCS, transaction: Transaction): Unit = ???
+
+  private def serializeTransaction(t: Transaction): TransactionData     = ???
+  private def deserializeTransaction(b: TransactionData): Transaction   = ???
+  private def serializeReceiptLogs(t: Vector[Receipt.Log]): ReceiptData = ???
+  private def deserializeReceipt(b: ReceiptData): Vector[Receipt]       = ???
 }
 
 object StoreHandler {

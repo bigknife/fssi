@@ -117,7 +117,6 @@ class CryptoHandler extends Crypto.Handler[Stack] with LogSupport with UnsignedB
       crypto.makeSignature(source, crypto.rebuildECPrivateKey(privateKey.value, crypto.SECP256K1))
     Signature(signedBytes)
   }
-
 }
 
 object CryptoHandler {

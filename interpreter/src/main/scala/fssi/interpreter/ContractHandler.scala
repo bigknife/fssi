@@ -4,6 +4,7 @@ import java.io.File
 import java.util.UUID
 
 import fssi.ast.Contract
+import fssi.contract.lib.Context
 import fssi.types.base.{Signature, UniqueName}
 import fssi.types.biz.Contract.{UserContract, Version}
 import fssi.types.biz.{Account, Receipt, Token, Transaction}
@@ -27,15 +28,6 @@ class ContractHandler extends Contract.Handler[Stack] {
   override def initializeRuntime(): Stack[Unit] = Stack {}
 
   override def closeRuntime(): Stack[Unit] = Stack {}
-
-  override def runTransaction(transaction: Transaction): Stack[Receipt] = Stack {
-    transaction match {
-      // TODO: handle run transaction
-      case transfer: Transaction.Transfer => ???
-      case deploy: Transaction.Deploy     => ???
-      case run: Transaction.Run           => ???
-    }
-  }
 
   override def createContractProject(projectRoot: File): Stack[Either[FSSIException, Unit]] =
     Stack {
@@ -61,6 +53,16 @@ class ContractHandler extends Contract.Handler[Stack] {
     Stack {
       sandbox.checkContractDeterminism(pubKey, contractFile)
     }
+
+  override def invokeContract(publicKey: Account.PubKey,
+                              context: Context,
+                              contract: UserContract,
+                              method: UserContract.Method,
+                              params: UserContract.Parameter): Stack[Receipt] = Stack {
+    val result = sandbox.executeContract(publicKey, context, contract, method, params)
+    // TODO: replenish properties
+    Receipt(Transaction.emptyId, result.isRight, Vector.empty, 0)
+  }
 
   override def loadContractFromFile(
       pubKey: Account.PubKey,

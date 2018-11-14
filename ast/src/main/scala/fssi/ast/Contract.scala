@@ -5,6 +5,7 @@ import java.io.File
 import bigknife.sop._
 import bigknife.sop.macros._
 import bigknife.sop.implicits._
+import fssi.contract.lib.Context
 import fssi.types.base.UniqueName
 import fssi.types.biz._
 import fssi.types.exception.FSSIException
@@ -17,7 +18,6 @@ import fssi.types.biz.Contract._
   def assertRuntime(): P[F, Unit]
   def initializeRuntime(): P[F, Unit]
   def closeRuntime(): P[F, Unit]
-  def runTransaction(transaction: Transaction): P[F, Receipt]
 
   def createContractProject(projectRoot: File): P[F, Either[FSSIException, Unit]]
   def compileContractProject(accountId: Account.ID,
@@ -28,6 +28,11 @@ import fssi.types.biz.Contract._
                              output: File): P[F, Either[FSSIException, Unit]]
   def checkContractDeterminism(pubKey: Account.PubKey,
                                contractFile: File): P[F, Either[FSSIException, Unit]]
+  def invokeContract(publicKey: Account.PubKey,
+                     context: Context,
+                     contract: UserContract,
+                     method: UserContract.Method,
+                     params: UserContract.Parameter): P[F, Receipt]
   def loadContractFromFile(pubKey: Account.PubKey,
                            contractFile: File): P[F, Either[FSSIException, UserContract]]
   def generateTransactionID(): P[F, Transaction.ID]

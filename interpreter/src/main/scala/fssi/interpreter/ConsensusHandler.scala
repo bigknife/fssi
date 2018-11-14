@@ -20,8 +20,7 @@ class ConsensusHandler
   override def initialize(node: ConsensusNode): Stack[Unit] = Stack { setting =>
     setting match {
       case coreNodeSetting: CoreNodeSetting =>
-        val consensusConfig                                   = coreNodeSetting.config.consensusConfig
-        implicit val scpSetting: fssi.scp.interpreter.Setting = resolveSCPSetting(consensusConfig)
+        implicit val scpSetting: fssi.scp.interpreter.Setting = resolveSCPSetting(coreNodeSetting)
         Portal.initialize
       case _ =>
     }
@@ -34,8 +33,7 @@ class ConsensusHandler
                         lastDeterminedBlock: Block,
                         currentWorldState: WorldState): Stack[Unit] = Stack {
     case coreNodeSetting: CoreNodeSetting =>
-      val consensusSetting                                  = coreNodeSetting.config.consensusConfig
-      implicit val scpSetting: fssi.scp.interpreter.Setting = resolveSCPSetting(consensusSetting)
+      implicit val scpSetting: fssi.scp.interpreter.Setting = resolveSCPSetting(coreNodeSetting)
       val nodeId                                            = scpSetting.nodeId
       val chainId                                           = coreNodeSetting.config.chainId
       val height                                            = lastDeterminedBlock.height + 1
@@ -65,9 +63,8 @@ class ConsensusHandler
       message match {
         case SCPEnvelope(envelope) =>
           log.debug(s"handling scp envelope: $envelope")
-          val consensusSetting = coreNodeSetting.config.consensusConfig
           implicit val scpSetting: fssi.scp.interpreter.Setting =
-            resolveSCPSetting(consensusSetting)
+            resolveSCPSetting(coreNodeSetting)
           val nodeId        = envelope.statement.from
           val slotIndex     = envelope.statement.slotIndex
           val previousValue = BlockValue(lastDeterminedBlock)

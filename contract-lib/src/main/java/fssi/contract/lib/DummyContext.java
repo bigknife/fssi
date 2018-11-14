@@ -7,11 +7,6 @@ public class DummyContext implements Context {
     }
 
     @Override
-    public SqlStore sqlStore() {
-        throw new UnsupportedOperationException("No Contract Context Provider Found");
-    }
-
-    @Override
     public TokenQuery tokenQuery() {
         throw new UnsupportedOperationException("No Contract Context Provider Found");
     }
