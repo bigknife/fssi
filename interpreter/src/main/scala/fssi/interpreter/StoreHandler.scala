@@ -20,11 +20,8 @@ import fssi.store.bcs.types._
 import fssi.store.bcs.types.BCSKey._
 import fssi.types.base._
 import fssi.types._
-<<<<<<< Updated upstream
 import fssi.types.biz.Contract.Version
-=======
 import fssi.types.biz.Contract.UserContract
->>>>>>> Stashed changes
 import fssi.types.biz._
 import fssi.types.implicits._
 
@@ -348,14 +345,10 @@ class StoreHandler extends Store.Handler[Stack] with LogSupport {
     }
   }
 
-<<<<<<< Updated upstream
   private def serializeReceiptLogs(t: Vector[Receipt.Log]): ReceiptData =
     ReceiptData(Receipt.logsToDeterminedBytes(t))
   private def deserializeReceiptLogs(b: ReceiptData): Vector[Receipt.Log] =
     Receipt.logsFromDeterminedBytes(b.bytes)
-=======
-  private def serializeReceiptLogs(t: Vector[Receipt.Log]): ReceiptData   = ???
-  private def deserializeReceiptLogs(b: ReceiptData): Vector[Receipt.Log] = ???
 
   override def transactToken(payee: Account.ID,
                              payer: Account.ID,
