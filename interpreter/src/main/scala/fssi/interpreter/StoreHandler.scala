@@ -117,10 +117,10 @@ class StoreHandler extends Store.Handler[Stack] with LogSupport {
     new ChainConfiguration {}
   }
 
-  override def getLatestDeterminedBlock(): Stack[Block] = {
+  override def getLatestDeterminedBlock(): Stack[Block] = Stack {
     // get persisted and de-serialized to a block
     require(bcsVar.isDefined)
-    bcsVar.map { bcs =>
+    (bcsVar.map { bcs =>
       // get current height
       val height  = BigInt(bcs.getPersistedMeta(MetaKey.Height).right.get.get.bytes)
       val chainId = new String(bcs.getPersistedMeta(MetaKey.ChainID).right.get.get.bytes, "utf-8")
@@ -180,10 +180,7 @@ class StoreHandler extends Store.Handler[Stack] with LogSupport {
           hash = hash
         )
       }
-
-    }
-
-    ???
+    }).unsafe
   }
 
   override def persistBlock(block: Block): Stack[Unit] = Stack {
@@ -254,9 +251,7 @@ class StoreHandler extends Store.Handler[Stack] with LogSupport {
       new FSSIException(s"load secret key from file $secretKeyFile failed", Option(e)))
   }
 
-  //private def persistTransaction(bcs: BCS, transaction: Transaction): Unit = ???
-
-  // transaction protocol:
+// transaction protocol:
   // first line used to express types
   // following lines used to express every fields
   private def serializeTransaction(t: Transaction): TransactionData = t match {
@@ -333,8 +328,8 @@ class StoreHandler extends Store.Handler[Stack] with LogSupport {
   }
 
 
-  private def serializeReceiptLogs(t: Vector[Receipt.Log]): ReceiptData   = ???
-  private def deserializeReceiptLogs(b: ReceiptData): Vector[Receipt.Log] = ???
+  private def serializeReceiptLogs(t: Vector[Receipt.Log]): ReceiptData   = ReceiptData(Receipt.logsToDeterminedBytes(t))
+  private def deserializeReceiptLogs(b: ReceiptData): Vector[Receipt.Log] = Receipt.logsFromDeterminedBytes(b.bytes)
 }
 
 object StoreHandler {

@@ -1,6 +1,7 @@
 package fssi.types
 package biz
 
+import fssi.base.BytesValue
 import fssi.types.implicits._
 
 /** a piece of receipt is running result and log of a transaction
@@ -20,6 +21,29 @@ case class Receipt(
 
 object Receipt {
   case class Log(label: String, line: String)
+
+  def logToDeterminedBytes(log: Log): Array[Byte] = {
+    Vector(log.label, log.line).mkString("\n").asBytesValue.bcBase58.getBytes
+  }
+
+  def logFromDeterminedBytes(bytes: Array[Byte]): Log = {
+    new String(BytesValue.unsafeDecodeBcBase58(new String(bytes)).bytes).split("\n") match {
+      case Array(label, line) => Log(label, line)
+      case _ => throw new RuntimeException("insane receipt log")
+    }
+  }
+
+  def logsToDeterminedBytes(log: Vector[Log]): Array[Byte] = {
+    log.map(logToDeterminedBytes).map{x =>
+      x.asBytesValue.bcBase58
+    }.mkString("\n").getBytes("utf-8")
+  }
+
+  def logsFromDeterminedBytes(bytes: Array[Byte]): Vector[Log] = {
+    new String(bytes).split("\n").toVector
+      .map(x => BytesValue.unsafeDecodeBcBase58(x).bytes)
+      .map(logFromDeterminedBytes)
+  }
 
   trait Implicits {
 
