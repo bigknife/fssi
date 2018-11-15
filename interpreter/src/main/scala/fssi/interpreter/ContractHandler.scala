@@ -1,6 +1,7 @@
 package fssi
 package interpreter
 import java.io.File
+import java.nio.charset.Charset
 import java.util.UUID
 
 import fssi.ast.Contract
@@ -120,6 +121,10 @@ class ContractHandler extends Contract.Handler[Stack] {
                     contractParameter,
                     Signature.empty,
                     System.currentTimeMillis())
+  }
+
+  override def getContractIdentifyName(contract: UserContract): Stack[String] = Stack {
+    s"${new String(contract.name.value, Charset.forName("utf-8"))}#${contract.version}"
   }
 }
 

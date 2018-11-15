@@ -20,7 +20,11 @@ import fssi.store.bcs.types._
 import fssi.store.bcs.types.BCSKey._
 import fssi.types.base._
 import fssi.types._
+<<<<<<< Updated upstream
 import fssi.types.biz.Contract.Version
+=======
+import fssi.types.biz.Contract.UserContract
+>>>>>>> Stashed changes
 import fssi.types.biz._
 import fssi.types.implicits._
 
@@ -344,10 +348,46 @@ class StoreHandler extends Store.Handler[Stack] with LogSupport {
     }
   }
 
+<<<<<<< Updated upstream
   private def serializeReceiptLogs(t: Vector[Receipt.Log]): ReceiptData =
     ReceiptData(Receipt.logsToDeterminedBytes(t))
   private def deserializeReceiptLogs(b: ReceiptData): Vector[Receipt.Log] =
     Receipt.logsFromDeterminedBytes(b.bytes)
+=======
+  private def serializeReceiptLogs(t: Vector[Receipt.Log]): ReceiptData   = ???
+  private def deserializeReceiptLogs(b: ReceiptData): Vector[Receipt.Log] = ???
+
+  override def transactToken(payee: Account.ID,
+                             payer: Account.ID,
+                             token: Token): Stack[Either[FSSIException, Unit]] = Stack {
+    require(bcsVar.isDefined)
+    bcsVar
+      .map { bcs =>
+        bcs.snapshotTransact { proxy =>
+          val payerId           = payer.asBytesValue.bcBase58
+          val payeeId           = payee.asBytesValue.bcBase58
+          val payerCurrentToken = proxy.getBalance(payerId)
+          if (payerCurrentToken - token.amount < 0)
+            throw new FSSIException(
+              s"payer $payeeId current token $payerCurrentToken is not enough to transact $token")
+          else {
+            val payeeCurrentToken = proxy.getBalance(payeeId)
+            proxy.putBalance(payeeId, payeeCurrentToken + token.amount)
+            proxy.putBalance(payerId, payerCurrentToken - token.amount)
+          }
+        }
+      }
+      .unsafe()
+      .left
+      .map(x => new FSSIException(x.getMessage, Some(x)))
+  }
+
+  override def persistContract(name: String, contract: UserContract): Stack[Unit] = Stack {
+    require(bcsVar.isDefined)
+    bcsVar.foreach { bcs =>
+      val height = BigInt(bcs.getPersistedMeta(MetaKey.Height).right.get.get.bytes)
+    }
+  }
 }
 
 object StoreHandler {

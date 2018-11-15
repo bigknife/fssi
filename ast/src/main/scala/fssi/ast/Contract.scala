@@ -52,4 +52,6 @@ import fssi.types.biz.Contract._
                            contractVersion: Version,
                            methodAlias: String,
                            contractParameter: Option[UserContract.Parameter]): P[F, Transaction.Run]
+
+  def getContractIdentifyName(contract: UserContract): P[F, String]
 }
