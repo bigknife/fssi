@@ -55,7 +55,7 @@ trait AttemptAcceptPrepareProgram[F[_]] extends SCP[F] with EmitProgram[F] {
     // AST:
     ifM(ignoreByCurrentPhase, false.pureSP[F]) {
       for {
-        localNode       <- localNode
+        localNode       <- localNode()
         candidates      <- prepareCandidatesWithHint(slotIndex, hint)
         _               <- info(s"[$slotIndex][AttemptAcceptPrepare] found prepare candidates: $candidates")
         phase           <- currentBallotPhase(slotIndex)

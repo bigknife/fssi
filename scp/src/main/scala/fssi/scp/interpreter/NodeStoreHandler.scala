@@ -256,15 +256,16 @@ class NodeStoreHandler extends NodeStore.Handler[Stack] {
     val highBallotOpt = ballotStatus.highBallot.unsafe()
 
     def higherAndInCompatible(p: Option[Ballot], h: Ballot): Boolean = (p, h) match {
-      case (Some(prepare), h)  => h.isLess(prepare) && !h.compatible(prepare)
-      case _ => false
+      case (Some(prepare), h) => h.isLess(prepare) && !h.compatible(prepare)
+      case _                  => false
     }
 
     val updated = if (commitOpt.nonEmpty && highBallotOpt.nonEmpty) {
 
       val preparedValid = higherAndInCompatible(ballotStatus.prepared.unsafe(), highBallotOpt.get)
 
-      val preparedPrimValid = higherAndInCompatible(ballotStatus.preparedPrime.unsafe(), highBallotOpt.get)
+      val preparedPrimValid =
+        higherAndInCompatible(ballotStatus.preparedPrime.unsafe(), highBallotOpt.get)
 
       if ((preparedValid || preparedPrimValid) && ballotStatus.phase
             .unsafe() == Ballot.Phase.Prepare) {
@@ -302,7 +303,8 @@ class NodeStoreHandler extends NodeStore.Handler[Stack] {
         highUpdated || commitUpdated
       } else false
 
-    didWork || newH.nonEmpty && updateCurrentIfNeed(slotIndex, newH.get)
+    val currentUpdated = newH.nonEmpty && updateCurrentIfNeed(slotIndex, newH.get)
+    didWork || currentUpdated
   }
 
   /** check received ballot envelope, find nodes which are ahead of local node
@@ -757,12 +759,12 @@ class NodeStoreHandler extends NodeStore.Handler[Stack] {
 
   override def shouldProcess[M <: Message](slotIndex: SlotIndex,
                                            envelope: Envelope[M]): Stack[Boolean] =
-    Stack {
-      setting =>
+    Stack { setting =>
       envelope.statement.message match {
         case _: BallotMessage =>
           val ballotStatus: BallotStatus = slotIndex
-          val lastEnv: Var[Option[Envelope[BallotMessage]]] = ballotStatus.latestEnvelopes.map(_.get(setting.localNode))
+          val lastEnv: Var[Option[Envelope[BallotMessage]]] =
+            ballotStatus.latestEnvelopes.map(_.get(setting.localNode))
           lastEnv.isEmpty || !lastEnv.unsafe().contains(envelope)
         case _ => false
       }
@@ -821,12 +823,12 @@ class NodeStoreHandler extends NodeStore.Handler[Stack] {
   }
 
   private def checkInvariants(slotIndex: SlotIndex): Boolean = {
-    val ballotStatus: BallotStatus  = slotIndex
-    val currentBallot               = ballotStatus.currentBallot.unsafe()
-    val prepared                    = ballotStatus.prepared.unsafe()
-    val preparedPrim                = ballotStatus.preparedPrime.unsafe()
-    val commit                      = ballotStatus.commit.unsafe()
-    val highBallot                  = ballotStatus.highBallot.unsafe()
+    val ballotStatus: BallotStatus = slotIndex
+    val currentBallot              = ballotStatus.currentBallot.unsafe()
+    val prepared                   = ballotStatus.prepared.unsafe()
+    val preparedPrim               = ballotStatus.preparedPrime.unsafe()
+    val commit                     = ballotStatus.commit.unsafe()
+    val highBallot                 = ballotStatus.highBallot.unsafe()
 
     def currentBallotValid: Boolean = currentBallot.isBottom || currentBallot.counter != 0
 

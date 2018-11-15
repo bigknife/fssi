@@ -47,7 +47,6 @@ trait AttemptConfirmPrepareProgram[F[_]] extends SCP[F] with EmitProgram[F] {
 
     }
 
-
     // filter the illegal here ballots
     def commitAsLowestBallots(candidates: BallotSet, newH: Ballot): SP[F, BallotSet] =
       // (ballotSet, stopFlat)
@@ -87,23 +86,23 @@ trait AttemptConfirmPrepareProgram[F[_]] extends SCP[F] with EmitProgram[F] {
     ifM(ignoreByCurrentPhase, false.pureSP[F]) {
       for {
         candidates <- prepareCandidatesWithHint(slotIndex, hint)
-        _ <- info(
-          s"[$slotIndex][AttemptConfirmPrepare] found prepare candidates: $candidates")
-        newH <- newHighestBallot(candidates)
-        _    <- info(s"[$slotIndex][AttemptConfirmPrepare] found newH: $newH")
+        _          <- info(s"[$slotIndex][AttemptConfirmPrepare] found prepare candidates: $candidates")
+        newH       <- newHighestBallot(candidates)
+        _          <- info(s"[$slotIndex][AttemptConfirmPrepare] found newH: $newH")
         newC <- ifM(newH.isEmpty, Option.empty[Ballot]) {
           ifM(notNecessarySetLowestCommitBallotUnderHigh(slotIndex, newH.get),
               Option.empty[Ballot].pureSP[F]) {
             for {
               legalLowCommits <- commitAsLowestBallots(candidates, newH.get)
-              c <- findLowestNewC(legalLowCommits)
+              c               <- findLowestNewC(legalLowCommits)
             } yield c
           }
         }
-        _       <- info(s"[$slotIndex][AttemptConfirmPrepare] found newC: $newC")
-        updated <- updateBallotStateWhenConfirmPrepare(slotIndex, newH, newC)
-        _ <- info(
-          s"[$slotIndex][AttemptConfirmPrepare] updated when confirm parepare: $updated")
+        _ <- info(s"[$slotIndex][AttemptConfirmPrepare] found newC: $newC")
+        updated <- ifM(newH.isEmpty, false) {
+          updateBallotStateWhenConfirmPrepare(slotIndex, newH, newC)
+        }
+        _ <- info(s"[$slotIndex][AttemptConfirmPrepare] updated when confirm prepare: $updated")
         _ <- ifThen(updated) {
           for {
             msg <- createBallotMessage(slotIndex)
