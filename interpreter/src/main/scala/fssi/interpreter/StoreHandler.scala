@@ -42,7 +42,7 @@ class StoreHandler extends Store.Handler[Stack] with LogSupport {
 
   /** initialized an empty chain store, such as creating genesis block .
     */
-  override def initialize(root: File, chainId: String): Stack[Unit] = Stack {
+  override def initialize(root: File, chainId: String): Stack[Unit] =  {
     if (bcsVar.isEmpty) {
       bcsVar := BCS(root.getAbsolutePath)
     }
