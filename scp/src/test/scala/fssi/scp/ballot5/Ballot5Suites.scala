@@ -13,5 +13,5 @@ class Ballot5Suites
       new StartFromPristineSuites(),
       new NormalRound1XSuites(),
       new RangeCheckSuite(),
-      new TimeoutSuite()
+      new NetworkSuite()
     ) {}

@@ -140,7 +140,7 @@ class ApplicationServiceHandler extends ApplicationService.Handler[Stack] with L
     val ballotStatus = BallotStatus.getInstance(slotIndex)
 
     if (ballotStatus.currentMessageLevel
-          .unsafe() == 0 && ballotStatus.latestGeneratedEnvelope.isDefined) {
+          .unsafe() == 0 && ballotStatus.latestGeneratedEnvelope.isDefined && setting.applicationCallback.isValidator) {
       if (!ballotStatus.latestEmitEnvelope
             .exists(_.contains(ballotStatus.latestGeneratedEnvelope))) {
         ballotStatus.latestEmitEnvelope := Some(ballotStatus.latestGeneratedEnvelope.unsafe())

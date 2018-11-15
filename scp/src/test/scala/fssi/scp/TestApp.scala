@@ -17,7 +17,8 @@ class TestApp(nodeID: NodeID,
               nodeKey: PrivateKey,
               slotIndex: SlotIndex,
               quorumSet: QuorumSet,
-              previousValue: Value)
+              previousValue: Value,
+              standby: Boolean = false)
     extends interpreter.ApplicationCallback {
 
   // all statements sent to network
@@ -122,6 +123,8 @@ class TestApp(nodeID: NodeID,
   override def ballotDidHearFromQuorum(slot: SlotIndex, ballot: Ballot): Unit = {
     if (slot == slotIndex) heardFromQuorums = heardFromQuorums :+ ballot
   }
+
+  override def isValidator: Boolean = !standby
 
   def bumpTimerOffset(): Unit = {
     currentTime = currentTime + 5 * 3600

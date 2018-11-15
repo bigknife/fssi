@@ -1,9 +1,14 @@
 package fssi.scp.ballot5
+import fssi.scp.{TestApp, TestValue}
 import fssi.scp.ballot5.steps.StepSpec
-import fssi.scp.types.Ballot
+import fssi.scp.interpreter.QuorumSetSupport
+import fssi.scp.types.{Ballot, Envelope, Message}
+import fssi.scp.types.Message.{Confirm, Externalize, Prepare}
 import org.scalatest.Matchers._
 
-class TimeoutSuite extends StepSpec {
+import scala.collection.immutable.TreeSet
+
+class NetworkSuite extends StepSpec {
   override def suiteName: String = "network edge cases"
 
   override def beforeEach(): Unit = {
@@ -138,5 +143,47 @@ class TimeoutSuite extends StepSpec {
     // quorum -> set nH=2
     app.numberOfEnvelopes shouldBe 6
     app.shouldHavePrepared(x3, Some(x2), cn = 0, hn = 2)
+  }
+
+  test("non validator watching the network")
+  {
+    val NV = createNodeID()
+    QuorumSetSupport.slicesCache := QuorumSetSupport.slicesCache.unsafe() + (NV._1 -> slice)
+
+    val scpNV: TestApp = new TestApp(NV._1, NV._2, slot0, quorumSet, TestValue(TreeSet.empty), standby = true)
+
+    val b: Ballot = Ballot(1, xValue)
+    scpNV.bumpState( xValue) shouldBe true
+    scpNV.numberOfEnvelopes shouldBe 0
+    scpNV.currentBallotStatus.latestEnvelopes
+      .unsafe()
+      .get(NV._1)
+      .map(_.statement.message)
+      .contains(Prepare(b)) shouldBe true
+
+    val ext1: Envelope[Externalize] = scpNV.makeExternalize(node1, keyOfNode1,  b, hn = 1)
+    val ext2: Envelope[Externalize] = scpNV.makeExternalize(node2, keyOfNode2,  b, hn = 1)
+    val ext3: Envelope[Externalize] = scpNV.makeExternalize(node3, keyOfNode3,  b, hn = 1)
+    val ext4: Envelope[Externalize] = scpNV.makeExternalize(node4, keyOfNode4,  b, hn = 1)
+
+    scpNV.onEnvelope(ext1)
+    scpNV.onEnvelope(ext2)
+    scpNV.onEnvelope(ext3)
+
+    scpNV.numberOfEnvelopes shouldBe 0
+    scpNV.currentBallotStatus.latestEnvelopes
+      .unsafe()
+      .get(NV._1)
+      .map(_.statement.message)
+      .contains(Confirm(Ballot(Int.MaxValue, xValue), Int.MaxValue, 1, Int.MaxValue)) shouldBe true
+
+    scpNV.onEnvelope(ext4)
+    scpNV.numberOfEnvelopes shouldBe 0
+    scpNV.currentBallotStatus.latestEnvelopes
+      .unsafe()
+      .get(NV._1)
+      .map(_.statement.message)
+      .contains(Externalize(xValue, 1, Int.MaxValue)) shouldBe true
+    scpNV.lastExternalizedValue shouldBe Some(xValue)
   }
 }

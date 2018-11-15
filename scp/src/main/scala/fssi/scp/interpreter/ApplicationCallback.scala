@@ -16,6 +16,8 @@ trait ApplicationCallback {
   def broadcastEnvelope[M <: Message](slotIndex: SlotIndex, envelope: Envelope[M]): Unit
   def ballotDidHearFromQuorum(slotIndex: SlotIndex, ballot: Ballot): Unit
 
+  def isValidator: Boolean = true
+
   def isHashFuncProvided: Boolean = false
   def hashNodeForPriority(nodeId: NodeID, slotIndex: SlotIndex, previousValue: Value, round: Int): Long = 0
   def hashNodeForNeighbour(nodeId: NodeID, slotIndex: SlotIndex, previousValue: Value, round: Int): Long = 0
