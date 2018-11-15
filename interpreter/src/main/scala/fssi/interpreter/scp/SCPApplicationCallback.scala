@@ -50,15 +50,17 @@ class SCPApplicationCallback(coreNodeSetting: CoreNodeSetting)
                              value: ValueSet): Option[Value] = {
     if (value.isEmpty) None
     else {
-      val newValue: Value = value.reduceLeft {
-        case (BlockValue(acc), BlockValue(n)) =>
-          if (acc.chainId == n.chainId && acc.height == n.height) {
-            BlockValue(acc.copy(transactions = acc.transactions ++ n.transactions))
-          } else
-            throw new RuntimeException(
-              s"scp value set were not inconsistent, found chainId(${acc.chainId},${n.chainId}) , height(${acc.height},${n.height})")
-        case (acc, n) =>
-          throw new RuntimeException(s"scp value set were inconsistent, found ($acc,$n)")
+      val newValue: Value = value.reduceLeft { (ac, value) =>
+        (ac, value) match {
+          case (BlockValue(acc), BlockValue(n)) =>
+            if (acc.chainId == n.chainId && acc.height == n.height) {
+              BlockValue(acc.copy(transactions = acc.transactions ++ n.transactions))
+            } else
+              throw new RuntimeException(
+                s"scp value set were not inconsistent, found chainId(${acc.chainId},${n.chainId}) , height(${acc.height},${n.height})")
+          case (acc, n) =>
+            throw new RuntimeException(s"scp value set were inconsistent, found ($acc,$n)")
+        }
       }
       val blockValue = newValue.asInstanceOf[BlockValue]
       val newBlock = blockValue.block.copy(

@@ -2,16 +2,19 @@ package fssi
 package interpreter
 
 import java.io.File
+import java.lang
 
 import fssi.ast.Store
-import fssi.types.biz.{Account, Block, ChainConfiguration, Constant}
+import fssi.types.biz.{Account, Block, ChainConfiguration}
 import fssi.types.exception.FSSIException
 import io.circe._
 import io.circe.parser._
 import fssi.types.json.implicits._
+import io.circe.syntax._
 import io.circe.generic.auto._
 import better.files._
 import fssi.base.BytesValue
+import fssi.contract.lib.{Context, KVStore, TokenQuery}
 import fssi.scp.interpreter.store.Var
 
 import scala.util.Try
@@ -22,6 +25,7 @@ import fssi.types.base._
 import fssi.types._
 import fssi.types.biz.Contract.Version
 import fssi.types.biz.Contract.UserContract
+import fssi.types.biz.Transaction.{Deploy, Run, Transfer}
 import fssi.types.biz._
 import fssi.types.implicits._
 
@@ -120,39 +124,40 @@ class StoreHandler extends Store.Handler[Stack] with LogSupport {
   override def getLatestDeterminedBlock(): Stack[Block] = Stack {
     // get persisted and de-serialized to a block
     require(bcsVar.isDefined)
-    (bcsVar.map { bcs =>
-      // get current height
-      val height  = BigInt(bcs.getPersistedMeta(MetaKey.Height).right.get.get.bytes)
-      val chainId = new String(bcs.getPersistedMeta(MetaKey.ChainID).right.get.get.bytes, "utf-8")
-      if (height < 0) throw new RuntimeException(s"insane block chain store. height is $height")
-      else if (height == 0) Block.genesis(chainId)
-      else {
-        // genesis block
-        val preWorldState =
-          WorldState(bcs.getPersistedBlock(BlockKey.preWorldState(height)).right.get.get.bytes)
-        val curWorldState =
-          WorldState(bcs.getPersistedBlock(BlockKey.curWorldState(height)).right.get.get.bytes)
-        val timestamp =
-          Timestamp(BigInt(
-            1,
-            bcs.getPersistedBlock(BlockKey.blockTimestamp(height)).right.get.get.bytes).toLong)
-        val hash =
-          Hash(bcs.getPersistedBlock(BlockKey.blockHash(height)).right.get.get.bytes)
+    bcsVar
+      .map { bcs =>
+        // get current height
+        val height  = BigInt(bcs.getPersistedMeta(MetaKey.Height).right.get.get.bytes)
+        val chainId = new String(bcs.getPersistedMeta(MetaKey.ChainID).right.get.get.bytes, "utf-8")
+        if (height < 0) throw new RuntimeException(s"insane block chain store. height is $height")
+        else if (height == 0) Block.genesis(chainId)
+        else {
+          // genesis block
+          val preWorldState =
+            WorldState(bcs.getPersistedBlock(BlockKey.preWorldState(height)).right.get.get.bytes)
+          val curWorldState =
+            WorldState(bcs.getPersistedBlock(BlockKey.curWorldState(height)).right.get.get.bytes)
+          val timestamp =
+            Timestamp(BigInt(
+              1,
+              bcs.getPersistedBlock(BlockKey.blockTimestamp(height)).right.get.get.bytes).toLong)
+          val hash =
+            Hash(bcs.getPersistedBlock(BlockKey.blockHash(height)).right.get.get.bytes)
 
-        val transactionIds: Array[String] = { // bcBase58
-          val s =
-            new String(bcs.getPersistedBlock(BlockKey.transactionList(height)).right.get.get.bytes)
-          s.split("\n").filter(_.length > 0)
-        }
+          val transactionIds: Array[String] = { // bcBase58
+            val s =
+              new String(
+                bcs.getPersistedBlock(BlockKey.transactionList(height)).right.get.get.bytes)
+            s.split("\n").filter(_.length > 0)
+          }
 
-        val transactions: TransactionSet = TransactionSet(transactionIds.map { tid =>
-          // tid is base58 of transaction id
-          deserializeTransaction(
-            bcs.getPersistedTransaction(TransactionKey.transaction(height, tid)).right.get.get)
-        }: _*)
+          val transactions: TransactionSet = TransactionSet(transactionIds.map { tid =>
+            // tid is base58 of transaction id
+            deserializeTransaction(
+              bcs.getPersistedTransaction(TransactionKey.transaction(height, tid)).right.get.get)
+          }: _*)
 
-        val receipts: ReceiptSet = ReceiptSet(transactionIds.map {
-          tid =>
+          val receipts: ReceiptSet = ReceiptSet(transactionIds.map { tid =>
             // tid is base58 of transaction id
             val result = 1 == BigInt(
               1,
@@ -172,23 +177,39 @@ class StoreHandler extends Store.Handler[Stack] with LogSupport {
               logs = logs,
               costs = costs
             )
-        }: _*)
+          }: _*)
 
-        Block(
-          height = height,
-          chainId = chainId,
-          preWorldState = preWorldState,
-          curWorldState = curWorldState,
-          transactions = transactions,
-          receipts = receipts,
-          timestamp = timestamp,
-          hash = hash
-        )
+          Block(
+            height = height,
+            chainId = chainId,
+            preWorldState = preWorldState,
+            curWorldState = curWorldState,
+            transactions = transactions,
+            receipts = receipts,
+            timestamp = timestamp,
+            hash = hash
+          )
+        }
       }
-    }).unsafe
+      .unsafe()
   }
 
-  override def getCurrentWorldState(): Stack[WorldState] = ???
+  override def getCurrentWorldState(): Stack[WorldState] = Stack {
+    require(bcsVar.isDefined)
+    bcsVar
+      .map { bcs =>
+        val height = BigInt(bcs.getPersistedMeta(MetaKey.Height).right.get.get.bytes)
+        bcs.getPersistedBlock(BlockKey.curWorldState(height)) match {
+          case Right(data) =>
+            data match {
+              case Some(value) => WorldState(value.bytes)
+              case None =>
+                throw new FSSIException(s"not found current state in block height $height")
+            }
+        }
+      }
+      .unsafe()
+  }
 
   override def persistBlock(block: Block): Stack[Unit] = Stack {
     // 1. meta height
@@ -225,9 +246,6 @@ class StoreHandler extends Store.Handler[Stack] with LogSupport {
           bcs.putReceipt(ReceiptKey.receiptLogs(height, transactionId),
                          serializeReceiptLogs(r.logs))
         }
-
-      //todo: if the transaction is deploy, then persist the contract
-
       }
 
       bcs.commit(height)
@@ -302,19 +320,21 @@ class StoreHandler extends Store.Handler[Stack] with LogSupport {
 
   private def deserializeTransaction(b: TransactionData): Transaction = {
     new String(b.bytes).split("\n") match {
-      case Array("transfer", id, payer, payee, token, signature, timestamp) =>
+      case Array("transfer", id, payer, publicKey, payee, token, signature, timestamp) =>
         Transaction.Transfer(
           id = Transaction.ID(BytesValue.decodeBcBase58(id).get.bytes),
           payer = Account.ID(BytesValue.decodeBcBase58(payer).get.bytes),
+          publicKeyForVerifying = Account.PubKey(BytesValue.decodeBcBase58(publicKey).get.bytes),
           payee = Account.ID(BytesValue.decodeBcBase58(payee).get.bytes),
           token = Token.parse(new String(BytesValue.decodeBcBase58(token).get.bytes)),
           signature = Signature(BytesValue.decodeBcBase58(signature).get.bytes),
           timestamp = BigInt(1, BytesValue.decodeBcBase58(timestamp).get.bytes).toLong
         )
-      case Array("deploy", id, owner, contract, signature, timestamp) =>
+      case Array("deploy", id, owner, publicKey, contract, signature, timestamp) =>
         Transaction.Deploy(
           id = Transaction.ID(BytesValue.decodeBcBase58(id).get.bytes),
           owner = Account.ID(BytesValue.decodeBcBase58(owner).get.bytes),
+          publicKeyForVerifying = Account.PubKey(BytesValue.decodeBcBase58(publicKey).get.bytes),
           contract = Contract.UserContract.fromDeterminedBytes(
             BytesValue.decodeBcBase58(contract).get.bytes),
           signature = Signature(BytesValue.decodeBcBase58(signature).get.bytes),
@@ -323,6 +343,7 @@ class StoreHandler extends Store.Handler[Stack] with LogSupport {
       case Array("run",
                  id,
                  caller,
+                 publicKey,
                  contractName,
                  contractVersion,
                  methodAlias,
@@ -332,6 +353,7 @@ class StoreHandler extends Store.Handler[Stack] with LogSupport {
         Transaction.Run(
           id = Transaction.ID(BytesValue.decodeBcBase58(id).get.bytes),
           caller = Account.ID(BytesValue.decodeBcBase58(caller).get.bytes),
+          publicKeyForVerifying = Account.PubKey(BytesValue.decodeBcBase58(publicKey).get.bytes),
           contractName = UniqueName(BytesValue.decodeBcBase58(contractName).get.bytes),
           contractVersion =
             Version(new String(BytesValue.decodeBcBase58(contractVersion).get.bytes, "utf-8")).get,
@@ -350,37 +372,141 @@ class StoreHandler extends Store.Handler[Stack] with LogSupport {
   private def deserializeReceiptLogs(b: ReceiptData): Vector[Receipt.Log] =
     Receipt.logsFromDeterminedBytes(b.bytes)
 
-  override def transactToken(payee: Account.ID,
-                             payer: Account.ID,
-                             token: Token): Stack[Either[FSSIException, Unit]] = Stack {
+  override def snapshotTransaction(transaction: Transaction): Stack[Either[FSSIException, Unit]] =
+    Stack {
+      require(bcsVar.isDefined)
+      bcsVar
+        .map { bcs =>
+          val height = BigInt(bcs.getPersistedMeta(MetaKey.Height).right.get.get.bytes)
+          transaction match {
+            case transfer: Transfer =>
+              bcs.snapshotTransact { proxy =>
+                val payerId           = transfer.payer.asBytesValue.bcBase58
+                val payeeId           = transfer.payee.asBytesValue.bcBase58
+                val token             = transfer.token
+                val payerCurrentToken = proxy.getBalance(payerId)
+                if (payerCurrentToken - token.amount < 0)
+                  throw new FSSIException(
+                    s"payer $payeeId current token $payerCurrentToken is not enough to transact $token")
+                else {
+                  val payeeCurrentToken = proxy.getBalance(payeeId)
+                  proxy.putBalance(payeeId, payeeCurrentToken + token.amount)
+                  proxy.putBalance(payerId, payerCurrentToken - token.amount)
+                }
+              }
+            case deploy: Deploy =>
+              val contract = deploy.contract
+              for {
+                _ <- bcs.putState(
+                  height,
+                  StateKey.contractCode(contract.owner.asBytesValue.bcBase58,
+                                        contract.name.asBytesValue.bcBase58,
+                                        contract.version.toString),
+                  StateData(contract.code.value)
+                )
+                _ <- bcs.putState(
+                  height,
+                  StateKey.contractDesc(contract.owner.asBytesValue.bcBase58,
+                                        contract.asBytesValue.bcBase58,
+                                        contract.version.toString),
+                  serializeContract(contract)
+                )
+              } yield ()
+            case run: Run =>
+              bcs.putState(height,
+                           StateKey.contractInvoking(run.caller.asBytesValue.bcBase58,
+                                                     run.contractName.asBytesValue.bcBase58),
+                           StateData(run.asBytesValue.bytes))
+          }
+        }
+        .unsafe()
+        .left
+        .map(x => new FSSIException(x.getMessage, Some(x)))
+    }
+
+  override def loadContract(accountId: Account.ID,
+                            contractName: UniqueName,
+                            version: Contract.Version): Stack[Option[UserContract]] = Stack {
     require(bcsVar.isDefined)
     bcsVar
       .map { bcs =>
-        bcs.snapshotTransact { proxy =>
-          val payerId           = payer.asBytesValue.bcBase58
-          val payeeId           = payee.asBytesValue.bcBase58
-          val payerCurrentToken = proxy.getBalance(payerId)
-          if (payerCurrentToken - token.amount < 0)
-            throw new FSSIException(
-              s"payer $payeeId current token $payerCurrentToken is not enough to transact $token")
-          else {
-            val payeeCurrentToken = proxy.getBalance(payeeId)
-            proxy.putBalance(payeeId, payeeCurrentToken + token.amount)
-            proxy.putBalance(payerId, payerCurrentToken - token.amount)
+        bcs
+          .getPersistedState(
+            StateKey.contractDesc(accountId.asBytesValue.bcBase58,
+                                  contractName.asBytesValue.bcBase58,
+                                  version.toString))
+          .right
+          .get
+          .map(deserializeContract)
+      }
+      .unsafe()
+  }
+
+  override def prepareKVStore(userContract: UserContract): Stack[KVStore] = Stack {
+    require(bcsVar.isDefined)
+    bcsVar
+      .map { bcs =>
+        val height = BigInt(bcs.getPersistedMeta(MetaKey.Height).right.get.get.bytes)
+        new KVStore {
+          override def put(key: Array[Byte], value: Array[Byte]): Unit = {
+            bcs.putState(
+              height,
+              StateKey.contractDb(userContract.owner.asBytesValue.bcBase58,
+                                  userContract.name.asBytesValue.bcBase58,
+                                  key.asBytesValue.bcBase58),
+              StateData(value)
+            ) match {
+              case Right(_) => ()
+              case Left(e)  => throw e
+            }
+          }
+          override def get(key: Array[Byte]): Array[Byte] = {
+            bcs.getStateGreedily(
+              StateKey.contractDb(userContract.owner.asBytesValue.bcBase58,
+                                  userContract.name.asBytesValue.bcBase58,
+                                  key.asBytesValue.bcBase58)) match {
+              case Right(data) =>
+                data.map(_.bytes) match {
+                  case Some(value) => value
+                  case None =>
+                    throw new FSSIException(
+                      s"value of key ${key.asBytesValue.bcBase58} not found in contract ${userContract.name.asBytesValue.bcBase58} for owner ${userContract.name.asBytesValue.bcBase58}")
+                }
+              case Left(e) => throw e
+            }
           }
         }
       }
       .unsafe()
-      .left
-      .map(x => new FSSIException(x.getMessage, Some(x)))
   }
 
-  override def persistContract(name: String, contract: UserContract): Stack[Unit] = Stack {
+  override def prepareTokenQuery(userContract: UserContract): Stack[TokenQuery] = Stack {
     require(bcsVar.isDefined)
-    bcsVar.foreach { bcs =>
-      val height = BigInt(bcs.getPersistedMeta(MetaKey.Height).right.get.get.bytes)
+    bcsVar
+      .map { bcs =>
+        new TokenQuery {
+          override def getAmount(accountId: java.lang.String): java.lang.Long =
+            bcs.getPersistedBalance(accountId).right.get.toLong
+        }
+      }
+      .unsafe()
+  }
+
+  override def createContextInstance(store: KVStore,
+                                     query: TokenQuery,
+                                     invoker: Account.ID): Stack[Context] = Stack {
+    new Context {
+      override def kvStore(): KVStore         = store
+      override def tokenQuery(): TokenQuery   = query
+      override def currentAccountId(): String = invoker.asBytesValue.bcBase58
     }
   }
+
+  private def serializeContract(contract: UserContract): StateData =
+    StateData(contract.asJson.noSpaces.asBytesValue.bytes)
+
+  private def deserializeContract(stateData: StateData): UserContract =
+    parse(stateData.bytes.asBytesValue.utf8String).right.get.as[UserContract].right.get
 }
 
 object StoreHandler {

@@ -1,7 +1,6 @@
 package fssi
 package interpreter
 import java.io.File
-import java.nio.charset.Charset
 import java.util.UUID
 
 import fssi.ast.Contract
@@ -59,7 +58,7 @@ class ContractHandler extends Contract.Handler[Stack] {
                               context: Context,
                               contract: UserContract,
                               method: UserContract.Method,
-                              params: UserContract.Parameter): Stack[Receipt] = Stack {
+                              params: Option[UserContract.Parameter]): Stack[Receipt] = Stack {
     val result = sandbox.executeContract(publicKey, context, contract, method, params)
     // TODO: replenish properties
     Receipt(Transaction.emptyId, result.isRight, Vector.empty, 0)
@@ -121,10 +120,6 @@ class ContractHandler extends Contract.Handler[Stack] {
                     contractParameter,
                     Signature.empty,
                     System.currentTimeMillis())
-  }
-
-  override def getContractIdentifyName(contract: UserContract): Stack[String] = Stack {
-    s"${new String(contract.name.value, Charset.forName("utf-8"))}#${contract.version}"
   }
 }
 

@@ -6,8 +6,10 @@ import bigknife.sop.implicits._
 import fssi.types.biz._
 import java.io._
 
-import fssi.types.base.WorldState
+import fssi.contract.lib.{Context, KVStore, TokenQuery}
+import fssi.types.base.{UniqueName, WorldState}
 import fssi.types.biz.Contract.UserContract
+import fssi.types.biz.{Contract => BizContract}
 import fssi.types.exception.FSSIException
 
 @sp trait Store[F[_]] {
@@ -59,9 +61,15 @@ import fssi.types.exception.FSSIException
 
   def loadSecretKeyFromFile(secretKeyFile: File): P[F, Either[FSSIException, Account.SecretKey]]
 
-  def transactToken(payee: Account.ID,
-                    payer: Account.ID,
-                    token: Token): P[F, Either[FSSIException, Unit]]
+  def snapshotTransaction(transaction: Transaction): P[F, Either[FSSIException, Unit]]
 
-  def persistContract(name: String, contract: UserContract): P[F, Unit]
+  def loadContract(accountId: Account.ID,
+                   contractName: UniqueName,
+                   version: BizContract.Version): P[F, Option[UserContract]]
+
+  def prepareKVStore(userContract: UserContract): P[F, KVStore]
+  def prepareTokenQuery(userContract: UserContract): P[F, TokenQuery]
+  def createContextInstance(kvStore: KVStore,
+                            tokenQuery: TokenQuery,
+                            invoker: Account.ID): P[F, Context]
 }

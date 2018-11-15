@@ -21,7 +21,7 @@ class Runner extends BaseLogger {
       context: Context,
       contractPath: Path,
       method: Method,
-      parameters: Contract.UserContract.Parameter): Either[FSSIException, Unit] = {
+      parameters: Option[Contract.UserContract.Parameter]): Either[FSSIException, Unit] = {
     logger.info(
       s"invoke contract method $method with params $parameters for contract $contractPath in context $context")
     if (contractPath.toFile.exists()) {
@@ -36,8 +36,10 @@ class Runner extends BaseLogger {
           val clazz                = classLoader.findClass(method.className)
           val instance             = clazz.newInstance()
           val contractMethod       = clazz.getDeclaredMethod(method.methodName, methodParameterTypes: _*)
-          val params               = context +: extractParameterValues(method.parameterTypes, parameters)
-          val accessible           = contractMethod.isAccessible
+          val params =
+            if (parameters.isEmpty) Array(context)
+            else context +: extractParameterValues(method.parameterTypes, parameters.get)
+          val accessible = contractMethod.isAccessible
           contractMethod.setAccessible(true)
           contractMethod.invoke(instance, params: _*)
           contractMethod.setAccessible(accessible)
