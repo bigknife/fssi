@@ -49,11 +49,12 @@ class SandBox {
     } yield contract
   }
 
-  def executeContract(publicKey: Account.PubKey,
-                      context: Context,
-                      contract: Contract.UserContract,
-                      method: Contract.UserContract.Method,
-                      params: Contract.UserContract.Parameter): Either[FSSIException, Unit] = {
+  def executeContract(
+      publicKey: Account.PubKey,
+      context: Context,
+      contract: Contract.UserContract,
+      method: Contract.UserContract.Method,
+      params: Option[Contract.UserContract.Parameter]): Either[FSSIException, Unit] = {
     for {
       tmpPath      <- builder.createDefaultContractTmpPath
       contractPath <- builder.buildContractProjectFromBytes(contract.code.value, tmpPath)

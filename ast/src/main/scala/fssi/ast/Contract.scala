@@ -5,7 +5,7 @@ import java.io.File
 import bigknife.sop._
 import bigknife.sop.macros._
 import bigknife.sop.implicits._
-import fssi.contract.lib.Context
+import fssi.contract.lib.{Context, KVStore, TokenQuery}
 import fssi.types.base.UniqueName
 import fssi.types.biz._
 import fssi.types.exception.FSSIException
@@ -32,7 +32,7 @@ import fssi.types.biz.Contract._
                      context: Context,
                      contract: UserContract,
                      method: UserContract.Method,
-                     params: UserContract.Parameter): P[F, Receipt]
+                     params: Option[UserContract.Parameter]): P[F, Receipt]
   def loadContractFromFile(pubKey: Account.PubKey,
                            contractFile: File): P[F, Either[FSSIException, UserContract]]
   def generateTransactionID(): P[F, Transaction.ID]
@@ -52,6 +52,4 @@ import fssi.types.biz.Contract._
                            contractVersion: Version,
                            methodAlias: String,
                            contractParameter: Option[UserContract.Parameter]): P[F, Transaction.Run]
-
-  def getContractIdentifyName(contract: UserContract): P[F, String]
 }

@@ -213,7 +213,7 @@ class Checker extends BaseLogger {
 
   private[sandbox] def isContractMethodExposed(
       method: Contract.UserContract.Method,
-      params: Contract.UserContract.Parameter,
+      params: Option[Contract.UserContract.Parameter],
       methods: Vector[Method]): Either[FSSIException, Unit] = {
     logger.info(s"check contract method $method whether existed for params $params")
     methods.find(_.alias == method.alias) match {
@@ -228,7 +228,7 @@ class Checker extends BaseLogger {
   }
 
   private def isContractMethodParameterTypeMatched(
-      params: Contract.UserContract.Parameter,
+      params: Option[Contract.UserContract.Parameter],
       parameterTypes: Array[SParameterType]): Either[FSSIException, Unit] = {
     logger.info(
       s"check contract method parameter type matched, params: $params, contract descriptor params types: ${parameterTypes
@@ -255,22 +255,35 @@ class Checker extends BaseLogger {
     }
 
     params match {
-      case PArray(array) if array.length != parameterTypes.length - 1 =>
-        val error =
-          s"receipted method parameter amount ${array.length} is not coordinated with contract method parameter amount ${parameterTypes.length}"
-        val ex = ContractCheckException(Vector(error))
-        logger.error(error, ex)
-        Left(ex)
-      case x =>
-        val receiptParameterType = SParameterType.SContext +: convertToSParameterType(x,
-                                                                                      Array.empty)
-        val receiptParameterTypeNames  = receiptParameterType.map(_.`type`.getName)
-        val contractParameterTypeNames = parameterTypes.map(_.`type`.getName)
-        if (receiptParameterTypeNames sameElements contractParameterTypeNames) Right(())
+      case Some(parameter) =>
+        parameter match {
+          case PArray(array) if array.length != parameterTypes.length - 1 =>
+            val error =
+              s"receipted method parameter amount ${array.length} is not coordinated with contract method parameter amount ${parameterTypes.length}"
+            val ex = ContractCheckException(Vector(error))
+            logger.error(error, ex)
+            Left(ex)
+          case x =>
+            val receiptParameterType = SParameterType.SContext +: convertToSParameterType(
+              x,
+              Array.empty)
+            val receiptParameterTypeNames  = receiptParameterType.map(_.`type`.getName)
+            val contractParameterTypeNames = parameterTypes.map(_.`type`.getName)
+            if (receiptParameterTypeNames sameElements contractParameterTypeNames) Right(())
+            else {
+              val ex = ContractCheckException(Vector(
+                s"receipted method parameter type: ${receiptParameterTypeNames.mkString("(", ",", ")")} not coordinated with contract method parameter type: ${contractParameterTypeNames
+                  .mkString("(", ",", ")")}"))
+              logger.error(ex.getMessage, ex)
+              Left(ex)
+            }
+        }
+      case None =>
+        if (parameterTypes.length - 1 == 0) Right(())
         else {
-          val ex = ContractCheckException(Vector(
-            s"receipted method parameter type: ${receiptParameterTypeNames.mkString("(", ",", ")")} not coordinated with contract method parameter type: ${contractParameterTypeNames
-              .mkString("(", ",", ")")}"))
+          val ex = ContractCheckException(
+            Vector(
+              "contract exposed method required more than Context parameter but invoked with nil"))
           logger.error(ex.getMessage, ex)
           Left(ex)
         }
