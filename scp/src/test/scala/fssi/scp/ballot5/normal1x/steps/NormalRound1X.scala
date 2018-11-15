@@ -29,7 +29,6 @@ trait NormalRound1X extends StepSpec {
 
   def normalRound1X(): Unit = {
     nodesAllPledgeToCommit()
-
     app.numberOfEnvelopes shouldBe 3
 
     // those should not trigger anything just yet
