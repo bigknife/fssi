@@ -1,11 +1,9 @@
 package fssi
 package interpreter
 
-import types._
 import java.io._
 import java.nio.file.{Path, Paths}
 
-import com.typesafe.config._
 import fssi.interpreter.Configuration.CoreNodeConfig
 import fssi.interpreter.Configuration._
 

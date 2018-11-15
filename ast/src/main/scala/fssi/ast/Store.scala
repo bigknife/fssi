@@ -6,6 +6,8 @@ import bigknife.sop.implicits._
 import fssi.types.biz._
 import java.io._
 
+import fssi.types.base.WorldState
+import fssi.types.biz.Contract.UserContract
 import fssi.types.exception.FSSIException
 
 @sp trait Store[F[_]] {
@@ -49,9 +51,17 @@ import fssi.types.exception.FSSIException
 
   def getLatestDeterminedBlock(): P[F, Block]
 
+  def getCurrentWorldState(): P[F, WorldState]
+
   def persistBlock(block: Block): P[F, Unit]
 
   def loadAccountFromFile(accountFile: File): P[F, Either[FSSIException, Account]]
 
   def loadSecretKeyFromFile(secretKeyFile: File): P[F, Either[FSSIException, Account.SecretKey]]
+
+  def transactToken(payee: Account.ID,
+                    payer: Account.ID,
+                    token: Token): P[F, Either[FSSIException, Unit]]
+
+  def persistContract(name: String, contract: UserContract): P[F, Unit]
 }
