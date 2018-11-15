@@ -247,6 +247,16 @@ class TestApp(nodeID: NodeID,
     runner.runIO(p, setting).unsafeRunSync()
   }
 
+  def shouldHavePreparedAtIndex(index: Int,
+                         b: Ballot,
+                         p: Option[Ballot] = None,
+                         cn: Int = 0,
+                         hn: Int = 0,
+                         pPrime: Option[Ballot] = None): Unit = {
+    statements.drop(index).headOption map (_.copy(timestamp = started)) contains statementOf(
+      Prepare(b, p, pPrime, cn, hn)) shouldBe true
+  }
+
   def shouldHavePrepared(b: Ballot,
                          p: Option[Ballot] = None,
                          cn: Int = 0,
