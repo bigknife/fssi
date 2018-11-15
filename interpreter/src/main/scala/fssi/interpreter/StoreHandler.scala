@@ -20,6 +20,7 @@ import fssi.store.bcs.types._
 import fssi.store.bcs.types.BCSKey._
 import fssi.types.base._
 import fssi.types._
+import fssi.types.biz.Contract.Version
 import fssi.types.biz._
 import fssi.types.implicits._
 
@@ -297,7 +298,38 @@ class StoreHandler extends Store.Handler[Stack] with LogSupport {
     case _ => TransactionData(Array.emptyByteArray)
   }
   private def deserializeTransaction(b: TransactionData): Transaction     = {
-    ???
+    new String(b.bytes).split("\n") match {
+      case Array("transfer", id, payer, payee, token, signature, timestamp) =>
+        Transaction.Transfer(
+          id = Transaction.ID(BytesValue.decodeBcBase58(id).get.bytes),
+          payer = Account.ID(BytesValue.decodeBcBase58(payer).get.bytes),
+          payee = Account.ID(BytesValue.decodeBcBase58(payee).get.bytes),
+          token = Token.parse(new String(BytesValue.decodeBcBase58(token).get.bytes)),
+          signature = Signature(BytesValue.decodeBcBase58(signature).get.bytes),
+          timestamp = BigInt(1, BytesValue.decodeBcBase58(timestamp).get.bytes).toLong
+        )
+      case Array("deploy", id, owner, contract, signature, timestamp) =>
+        Transaction.Deploy(
+          id = Transaction.ID(BytesValue.decodeBcBase58(id).get.bytes),
+          owner = Account.ID(BytesValue.decodeBcBase58(owner).get.bytes),
+          contract = 
+            Contract.UserContract.fromDeterminedBytes(BytesValue.decodeBcBase58(contract).get.bytes),
+          signature = Signature(BytesValue.decodeBcBase58(signature).get.bytes),
+          timestamp = BigInt(1, BytesValue.decodeBcBase58(timestamp).get.bytes).toLong
+        )
+      case Array("run", id, caller, contractName, contractVersion, methodAlias, contractParameter, signature, timestamp) =>
+        Transaction.Run(
+          id = Transaction.ID(BytesValue.decodeBcBase58(id).get.bytes),
+          caller = Account.ID(BytesValue.decodeBcBase58(caller).get.bytes),
+          contractName = UniqueName(BytesValue.decodeBcBase58(contractName).get.bytes),
+          contractVersion = Version(new String(BytesValue.decodeBcBase58(contractVersion).get.bytes, "utf-8")).get,
+          methodAlias = new String(BytesValue.decodeBcBase58(methodAlias).get.bytes, "utf-8"),
+          contractParameter = Contract.UserContract.parameterFromDeterminedBytes(BytesValue.decodeBcBase58(contractParameter).get.bytes),
+          signature = Signature(BytesValue.decodeBcBase58(signature).get.bytes),
+          timestamp = BigInt(1, BytesValue.decodeBcBase58(timestamp).get.bytes).toLong
+        )
+      case _ => throw new RuntimeException("insane transaction data")
+    }
   }
 
 
