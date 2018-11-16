@@ -4,6 +4,7 @@ package world
 import java.io._
 import java.nio.file.{Files, Path, Paths}
 
+import fssi.base.BytesValue
 import fssi.sandbox.contract.ContractFileBuilder
 import fssi.sandbox.exception.{ContractBuildException, ContractCheckException}
 import fssi.sandbox.inf._
@@ -11,7 +12,7 @@ import fssi.sandbox.types.{ContractMeta, SandBoxVersion}
 import fssi.sandbox.visitor.clazz.DegradeClassVersionVisitor
 import fssi.types.base._
 import fssi.types.biz.Contract.UserContract._
-import fssi.types.biz.Contract.{Version => ContractVersion}
+import fssi.types.biz.Contract.{UserContract, Version => ContractVersion}
 import fssi.types.biz.{Account, Contract}
 import fssi.types.exception.FSSIException
 import fssi.utils.FileUtil
@@ -203,5 +204,16 @@ class Builder extends BaseLogger {
           new FSSIException(
             s"build contract root path with bytes under path: $rootPath failed: ${t.getMessage}"))
     } finally if (file.exists()) FileUtil.deleteDir(file.toPath)
+  }
+
+  def createDefaultContractTmpPath: Either[FSSIException, Path] = {
+    try {
+      val path = Paths.get(System.getProperty("user.home"), ".fssi")
+      path.toFile.mkdirs()
+      Right(path)
+    } catch {
+      case t: Throwable =>
+        Left(new FSSIException(s"create default contract tmp path failed: ${t.getMessage}"))
+    }
   }
 }

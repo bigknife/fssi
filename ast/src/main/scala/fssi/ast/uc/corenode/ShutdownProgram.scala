@@ -1,5 +1,5 @@
-package fssi.ast
-package uc
+package fssi.ast.uc
+package corenode
 
 import bigknife.sop._
 import bigknife.sop.macros._
@@ -12,7 +12,8 @@ import java.io._
 trait ShutdownProgram[F[_]] extends CoreNodeProgram[F] with BaseProgram[F] {
   import model._
 
-  def shutdown(consensusNode: Node.ConsensusNode, applicationNode: Option[Node.ApplicationNode]): SP[F, Unit] = {
+  def shutdown(consensusNode: Node.ConsensusNode,
+               applicationNode: Option[Node.ApplicationNode]): SP[F, Unit] = {
     for {
       _ <- consensus.destroy()
       _ <- store.unload()

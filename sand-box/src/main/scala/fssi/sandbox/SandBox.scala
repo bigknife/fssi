@@ -35,8 +35,8 @@ class SandBox {
       contractBytes <- builder.readContractBytesFromFile(publicKey.value, contractFile)
       contractPath <- builder.buildContractProjectFromBytes(contractBytes,
                                                             contractFile.getParentFile.toPath)
-      _ <- checker.checkDeterminism(contractPath)
-    } yield FileUtil.deleteDir(contractPath)
+      _ <- checker.checkDeterminism(contractPath)(contractPath)(true)
+    } yield ()
   }
 
   def buildUnsignedContract(publicKey: Account.PubKey,
@@ -45,28 +45,39 @@ class SandBox {
       contractBytes <- builder.readContractBytesFromFile(publicKey.value, file)
       contractPath <- builder.buildContractProjectFromBytes(contractBytes,
                                                             file.getParentFile.toPath)
-      contract <- builder.buildUserContractFromPath(contractPath, contractBytes)
-    } yield { FileUtil.deleteDir(contractPath); contract }
+      contract <- builder.buildUserContractFromPath(contractPath, contractBytes)(contractPath)(true)
+    } yield contract
   }
 
-  def executeContract(publicKey: Account.PubKey,
-                      context: Context,
-                      contractFile: File,
-                      method: Contract.UserContract.Method,
-                      params: Contract.UserContract.Parameter): Either[FSSIException, Unit] = {
+  def executeContract(
+      publicKey: Account.PubKey,
+      context: Context,
+      contract: Contract.UserContract,
+      method: Contract.UserContract.Method,
+      params: Option[Contract.UserContract.Parameter]): Either[FSSIException, Unit] = {
     for {
-      contractBytes <- builder.readContractBytesFromFile(publicKey.value, contractFile)
-      contractPath <- builder.buildContractProjectFromBytes(contractBytes,
-                                                            contractFile.getParentFile.toPath)
-      methodMeta <- builder.buildContractMeta(contractPath)
-      methods    <- checker.checkContractDescriptor(methodMeta.interfaces)
-      _          <- checker.isContractMethodExposed(method, params, methods)
-      _          <- checker.checkDeterminism(contractPath)
+      tmpPath      <- builder.createDefaultContractTmpPath
+      contractPath <- builder.buildContractProjectFromBytes(contract.code.value, tmpPath)
+      methodMeta   <- builder.buildContractMeta(contractPath)(tmpPath)(false)
+      methods      <- checker.checkContractDescriptor(methodMeta.interfaces)(tmpPath)(false)
+      _            <- checker.isContractMethodExposed(method, params, methods)(tmpPath)(false)
+      _            <- checker.checkDeterminism(contractPath)(tmpPath)(false)
       contractMethod = methods.find(_.alias == method.alias).get
-      _ <- runner.invokeContractMethod(context, contractPath, contractMethod, params)
-    } yield FileUtil.deleteDir(contractPath)
+      _ <- runner.invokeContractMethod(context, contractPath, contractMethod, params)(tmpPath)(true)
+    } yield ()
   }
 
   def checkRunningEnvironment: Either[FSSIException, Unit] =
     checker.isSandBoxEnvironmentValid
+
+  implicit def cleanCacheFile[A <: Any](
+      either: Either[FSSIException, A]): Path => Boolean => Either[FSSIException, A] =
+    path =>
+      delete => {
+        either.left
+          .map(_ => FileUtil.deleteDir(path))
+          .right
+          .map(_ => if (delete) FileUtil.deleteDir(path))
+        either
+    }
 }

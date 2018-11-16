@@ -4,13 +4,16 @@ package interpreter
 import fssi.scp.interpreter.store._
 import fssi.scp.types._
 
-trait QuorumSetSupport extends LogSupport{
+trait QuorumSetSupport extends LogSupport {
   import QuorumSet._
   import QuorumSetSupport._
 
   def unsafeGetSlices(nodeID: NodeID): QuorumSet.Slices = {
     (slicesCache map (_.filterKeys(_ === nodeID)) getOrElse Map.empty).head._2
   }
+
+  def addNodeSlices(nodeId: NodeID, slices: QuorumSet.Slices): Unit =
+    slicesCache := slicesCache.map(_ + (nodeId -> slices)).unsafe()
 
   /** delete a node (validators) from slices.
     * Definition (delete).
@@ -43,7 +46,7 @@ trait QuorumSetSupport extends LogSupport{
             }
           Slices.Flat(x_remainedThreshold, x_remainedValidators)
         }
-        Slices.nest(remainedThreshold, remainedValidators, remainedInners:_*)
+        Slices.nest(remainedThreshold, remainedValidators, remainedInners: _*)
     }
   }
 
@@ -55,13 +58,13 @@ trait QuorumSetSupport extends LogSupport{
     */
   def simplifySlices(slices: Slices): Slices = {
     slices match {
-      case x: Slices.Flat => x
+      case x: Slices.Flat                            => x
       case Slices.Nest(threshold, validators, inner) =>
         // simplifies singleton inner sets
         if (threshold == 1 && validators.isEmpty && inner.size == 1) inner.head
         else {
           // simplifies singleton inner set into outer sets
-          val (v, i) = inner.foldLeft((validators, Vector.empty[Slices.Flat])) {(acc, n) =>
+          val (v, i) = inner.foldLeft((validators, Vector.empty[Slices.Flat])) { (acc, n) =>
             if (n.validators.size == 1 && n.threshold == 1) (acc._1 :+ n.validators.head, acc._2)
             else (acc._1, acc._2 :+ n)
           }

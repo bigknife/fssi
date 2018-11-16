@@ -8,4 +8,9 @@ case class Timestamp(value: Long) extends AnyVal {
 
 object Timestamp {
   def now: Timestamp = Timestamp(System.currentTimeMillis)
+
+  trait Implicits {
+    implicit def timestampToArrayBytes(ts: Timestamp): Array[Byte] =
+      BigInt.apply(ts.value).toByteArray
+  }
 }

@@ -103,6 +103,14 @@ object Common {
           )
     }
 
+    object store {
+      def apply(): Project =
+        prj("store", "store")
+          .settings(
+            libraryDependencies ++= (all.xodus ++ all.bcprov ++ all.apacheHc)
+          )
+    }
+
     object types {
       def apply(): Project = prj("types", "types")
     }
@@ -173,6 +181,14 @@ object Common {
           .settings(
             libraryDependencies ++= all.scopt
           )
+    }
+
+    object wallet {
+      def apply(): Project =
+        prj("wallet", "wallet")
+        .settings(
+          libraryDependencies ++= (all.scalafx ++ all.jfoenix)
+        )
     }
 
     object coreNode {

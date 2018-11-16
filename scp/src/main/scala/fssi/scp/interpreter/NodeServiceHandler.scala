@@ -16,6 +16,13 @@ class NodeServiceHandler
     with QuorumSetSupport {
   import log._
 
+  override def cacheNodeQuorumSet(): Stack[Unit] = Stack { setting =>
+    setting.quorumSet match {
+      case QuorumSet.QuorumSlices(slices) => addNodeSlices(setting.nodeId, slices)
+      case QuorumSet.QuorumRef(_)         =>
+    }
+  }
+
   /** compute next round timeout (in ms)
     *
     * @see SCPDriver.cpp#79

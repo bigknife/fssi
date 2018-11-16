@@ -10,3 +10,4 @@ trait BaseTypeImplicits
     with Signature.Implicits
     with UniqueName.Implicits
     with WorldState.Implicits
+    with Timestamp.Implicits

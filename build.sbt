@@ -20,7 +20,7 @@ lazy val pTypesJson = typesJson()
 
 lazy val pAst = ast()
   .dependsOn(pTypes)
-  //.dependsOn(pContractLib)
+  .dependsOn(pContractLib)
 
 lazy val pScp = scp()
   .dependsOn(pUtils)
@@ -32,11 +32,15 @@ lazy val pInterperter = interpreter()
   .dependsOn(pSandBox)
   .dependsOn(pContractScaffold)
   .dependsOn(pScp)
+  .dependsOn(pStore)
 
 lazy val pJsonRpc = jsonrpc()
 
 lazy val pTrie = trie()
   .dependsOn(pUtils)
+
+lazy val pStore = store()
+  .dependsOn(pBase)
 
 lazy val pContractLib = contractLib()
   .dependsOn(pTypes)
@@ -52,6 +56,8 @@ lazy val pTool = tool()
   .settings(
     packMain := Map("tool" -> "fssi.tool.ToolMain")
   )
+
+lazy val pWallet = wallet()
 
 lazy val pCoreNode = coreNode()
   .dependsOn(pInterperter)

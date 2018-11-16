@@ -25,7 +25,11 @@ trait TransactionProgram[F[_]] extends ToolProgram[F] with BaseProgram[F] {
       secretKey         <- err.either(secretKeyOrFailed)
       privateKey        <- crypto.decryptAccountPrivKey(account.encPrivKey, secretKey, account.iv)
       transactionId     <- contract.generateTransactionID()
-      transfer          <- contract.createTransferTransaction(transactionId, account.id, payee, token)
+      transfer <- contract.createTransferTransaction(transactionId,
+                                                     account.id,
+                                                     account.pubKey,
+                                                     payee,
+                                                     token)
       transferSignature <- crypto.makeTransactionSignature(transfer, privateKey)
       signedTransfer = transfer.copy(signature = transferSignature)
     } yield signedTransfer
@@ -46,8 +50,11 @@ trait TransactionProgram[F[_]] extends ToolProgram[F] with BaseProgram[F] {
       userContract         <- err.either(userContractOrFailed)
       contractSignature    <- crypto.makeContractSignature(userContract, privateKey)
       signedContract = userContract.copy(signature = contractSignature)
-      transactionId   <- contract.generateTransactionID()
-      deploy          <- contract.createDeployTransaction(transactionId, account.id, signedContract)
+      transactionId <- contract.generateTransactionID()
+      deploy <- contract.createDeployTransaction(transactionId,
+                                                 account.id,
+                                                 account.pubKey,
+                                                 signedContract)
       deploySignature <- crypto.makeTransactionSignature(deploy, privateKey)
       signedDeploy = deploy.copy(signature = deploySignature)
     } yield signedDeploy
@@ -71,6 +78,7 @@ trait TransactionProgram[F[_]] extends ToolProgram[F] with BaseProgram[F] {
       transactionId     <- contract.generateTransactionID()
       run <- contract.createRunTransaction(transactionId,
                                            account.id,
+                                           account.pubKey,
                                            contractName,
                                            contractVersion,
                                            methodAlias,

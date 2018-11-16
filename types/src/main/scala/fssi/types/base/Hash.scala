@@ -1,11 +1,13 @@
 package fssi
 package types
 package base
+import fssi.base.Base58
 
 /** hash for any data, a common hash, no more type info.
   */
 case class Hash(value: Array[Byte]) extends AnyVal {
   def ===(other: Hash): Boolean = value sameElements other.value
+  override def toString: String = Base58.encode(value)
 }
 
 object Hash {

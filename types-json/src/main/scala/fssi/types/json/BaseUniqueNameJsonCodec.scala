@@ -2,9 +2,9 @@ package fssi
 package types
 package json
 
+import fssi.base.BytesValue
 import fssi.types.base._
 import fssi.types.implicits._
-
 import io.circe._
 import io.circe.syntax._
 import io.circe.generic.auto._
@@ -15,5 +15,5 @@ trait BaseUniqueNameJsonCodec {
     Encoder[String].contramap(_.asBytesValue.bcBase58)
 
   implicit val baseUniqueNameDecoder: Decoder[UniqueName] =
-    Decoder[String].map(x => UniqueName(BytesValue.decodeBcBase58(x).get.bytes))
+    Decoder[String].map(x => UniqueName(BytesValue.unsafeDecodeBcBase58(x).bytes))
 }

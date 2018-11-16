@@ -7,6 +7,7 @@ import fssi.types.implicits._
 sealed trait Transaction extends Ordered[Transaction] {
   def id: Transaction.ID
   def sender: Account.ID
+  def publicKeyForVerifying: Account.PubKey
   def signature: Signature
   def timestamp: Long
 
@@ -25,7 +26,9 @@ sealed trait Transaction extends Ordered[Transaction] {
 }
 
 object Transaction {
-  case class ID(value: Array[Byte]) extends AnyVal
+  case class ID(value: Array[Byte]) extends AnyVal {
+    def ===(that: ID): Boolean = this.value sameElements that.value
+  }
   def emptyId: ID = ID(Array.emptyByteArray)
 
   /** Transfer is a  transaction to transfer payer's token to payee's token
@@ -33,6 +36,7 @@ object Transaction {
   case class Transfer(
       id: Transaction.ID,
       payer: Account.ID,
+      publicKeyForVerifying: Account.PubKey,
       payee: Account.ID,
       token: Token,
       signature: Signature,
@@ -46,6 +50,7 @@ object Transaction {
   case class Deploy(
       id: Transaction.ID,
       owner: Account.ID,
+      publicKeyForVerifying: Account.PubKey,
       contract: Contract.UserContract,
       signature: Signature,
       timestamp: Long
@@ -58,6 +63,7 @@ object Transaction {
   case class Run(
       id: Transaction.ID,
       caller: Account.ID,
+      publicKeyForVerifying: Account.PubKey,
       contractName: UniqueName,
       contractVersion: Contract.Version,
       methodAlias: String,
@@ -83,19 +89,19 @@ object Transaction {
 
     implicit def bizTransferToBytesValue(a: Transfer): Array[Byte] = {
       import a._
-      (id.asBytesValue.any ++ payer.asBytesValue.any ++ payee.asBytesValue.any ++
+      (id.asBytesValue.any ++ payer.asBytesValue.any ++ publicKeyForVerifying.asBytesValue.any ++ payee.asBytesValue.any ++
         token.asBytesValue.any ++ signature.asBytesValue.any ++ timestamp.asBytesValue.any).bytes
     }
 
     implicit def bizDeployToBytesValue(a: Deploy): Array[Byte] = {
       import a._
-      (id.asBytesValue.any ++ owner.asBytesValue.any ++ contract.asBytesValue.any ++
+      (id.asBytesValue.any ++ owner.asBytesValue.any ++ publicKeyForVerifying.asBytesValue.any ++ contract.asBytesValue.any ++
         signature.asBytesValue.any ++ timestamp.asBytesValue.any).bytes
     }
 
     implicit def bizRunToBytesValue(a: Run): Array[Byte] = {
       import a._
-      (id.asBytesValue.any ++ caller.asBytesValue.any ++ contractName.asBytesValue.any ++
+      (id.asBytesValue.any ++ caller.asBytesValue.any ++ publicKeyForVerifying.asBytesValue.any ++ contractName.asBytesValue.any ++
         contractVersion.asBytesValue.any ++ methodAlias.asBytesValue.any ++ contractParameter.asBytesValue.any ++
         signature.asBytesValue.any ++ timestamp.asBytesValue.any).bytes
     }

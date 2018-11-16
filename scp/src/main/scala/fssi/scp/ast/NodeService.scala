@@ -10,6 +10,8 @@ import scala.collection.immutable._
 import types._
 @sp trait NodeService[F[_]] {
 
+  def cacheNodeQuorumSet(): P[F, Unit]
+
   /** compute next round timeout (in ms)
     *
     * @see SCPDriver.cpp#79

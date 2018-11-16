@@ -2,6 +2,8 @@ package fssi.types
 package biz
 
 import base._
+import fssi.base.BytesValue
+
 import scala.collection._
 import fssi.types.implicits._
 
@@ -27,10 +29,11 @@ object Contract {
     def empty: Version = Version(0, 0, 0)
     def apply(s: String): Option[Version] = s match {
       case VersionR(major, minor, patch) => Some(Version(major.toInt, minor.toInt, patch.toInt))
-      case _ => None
+      case _                             => None
     }
 
     trait Implicits {
+
       /** version is ordered
         */
       implicit val versionOrdering: Ordering[Version] = new Ordering[Version] {
@@ -45,7 +48,7 @@ object Contract {
           } else m
         }
       }
-      implicit def versionToBytesValue(v: Version): Array[Byte] = v.toString.getBytes
+      implicit def versionToBytesValue(v: Version): Array[Byte] = v.toString.getBytes("utf-8")
     }
   }
 
@@ -67,8 +70,8 @@ object Contract {
   object UserContract {
     case class Code(value: Array[Byte])
     case class Method(
-      alias: String,
-      fullSignature: String
+        alias: String,
+        fullSignature: String
     ) {
       override def toString(): String = {
         s"$alias=$fullSignature"
@@ -76,6 +79,10 @@ object Contract {
     }
     object Method {
       def empty: Method = Method("", "")
+      def parse(s: String): Option[Method] = s.split("=") match {
+        case Array(alias, fs) => Some(Method(alias, fs))
+        case _                => None
+      }
     }
 
     /**
@@ -111,34 +118,113 @@ object Contract {
       }
     }
 
+    def toDeterminedBytes(uc: UserContract): Array[Byte] = {
+      val owner   = uc.owner.asBytesValue.bcBase58
+      val name    = uc.name.asBytesValue.bcBase58
+      val version = uc.version.asBytesValue.bcBase58
+      val code    = uc.code.asBytesValue.bcBase58
+      val methods =
+        uc.methods.map(_.toString).mkString("\n").getBytes("utf-8").asBytesValue.bcBase58
+      val signature = uc.signature.asBytesValue.bcBase58
+      Vector(owner, name, version, code, methods, signature).mkString("\n").getBytes("utf-8")
+    }
+    def fromDeterminedBytes(bytes: Array[Byte]): UserContract = {
+      new String(bytes, "utf-8").split("\n") match {
+        case Array(owner, name, version, code, methods, signature) =>
+          UserContract(
+            owner = Account.ID(BytesValue.decodeBcBase58(owner).get.bytes),
+            name = UniqueName(BytesValue.decodeBcBase58(name).get.bytes),
+            version = Version(new String(BytesValue.decodeBcBase58(version).get.bytes, "utf-8")).get,
+            code = Code(BytesValue.decodeBcBase58(code).get.bytes),
+            methods = {
+              scala.collection.immutable.TreeSet(
+                new String(BytesValue.decodeBcBase58(methods).get.bytes, "utf-8")
+                  .split("\n")
+                  .map(x => Method.parse(x).get): _*)
+            },
+            signature = Signature(BytesValue.decodeBcBase58(signature).get.bytes)
+          )
+        case _ => throw new RuntimeException("insance user contract data")
+      }
+    }
+
+    def parameterToDeterminedBytes(p: Parameter): Array[Byte] = p match {
+      case Parameter.PString(x) =>
+        Vector("PString", x)
+          .mkString("\n")
+          .asBytesValue
+          .bcBase58
+          .getBytes("utf-8")
+
+      case Parameter.PBigDecimal(x) =>
+        Vector("PBigDecimal", x.toPlainString)
+          .mkString("\n")
+          .asBytesValue
+          .bcBase58
+          .getBytes("utf-8")
+
+      case Parameter.PBool(x) =>
+        Vector("PBool", if (x) "true" else "false")
+          .mkString("\n")
+          .asBytesValue
+          .bcBase58
+          .getBytes("utf-8")
+
+      case Parameter.PArray(xs) =>
+        Vector("PArray",
+               xs.foldLeft(Vector.empty[String]) { (acc, n) =>
+                   acc :+ new String(parameterToDeterminedBytes(n), "utf-8")
+                 }
+                 .mkString("\n")
+                 .asBytesValue
+                 .bcBase58).mkString("\n").asBytesValue.bcBase58.getBytes("utf-8")
+    }
+    def parameterFromDeterminedBytes(bytes: Array[Byte]): Option[Parameter] = {
+      BytesValue.decodeBcBase58[Any](new String(bytes, "utf-8")).map { x =>
+        import Parameter._
+        new String(x.bytes, "utf-8").split("\n") match {
+          case Array("PString", x0)     => PString(x0)
+          case Array("PBigDecimal", x0) => PBigDecimal(new java.math.BigDecimal(x0))
+          case Array("PBool", "true")   => PBool(true)
+          case Array("PBool", "false")  => PBool(false)
+          case Array("PArray", x0) =>
+            val xs: Array[Parameter.PrimaryParameter] =
+              new String(BytesValue.unsafeDecodeBcBase58(x0).bytes, "utf-8")
+                .split("\n")
+                .map(BytesValue.unsafeDecodeBcBase58)
+                .map(_.bytes)
+                .map(parameterFromDeterminedBytes)
+                .filter(_.isDefined)
+                .map(_.get.asInstanceOf[Parameter.PrimaryParameter])
+            PArray(xs)
+        }
+      }
+    }
+
     trait Implicits {
       implicit val methodOrdering: Ordering[Method] = new Ordering[Method] {
-        def compare(m1: Method, m2: Method): Int = Ordering[String].compare(m1.toString, m2.toString)
+        def compare(m1: Method, m2: Method): Int =
+          Ordering[String].compare(m1.toString, m2.toString)
       }
 
       implicit def methodToBytesValue(m: Method): Array[Byte] = m.toString.getBytes
 
       implicit def codeToBytesValue(c: Code): Array[Byte] = c.value
 
-      implicit def parameterToBytesValue(p: Parameter): Array[Byte] = p match {
-        case Parameter.PString(x) => x.getBytes("utf-8")
-        case Parameter.PBigDecimal(x) => x.toPlainString.getBytes("utf-8")
-        case Parameter.PBool(x) => if(x) Array(1) else Array(0)
-        case Parameter.PArray(xs) => xs.foldLeft(Array.emptyByteArray) {(acc, n) =>
-          acc ++ parameterToBytesValue(n)
-        }
-      }
+      implicit def parameterToBytesValue(p: Parameter): Array[Byte] =
+        parameterToDeterminedBytes(p)
+    }
 
-      implicit def userContractToBytesValue(uc: UserContract): Array[Byte] = {
+    implicit def userContractToBytesValue(uc: UserContract): Array[Byte] =
+      toDeterminedBytes(uc)
+    /*{
         import uc._
         owner.value ++ name.value ++ version.asBytesValue.bytes ++ code.value ++ methods.foldLeft(Array.emptyByteArray){(acc, n) =>
           acc ++ n.asBytesValue.bytes
         }
       }
-    }
+    }*/
   }
-
-
 
   // inner contract
   object inner {

@@ -4,6 +4,7 @@ import java.io.File
 import java.util.UUID
 
 import fssi.ast.Contract
+import fssi.contract.lib.Context
 import fssi.types.base.{Signature, UniqueName}
 import fssi.types.biz.Contract.{UserContract, Version}
 import fssi.types.biz.{Account, Receipt, Token, Transaction}
@@ -27,15 +28,6 @@ class ContractHandler extends Contract.Handler[Stack] {
   override def initializeRuntime(): Stack[Unit] = Stack {}
 
   override def closeRuntime(): Stack[Unit] = Stack {}
-
-  override def runTransaction(transaction: Transaction): Stack[Receipt] = Stack {
-    transaction match {
-      // TODO: handle run transaction
-      case transfer: Transaction.Transfer => ???
-      case deploy: Transaction.Deploy     => ???
-      case run: Transaction.Run           => ???
-    }
-  }
 
   override def createContractProject(projectRoot: File): Stack[Either[FSSIException, Unit]] =
     Stack {
@@ -62,6 +54,16 @@ class ContractHandler extends Contract.Handler[Stack] {
       sandbox.checkContractDeterminism(pubKey, contractFile)
     }
 
+  override def invokeContract(publicKey: Account.PubKey,
+                              context: Context,
+                              contract: UserContract,
+                              method: UserContract.Method,
+                              params: Option[UserContract.Parameter]): Stack[Receipt] = Stack {
+    val result = sandbox.executeContract(publicKey, context, contract, method, params)
+    // TODO: replenish properties
+    Receipt(Transaction.emptyId, result.isRight, Vector.empty, 0)
+  }
+
   override def loadContractFromFile(
       pubKey: Account.PubKey,
       contractFile: File): Stack[Either[FSSIException, UserContract]] = Stack {
@@ -75,31 +77,43 @@ class ContractHandler extends Contract.Handler[Stack] {
 
   override def createTransferTransaction(transactionId: Transaction.ID,
                                          payer: Account.ID,
+                                         publicKey: Account.PubKey,
                                          payee: Account.ID,
-                                         token: Token): Stack[Transaction.Transfer] = Stack {
-    Transaction.Transfer(transactionId,
-                         payer,
-                         payee,
-                         token,
-                         Signature.empty,
-                         System.currentTimeMillis())
-  }
+                                         token: Token): Stack[Transaction.Transfer] =
+    Stack {
+      Transaction.Transfer(transactionId,
+                           payer,
+                           publicKey,
+                           payee,
+                           token,
+                           Signature.empty,
+                           System.currentTimeMillis())
+    }
 
   override def createDeployTransaction(transactionId: Transaction.ID,
                                        owner: Account.ID,
-                                       contract: UserContract): Stack[Transaction.Deploy] = Stack {
-    Transaction.Deploy(transactionId, owner, contract, Signature.empty, System.currentTimeMillis())
-  }
+                                       publicKey: Account.PubKey,
+                                       contract: UserContract): Stack[Transaction.Deploy] =
+    Stack {
+      Transaction.Deploy(transactionId,
+                         owner,
+                         publicKey,
+                         contract,
+                         Signature.empty,
+                         System.currentTimeMillis())
+    }
 
   override def createRunTransaction(
       transactionId: Transaction.ID,
       caller: Account.ID,
+      publicKey: Account.PubKey,
       contractName: UniqueName,
       contractVersion: Version,
       methodAlias: String,
       contractParameter: Option[UserContract.Parameter]): Stack[Transaction.Run] = Stack {
     Transaction.Run(transactionId,
                     caller,
+                    publicKey,
                     contractName,
                     contractVersion,
                     methodAlias,

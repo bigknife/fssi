@@ -17,9 +17,9 @@ trait NewBlockGeneratedProgram[F[_]] extends CoreNodeProgram[F] with BaseProgram
       hashVerify   <- crypto.verifyBlockHash(block)
       _            <- requireM(hashVerify(), new RuntimeException("block hash tampered"))
       currentBlock <- store.getLatestDeterminedBlock()
-      _ <- requireM(currentBlock.head.height + 1 == block.head.height,
+      _ <- requireM(currentBlock.height + 1 == block.height,
                     new RuntimeException("block height not consistent"))
-      _ <- requireM(currentBlock.head.chainId == block.head.chainId,
+      _ <- requireM(currentBlock.chainId == block.chainId,
                     new RuntimeException("chainId not consistent"))
       _ <- store.persistBlock(block)
     } yield ()
