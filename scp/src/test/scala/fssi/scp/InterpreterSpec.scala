@@ -38,10 +38,10 @@ class InterpreterSpec extends FunSuite {
     val nodeId    = NodeID("hello".getBytes)
     val slotIndex = SlotIndex(1)
 
-    val ballotStatus = BallotStatus.getInstance(nodeId, slotIndex)
+    val ballotStatus = BallotStatus.getInstance(slotIndex)
     info(s"$ballotStatus")
 
-    val ballotStatus1 = BallotStatus.getInstance(nodeId, slotIndex)
+    val ballotStatus1 = BallotStatus.getInstance(slotIndex)
     ballotStatus1.phase := Ballot.Phase.Externalize
 
     info(s"$ballotStatus")
@@ -56,12 +56,12 @@ class InterpreterSpec extends FunSuite {
     assert(ballotStatus1.phase == ballotStatus.phase)
 
     val slotIndex1    = SlotIndex(2)
-    val ballotStatus3 = BallotStatus.getInstance(nodeId, slotIndex1)
+    val ballotStatus3 = BallotStatus.getInstance(slotIndex1)
     info(s"$ballotStatus3")
     assert(ballotStatus3 != ballotStatus)
 
-    BallotStatus.cleanInstance(nodeId, slotIndex)
-    val ballotStatus4 = BallotStatus.getInstance(nodeId, slotIndex)
+    BallotStatus.cleanInstance(slotIndex)
+    val ballotStatus4 = BallotStatus.getInstance(slotIndex)
     info(s"$ballotStatus4")
     assert(ballotStatus4.phase.isEmpty)
     assert(ballotStatus != ballotStatus4)
@@ -71,16 +71,16 @@ class InterpreterSpec extends FunSuite {
     val nodeId    = NodeID("nominate".getBytes)
     val slotIndex = SlotIndex(1)
 
-    val initStatus = NominationStatus.getInstance(nodeId, slotIndex)
+    val initStatus = NominationStatus.getInstance(slotIndex)
     info(s"$initStatus")
 
-    val status1 = NominationStatus.getInstance(nodeId, slotIndex)
+    val status1 = NominationStatus.getInstance(slotIndex)
     status1.roundNumber := 2
     info(s"$initStatus")
     info(s"$status1")
     assert(initStatus == status1)
 
-    val status2 = NominationStatus.getInstance(nodeId, slotIndex)
+    val status2 = NominationStatus.getInstance(slotIndex)
     val value1  = TestValue(TreeSet(10))
     val votes   = TreeSet[Value](value1)
     status2.votes := votes

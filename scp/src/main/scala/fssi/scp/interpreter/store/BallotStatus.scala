@@ -15,7 +15,7 @@ case class BallotStatus(
     valueOverride: Var[Option[Value]], //z
     currentMessageLevel: Var[Int],
     latestGeneratedEnvelope: Var[Envelope[BallotMessage]],
-    latestEmitEnvelope: Var[Envelope[BallotMessage]]
+    latestEmitEnvelope: Var[Option[Envelope[BallotMessage]]]
 )
 
 object BallotStatus {
@@ -31,26 +31,26 @@ object BallotStatus {
     valueOverride = Var(None),
     currentMessageLevel = Var(0),
     latestGeneratedEnvelope = Var.empty,
-    latestEmitEnvelope = Var.empty
+    latestEmitEnvelope = Var(None)
   )
-  private val instances: Var[Map[(NodeID, SlotIndex), BallotStatus]] = Var(Map.empty)
+  private val instances: Var[Map[SlotIndex, BallotStatus]] = Var(Map.empty)
 
-  def getInstance(nodeId: NodeID, slotIndex: SlotIndex): BallotStatus = {
+  def getInstance(slotIndex: SlotIndex): BallotStatus = {
     instances
-      .map(_.get((nodeId, slotIndex)))
+      .map(_.get(slotIndex))
       .map {
         case Some(b) => b
         case None =>
           val b = empty
-          instances := instances.unsafe() + ((nodeId, slotIndex) -> b)
+          instances := instances.unsafe() + (slotIndex -> b)
           b
       }
       .unsafe
   }
-  def cleanInstance(nodeId: NodeID, slotIndex: SlotIndex): Unit =
-    instances.map(_.get((nodeId, slotIndex))).foreach {
+  def cleanInstance(slotIndex: SlotIndex): Unit =
+    instances.map(_.get(slotIndex)).foreach {
       case Some(_) =>
-        instances := instances.unsafe() - ((nodeId, slotIndex))
+        instances := instances.unsafe() - slotIndex
         ()
       case None =>
     }

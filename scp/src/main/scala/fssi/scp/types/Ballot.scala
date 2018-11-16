@@ -3,11 +3,14 @@ package fssi.scp.types
 sealed trait Ballot extends Ordered[Ballot] {
   def counter: Int
   def value: Value
-  def isLess(other: Ballot): Boolean = counter <= other.counter
+
+  def isLess(other: Ballot): Boolean = compare(other) <= 0
+
   def isBottom: Boolean
 
-  def compatible(b2: Ballot): Boolean   = value == b2.value
-  def incompatible(b2: Ballot): Boolean = value != b2.value
+  def compatible(b2: Ballot): Boolean
+  def incompatible(b2: Ballot): Boolean = !compatible(b2)
+
 }
 
 object Ballot {
@@ -21,6 +24,9 @@ object Ballot {
       case _      => -1
     }
     override def isBottom: Boolean = true
+
+    override def compatible(b2: Ballot): Boolean   = false
+    override def incompatible(b2: Ballot): Boolean = true
   }
 
   private case class CommonBallot(counter: Int, value: Value) extends Ballot {
@@ -32,6 +38,11 @@ object Ballot {
         else c
     }
     override def isBottom: Boolean = false
+
+    override def compatible(b2: Ballot): Boolean = b2 match {
+      case CommonBallot(_, other) => value == other
+      case Bottom => false
+    }
   }
 
   def bottom: Ballot = Bottom

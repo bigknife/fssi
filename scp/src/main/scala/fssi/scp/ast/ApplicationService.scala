@@ -4,9 +4,9 @@ package ast
 import bigknife.sop._
 import bigknife.sop.macros._
 import bigknife.sop.implicits._
+import fssi.scp.types.Message.BallotMessage
 
 import scala.collection.immutable._
-
 import types._
 @sp trait ApplicationService[F[_]] {
 
@@ -38,15 +38,16 @@ import types._
 
   /** listener, phase upgrade to confirm
     */
-  def phaseUpgradeToConfirm(nodeId: NodeID, slotIndex: SlotIndex, ballot: Ballot): P[F, Unit]
+  def phaseUpgradeToConfirm(slotIndex: SlotIndex, ballot: Ballot): P[F, Unit]
 
   /** listener, phase upgrade to externalize
     */
-  def phaseUpgradeToExternalize(nodeId: NodeID, slotIndex: SlotIndex, ballot: Ballot): P[F, Unit]
+  def phaseUpgradeToExternalize(slotIndex: SlotIndex, ballot: Ballot): P[F, Unit]
 
   /** broadcast message envelope
     */
-  def broadcastEnvelope[M <: Message](nodeId: NodeID,
-                                      slotIndex: SlotIndex,
+  def broadcastEnvelope[M <: Message](slotIndex: SlotIndex,
                                       envelope: Envelope[M]): P[F, Unit]
+
+  def sendLatestEnvelope(slotIndex: SlotIndex): P[F, Unit]
 }

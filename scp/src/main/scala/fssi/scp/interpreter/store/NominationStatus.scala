@@ -34,24 +34,24 @@ object NominationStatus {
     previousValue = Var(None)
   )
 
-  private lazy val instances: Var[Map[(NodeID, SlotIndex), NominationStatus]] = Var(Map.empty)
+  private lazy val instances: Var[Map[SlotIndex, NominationStatus]] = Var(Map.empty)
 
-  def getInstance(nodeID: NodeID, slotIndex: SlotIndex): NominationStatus = {
+  def getInstance(slotIndex: SlotIndex): NominationStatus = {
     instances
-      .map(_.get((nodeID, slotIndex)))
+      .map(_.get(slotIndex))
       .map {
         case Some(n) => n
         case None =>
           val n = empty
-          instances := instances.map(_ + ((nodeID, slotIndex) -> n)).unsafe()
+          instances := instances.map(_ + (slotIndex -> n)).unsafe()
           n
       }
       .unsafe()
   }
 
-  def clearInstance(nodeID: NodeID, slotIndex: SlotIndex): Unit = {
-    instances.map(_.get((nodeID, slotIndex))).foreach {
-      case Some(_) => instances := instances.map(_ - ((nodeID, slotIndex))).unsafe()
+  def clearInstance(slotIndex: SlotIndex): Unit = {
+    instances.map(_.get(slotIndex)).foreach {
+      case Some(_) => instances := instances.map(_ - slotIndex).unsafe()
       case None    =>
     }
   }
