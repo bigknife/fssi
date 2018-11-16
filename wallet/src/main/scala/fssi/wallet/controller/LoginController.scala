@@ -3,16 +3,16 @@ import java.net.URL
 import java.util.ResourceBundle
 
 import com.jfoenix.controls._
-
+import fssi.wallet.WalletMain
 import javafx.scene.input.MouseEvent
 import scalafx.application.Platform
 import scalafx.stage.Stage
+import scalafx.Includes._
 
 class LoginController extends javafx.fxml.Initializable {
-
-  private var x: Double = 0
-  private var y: Double = 0
   var stage: Stage = _
+  val dw: DragWindow = new DragWindow()
+
 
   @javafx.fxml.FXML
   var loginName: JFXTextField = _
@@ -31,19 +31,26 @@ class LoginController extends javafx.fxml.Initializable {
 
   @javafx.fxml.FXML
   def mousePressedHandler(me: MouseEvent): Unit = {
-    x = me.getScreenX - stage.getX
-    y = me.getScreenY - stage.getY
+    dw.mousePressed(me, stage)
   }
 
   @javafx.fxml.FXML
   def mouseDraggedHandler(me: MouseEvent): Unit = {
-    stage.x = me.getScreenX - x
-    stage.y = me.getScreenY - y
+    dw.mouseDragged(me, stage)
   }
 
   @javafx.fxml.FXML
   def exit(): Unit = {
-
     Platform.exit()
+  }
+
+  @javafx.fxml.FXML
+  def login(): Unit = {
+    WalletMain.gotoProfile(stage)
+  }
+
+  @javafx.fxml.FXML
+  def register(): Unit = {
+    WalletMain.gotoDashboard(stage)
   }
 }

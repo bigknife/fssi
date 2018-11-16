@@ -187,7 +187,7 @@ object Common {
       def apply(): Project =
         prj("wallet", "wallet")
         .settings(
-          libraryDependencies ++= (all.scalafx ++ all.jfoenix)
+          libraryDependencies ++= (all.scalafx ++ all.jfoenix ++ all.controlfx ++ all.fontawesomefx)
         )
     }
 

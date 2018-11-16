@@ -67,6 +67,22 @@ object Dependencies {
       val scalafx = "8.0.144-R12"
 
       val jfoenix = "8.0.7"
+      
+      val controlfx = "8.40.14"
+      
+      val fontawesomefx = "8.9"
+    }
+    
+    lazy val fontawesomefx = {
+      Seq(
+        Dpd("de.jensd", "fontawesomefx", versions.fontawesomefx, autoScalaVersion = false)
+      ).map(_.libraryDependencies)
+    }
+    
+    lazy val controlfx = {
+      Seq(
+        Dpd("org.controlsfx", "controlsfx", versions.controlfx, autoScalaVersion = false)
+      ).map(_.libraryDependencies)
     }
 
     lazy val jfoenix = {
