@@ -66,7 +66,7 @@ object Dependencies {
 
       val scalafx = "8.0.144-R12"
 
-      val jfoenix = "9.0.1"
+      val jfoenix = "8.0.7"
     }
 
     lazy val jfoenix = {
