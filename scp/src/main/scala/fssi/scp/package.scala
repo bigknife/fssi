@@ -22,12 +22,10 @@ package object scp {
       fssi.scp.interpreter.runner.runIO(program, setting).unsafeRunSync()
     }
 
-    def handleEnvelope[M <: Message](nodeId: NodeID,
-                                     slotIndex: SlotIndex,
-                                     envelope: Envelope[M],
-                                     previousValue: Value)(implicit setting: Setting): Boolean = {
+    def handleEnvelope[M <: Message](envelope: Envelope[M], previousValue: Value)(
+        implicit setting: Setting): Boolean = {
       val scp     = SCP[fssi.scp.ast.components.Model.Op]
-      val program = scp.handleSCPEnvelope(nodeId, slotIndex, envelope, previousValue)
+      val program = scp.handleSCPEnvelope(envelope, previousValue)
       fssi.scp.interpreter.runner.runIO(program, setting).unsafeRunSync()
     }
   }

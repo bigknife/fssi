@@ -6,8 +6,6 @@ import fssi.ast.uc.EdgeNodeProgram
 import fssi.interpreter.Setting.EdgeNodeSetting
 import fssi.interpreter.StackConsoleMain.Effect
 import fssi.interpreter.{Setting, StackConsoleMain}
-import fssi.types.ServiceResource
-import bigknife.jsonrpc._
 
 object EdgeNodeMain extends StackConsoleMain[EdgeNodeSetting] {
   private val instance = EdgeNodeProgram.instance
@@ -16,17 +14,6 @@ object EdgeNodeMain extends StackConsoleMain[EdgeNodeSetting] {
     workingDir = new File(System.getProperty("user.home"), ".fssi"),
     password = Array.emptyByteArray
   )
-
-  def resource: EdgeNodeSetting => ServiceResource =
-    edgeNodeSetting =>
-      () =>
-        server.run(
-          name = "edge",
-          version = "v1",
-          resource = EdgeJsonRpcResource(edgeNodeSetting),
-          port = edgeNodeSetting.config.jsonRPCConfig.port,
-          host = edgeNodeSetting.config.jsonRPCConfig.host
-    )
 
   override def cmdArgs(xs: Array[String]): Option[EdgeNodeSetting] =
     EdgeNodeSettingParser.parse(xs, defaultEdgeNodeSetting)
@@ -38,12 +25,12 @@ object EdgeNodeMain extends StackConsoleMain[EdgeNodeSetting] {
     cmdArgs match {
       case Some(edgeNodeSetting) =>
         for {
-          node <- startup(applicationMessageHandler(),
-                          clientMessageHandler(),
-                          resource(edgeNodeSetting))
+          node <- startup(applicationMessageHandler(edgeNodeSetting),
+                          clientMessageHandler(edgeNodeSetting))
           _ <- Runtime.getRuntime.addShutdownHook(new Thread() {
             override def run(): Unit = { shutdown(node._1, node._2); () }
           })
+          _ <- Thread.currentThread().join()
         } yield ()
       case _ =>
     }

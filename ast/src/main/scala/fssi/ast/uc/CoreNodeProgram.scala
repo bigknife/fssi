@@ -19,21 +19,22 @@ trait CoreNodeProgram[F[_]] {
     * @return node info
     */
   def startupFull(root: File,
-                  consensusMessageHandler: Message.Handler[ConsensusMessage],
-                  applicationMessageHandler: Message.Handler[ApplicationMessage])
+                  consensusMessageHandler: Message.Handler[ConsensusMessage, Unit],
+                  applicationMessageHandler: Message.Handler[ApplicationMessage, Unit])
     : SP[F, (Node.ConsensusNode, Node.ApplicationNode)]
 
   /** Start up a semi-functioning core node.
     * runing consensus node only
     * @return node info
     */
-  def startupSemi(root: File,
-                  consensusMessageHandler: Message.Handler[ConsensusMessage]): SP[F, Node.ConsensusNode]
+  def startupSemi(
+      root: File,
+      consensusMessageHandler: Message.Handler[ConsensusMessage, Unit]): SP[F, Node.ConsensusNode]
 
   /** Shutdown core node
     */
-  def shutdown(consensusNode: Node.ConsensusNode, applicationNode: Option[Node.ApplicationNode]): SP[F, Unit]
-
+  def shutdown(consensusNode: Node.ConsensusNode,
+               applicationNode: Option[Node.ApplicationNode]): SP[F, Unit]
 
   /** handle transaction
     */
@@ -43,9 +44,17 @@ trait CoreNodeProgram[F[_]] {
     */
   def newBlockGenerated(block: Block): SP[F, Unit]
 
-  /** process message
+  /** process consensus message
     */
-  def processMessage(message: ConsensusAuxMessage): SP[F, Unit]
+  def processConsensusMessage(message: ConsensusMessage): SP[F, Unit]
+
+  /** process application message
+    */
+  def processApplicationMessage(applicationMessage: ApplicationMessage): SP[F, Unit]
+
+  /** broadcast consensus message
+    */
+  def broadcastConsensusMessage(consensusMessage: ConsensusMessage): SP[F, Unit]
 }
 
 object CoreNodeProgram {

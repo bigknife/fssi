@@ -5,10 +5,10 @@ import fssi.interpreter.Setting.CoreNodeSetting
 import fssi.interpreter.scp.{BlockValue, SCPEnvelope, SCPSupport}
 import fssi.scp._
 import fssi.scp.types.SlotIndex
-import fssi.types.{ReceiptSet, TransactionSet}
+import fssi.types.{ConsensusMessage, ReceiptSet, TransactionSet}
 import fssi.types.base.{Hash, Timestamp, WorldState}
 import fssi.types.biz.Node.ConsensusNode
-import fssi.types.biz.{Block, ConsensusAuxMessage, Receipt, Transaction}
+import fssi.types.biz.{Block, Receipt, Transaction}
 import utils._
 
 class ConsensusHandler
@@ -35,7 +35,7 @@ class ConsensusHandler
     setting match {
       case coreNodeSetting: CoreNodeSetting =>
         implicit val scpSetting: fssi.scp.interpreter.Setting = resolveSCPSetting(coreNodeSetting)
-        val nodeId                                            = scpSetting.nodeId
+        val nodeId                                            = scpSetting.localNode
         val chainId                                           = coreNodeSetting.config.chainId
         val height                                            = lastDeterminedBlock.height + 1
         val slotIndex                                         = SlotIndex(height)
@@ -59,24 +59,22 @@ class ConsensusHandler
     }
   }
 
-  override def processMessage(message: ConsensusAuxMessage,
-                              lastDeterminedBlock: Block): Stack[Unit] = Stack { setting =>
-    setting match {
-      case coreNodeSetting: CoreNodeSetting =>
-        message match {
-          case SCPEnvelope(envelope) =>
-            log.debug(s"handling scp envelope: $envelope")
-            implicit val scpSetting: fssi.scp.interpreter.Setting =
-              resolveSCPSetting(coreNodeSetting)
-            val nodeId        = envelope.statement.from
-            val slotIndex     = envelope.statement.slotIndex
-            val previousValue = BlockValue(lastDeterminedBlock)
-            Portal.handleEnvelope(nodeId, slotIndex, envelope, previousValue)
-            log.debug(s"handled scp envelope: $envelope")
-        }
-      case _ =>
+  override def processMessage(message: ConsensusMessage, lastDeterminedBlock: Block): Stack[Unit] =
+    Stack { setting =>
+      setting match {
+        case coreNodeSetting: CoreNodeSetting =>
+          message match {
+            case SCPEnvelope(envelope) =>
+              log.debug(s"handling scp envelope: $envelope")
+              implicit val scpSetting: fssi.scp.interpreter.Setting =
+                resolveSCPSetting(coreNodeSetting)
+              val previousValue = BlockValue(lastDeterminedBlock)
+              Portal.handleEnvelope(envelope, previousValue)
+              log.debug(s"handled scp envelope: $envelope")
+          }
+        case _ =>
+      }
     }
-  }
 }
 
 object ConsensusHandler {

@@ -3,20 +3,18 @@ import java.util.concurrent.{ExecutorService, Executors}
 
 import fssi.ast.uc.CoreNodeProgram
 import fssi.interpreter.Setting.CoreNodeSetting
-import fssi.interpreter.{LogSupport, NetworkHandler, UnsignedBytesSupport}
+import fssi.interpreter.{LogSupport, UnsignedBytesSupport}
 import fssi.scp.interpreter.ApplicationCallback
 import fssi.scp.types._
 import fssi.scp.types.implicits._
 import fssi.types.base.Hash
-import fssi.types.biz.Message.ConsensusMessage
 import fssi.types.implicits._
 import fssi.utils._
 import fssi.interpreter._
 
-class SCPApplicationCallback(coreNodeSetting: CoreNodeSetting)
-    extends ApplicationCallback
-    with UnsignedBytesSupport
-    with LogSupport {
+trait SCPApplicationCallback extends ApplicationCallback with UnsignedBytesSupport with LogSupport {
+
+  def coreNodeSetting: CoreNodeSetting
 
   override def validateValue(nodeId: NodeID, slotIndex: SlotIndex, value: Value): Value.Validity =
     value match {
@@ -85,17 +83,7 @@ class SCPApplicationCallback(coreNodeSetting: CoreNodeSetting)
       Some(BlockValue(newHashedBlock))
   }
 
-  override def scpExecutorService(): ExecutorService =
-    Executors.newSingleThreadExecutor(
-      (r: Runnable) => {
-        val thread = new Thread(r)
-        thread.setDaemon(true)
-        thread.setName("scp-delay-executor-program-thread")
-        thread
-      }
-    )
-
-  override def valueConfirmed(nodeId: NodeID, slotIndex: SlotIndex, value: Value): Unit = {
+  override def valueConfirmed(slotIndex: SlotIndex, value: Value): Unit = {
     value match {
       case BlockValue(block) =>
         log.info(s"confirmed block value slotIndex: ${slotIndex.value} --> hash: ${block.hash}")
@@ -103,7 +91,7 @@ class SCPApplicationCallback(coreNodeSetting: CoreNodeSetting)
     }
   }
 
-  override def valueExternalized(nodeId: NodeID, slotIndex: SlotIndex, value: Value): Unit = {
+  override def valueExternalized(slotIndex: SlotIndex, value: Value): Unit = {
     value match {
       case BlockValue(block) =>
         if (block.height != slotIndex.value)
@@ -119,11 +107,27 @@ class SCPApplicationCallback(coreNodeSetting: CoreNodeSetting)
     }
   }
 
-  override def broadcastEnvelope[M <: Message](nodeId: NodeID,
-                                               slotIndex: SlotIndex,
+  override def broadcastEnvelope[M <: Message](slotIndex: SlotIndex,
                                                envelope: Envelope[M]): Unit = {
-    val scpEnvelope      = SCPEnvelope(envelope.to[Message])
-    val consensusMessage = ConsensusMessage(scpEnvelope.value.asBytesValue.bytes)
-    NetworkHandler.instance.broadcastMessage(consensusMessage)(coreNodeSetting).unsafeRunSync()
+    import io.circe._
+    import io.circe.syntax._
+    import io.circe.generic.auto._
+    import fssi.scp.interpreter.json.implicits._
+    import fssi.interpreter.scp.BlockValue.implicits._
+    val transferredEnvelope = envelope.to[Message]
+    val scpEnvelope         = SCPEnvelope(transferredEnvelope)
+    if (slotIndex.value == envelope.statement.slotIndex.value) {
+      log.debug(s"broadcast scp envelope ${transferredEnvelope.asJson.noSpaces}")
+      runner
+        .runIOAttempt(CoreNodeProgram.instance.broadcastConsensusMessage(scpEnvelope),
+                      coreNodeSetting)
+        .unsafeRunSync() match {
+        case Right(_) =>
+          log.info(s"broadcast scp envelope ${transferredEnvelope.asJson.noSpaces} success")
+        case Left(e) => log.error(s"broadcast scp envelope failed: ${e.getMessage}", Some(e))
+      }
+    } else
+      throw new RuntimeException(
+        s"can't broadcast envelope of inconsistent slot index, received: ${slotIndex.value} , envelope: ${envelope.statement.slotIndex.value}")
   }
 }

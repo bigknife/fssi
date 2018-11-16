@@ -12,19 +12,18 @@ class SCPSpec extends FunSuite with TestSupport {
   val scp = SCP[Model.Op]
 
   test("ast") {
-    val (nodeId, nodeKey)               = createNodeID()
+    val (nodeId, nodeKey)    = createNodeID()
     val slotIndex            = SlotIndex(1)
     val value: Value         = TestValue(TreeSet(1, 2))
     val previousValue: Value = TestValue(TreeSet(1))
 
     val setting = Setting(
-      nodeId = nodeId,
       quorumSet = QuorumSet.slices(
         QuorumSet.Slices.flat(1, nodeId)
       ),
       localNode = nodeId,
       privateKey = null,
-      applicationCallback = ApplicationCallback.unimplemented
+      applicationCallback = null
     )
 
     val p = scp.handleAppRequest(nodeId, slotIndex, value, previousValue)

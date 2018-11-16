@@ -5,20 +5,29 @@ import fssi.interpreter.Configuration.P2PConfig
 import fssi.interpreter.Setting.{CoreNodeSetting, EdgeNodeSetting}
 import fssi.types.biz.Node.{ApplicationNode, ConsensusNode, ServiceNode}
 import fssi.types.biz._
-import fssi.types.{ApplicationMessage, ClientMessage, ConsensusMessage, ServiceResource}
+import fssi.types.{ApplicationMessage, ClientMessage, ConsensusMessage}
 import fssi.utils.Once
 import io.scalecube.cluster.{Cluster, ClusterConfig}
 import io.scalecube.transport.{Address, Message => CubeMessage}
+import bigknife.jsonrpc._
+import fssi.interpreter.jsonrpc.EdgeJsonRpcResource
+import fssi.types.biz.Message.ApplicationMessage.TransactionMessage
+import fssi.types.biz.Message.ClientMessage.QueryTransaction
+import fssi.types.implicits._
+import fssi.types.json.implicits._
+import io.circe._
+import io.circe.parser._
+import io.circe.generic.auto._
 
 class NetworkHandler extends Network.Handler[Stack] with LogSupport {
 
   val consensusOnce: Once[Cluster]   = Once.empty
   val applicationOnce: Once[Cluster] = Once.empty
-  val serviceOnce: Once[Cluster]     = Once.empty
+
+  val transactionOnce: Once[Map[String, Transaction]] = Once(Map.empty)
 
   override def startupConsensusNode(
-      conf: ChainConfiguration,
-      handler: Message.Handler[ConsensusMessage]): Stack[ConsensusNode] = Stack { setting =>
+      handler: Message.Handler[ConsensusMessage, Unit]): Stack[ConsensusNode] = Stack { setting =>
     val p2pConfig = setting match {
       case coreNodeSetting: CoreNodeSetting => coreNodeSetting.config.consensusConfig
       case _                                => throw new RuntimeException("unsupported setting to startup consensus")
@@ -30,33 +39,32 @@ class NetworkHandler extends Network.Handler[Stack] with LogSupport {
   }
 
   override def startupApplicationNode(
-      conf: ChainConfiguration,
-      handler: Message.Handler[ApplicationMessage]): Stack[ApplicationNode] = Stack { setting =>
-    val applicationConfig = setting match {
-      case coreNodeSetting: CoreNodeSetting => coreNodeSetting.config.applicationConfig
-      case edgeNodeSetting: EdgeNodeSetting => edgeNodeSetting.config.applicationConfig
-    }
-    val converter: CubeMessage => ApplicationMessage = cube => cube.data[ApplicationMessage]
-    val node                                         = startP2PNode(applicationOnce, applicationConfig, converter, handler)
-    ApplicationNode(node)
+      handler: Message.Handler[ApplicationMessage, Unit]): Stack[ApplicationNode] = Stack {
+    setting =>
+      val applicationConfig = setting match {
+        case coreNodeSetting: CoreNodeSetting => coreNodeSetting.config.applicationConfig
+        case edgeNodeSetting: EdgeNodeSetting => edgeNodeSetting.config.applicationConfig
+      }
+      val converter: CubeMessage => ApplicationMessage = cube => cube.data[ApplicationMessage]
+      val node                                         = startP2PNode(applicationOnce, applicationConfig, converter, handler)
+      ApplicationNode(node)
   }
 
-  override def startupServiceNode(conf: ChainConfiguration,
-                                  handler: Message.Handler[ClientMessage],
-                                  serviceResource: ServiceResource): Stack[ServiceNode] = Stack {
-    setting =>
+  override def startupServiceNode(
+      handler: Message.Handler[ClientMessage, Transaction]): Stack[ServiceNode] =
+    Stack { setting =>
       setting match {
         case edgeNodeSetting: EdgeNodeSetting =>
-          serviceResource()
-          val config  = edgeNodeSetting.config.jsonRPCConfig
-          val address = Node.Addr(config.host, config.port)
-          /// TODO: cope service node account
+          val config   = edgeNodeSetting.config.jsonRPCConfig
+          val address  = Node.Addr(config.host, config.port)
+          val resource = new EdgeJsonRpcResource(handler)
+          server.run("edgeNode", "v1", resource, address.port, address.host)
           val account = edgeNodeSetting.config.applicationConfig.account
           ServiceNode(Node(address, account))
         case _ =>
           throw new RuntimeException("unsupported edge node setting to startup service node")
       }
-  }
+    }
 
   override def shutdownConsensusNode(node: ConsensusNode): Stack[Unit] = Stack {
     shutdownP2PNode(consensusOnce)
@@ -67,30 +75,59 @@ class NetworkHandler extends Network.Handler[Stack] with LogSupport {
 
   override def shutdownServiceNode(node: ServiceNode): Stack[Unit] = ???
 
-  override def broadcastMessage(message: Message): Stack[Unit] = Stack {
-    message match {
-      case consensusMessage: ConsensusMessage =>
-        consensusOnce.foreach { cluster =>
-          cluster.spreadGossip(CubeMessage.fromData(consensusMessage)); ()
+  override def broadcastMessage(message: Message): Stack[Unit] = Stack { setting =>
+    setting match {
+      case _: CoreNodeSetting =>
+        message match {
+          case consensusMessage: ConsensusMessage =>
+            consensusOnce.foreach(cluster =>
+              cluster.spreadGossip(CubeMessage.fromData(consensusMessage)))
+          case _ =>
         }
-      case applicationMessage: ApplicationMessage =>
-        applicationOnce.foreach { cluster =>
-          cluster.spreadGossip(CubeMessage.fromData(applicationMessage)); ()
+      case _: EdgeNodeSetting =>
+        message match {
+          case applicationMessage: ApplicationMessage =>
+            applicationOnce.foreach(cluster =>
+              cluster.spreadGossip(CubeMessage.fromData(applicationMessage)))
+          case _ =>
         }
-      case clientMessage: ClientMessage =>
-        // TODO: handle client message
-        serviceOnce.foreach { cluster =>
-          cluster.spreadGossip(CubeMessage.fromData(clientMessage)); ()
-        }
+      case _ =>
     }
   }
 
-  override def waitForMessageResponse(message: Message): Stack[Either[Throwable, Transaction]] = ???
+  override def handledQueryTransaction(
+      queryTransaction: QueryTransaction): Stack[Option[Transaction]] = Stack {
+    transactionOnce.map(_.get(queryTransaction.payload.asBytesValue.utf8String)).unsafe()
+  }
+
+  override def receiveTransactionMessage(applicationMessage: ApplicationMessage): Stack[Unit] =
+    Stack {
+      applicationMessage match {
+        case transactionMessage: TransactionMessage =>
+          val jsonString = transactionMessage.payload.asBytesValue.utf8String
+          parse(jsonString).right.toOption match {
+            case Some(json) =>
+              json.as[Transaction].right.toOption match {
+                case Some(transaction) =>
+                  transactionOnce.updated(
+                    _ + (transaction.id.asBytesValue.utf8String -> transaction)); ()
+                case None =>
+                  throw new RuntimeException(
+                    s"received core node application message: $jsonString can not convert to Transaction")
+              }
+            case None =>
+              throw new RuntimeException(
+                s"received core node application message: $jsonString must be a transaction json")
+          }
+        case _ =>
+      }
+      ()
+    }
 
   private def startP2PNode[M <: Message](clusterOnce: Once[Cluster],
                                          p2pConfig: P2PConfig,
                                          converter: CubeMessage => M,
-                                         handler: Message.Handler[M]): Node = {
+                                         handler: Message.Handler[M, Unit]): Node = {
     val config =
       ClusterConfig
         .builder()

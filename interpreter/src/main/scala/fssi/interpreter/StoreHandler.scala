@@ -5,7 +5,7 @@ import java.io.File
 import java.lang
 
 import fssi.ast.Store
-import fssi.types.biz.{Account, Block, ChainConfiguration}
+import fssi.types.biz.{Account, Block}
 import fssi.types.exception.FSSIException
 import io.circe._
 import io.circe.parser._
@@ -42,6 +42,10 @@ class StoreHandler extends Store.Handler[Stack] with LogSupport {
     val f1 = f.createChild(".chain")
     f1.overwrite(s"$chainId")
     f.createChild("db", asDirectory = true)
+    val confString =
+      Resource.getAsString("config-sample.conf")(java.nio.charset.Charset.forName("utf-8"))
+    val confFile = f.createChild("fssi.conf", asDirectory = false, createParents = true)
+    confFile.overwrite(confString)
     ()
   }
 
@@ -49,7 +53,7 @@ class StoreHandler extends Store.Handler[Stack] with LogSupport {
     */
   override def initialize(root: File, chainId: String): Stack[Unit] = {
     if (bcsVar.isEmpty) {
-      bcsVar := BCS(root.getAbsolutePath)
+      bcsVar := BCS(s"${root.getAbsolutePath}/db")
     }
 
     // genesis block
@@ -64,7 +68,7 @@ class StoreHandler extends Store.Handler[Stack] with LogSupport {
     */
   override def load(root: File): Stack[Unit] = Stack {
     if (bcsVar.isEmpty) {
-      bcsVar := BCS(root.getAbsolutePath)
+      bcsVar := BCS(s"${root.getAbsolutePath}/db")
       ()
     } else ()
   }
@@ -113,12 +117,6 @@ class StoreHandler extends Store.Handler[Stack] with LogSupport {
       if (currentHeight > 0) checkHeight(currentHeight)
       else ()
     }
-  }
-
-  /** get conf store
-    */
-  override def getChainConfiguration(): Stack[ChainConfiguration] = Stack {
-    new ChainConfiguration {}
   }
 
   override def getLatestDeterminedBlock(): Stack[Block] = Stack {

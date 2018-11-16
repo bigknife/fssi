@@ -18,7 +18,7 @@ class NodeServiceHandler
 
   override def cacheNodeQuorumSet(): Stack[Unit] = Stack { setting =>
     setting.quorumSet match {
-      case QuorumSet.QuorumSlices(slices) => addNodeSlices(setting.nodeId, slices)
+      case QuorumSet.QuorumSlices(slices) => addNodeSlices(setting.localNode, slices)
       case QuorumSet.QuorumRef(_)         =>
     }
   }
@@ -151,34 +151,34 @@ class NodeServiceHandler
     */
   override def createBallotMessage(slotIndex: SlotIndex): Stack[Message.BallotMessage] = Stack {
     setting =>
-    assertSlotIndex(setting.localNode, slotIndex)
+      assertSlotIndex(setting.localNode, slotIndex)
 
-    val ballotStatus = BallotStatus.getInstance(slotIndex)
-    val phase        = ballotStatus.phase.unsafe()
+      val ballotStatus = BallotStatus.getInstance(slotIndex)
+      val phase        = ballotStatus.phase.unsafe()
 
-    phase match {
-      case Ballot.Phase.Prepare =>
-        Message.Prepare(
-          b = ballotStatus.currentBallot.unsafe(),
-          p = ballotStatus.prepared.unsafe(),
-          `p'` = ballotStatus.preparedPrime.unsafe(),
-          `c.n` = ballotStatus.commit.unsafe().map(_.counter).getOrElse(0),
-          `h.n` = ballotStatus.highBallot.unsafe().map(_.counter).getOrElse(0)
-        )
-      case Ballot.Phase.Confirm =>
-        Message.Confirm(
-          b = ballotStatus.currentBallot.unsafe(),
-          `p.n` = ballotStatus.prepared.unsafe().map(_.counter).getOrElse(0),
-          `c.n` = ballotStatus.commit.unsafe().map(_.counter).getOrElse(0),
-          `h.n` = ballotStatus.highBallot.unsafe().map(_.counter).getOrElse(0)
-        )
-      case Ballot.Phase.Externalize =>
-        Message.Externalize(
-          x = ballotStatus.commit.unsafe().map(_.value).get,
-          `c.n` = ballotStatus.commit.unsafe().map(_.counter).get,
-          `h.n` = ballotStatus.highBallot.unsafe().map(_.counter).getOrElse(0)
-        )
-    }
+      phase match {
+        case Ballot.Phase.Prepare =>
+          Message.Prepare(
+            b = ballotStatus.currentBallot.unsafe(),
+            p = ballotStatus.prepared.unsafe(),
+            `p'` = ballotStatus.preparedPrime.unsafe(),
+            `c.n` = ballotStatus.commit.unsafe().map(_.counter).getOrElse(0),
+            `h.n` = ballotStatus.highBallot.unsafe().map(_.counter).getOrElse(0)
+          )
+        case Ballot.Phase.Confirm =>
+          Message.Confirm(
+            b = ballotStatus.currentBallot.unsafe(),
+            `p.n` = ballotStatus.prepared.unsafe().map(_.counter).getOrElse(0),
+            `c.n` = ballotStatus.commit.unsafe().map(_.counter).getOrElse(0),
+            `h.n` = ballotStatus.highBallot.unsafe().map(_.counter).getOrElse(0)
+          )
+        case Ballot.Phase.Externalize =>
+          Message.Externalize(
+            x = ballotStatus.commit.unsafe().map(_.value).get,
+            `c.n` = ballotStatus.commit.unsafe().map(_.counter).get,
+            `h.n` = ballotStatus.highBallot.unsafe().map(_.counter).getOrElse(0)
+          )
+      }
   }
 
   /** make a envelope for a message
@@ -233,13 +233,12 @@ class NodeServiceHandler
 
   /** check a node set to see if they can construct a quorum for a node (configured quorum slices)
     */
-  override def isLocalQuorum(nodes: Set[NodeID]): Stack[Boolean] = Stack {
-   setting =>
+  override def isLocalQuorum(nodes: Set[NodeID]): Stack[Boolean] = Stack { setting =>
     isQuorumImpl(setting.localNode, nodes)
   }
 
   override def isQuorum(nodeID: NodeID, nodes: Set[NodeID]): Stack[Boolean] = Stack {
-   isQuorumImpl(nodeID, nodes)
+    isQuorumImpl(nodeID, nodes)
   }
 
   private def isQuorumImpl(nodeID: NodeID, nodes: Set[NodeID]): Boolean = {
@@ -248,7 +247,8 @@ class NodeServiceHandler
       case Slices.Flat(threshold, validators) =>
         nodes.count(validators.contains) >= threshold
       case Slices.Nest(threshold, validators, inners) =>
-        val innerCount = inners.count { f => nodes.count(f.validators.contains) >= f.threshold
+        val innerCount = inners.count { f =>
+          nodes.count(f.validators.contains) >= f.threshold
         }
         val outterCount = nodes.count(validators.contains)
         (innerCount + outterCount) >= threshold
@@ -257,13 +257,12 @@ class NodeServiceHandler
 
   /** check a node set to see if they can construct a vblocking set for a node (configured quorum slices)
     */
-  override def isLocalVBlocking(nodes: Set[NodeID]): Stack[Boolean] = Stack {
-    setting =>
-      isVBlockingImpl(setting.localNode, nodes)
+  override def isLocalVBlocking(nodes: Set[NodeID]): Stack[Boolean] = Stack { setting =>
+    isVBlockingImpl(setting.localNode, nodes)
   }
 
   override def isVBlocking(nodeID: NodeID, nodes: Set[NodeID]): Stack[Boolean] = Stack {
-   isVBlockingImpl(nodeID, nodes)
+    isVBlockingImpl(nodeID, nodes)
   }
 
   private def isVBlockingImpl(nodeID: NodeID, nodes: Set[NodeID]): Boolean = {
@@ -304,25 +303,24 @@ class NodeServiceHandler
     *
     * @see BallotProcotol.cpp#807-834
     */
-  override def canBallotBePrepared(slotIndex: SlotIndex,
-                                   ballot: Ballot): Stack[Boolean] = Stack {
+  override def canBallotBePrepared(slotIndex: SlotIndex, ballot: Ballot): Stack[Boolean] = Stack {
     setting =>
-    assertSlotIndex(setting.localNode, slotIndex)
-    val ballotStatus = BallotStatus.getInstance(slotIndex)
-    val phase        = ballotStatus.phase.unsafe()
+      assertSlotIndex(setting.localNode, slotIndex)
+      val ballotStatus = BallotStatus.getInstance(slotIndex)
+      val phase        = ballotStatus.phase.unsafe()
 
-    val b1 = if (phase == Ballot.Phase.Confirm) {
-      val p: Ballot = ballotStatus.prepared.unsafe().getOrElse(Ballot.bottom)
-      p <= ballot && p.compatible(ballot)
-    } else true
+      val b1 = if (phase == Ballot.Phase.Confirm) {
+        val p: Ballot = ballotStatus.prepared.unsafe().getOrElse(Ballot.bottom)
+        p <= ballot && p.compatible(ballot)
+      } else true
 
-    val pPrime = ballotStatus.preparedPrime.unsafe()
-    val b2     = !(pPrime.isDefined && ballot <= pPrime.get)
+      val pPrime = ballotStatus.preparedPrime.unsafe()
+      val b2     = !(pPrime.isDefined && ballot <= pPrime.get)
 
-    val p  = ballotStatus.prepared.unsafe()
-    val b3 = !(p.isDefined && (ballot <= p.get && ballot.compatible(p.get)))
+      val p  = ballotStatus.prepared.unsafe()
+      val b3 = !(p.isDefined && (ballot <= p.get && ballot.compatible(p.get)))
 
-    b1 && b2 && b3
+      b1 && b2 && b3
   }
 
   /** check a ballot can be potentially raise h, be confirmed prepared, to a commit
