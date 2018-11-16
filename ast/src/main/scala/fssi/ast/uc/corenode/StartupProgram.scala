@@ -18,8 +18,8 @@ trait StartupProgram[F[_]] extends CoreNodeProgram[F] with BaseProgram[F] {
     * @return node info
     */
   def startupFull(root: File,
-                  consensusMessageHandler: Message.Handler[ConsensusMessage],
-                  applicationMessageHandler: Message.Handler[ApplicationMessage])
+                  consensusMessageHandler: Message.Handler[ConsensusMessage, Unit],
+                  applicationMessageHandler: Message.Handler[ApplicationMessage, Unit])
     : SP[F, (Node.ConsensusNode, Node.ApplicationNode)] = {
     for {
       _               <- contract.assertRuntime()
@@ -27,9 +27,8 @@ trait StartupProgram[F[_]] extends CoreNodeProgram[F] with BaseProgram[F] {
       _               <- log.info("contract runtime checking passed.")
       _               <- store.loadAndCheck(root)
       _               <- log.info("store loaded, and checking passed.")
-      chainConf       <- store.getChainConfiguration()
-      consensusNode   <- network.startupConsensusNode(chainConf, consensusMessageHandler)
-      applicationNode <- network.startupApplicationNode(chainConf, applicationMessageHandler)
+      consensusNode   <- network.startupConsensusNode(consensusMessageHandler)
+      applicationNode <- network.startupApplicationNode(applicationMessageHandler)
       _               <- log.info("network startup.")
       _               <- consensus.initialize(consensusNode)
       _               <- log.info("consensus engine initialized.")
@@ -41,17 +40,15 @@ trait StartupProgram[F[_]] extends CoreNodeProgram[F] with BaseProgram[F] {
     * runing consensus node only
     * @return node info
     */
-  def startupSemi(
-      root: File,
-      consensusMessageHandler: Message.Handler[ConsensusMessage]): SP[F, Node.ConsensusNode] = {
+  def startupSemi(root: File, consensusMessageHandler: Message.Handler[ConsensusMessage, Unit])
+    : SP[F, Node.ConsensusNode] = {
     for {
       _             <- contract.assertRuntime()
       _             <- contract.initializeRuntime()
       _             <- log.info("contract runtime checking passed.")
       _             <- store.loadAndCheck(root)
       _             <- log.info("store loaded, and checking passed.")
-      chainConf     <- store.getChainConfiguration()
-      consensusNode <- network.startupConsensusNode(chainConf, consensusMessageHandler)
+      consensusNode <- network.startupConsensusNode(consensusMessageHandler)
       _             <- log.info("network startup.")
       _             <- consensus.initialize(consensusNode)
       _             <- log.info("consensus engine initialized.")

@@ -22,15 +22,11 @@ trait SCP[F[_]] {
 
   /** process message envelope from peer nodes
     */
-  def handleSCPEnvelope[M <: Message](nodeId: NodeID,
-                                      slotIndex: SlotIndex,
-                                      envelope: Envelope[M],
-                                      previousValue: Value): SP[F, Boolean]
+  def handleSCPEnvelope[M <: Message](envelope: Envelope[M], previousValue: Value): SP[F, Boolean]
 
   /** a bridge function, nomination process can bump to ballot process
     */
-  private[uc] def bumpState(nodeId: NodeID,
-                            slotIndex: SlotIndex,
+  private[scp] def bumpState(slotIndex: SlotIndex,
                             previousValue: Value,
                             compositeValue: Value,
                             force: Boolean): SP[F, Boolean]

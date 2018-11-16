@@ -8,11 +8,12 @@ trait QuorumSetSupport extends LogSupport {
   import QuorumSet._
   import QuorumSetSupport._
 
+  def unsafeGetSlices(nodeID: NodeID): QuorumSet.Slices = {
+    (slicesCache map (_.filterKeys(_ === nodeID)) getOrElse Map.empty).head._2
+  }
+
   def addNodeSlices(nodeId: NodeID, slices: QuorumSet.Slices): Unit =
     slicesCache := slicesCache.map(_ + (nodeId -> slices)).unsafe()
-
-  def unsafeGetSlices(nodeId: NodeID): QuorumSet.Slices =
-    slicesCache.map(_.get(nodeId)).unsafe.get
 
   /** delete a node (validators) from slices.
     * Definition (delete).
@@ -74,5 +75,5 @@ trait QuorumSetSupport extends LogSupport {
 }
 
 object QuorumSetSupport {
-  private val slicesCache: Var[Map[NodeID, QuorumSet.Slices]] = Var(Map.empty)
+  val slicesCache: Var[Map[NodeID, QuorumSet.Slices]] = Var(Map.empty)
 }

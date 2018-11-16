@@ -6,14 +6,16 @@ import fssi.utils._
 
 trait SCPSupport {
 
-  def resolveSCPSetting(coreNodeSetting: CoreNodeSetting): Setting = {
-    val config = coreNodeSetting.config.consensusConfig
+  def resolveSCPSetting(coreNode: CoreNodeSetting): Setting = {
+    val config = coreNode.config.consensusConfig
     Setting(
-      nodeId = NodeID(config.account.pubKey.value),
+      localNode = NodeID(config.account.pubKey.value),
       maxTimeoutSeconds = config.maxTimeoutSeconds.toInt,
       quorumSet = config.quorumSet,
       privateKey = crypto.rebuildECPrivateKey(config.account.encPrivKey.value, crypto.SECP256K1),
-      applicationCallback = new SCPApplicationCallback(coreNodeSetting)
+      applicationCallback = new SCPApplicationCallback {
+        override def coreNodeSetting: CoreNodeSetting = coreNode
+      }
     )
   }
 }

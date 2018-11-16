@@ -5,11 +5,12 @@ import java.io.File
 import bigknife.sop._
 import bigknife.sop.macros._
 import bigknife.sop.implicits._
-import fssi.contract.lib.{Context, KVStore, TokenQuery}
+import fssi.contract.lib.Context
 import fssi.types.base.UniqueName
 import fssi.types.biz._
 import fssi.types.exception.FSSIException
 import fssi.types.biz.Contract._
+import fssi.types.biz.Message.ApplicationMessage.TransactionMessage
 
 @sp trait Contract[F[_]] {
 
@@ -52,4 +53,6 @@ import fssi.types.biz.Contract._
                            contractVersion: Version,
                            methodAlias: String,
                            contractParameter: Option[UserContract.Parameter]): P[F, Transaction.Run]
+
+  def transferMessageToTransaction(message: Message): P[F, Option[Transaction]]
 }

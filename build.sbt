@@ -33,6 +33,7 @@ lazy val pInterperter = interpreter()
   .dependsOn(pContractScaffold)
   .dependsOn(pScp)
   .dependsOn(pStore)
+  .dependsOn(pJsonRpc)
 
 lazy val pJsonRpc = jsonrpc()
 
@@ -67,7 +68,6 @@ lazy val pCoreNode = coreNode()
 
 lazy val pEdgeNode = edgeNode()
   .dependsOn(pInterperter)
-  .dependsOn(pJsonRpc)
   .settings(
     packMain := Map("edgenode" -> "fssi.edgenode.EdgeNodeMain")
   )

@@ -2,40 +2,38 @@ package fssi.scp
 package ast
 package uc
 
-import types._
-import components._
-
 import bigknife.sop._
 import bigknife.sop.implicits._
+import fssi.scp.types._
 
 trait AttemptAcceptPrepareProgram[F[_]] extends SCP[F] with EmitProgram[F] {
+  import model.logService._
   import model.nodeService._
   import model.nodeStore._
-  import model.applicationService._
-  import model.logService._
 
-  def attemptAcceptPrepare(nodeId: NodeID,
-                           slotIndex: SlotIndex,
+  def attemptAcceptPrepare(slotIndex: SlotIndex,
                            previousValue: Value,
                            hint: Statement[Message.BallotMessage]): SP[F, Boolean] = {
 
     lazy val ignoreByCurrentPhase: SP[F, Boolean] =
-      currentBallotPhase(nodeId, slotIndex).map(_ == Ballot.Phase.Externalize)
+      currentBallotPhase(slotIndex).map(_ == Ballot.Phase.Externalize)
 
-    def tryAcceptHighestBallot(candidates: BallotSet, phase: Ballot.Phase): SP[F, Boolean] =
+    def tryAcceptHighestBallot(nodeID: NodeID,
+                               candidates: BallotSet,
+                               phase: Ballot.Phase): SP[F, Boolean] =
       candidates
         .foldRight(Option.empty[Ballot].pureSP[F]) { (n, acc) =>
           for {
             pre <- acc
             next <- ifM(pre.isDefined, pre) {
               for {
-                canBePrepared <- ifM(ballotCannotBePrepared(nodeId, slotIndex, n), false.pureSP[F]) {
+                canBePrepared <- ifM(ballotCannotBePrepared(slotIndex, n), false.pureSP[F]) {
                   for {
-                    nodeAccepted <- nodesAcceptedPrepare(nodeId, slotIndex, n)
-                    accepted <- ifM(isVBlocking(nodeId, nodeAccepted), true.pureSP[F]) {
+                    nodeAccepted <- nodesAcceptedPrepare(slotIndex, n)
+                    accepted <- ifM(isVBlocking(nodeID, nodeAccepted), true.pureSP[F]) {
                       for {
-                        nodeVoted <- nodesVotedPrepare(nodeId, slotIndex, n)
-                        byQuorum  <- isQuorum(nodeId, nodeVoted ++ nodeAccepted)
+                        nodeVoted <- nodesVotedPrepare(slotIndex, n)
+                        byQuorum  <- isQuorum(nodeID, nodeVoted ++ nodeAccepted)
                       } yield byQuorum
                     }
                   } yield accepted
@@ -43,9 +41,8 @@ trait AttemptAcceptPrepareProgram[F[_]] extends SCP[F] with EmitProgram[F] {
                 next <- ifM(!canBePrepared, pre) {
                   for {
 
-                    updated <- updateBallotStateWhenAcceptPrepare(nodeId, slotIndex, n)
-                    _ <- info(
-                      s"[$nodeId][$slotIndex][AttemptAcceptPrepare] updated acceptable $n: $updated")
+                    updated <- updateBallotStateWhenAcceptPrepare(slotIndex, n)
+                    _       <- info(s"[$slotIndex][AttemptAcceptPrepare] updated acceptable $n: $updated")
                   } yield if (updated) Option(n) else pre
                 }
               } yield next
@@ -57,21 +54,21 @@ trait AttemptAcceptPrepareProgram[F[_]] extends SCP[F] with EmitProgram[F] {
 
     // AST:
     ifM(ignoreByCurrentPhase, false.pureSP[F]) {
-      for { 
-        candidates <- prepareCandidatesWithHint(nodeId, slotIndex, hint)
+      for {
+        localNode       <- localNode()
+        candidates      <- prepareCandidatesWithHint(slotIndex, hint)
+        _               <- info(s"[$slotIndex][AttemptAcceptPrepare] found prepare candidates: $candidates")
+        phase           <- currentBallotPhase(slotIndex)
+        highestAccepted <- tryAcceptHighestBallot(localNode, candidates, phase)
         _ <- info(
-          s"[$nodeId][$slotIndex][AttemptAcceptPrepare] found prepare candidates: $candidates")
-        phase           <- currentBallotPhase(nodeId, slotIndex)
-        highestAccepted <- tryAcceptHighestBallot(candidates, phase)
-        _ <- info(
-          s"[$nodeId][$slotIndex][AttemptAcceptPrepare] accepted higest candidates at phase:$phase: $highestAccepted")
+          s"[$slotIndex][AttemptAcceptPrepare] accepted highest candidates at phase:$phase: $highestAccepted")
         _ <- ifThen(highestAccepted) {
           for {
-            msg <- createBallotMessage(nodeId, slotIndex)
-            _   <- emit(nodeId, slotIndex, previousValue, msg)
+            msg <- createBallotMessage(slotIndex)
+            _   <- emitBallot(slotIndex, previousValue, msg)
           } yield ()
         }
-     } yield highestAccepted
+      } yield highestAccepted
     }
   }
 }

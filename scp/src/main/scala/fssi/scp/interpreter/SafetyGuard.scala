@@ -20,4 +20,8 @@ trait SafetyGuard {
         highestSlotIndex := highestSlotIndex.map(_ + (nodeId -> slotIndex)).unsafe
     }
   }
+
+  private[scp] def resetSlotIndex(nodeID: NodeID): Unit = {
+    highestSlotIndex := highestSlotIndex.map(_.filterKeys(_ != nodeID)).unsafe()
+  }
 }

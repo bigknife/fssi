@@ -47,10 +47,6 @@ import fssi.types.exception.FSSIException
     } yield ()
   }
 
-  /** get conf store
-    */
-  def getChainConfiguration(): P[F, ChainConfiguration]
-
   def getLatestDeterminedBlock(): P[F, Block]
 
   def getCurrentWorldState(): P[F, WorldState]

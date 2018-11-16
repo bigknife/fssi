@@ -7,8 +7,6 @@ package object types {
   type ApplicationMessage = biz.Message.ApplicationMessage
   type ClientMessage      = biz.Message.ClientMessage
 
-  type ServiceResource = () => Unit
-
   type TransactionSet = scala.collection.immutable.TreeSet[biz.Transaction]
   object TransactionSet {
     def empty: TransactionSet = scala.collection.immutable.TreeSet.empty[biz.Transaction]
@@ -18,7 +16,7 @@ package object types {
 
   type ReceiptSet = scala.collection.immutable.TreeSet[biz.Receipt]
   object ReceiptSet {
-    def empty: ReceiptSet =  scala.collection.immutable.TreeSet.empty[biz.Receipt]
+    def empty: ReceiptSet = scala.collection.immutable.TreeSet.empty[biz.Receipt]
     def apply(receipts: Receipt*): ReceiptSet =
       scala.collection.immutable.TreeSet(receipts: _*)
   }

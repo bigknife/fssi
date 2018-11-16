@@ -7,20 +7,30 @@ package biz
 sealed trait Message
 
 object Message {
-  case class ConsensusMessage(payload: Array[Byte]) extends Message
-  case class ApplicationMessage(payload: Array[Byte]) extends Message
-  case class ClientMessage(payload: Array[Byte]) extends Message
+  trait ConsensusMessage extends Message
 
-  def handler[A <: Message](fun: A => Unit): Handler[A] = Handler(fun)
+  sealed trait ApplicationMessage extends Message
+  object ApplicationMessage {
+    case class TransactionMessage(payload: Array[Byte]) extends ApplicationMessage
+    case class QueryMessage(payload: Array[Byte])       extends ApplicationMessage
+  }
 
-  sealed trait Handler[A <: Message] {
-    protected val fun: A => Unit
+  sealed trait ClientMessage extends Message
+  object ClientMessage {
+    case class SendTransaction(payload: Array[Byte])  extends ClientMessage
+    case class QueryTransaction(payload: Array[Byte]) extends ClientMessage
+  }
 
-    def apply(message: A): Unit = fun(message)
+  def handler[A <: Message, R](fun: A => R): Handler[A, R] = Handler(fun)
+
+  sealed trait Handler[A <: Message, R] {
+    protected val fun: A => R
+
+    def apply(message: A): R = fun(message)
   }
 
   object Handler {
-    def apply[A <: Message](_fun: A => Unit): Handler[A] = new Handler[A] {
+    def apply[A <: Message, R](_fun: A => R): Handler[A, R] = new Handler[A, R] {
       protected val fun = _fun
     }
   }

@@ -35,10 +35,10 @@ object CoreNodeMain extends StackConsoleMain[CoreNodeSetting] {
       for {
         node <- if (coreNodeSetting.isFullFunctioning)
           startupFull(coreNodeSetting.workingDir,
-                      consensusMessageHandler(),
-                      applicationMessageHandler()).map(x => (x._1, Option(x._2)))
+                      consensusMessageHandler(coreNodeSetting),
+                      applicationMessageHandler(coreNodeSetting)).map(x => (x._1, Option(x._2)))
         else
-          startupSemi(coreNodeSetting.workingDir, consensusMessageHandler())
+          startupSemi(coreNodeSetting.workingDir, consensusMessageHandler(coreNodeSetting))
             .map((_, Option.empty[Node.ApplicationNode]))
         _ <- Runtime.getRuntime.addShutdownHook(new Thread(new Runnable {
           override def run(): Unit = {

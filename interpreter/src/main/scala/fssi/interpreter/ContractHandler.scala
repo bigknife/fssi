@@ -5,10 +5,17 @@ import java.util.UUID
 
 import fssi.ast.Contract
 import fssi.contract.lib.Context
+import fssi.types.ApplicationMessage
 import fssi.types.base.{Signature, UniqueName}
 import fssi.types.biz.Contract.{UserContract, Version}
-import fssi.types.biz.{Account, Receipt, Token, Transaction}
+import fssi.types.biz.Message.ApplicationMessage.TransactionMessage
+import fssi.types.biz.Message.ClientMessage.SendTransaction
+import fssi.types.biz._
 import fssi.types.exception.FSSIException
+import fssi.types.implicits._
+import io.circe._
+import io.circe.parser._
+import fssi.types.json.implicits._
 
 class ContractHandler extends Contract.Handler[Stack] {
 
@@ -120,6 +127,16 @@ class ContractHandler extends Contract.Handler[Stack] {
                     contractParameter,
                     Signature.empty,
                     System.currentTimeMillis())
+  }
+
+  override def transferMessageToTransaction(message: Message): Stack[Option[Transaction]] = Stack {
+    val bytesArray = message match {
+      case transactionMessage: TransactionMessage => transactionMessage.payload
+      case sendTransaction: SendTransaction       => sendTransaction.payload
+      case _                                      => Array.emptyByteArray
+    }
+    if (bytesArray.isEmpty) None
+    else parse(bytesArray.asBytesValue.utf8String).right.get.as[Transaction].toOption
   }
 }
 
