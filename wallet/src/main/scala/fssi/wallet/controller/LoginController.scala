@@ -46,11 +46,11 @@ class LoginController extends javafx.fxml.Initializable {
 
   @javafx.fxml.FXML
   def login(): Unit = {
-    WalletMain.gotoProfile(stage)
+    //WalletMain.gotoProfile(stage)
   }
 
   @javafx.fxml.FXML
   def register(): Unit = {
-    WalletMain.gotoDashboard(stage)
+    WalletMain.gotoMainFrame(stage)
   }
 }

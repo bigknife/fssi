@@ -11,11 +11,12 @@ import scalafx.scene.layout.{Region, StackPane}
 import scalafx.scene.paint.Color
 import scalafx.stage.StageStyle
 
-object WalletMain extends JFXApp with LoginFragment with ProfileFragment with DashboardFragment {
+object WalletMain extends JFXApp with LoginFragment  with MainFrameFragment {
   self =>
 
   stage = new PrimaryStage
   stage.initStyle(StageStyle.Transparent)
 
-  gotoLogin(stage)
+  //gotoLogin(stage)
+  gotoMainFrame(stage)
 }
