@@ -21,7 +21,7 @@ trait HandleNominationProgram[F[_]] extends SCP[F] with EmitProgram[F] {
                        statement: Statement[Message.Nomination]): SP[F, Boolean] = {
 
     ifM(isNominatingStopped(slotIndex), false.pureSP[F]) {
-      // try to accept votes from the message,
+      // try to accept votes from the message
       def tryAcceptVotes(xs: ValueSet): SP[F, StateChanged] = {
         xs.foldLeft(false.pureSP[F]) { (acc, n) =>
           for {
@@ -33,7 +33,7 @@ trait HandleNominationProgram[F[_]] extends SCP[F] with EmitProgram[F] {
                   for {
                     votedNodes <- nodesVotedNomination(slotIndex, n)
                     x          <- isQuorum(nodeId, votedNodes ++ acceptedNodes)
-                    _          <- if(x) debug(s"[$nodeId][$slotIndex] accepted $n by quorum")
+                    _ <- if (x) debug(s"[$nodeId][$slotIndex] accepted $n by quorum")
                     else debug(s"[$nodeId][$slotIndex] did not accept $n by quorum")
                   } yield x
                 }
@@ -75,9 +75,9 @@ trait HandleNominationProgram[F[_]] extends SCP[F] with EmitProgram[F] {
         acceptNew <- tryAcceptVotes(toVotes)
         _ <- if (acceptNew) info(s"[$nodeId][$slotIndex] accepted new votes: $toVotes")
         else info(s"[$nodeId][$slotIndex] votes: $toVotes not accepted")
-        accepted        <- acceptedNominations(slotIndex)
-        candidateNew    <- tryCandidate(accepted)
-        _               <- if (candidateNew) info(s"[$nodeId][$slotIndex] produced new candidate: $candidateNew")
+        accepted     <- acceptedNominations(slotIndex)
+        candidateNew <- tryCandidate(accepted)
+        _ <- if (candidateNew) info(s"[$nodeId][$slotIndex] produced new candidate: $candidateNew")
         else info(s"[$nodeId][$slotIndex] no new candidates from votes: $toVotes")
         voteNew <- ifM(haveCandidateNominations(slotIndex), false.pureSP[F]) {
           ifM(isNotLeader(nodeId, slotIndex), false.pureSP[F]) {
@@ -87,7 +87,8 @@ trait HandleNominationProgram[F[_]] extends SCP[F] with EmitProgram[F] {
               x <- ifM(value.isEmpty, false) {
                 for {
                   _ <- voteNewNominations(slotIndex, ValueSet(value.get))
-                  _ <- info(s"[$nodeId][$slotIndex] when no candidates, voted new nomination: ${value.get}")
+                  _ <- info(
+                    s"[$nodeId][$slotIndex] when no candidates, voted new nomination: ${value.get}")
                 } yield true
               }
             } yield x

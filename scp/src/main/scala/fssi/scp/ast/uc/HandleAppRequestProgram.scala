@@ -61,6 +61,7 @@ trait HandleAppRequestProgram[F[_]] extends SCP[F] with EmitProgram[F] {
     ifM(cannotNominateNewValue(slotIndex, timeout), false.pureSP[F]) {
       // rate limits
       for {
+        _        <- startNominating(slotIndex)
         round    <- currentNominateRound(slotIndex)
         _        <- info(s"[$nodeId][$slotIndex] handling app request at round: $round")
         newVotes <- narrowDownVotes(round)

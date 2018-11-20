@@ -9,6 +9,7 @@ import scala.collection.JavaConverters._
 import fssi.base._
 import fssi.scp.types.QuorumSet.Slices
 import fssi.scp.types.{NodeID, QuorumSet}
+import fssi.types.biz.Account.SecretKey
 
 case class ConfigReader(configFile: File) {
   private lazy val config: Config = ConfigFactory.parseFile(configFile)
@@ -25,7 +26,7 @@ case class ConfigReader(configFile: File) {
       def port: Int                       = config.getInt(s"$consensusPrefix.port")
       def seeds: Vector[Node.Addr]        = getSeeds(config.getConfig(consensusPrefix))
 
-      def account: Account = getAccount(config.getConfig(s"$consensusPrefix.account"))
+      def account: (Account, SecretKey) = getAccount(config.getConfig(s"$consensusPrefix.account"))
 
       object scp {
         val scpPrefix = s"$consensusPrefix.scp"
@@ -65,7 +66,8 @@ case class ConfigReader(configFile: File) {
       def host: String                      = config.getString(s"$applicationPrefix.host")
       def port: Int                         = config.getInt(s"$applicationPrefix.port")
       def seeds: Vector[Node.Addr]          = getSeeds(config.getConfig(applicationPrefix))
-      def account: Account                  = getAccount(config.getConfig(s"$applicationPrefix.account"))
+      def account: (Account, SecretKey) =
+        getAccount(config.getConfig(s"$applicationPrefix.account"))
     }
   }
 
@@ -86,11 +88,12 @@ case class ConfigReader(configFile: File) {
       def host: String                      = config.getString(s"$applicationPrefix.host")
       def port: Int                         = config.getInt(s"$applicationPrefix.port")
       def seeds: Vector[Node.Addr]          = getSeeds(config.getConfig(applicationPrefix))
-      def account: Account                  = getAccount(config.getConfig(s"$applicationPrefix.account"))
+      def account: (Account, SecretKey) =
+        getAccount(config.getConfig(s"$applicationPrefix.account"))
     }
   }
 
-  private def getAccount(accountConfig: Config): Account = {
+  private def getAccount(accountConfig: Config): (Account, SecretKey) = {
     val idOpt =
       Base58.decode(accountConfig.getString(s"id"))
     require(idOpt.nonEmpty, "account id must encode by base58")
@@ -104,8 +107,11 @@ case class ConfigReader(configFile: File) {
     val encPriKey = Account.PrivKey(encPriKeyOpt.get)
     val ivOpt     = Base58.decode(accountConfig.getString(s"iv"))
     require(ivOpt.nonEmpty, "account iv must encode by base58")
-    val iv = Account.IV(ivOpt.get)
-    Account(encPriKey, publicKey, iv, id)
+    val iv           = Account.IV(ivOpt.get)
+    val secretKeyOpt = Base58.decode(accountConfig.getString("secretKey"))
+    require(secretKeyOpt.nonEmpty, "account secret key must encode by base58")
+    val secretKey = SecretKey(secretKeyOpt.get)
+    (Account(encPriKey, publicKey, iv, id), secretKey)
   }
 
   private def getSeeds(seedsConfig: Config): Vector[Node.Addr] =

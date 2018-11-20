@@ -1,15 +1,18 @@
 package fssi.interpreter.scp
 
+import fssi.interpreter.UnsignedBytesSupport
 import fssi.scp.types._
 import fssi.store.mpt.Hash
-import fssi.types.TransactionSet
 import fssi.types.biz._
 import fssi.types.implicits._
 import fssi.store.implicits._
 
 case class BlockValue(block: Block) extends Value {
 
-  override def rawBytes: Array[Byte] = block.asBytesValue.bytes
+  override def rawBytes: Array[Byte] = {
+    val bytes = UnsignedBytesSupport.calculateUnsignedBlockBytes(block)
+    bytes
+  }
 
   override def compare(v: Value): Int =
     v match {
@@ -26,8 +29,15 @@ case class BlockValue(block: Block) extends Value {
             Ordering[String].compare(thisEncoding, thatEncoding)
           }
         }
+      case _ => -1
     }
 
+  override def equals(obj: scala.Any): Boolean = {
+    obj match {
+      case value: BlockValue => value.rawBytes sameElements rawBytes
+      case _                 => false
+    }
+  }
 }
 
 object BlockValue {
@@ -40,9 +50,15 @@ object BlockValue {
 
     implicit val valueEncoder: Encoder[Value] = {
       case blockValue: BlockValue => blockValue.asJson
+      case fakeValue: FakeValue   => fakeValue.asJson
     }
 
-    implicit val valueDecoder: Decoder[Value] = (hCursor: HCursor) => hCursor.as[BlockValue]
+    implicit val valueDecoder: Decoder[Value] = (hCursor: HCursor) => {
+      hCursor.as[BlockValue] match {
+        case Right(value) => Right(value)
+        case Left(_)      => hCursor.as[FakeValue]
+      }
+    }
   }
 
 }

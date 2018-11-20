@@ -11,7 +11,11 @@ trait SCP[F[_]] {
 
   /** initialize node scp
     */
-  def initialize(): SP[F, Unit]
+  def initialize(nodeId: NodeID, quorumSet: QuorumSet, fakeValue: Value): SP[F, Unit]
+
+  /** nominate fake value to update round leaders
+    */
+  def nominateFakeValue(nodeId: NodeID, slotIndex: SlotIndex, fakeValue: Value): SP[F, Unit]
 
   /** handle request of application
     */
@@ -27,9 +31,9 @@ trait SCP[F[_]] {
   /** a bridge function, nomination process can bump to ballot process
     */
   private[scp] def bumpState(slotIndex: SlotIndex,
-                            previousValue: Value,
-                            compositeValue: Value,
-                            force: Boolean): SP[F, Boolean]
+                             previousValue: Value,
+                             compositeValue: Value,
+                             force: Boolean): SP[F, Boolean]
 }
 
 object SCP {

@@ -37,13 +37,15 @@ object BCSKey {
 
     override def persistedKey: Array[Byte] = {
       val infix = "persisted"
-      s"$scheme:$infix://${segments.map(URLEncoder.encode(_, "utf-8")).mkString("/")}"
-        .getBytes("utf-8")
+      val persistedKey =
+        s"$scheme:$infix://${segments.map(URLEncoder.encode(_, "utf-8")).mkString("/")}"
+      persistedKey.getBytes("utf-8")
     }
     override def snapshotKey: Array[Byte] = {
       val infix = "snapshot"
-      s"$scheme:$infix://${segments.map(URLEncoder.encode(_, "utf-8")).mkString("/")}"
-        .getBytes("utf-8")
+      val snapshotKey =
+        s"$scheme:$infix://${segments.map(URLEncoder.encode(_, "utf-8")).mkString("/")}"
+      snapshotKey.getBytes("utf-8")
     }
   }
 
@@ -87,11 +89,11 @@ object BCSKey {
     }
 
     def preWorldState(height: BigInt): BlockKey = new _BlockKey(height) {
-      override val segments: Array[String] = Array("preBlockState")
+      override val segments: Array[String] = Array("preWorldState")
     }
 
     def curWorldState(height: BigInt): BlockKey = new _BlockKey(height) {
-      override val segments: Array[String] = Array("preGlobalState")
+      override val segments: Array[String] = Array("curWorldState")
     }
 
     def transactionList(height: BigInt): BlockKey = new _BlockKey(height) {
@@ -125,15 +127,15 @@ object BCSKey {
     def parseFromSnapshot(str: String): Option[BlockKey] = {
       //block:{height}:snapshot://preHash
       str match {
-        case P(height, key) if key == "height"        => Some(blockChainId(BigInt(height)))
+        case P(height, key) if key == "height"        => Some(blockHeight(BigInt(height)))
         case P(height, key) if key == "chainId"       => Some(blockChainId(BigInt(height)))
         case P(height, key) if key == "preWorldState" => Some(preWorldState(BigInt(height)))
-        case P(height, key) if key == "curWorldState" => Some(preWorldState(BigInt(height)))
+        case P(height, key) if key == "curWorldState" => Some(curWorldState(BigInt(height)))
         case P(height, key) if key == "transactions"  => Some(transactionList(BigInt(height)))
         //case P(height, key) if key == "receipts"      => Some(receiptList(BigInt(height)))
-        case P(height, key) if key == "timestamp"     => Some(blockTimestamp(BigInt(height)))
-        case P(height, key) if key == "hash"          => Some(blockHash(BigInt(height)))
-        case _                                        => None
+        case P(height, key) if key == "timestamp" => Some(blockTimestamp(BigInt(height)))
+        case P(height, key) if key == "hash"      => Some(blockHash(BigInt(height)))
+        case _                                    => None
       }
     }
   }

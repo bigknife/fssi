@@ -16,9 +16,9 @@ class NodeServiceHandler
     with QuorumSetSupport {
   import log._
 
-  override def cacheNodeQuorumSet(): Stack[Unit] = Stack { setting =>
-    setting.quorumSet match {
-      case QuorumSet.QuorumSlices(slices) => addNodeSlices(setting.localNode, slices)
+  override def cacheNodeQuorumSet(nodeId: NodeID, quorumSet: QuorumSet): Stack[Unit] = Stack {
+    quorumSet match {
+      case QuorumSet.QuorumSlices(slices) => addNodeSlices(nodeId, slices)
       case QuorumSet.QuorumRef(_)         =>
     }
   }
@@ -56,7 +56,7 @@ class NodeServiceHandler
     assertSlotIndex(setting.localNode, slotIndex)
 
     val nominationStatus = NominationStatus.getInstance(slotIndex)
-    nominationStatus.nominationStarted.unsafe()
+    !nominationStatus.nominationStarted.unsafe()
   }
 
   /** compute a value's hash
@@ -74,6 +74,14 @@ class NodeServiceHandler
         slotIndex.value.toByteArray ++ previousValue.rawBytes ++ NodeServiceHandler.hash_K ++ BigInt(
           round).toByteArray ++ value.rawBytes).toLong
     }
+  }
+
+  /** start nomination process
+    */
+  override def startNominating(slotIndex: SlotIndex): Stack[Unit] = Stack { setting =>
+    assertSlotIndex(setting.localNode, slotIndex)
+    NominationStatus.getInstance(slotIndex).nominationStarted := true
+    ()
   }
 
   /** stop nomination process
@@ -206,7 +214,8 @@ class NodeServiceHandler
     val fromNode  = envelope.statement.from
     val publicKey = crypto.rebuildECPublicKey(fromNode.value, cryptoUtil.SECP256K1)
     val source    = fixedStatementBytes(envelope.statement)
-    crypto.verifySignature(signature.value, source, publicKey)
+    val verified  = crypto.verifySignature(signature.value, source, publicKey)
+    verified
   }
 
   /** check the statement to see if it is illegal

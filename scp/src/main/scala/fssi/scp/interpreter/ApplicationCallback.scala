@@ -29,7 +29,7 @@ trait ApplicationCallback {
                            round: Int): Long                                                = 0
   def hashValue(slotIndex: SlotIndex, previousValue: Value, round: Int, value: Value): Long = 0
 
-  def canDispatch: Boolean                                         = false
+  def canDispatch: Boolean                                         = true
   def dispatch(timer: String, timeout: Long, task: Runnable): Unit = ()
   def cancel(timer: String): Unit                                  = ()
 }

@@ -8,23 +8,27 @@ package object scp {
   val ApplicationCallback: interpreter.ApplicationCallback.type = interpreter.ApplicationCallback
 
   object Portal {
+    private lazy val scp = SCP[fssi.scp.ast.components.Model.Op]
 
     def initialize(implicit setting: Setting): Unit = {
-      val scp     = SCP[fssi.scp.ast.components.Model.Op]
-      val program = scp.initialize()
+      val program = scp.initialize(setting.localNode, setting.quorumSet, setting.initFakeValue)
+      fssi.scp.interpreter.runner.runIO(program, setting).unsafeRunSync()
+    }
+
+    def nominateFakeValue(nodeId: NodeID, slotIndex: SlotIndex, fakeValue: Value)(
+        implicit setting: Setting): Unit = {
+      val program = scp.nominateFakeValue(nodeId, slotIndex, fakeValue)
       fssi.scp.interpreter.runner.runIO(program, setting).unsafeRunSync()
     }
 
     def handleRequest(nodeId: NodeID, slotIndex: SlotIndex, previousValue: Value, value: Value)(
         implicit setting: Setting): Boolean = {
-      val scp     = SCP[fssi.scp.ast.components.Model.Op]
       val program = scp.handleAppRequest(nodeId, slotIndex, value, previousValue)
       fssi.scp.interpreter.runner.runIO(program, setting).unsafeRunSync()
     }
 
     def handleEnvelope[M <: Message](envelope: Envelope[M], previousValue: Value)(
         implicit setting: Setting): Boolean = {
-      val scp     = SCP[fssi.scp.ast.components.Model.Op]
       val program = scp.handleSCPEnvelope(envelope, previousValue)
       fssi.scp.interpreter.runner.runIO(program, setting).unsafeRunSync()
     }

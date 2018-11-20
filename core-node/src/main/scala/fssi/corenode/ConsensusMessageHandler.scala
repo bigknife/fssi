@@ -14,12 +14,14 @@ trait ConsensusMessageHandler extends LogSupport {
   private val handler: CoreNodeSetting => Message.Handler[ConsensusMessage, Unit] =
     coreNodeSetting =>
       Message.handler[ConsensusMessage, Unit] { consensusMessage =>
+        log.info("core node receive consensus message")
         val program = coreNodeProgram.processConsensusMessage(consensusMessage)
         runner.runIOAttempt(program, coreNodeSetting).unsafeRunSync() match {
           case Right(_) =>
             log.info(s"core node handle consensus message success")
           case Left(e) =>
             log.error(s"core node handle consensus message failed: ${e.getMessage}", Some(e))
+            throw e
         }
     }
 
