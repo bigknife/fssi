@@ -1,0 +1,12 @@
+.root {
+  -fx-background-color: null;
+}
+#region {
+  //-fx-background-radius:20;
+  -fx-background-color: white;
+}
+
+.title_bar {
+   -fx-background-color: #404040;
+
+}

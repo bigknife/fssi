@@ -48,3 +48,6 @@
 /crypto/target/
 
 !/**/docs/
+
+!/**/main/**/*.fxml
+!/**/main/**/*.css
