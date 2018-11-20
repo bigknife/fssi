@@ -11,7 +11,7 @@
 <StackPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="768.0" prefWidth="1024.0" styleClass="root" stylesheets="@css/MainFrame.css" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="fssi.wallet.controller.MainFrameController">
    <children>
       <Region prefHeight="200.0" prefWidth="200.0" />
-      <BorderPane fx:id="workspace" prefHeight="200.0" prefWidth="200.0">
+      <BorderPane fx:id="workspace" prefHeight="200.0" prefWidth="200.0" style="-fx-background-color: black;">
          <top>
             <StackPane prefHeight="60.0" prefWidth="200.0" BorderPane.alignment="CENTER">
                <children>
