@@ -40,7 +40,7 @@
     -fx-background-repeat: no-repeat;
     /*-fx-background-position: 100%;*/
     -fx-background-radius: 0;
-    -fx-background-image: url('image/window-close-line.png');
+    -fx-background-image: url('../image/window-close-line.png');
 }
 .system_close:hover {
     -fx-background-color: #882D31;
@@ -50,7 +50,7 @@
     -fx-background-repeat: no-repeat;
     -fx-background-position: 100%;
     -fx-background-radius: 0;
-    -fx-background-image: url('image/window-min-line.png');
+    -fx-background-image: url('../image/window-min-line.png');
 }
 .system_min:hover {
     -fx-background-color: #882D31;
@@ -60,7 +60,7 @@
     -fx-background-repeat: no-repeat;
     /*-fx-background-position: 100%;*/
     -fx-background-radius: 0;
-    -fx-background-image: url('image/window-max-line.png');
+    -fx-background-image: url('../image/window-max-line.png');
 }
 .system_max:hover {
     -fx-background-color: #882D31;
@@ -93,7 +93,4 @@
     -fx-background-color: null;
     -fx-text-fill: #4A4A4A;
     -fx-font-size: 12px;
-}
-.workspace-background-dark {
-    -fx-background-color: #22343c;
 }

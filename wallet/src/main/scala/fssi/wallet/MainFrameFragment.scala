@@ -23,6 +23,6 @@ trait MainFrameFragment extends RouteSupport {
     changeScene(mainFrameScene, stage)
 
     // workspace to default view (may be dashboard)
-    WorkspaceLoader << "ui/workspace/dashboard.fxml"
+    WorkspaceLoader << "ui/workspace/create_account.fxml"
   }
 }

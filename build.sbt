@@ -58,6 +58,7 @@ lazy val pTool = tool()
   )
 
 lazy val pWallet = wallet()
+  .dependsOn(pBase)
 
 lazy val pCoreNode = coreNode()
   .dependsOn(pInterperter)

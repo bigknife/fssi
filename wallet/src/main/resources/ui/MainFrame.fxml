@@ -8,18 +8,10 @@
 <?import java.lang.*?>
 <?import javafx.scene.layout.*?>
 
-<StackPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="768.0" prefWidth="1024.0" styleClass="root" stylesheets="@MainFrame.css" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="fssi.wallet.controller.MainFrameController">
+<StackPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="768.0" prefWidth="1024.0" styleClass="root" stylesheets="@css/MainFrame.css" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="fssi.wallet.controller.MainFrameController">
    <children>
       <Region prefHeight="200.0" prefWidth="200.0" />
       <BorderPane fx:id="workspace" prefHeight="200.0" prefWidth="200.0">
-         <top>
-            <StackPane prefHeight="60.0" prefWidth="200.0" BorderPane.alignment="CENTER" />
-         </top>
-         <left>
-            <StackPane prefHeight="150.0" prefWidth="200.0" BorderPane.alignment="CENTER" />
-         </left>
-      </BorderPane>
-      <BorderPane prefHeight="200.0" prefWidth="200.0">
          <top>
             <StackPane prefHeight="60.0" prefWidth="200.0" BorderPane.alignment="CENTER">
                <children>
@@ -165,7 +157,7 @@
          <left>
             <VBox prefHeight="684.0" prefWidth="200.0" styleClass="left_side" BorderPane.alignment="CENTER">
                <children>
-                  <StackPane alignment="TOP_CENTER" prefHeight="150.0" prefWidth="200.0">
+                  <StackPane alignment="TOP_CENTER" prefHeight="150.0" prefWidth="200.0" VBox.vgrow="ALWAYS">
                      <children>
                         <VBox prefHeight="200.0" prefWidth="100.0">
                            <children>
@@ -301,7 +293,7 @@
                         </VBox>
                      </children>
                   </StackPane>
-                  <StackPane prefHeight="150.0" prefWidth="200.0" VBox.vgrow="ALWAYS">
+                  <StackPane prefHeight="150.0" prefWidth="200.0" VBox.vgrow="NEVER">
                      <children>
                         <HBox alignment="CENTER" prefHeight="100.0" prefWidth="200.0">
                            <children>

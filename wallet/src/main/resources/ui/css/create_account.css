@@ -1,0 +1,43 @@
+.create_account_step {
+    -fx-font-size: 14px;
+    -fx-text-fill: #ADBBC4;
+    -fx-border-color: #485764;
+    -fx-border-width: 0px 0px 1px 0px;
+}
+
+.create_account_mouse_track_pad {
+    -fx-background-color: #0F171C;
+    -fx-background-radius: 10px;
+    -fx-border-width: 1px;
+    -fx-border-color: #29414E;
+    -fx-border-radius: 10px;
+}
+
+.create_account_field_label {
+    -fx-background-color: rgb(15, 96, 130, 0.3);
+    -fx-background-radius: 11px;
+    -fx-text-fill: #E9ECEF;
+    -fx-font-size: 11px;
+}
+.create_account_random_text {
+    -fx-background-color: transparent;
+    -fx-text-fill: #9B9B9B;
+}
+.create_account_random_text .scroll-pane {
+    -fx-background-color: transparent;
+}
+.create_account_random_text .viewport {
+    -fx-background-color: transparent;
+}
+.create_account_random_text .content {
+    -fx-background-color: transparent;
+}
+.create_account_random_text .scroll-bar:vertical {
+    -fx-opacity: 0;
+}
+.create_account_password {
+    -fx-background-color: transparent;
+    -fx-border-color: #ADBBC4;
+    -fx-border-width: 0 0 1px 0px;
+    -fx-text-fill: #E9ECEF;
+}
