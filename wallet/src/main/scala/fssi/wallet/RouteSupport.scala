@@ -17,7 +17,5 @@ trait RouteSupport {
   }
 
   def gotoLogin(stage: Stage): Unit
-  //def gotoProfile(stage: Stage): Unit
-  //def gotoDashboard(stage: Stage): Unit
   def gotoMainFrame(stage: Stage): Unit
 }

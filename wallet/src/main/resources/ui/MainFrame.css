@@ -67,15 +67,15 @@
 }
 
 .menu_item_level1 {
-    -fx-background-color: rgb(41,65,78,1);
+    -fx-background-color: rgb(41,65,78,0.8);
     -fx-font-size: 14px;
     -fx-text-fill: #ADBBC4;
     -fx-alignment: CENTER_LEFT;
     -fx-background-radius: 0px;
 }
 .menu_item_level1:hover {
-    -fx-background-color: #4D83A0;
-    -fx-text-fill: #870000;
+    -fx-background-color: rgb(41,65,78,0.9);
+    -fx-text-fill: #FF9B1D;
 }
 
 .menu_item_level2 {
@@ -86,6 +86,14 @@
     -fx-background-radius: 0px;
 }
 .menu_item_level2:hover {
-    -fx-background-color: rgb(41,65,78,1);
-    -fx-text-fill: #ffff0a;
+    -fx-background-color: rgb(41,65,78,0.7);
+    -fx-text-fill: #C27413;
+}
+.who_am_i {
+    -fx-background-color: null;
+    -fx-text-fill: #4A4A4A;
+    -fx-font-size: 12px;
+}
+.workspace-background-dark {
+    -fx-background-color: #22343c;
 }

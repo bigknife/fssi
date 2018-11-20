@@ -1,5 +1,5 @@
 package fssi.wallet
-import fssi.wallet.controller.MainFrameController
+import fssi.wallet.controller.{MainFrameController, WorkspaceLoader}
 import scalafx.scene.Scene
 import scalafx.stage.Stage
 import scalafx.Includes._
@@ -21,5 +21,8 @@ trait MainFrameFragment extends RouteSupport {
   override def gotoMainFrame(stage: Stage): Unit = {
     init(stage)
     changeScene(mainFrameScene, stage)
+
+    // workspace to default view (may be dashboard)
+    WorkspaceLoader << "ui/workspace/dashboard.fxml"
   }
 }

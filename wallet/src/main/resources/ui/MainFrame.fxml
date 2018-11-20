@@ -11,12 +11,9 @@
 <StackPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="768.0" prefWidth="1024.0" styleClass="root" stylesheets="@MainFrame.css" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="fssi.wallet.controller.MainFrameController">
    <children>
       <Region prefHeight="200.0" prefWidth="200.0" />
-      <BorderPane prefHeight="200.0" prefWidth="200.0">
-         <center>
-            <StackPane prefHeight="150.0" prefWidth="200.0" BorderPane.alignment="CENTER" />
-         </center>
+      <BorderPane fx:id="workspace" prefHeight="200.0" prefWidth="200.0">
          <top>
-            <StackPane prefHeight="84.0" prefWidth="200.0" BorderPane.alignment="CENTER" />
+            <StackPane prefHeight="60.0" prefWidth="200.0" BorderPane.alignment="CENTER" />
          </top>
          <left>
             <StackPane prefHeight="150.0" prefWidth="200.0" BorderPane.alignment="CENTER" />
@@ -24,7 +21,7 @@
       </BorderPane>
       <BorderPane prefHeight="200.0" prefWidth="200.0">
          <top>
-            <StackPane prefHeight="84.0" prefWidth="200.0" BorderPane.alignment="CENTER">
+            <StackPane prefHeight="60.0" prefWidth="200.0" BorderPane.alignment="CENTER">
                <children>
                   <StackPane maxHeight="-Infinity" minHeight="-Infinity" prefHeight="60.0" StackPane.alignment="BOTTOM_CENTER">
                      <children>
@@ -122,7 +119,7 @@
                         </HBox>
                      </children>
                   </StackPane>
-                  <StackPane maxHeight="-Infinity" minHeight="-Infinity" prefHeight="24.0" styleClass="title_bar" StackPane.alignment="TOP_CENTER">
+                  <StackPane maxHeight="-Infinity" minHeight="-Infinity" prefHeight="24.0" styleClass="title_bar" visible="false" StackPane.alignment="TOP_CENTER">
                      <children>
                         <HBox alignment="CENTER_RIGHT" onMouseDragged="#mouseDraggedHandler" onMousePressed="#mousePressedHandler" prefHeight="24.0" prefWidth="200.0">
                            <children>
@@ -137,7 +134,7 @@
                                           <String fx:value="system_min" />
                                        </styleClass>
                                     </Button>
-                                    <Button minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" prefHeight="24.0" prefWidth="24.0">
+                                    <Button minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" onMouseClicked="#changeSize" prefHeight="24.0" prefWidth="24.0">
                                        <HBox.margin>
                                           <Insets right="8.0" />
                                        </HBox.margin>
@@ -172,7 +169,7 @@
                      <children>
                         <VBox prefHeight="200.0" prefWidth="100.0">
                            <children>
-                              <Button maxHeight="-Infinity" maxWidth="1.7976931348623157E308" mnemonicParsing="false" prefHeight="40.0" styleClass="menu_item_level1" text="Dashboard">
+                              <Button maxHeight="-Infinity" maxWidth="1.7976931348623157E308" mnemonicParsing="false" onMouseClicked="#gotoDashboard" prefHeight="40.0" styleClass="menu_item_level1" text="Dashboard">
                                  <VBox.margin>
                                     <Insets top="2.0" />
                                  </VBox.margin>
@@ -212,7 +209,7 @@
                                     <Insets top="2.0" />
                                  </VBox.margin>
                               </Button>
-                              <Button maxHeight="-Infinity" maxWidth="1.7976931348623157E308" mnemonicParsing="false" prefHeight="30.0" styleClass="menu_item_level2" text="Create Account">
+                              <Button maxHeight="-Infinity" maxWidth="1.7976931348623157E308" mnemonicParsing="false" onMouseClicked="#gotoCreateAccount" prefHeight="30.0" styleClass="menu_item_level2" text="Create Account">
                                  <graphic>
                                     <ImageView fitHeight="20.0" fitWidth="20.0" pickOnBounds="true" preserveRatio="true" />
                                  </graphic>
@@ -304,7 +301,43 @@
                         </VBox>
                      </children>
                   </StackPane>
-                  <StackPane prefHeight="150.0" prefWidth="200.0" />
+                  <StackPane prefHeight="150.0" prefWidth="200.0" VBox.vgrow="ALWAYS">
+                     <children>
+                        <HBox alignment="CENTER" prefHeight="100.0" prefWidth="200.0">
+                           <children>
+                              <ImageView fitHeight="24.0" fitWidth="24.0" pickOnBounds="true" preserveRatio="true">
+                                 <image>
+                                    <Image url="@image/bar-chart-solid.png" />
+                                 </image>
+                                 <HBox.margin>
+                                    <Insets bottom="25.0" left="25.0" />
+                                 </HBox.margin>
+                              </ImageView>
+                              <VBox alignment="CENTER_LEFT" prefHeight="200.0" prefWidth="100.0" HBox.hgrow="ALWAYS">
+                                 <children>
+                                    <Label styleClass="who_am_i" text="FSSI">
+                                       <VBox.margin>
+                                          <Insets top="5.0" />
+                                       </VBox.margin>
+                                    </Label>
+                                    <Label styleClass="who_am_i" text="Software Foundation">
+                                       <VBox.margin>
+                                          <Insets top="5.0" />
+                                       </VBox.margin>
+                                    </Label>
+                                    <Label styleClass="who_am_i" text="2018 - 2019">
+                                       <VBox.margin>
+                                          <Insets top="5.0" />
+                                       </VBox.margin>
+                                    </Label>
+                                 </children>
+                                 <padding>
+                                    <Insets left="10.0" />
+                                 </padding>
+                              </VBox>
+                           </children>
+                        </HBox>
+                     </children></StackPane>
                </children>
             </VBox>
          </left>
