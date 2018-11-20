@@ -51,3 +51,4 @@
 
 !/**/main/**/*.fxml
 !/**/main/**/*.css
+!/**/main/**/*.otf
