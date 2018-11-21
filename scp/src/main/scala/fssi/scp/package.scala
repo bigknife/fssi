@@ -10,8 +10,9 @@ package object scp {
   object Portal {
     private lazy val scp = SCP[fssi.scp.ast.components.Model.Op]
 
-    def initialize(implicit setting: Setting): Unit = {
-      val program = scp.initialize(setting.localNode, setting.quorumSet, setting.initFakeValue)
+    def initialize(currentHeight: BigInt)(implicit setting: Setting): Unit = {
+      val program =
+        scp.initialize(setting.localNode, setting.quorumSet, currentHeight, setting.initFakeValue)
       fssi.scp.interpreter.runner.runIO(program, setting).unsafeRunSync()
     }
 
