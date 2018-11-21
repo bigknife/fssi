@@ -63,13 +63,9 @@ class NodeServiceHandler
 
   /** check if only nominate fake value
     */
-  override def isOnlyNominateFakeValue(slotIndex: SlotIndex): Stack[Boolean] = Stack { setting =>
-    assertSlotIndex(setting.localNode, slotIndex)
-
-    val nominationStatus = NominationStatus.getInstance(slotIndex)
-    val votes            = nominationStatus.votes.unsafe()
+  override def isOnlyNominateFakeValue(voted: ValueSet): Stack[Boolean] = Stack { setting =>
     // we put fake value when nominate
-    votes.size <= 1
+    voted.size <= 1
   }
 
   /** compute a value's hash
