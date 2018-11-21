@@ -48,8 +48,7 @@ class TestApp(nodeID: NodeID,
     quorumSet = quorumSet,
     localNode = nodeID,
     privateKey = nodeKey,
-    applicationCallback = this,
-    initFakeValue = null
+    applicationCallback = this
   )
   private val scp: SCP[Op] = SCP[Model.Op]
 

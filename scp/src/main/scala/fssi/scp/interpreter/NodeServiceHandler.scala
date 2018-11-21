@@ -29,8 +29,9 @@ class NodeServiceHandler
     * @see SCPDriver.cpp#79
     */
   override def computeTimeout(round: Int): Stack[Long] = Stack { setting =>
-    if (round > setting.maxTimeoutSeconds) setting.maxTimeoutSeconds * 1000L
-    else round * 1000L
+//    if (round > setting.maxTimeoutSeconds) setting.maxTimeoutSeconds * 1000L
+//    else round * 1000L
+    1000 * 10
   }
 
   /** check if in-nominating and no any candidate produced
