@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.text.*?>
+<?import javafx.geometry.*?>
+<?import javafx.scene.effect.*?>
+<?import java.lang.*?>
+<?import java.util.*?>
+<?import javafx.scene.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+
+<StackPane prefHeight="600.0" prefWidth="800.0" stylesheets="@login.css" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="fssi.wallet.controller.ProfileController">
+   <children>
+      <Region id="region" prefHeight="200.0" prefWidth="200.0">
+         <effect>
+            <DropShadow color="GREY" />
+         </effect>
+      </Region>
+      <VBox prefHeight="200.0" prefWidth="100.0">
+         <children>
+            <StackPane prefHeight="60.0" prefWidth="780.0" style="-fx-background-color: #404040;" styleClass="title_bar">
+               <children>
+                  <StackPane onMouseDragged="#mouseDraggedHandler" onMousePressed="#mousePressedHandler" prefHeight="60.0" prefWidth="780.0" style="-fx-background-color: #404040;" styleClass="title_bar" />
+                  <Label onMouseDragged="#mouseDraggedHandler" onMousePressed="#mousePressedHandler" text="FSSI Wallet" textFill="WHITE" StackPane.alignment="CENTER_LEFT">
+                     <font>
+                        <Font size="24.0" />
+                     </font>
+                     <opaqueInsets>
+                        <Insets />
+                     </opaqueInsets>
+                     <StackPane.margin>
+                        <Insets />
+                     </StackPane.margin>
+                  </Label>
+               </children>
+            </StackPane>
+         </children>
+      </VBox>
+   </children>
+   <padding>
+      <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
+   </padding>
+</StackPane>

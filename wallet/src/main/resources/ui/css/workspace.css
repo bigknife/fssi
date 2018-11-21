@@ -1,0 +1,41 @@
+.workspace-background-dark {
+    -fx-background-color: #22343c;
+}
+.workspace-title-bar {
+    -fx-background-color: #404e68;
+}
+.workspace-title-text {
+    -fx-text-fill: #FFFFFF;
+    -fx-font-size: 16px;
+}
+
+.button_primary {
+    -fx-background-color: #49AFD9;
+    -fx-font-size: 12px;
+    -fx-text-fill: #080d13;
+    -fx-background-radius: 5px;
+    -fx-font-weight: bold;
+}
+
+.button_primary:hover {
+    -fx-background-color: #0f151f;
+    -fx-text-fill: #9bb7b7;
+}
+
+.file_chooser {
+    -fx-background-color: #275571;
+    -fx-font-size: 12px;
+    -fx-text-fill: #E9ECEF;
+    -fx-background-radius: 5px 0px 0px 5px;
+}
+
+.file_chooser_label {
+    -fx-background-color: #1d3a4e;
+    -fx-font-size: 12px;
+    -fx-text-fill: #E9ECEF;
+    -fx-background-radius: 0px 5px 5px 0px;
+}
+.file_chooser:hover {
+    -fx-background-color: #0f151f;
+    -fx-text-fill: #a2c2c2;
+}
