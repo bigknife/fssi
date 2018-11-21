@@ -1,6 +1,7 @@
 package fssi.scp
 package interpreter
 
+import fssi.base.Base58
 import fssi.base.implicits._
 import fssi.scp.ast._
 import fssi.scp.interpreter.store._
@@ -139,6 +140,7 @@ class NodeServiceHandler
         }
       log.debug(s"found ${leaders.size} leaders at new top priority: $newTopPriority")
       nominationStatus.roundLeaders := leaders
+      log.info(s"current leaders : $leaders on $slotIndex for previous value: $previousValue")
       leaders
   }
 
@@ -503,4 +505,57 @@ object NodeServiceHandler {
   trait Implicits {
     implicit val scpNodeServiceHandler: NodeServiceHandler = instance
   }
+
+  def main(args: Array[String]): Unit = {
+    crypto.registerBC()
+    val slotIndex = SlotIndex(1)
+    val previousValue = new Value {
+      override def rawBytes: Array[Byte]     = Array.emptyByteArray
+      override def compare(that: Value): Int = -1
+    }
+    val nodeId1 = NodeID(Base58.decode("nyCPaRVVPgGJrz5Lv8APnjCE3TrVfM5CRT8Nrxsq3uQS").get)
+    val nodeId2 = NodeID(Base58.decode("24SaPYzWudHZo7HonWWEYLmAJV2G8XLHNeGLoWH5oTuo3").get)
+    val nodeId3 = NodeID(Base58.decode("qKNMi4vA7zNJDWZQriujHUbUjaCqTSU4AZT4Ur8mxaSa").get)
+    val nodeId4 = NodeID(Base58.decode("bov1N9tWYPt4Q4DdHiVaqc2NaDjxjmDpCiCVuXab8PuY").get)
+    val slices = QuorumSet.Slices
+      .flat(1, nodeId1, nodeId2, nodeId3, nodeId4)
+    val quorumSet = QuorumSet.slices(slices)
+    val setting = Setting(
+      null,
+      0,
+      quorumSet,
+      nodeId1,
+      null,
+      new ApplicationCallback {
+        override def validateValue(nodeId: NodeID,
+                                   slotIndex: SlotIndex,
+                                   value: Value): Value.Validity = ???
+        override def combineValues(nodeId: NodeID,
+                                   slotIndex: SlotIndex,
+                                   value: ValueSet): Option[Value] = ???
+        override def extractValidValue(nodeId: NodeID,
+                                       slotIndex: SlotIndex,
+                                       value: Value): Option[Value]              = ???
+        override def valueConfirmed(slotIndex: SlotIndex, value: Value): Unit    = ???
+        override def valueExternalized(slotIndex: SlotIndex, value: Value): Unit = ???
+        override def broadcastEnvelope[M <: Message](slotIndex: SlotIndex,
+                                                     envelope: Envelope[M]): Unit = ???
+        override def isHashFuncProvided: StateChanged                             = false
+      }
+    )
+    QuorumSetSupport.slicesCache := Map(nodeId1 -> slices,
+                                        nodeId2 -> slices,
+                                        nodeId3 -> slices,
+                                        nodeId4 -> slices)
+    val nodes = Array(nodeId1, nodeId2, nodeId3, nodeId4)
+    (1 to 4).foreach { i =>
+      val set =
+        instance
+          .updateAndGetNominateLeaders(slotIndex, previousValue)(
+            setting.copy(localNode = nodes(i - 1)))
+          .unsafeRunSync()
+      println(set)
+    }
+  }
+
 }
