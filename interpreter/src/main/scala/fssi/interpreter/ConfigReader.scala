@@ -51,6 +51,7 @@ case class ConfigReader(configFile: File) {
 
         def maxTimeoutSeconds: Long = config.getLong(s"$scpPrefix.maxTimeoutSeconds")
         def maxNominatingTimes: Int = config.getInt(s"$scpPrefix.maxNominatingTimes")
+        def broadcastTimeout: Long  = config.getInt(s"$scpPrefix.broadcastTimeout")
 
         private def getValidators(validators: Vector[String]): Vector[NodeID] =
           validators

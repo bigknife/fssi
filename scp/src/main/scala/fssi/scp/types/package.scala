@@ -21,8 +21,9 @@ package object types {
     def apply(v: Int*): CounterSet = scala.collection.immutable.TreeSet(v: _*)
   }
 
-  val BALLOT_TIMER   = "ballot_timer"
-  val NOMINATE_TIMER = "nominate_timer"
+  val BALLOT_TIMER    = "ballot_timer"
+  val NOMINATE_TIMER  = "nominate_timer"
+  val BROADCAST_TIMER = "broadcast_timer"
 
   object implicits
       extends NodeID.Implicits

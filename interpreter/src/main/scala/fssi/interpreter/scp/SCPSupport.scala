@@ -20,7 +20,8 @@ trait SCPSupport {
       privateKey = crypto.rebuildECPrivateKey(privKeyBytes, crypto.SECP256K1),
       applicationCallback = new SCPApplicationCallback {
         override def coreNodeSetting: CoreNodeSetting = coreNode
-      }
+      },
+      broadcastTimeout = config.broadcastTimeout
     )
   }
 }

@@ -33,5 +33,15 @@ package object scp {
       val program = scp.handleSCPEnvelope(envelope, previousValue)
       fssi.scp.interpreter.runner.runIO(program, setting).unsafeRunSync()
     }
+
+    def stopBroadcastMessage()(implicit setting: Setting): Unit = {
+      val program = scp.stopBroadcastMessage()
+      fssi.scp.interpreter.runner.runIO(program, setting).unsafeRunSync()
+    }
+
+    def startBroadcastMessage(slotIndex: SlotIndex)(implicit setting: Setting): Unit = {
+      val program = scp.broadcastMessageRegularly(slotIndex)
+      fssi.scp.interpreter.runner.runIO(program, setting).unsafeRunSync()
+    }
   }
 }
