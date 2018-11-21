@@ -29,7 +29,8 @@ object Configuration {
                              account: (Account, SecretKey),
                              quorumSet: QuorumSet,
                              maxTimeoutSeconds: Long,
-                             maxNominatingTimes: Int)
+                             maxNominatingTimes: Int,
+                             broadcastTimeout: Long)
       extends P2PConfig
 
   case class ApplicationConfig(host: String,
@@ -68,7 +69,8 @@ object Configuration {
       core.consensus.account,
       core.consensus.scp.quorums,
       core.consensus.scp.maxTimeoutSeconds,
-      core.consensus.scp.maxNominatingTimes
+      core.consensus.scp.maxNominatingTimes,
+      core.consensus.scp.broadcastTimeout
     )
     val coreApplicationConfig = ApplicationConfig(core.application.host,
                                                   core.application.port,

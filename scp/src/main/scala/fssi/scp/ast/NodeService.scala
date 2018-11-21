@@ -122,4 +122,6 @@ import types._
   def notNecessarySetLowestCommitBallotUnderHigh(slotIndex: SlotIndex,
                                                  high: Ballot): P[F, Boolean] =
     needSetLowestCommitBallotUnderHigh(slotIndex, high).map(!_)
+
+  def broadcastTimeout(): P[F, Long]
 }

@@ -112,6 +112,10 @@ trait SCPApplicationCallback
           implicit val scpSetting: fssi.scp.interpreter.Setting = resolveSCPSetting(coreNodeSetting)
           val newSlotIndex                                      = SlotIndex(slotIndex.value + 1)
           Portal.nominateFakeValue(scpSetting.localNode, newSlotIndex, FakeValue(newSlotIndex))
+          log.info(s"stop broadcast message on slotIndex: $slotIndex")
+          Portal.stopBroadcastMessage()
+          log.info(s"start broadcast message on slotIndex: $newSlotIndex")
+          Portal.startBroadcastMessage(newSlotIndex)
         }
       case FakeValue(_) =>
     }

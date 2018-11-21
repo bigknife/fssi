@@ -782,7 +782,20 @@ class NodeStoreHandler extends NodeStore.Handler[Stack] {
     ()
   }
 
-  override def localNode(): Stack[NodeID] = Stack { setting => setting.localNode
+  override def localNode(): Stack[NodeID] = Stack { setting =>
+    setting.localNode
+  }
+
+  override def nominateEnvelope(slotIndex: SlotIndex): Stack[Option[Envelope[Message.Nomination]]] =
+    Stack {
+      val nominationStatus: NominationStatus = slotIndex
+      nominationStatus.lastEnvelope.unsafe()
+    }
+
+  override def ballotEnvelope(
+      slotIndex: SlotIndex): Stack[Option[Envelope[Message.BallotMessage]]] = Stack {
+    val ballotStatus: BallotStatus = slotIndex
+    ballotStatus.latestEmitEnvelope.unsafe()
   }
 
   implicit def getNominationStatus(slotIndex: SlotIndex): NominationStatus = {
