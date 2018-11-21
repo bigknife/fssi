@@ -1,8 +1,13 @@
 package fssi.scp.types
 import fssi.base.Base58
 
-case class NodeID(value: Array[Byte]) extends AnyVal {
+case class NodeID(value: Array[Byte]) {
   def ===(other: NodeID): Boolean = value sameElements other.value
+
+  override def equals(obj: scala.Any): Boolean = obj match {
+    case NodeID(bytes) => bytes sameElements value
+    case _             => false
+  }
 
   override def toString: String = Base58.encode(value)
 }
