@@ -15,6 +15,7 @@ import scalafx.stage.StageStyle
 object WalletMain extends JFXApp with LoginFragment  with MainFrameFragment {
   self =>
 
+  fssi.utils.crypto.registerBC()
   //load font
   Font.loadFont(getClass.getClassLoader.getResource("ui/font/Metropolis-Regular.otf").toExternalForm, 10)
 

@@ -13,7 +13,7 @@
       <Region prefHeight="200.0" prefWidth="200.0" />
       <BorderPane fx:id="workspace" prefHeight="200.0" prefWidth="200.0" style="-fx-background-color: black;">
          <top>
-            <StackPane prefHeight="60.0" prefWidth="200.0" BorderPane.alignment="CENTER">
+            <StackPane maxHeight="-Infinity" minHeight="-Infinity" prefHeight="60.0" prefWidth="200.0" BorderPane.alignment="CENTER">
                <children>
                   <StackPane maxHeight="-Infinity" minHeight="-Infinity" prefHeight="60.0" StackPane.alignment="BOTTOM_CENTER">
                      <children>
@@ -333,6 +333,9 @@
                </children>
             </VBox>
          </left>
+         <center>
+            <StackPane prefHeight="150.0" prefWidth="200.0" BorderPane.alignment="CENTER" />
+         </center>
       </BorderPane>
    </children>
 </StackPane>

@@ -27,116 +27,118 @@
                   <Label maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" minHeight="-Infinity" minWidth="-Infinity" styleClass="workspace-title-text" text="Create Account" />
                </children>
             </HBox>
-            <Label prefHeight="36.0" styleClass="create_account_step" text="1. Shake mouse below to create random numbers">
+            <HBox fx:id="cCanvasParent" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" onMouseDragged="#mouseDragged" onMousePressed="#mousePressed" onMouseReleased="#mouseReleased" prefHeight="400.0" prefWidth="804.0" styleClass="create_account_mouse_track_pad">
                <VBox.margin>
-                  <Insets left="10.0" />
-               </VBox.margin>
-               <padding>
-                  <Insets right="20.0" />
-               </padding>
-            </Label>
-            <HBox fx:id="canvasParent" maxHeight="-Infinity" maxWidth="1.7976931348623157E308" minHeight="-Infinity" minWidth="-Infinity" onMouseDragged="#mouseDragged" onMousePressed="#mousePressed" onMouseReleased="#mouseReleased" prefHeight="160.0" prefWidth="200.0" styleClass="create_account_mouse_track_pad">
-               <VBox.margin>
-                  <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
+                  <Insets left="10.0" right="10.0" top="10.0" />
                </VBox.margin>
                <children>
-                  <Canvas fx:id="canvas" height="200.0" width="335.0" HBox.hgrow="ALWAYS" />
+                  <Canvas fx:id="cCanvas" height="200.0" width="335.0" HBox.hgrow="ALWAYS" />
                </children>
                <padding>
                   <Insets bottom="1.0" left="1.0" right="1.0" top="1.0" />
                </padding>
             </HBox>
-            <VBox prefWidth="100.0">
+            <HBox alignment="CENTER" maxHeight="-Infinity" maxWidth="-Infinity" prefWidth="804.0" styleClass="create_account_mouse_track_result">
                <children>
-                  <Label styleClass="create_account_field_label" text="Random Numbers:">
-                     <padding>
-                        <Insets bottom="5.0" left="10.0" right="10.0" top="5.0" />
-                     </padding>
-                  </Label>
-                  <HBox fx:id="canvasParent1" maxWidth="1.7976931348623157E308" minHeight="-Infinity" minWidth="-Infinity" onMouseDragged="#mouseDragged" onMousePressed="#mousePressed" prefHeight="100.0" prefWidth="200.0" styleClass="create_account_mouse_track_pad">
-                     <padding>
-                        <Insets bottom="1.0" left="1.0" right="1.0" top="1.0" />
-                     </padding>
-                     <VBox.margin>
-                        <Insets top="10.0" />
-                     </VBox.margin>
-                     <children>
-                        <TextArea fx:id="randomTextArea" prefHeight="200.0" prefWidth="200.0" styleClass="create_account_random_text" wrapText="true" HBox.hgrow="ALWAYS" />
-                     </children>
-                  </HBox>
+                  <Label fx:id="cRandomText" styleClass="create_account_random_text" text="random text" />
+               </children>
+               <VBox.margin>
+                  <Insets left="10.0" right="10.0" />
+               </VBox.margin>
+               <padding>
+                  <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
+               </padding>
+            </HBox>
+            <HBox>
+               <children>
+                  <Button mnemonicParsing="false" onMouseClicked="#resetAll" prefHeight="36.0" prefWidth="100.0" styleClass="button_normal" text="Reset All">
+                     <HBox.margin>
+                        <Insets right="10.0" />
+                     </HBox.margin>
+                  </Button>
+                  <Button mnemonicParsing="false" onMouseClicked="#generate" prefHeight="36.0" prefWidth="100.0" styleClass="button_primary" text="Generate">
+                     <HBox.margin>
+                        <Insets right="10.0" />
+                     </HBox.margin>
+                  </Button>
+                  <Button mnemonicParsing="false" onMouseClicked="#saveAs" prefHeight="36.0" prefWidth="100.0" styleClass="button_primary" text="Save As ...">
+                     <HBox.margin>
+                        <Insets right="10.0" />
+                     </HBox.margin>
+                  </Button>
                </children>
                <VBox.margin>
                   <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
                </VBox.margin>
-            </VBox>
-            <Label prefHeight="36.0" styleClass="create_account_step" text="2. Input personal password to protect your private key">
-               <padding>
-                  <Insets right="20.0" />
-               </padding>
-               <VBox.margin>
-                  <Insets left="10.0" />
-               </VBox.margin>
-            </Label>
-            <HBox alignment="CENTER_LEFT" prefWidth="200.0">
-               <children>
-                  <Label maxHeight="-Infinity" maxWidth="-Infinity" minWidth="-Infinity" prefWidth="100.0" styleClass="create_account_field_label" text="Password:">
-                     <padding>
-                        <Insets bottom="5.0" left="10.0" right="10.0" top="5.0" />
-                     </padding>
-                     <HBox.margin>
-                        <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
-                     </HBox.margin>
-                  </Label>
-                  <PasswordField maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="24.0" prefWidth="300.0" styleClass="create_account_password">
-                     <HBox.margin>
-                        <Insets right="10.0" />
-                     </HBox.margin>
-                  </PasswordField>
-               </children>
             </HBox>
-            <HBox alignment="CENTER_LEFT" prefWidth="200.0">
-               <children>
-                  <Label maxHeight="-Infinity" maxWidth="-Infinity" minWidth="-Infinity" prefWidth="100.0" styleClass="create_account_field_label" text="Once More:">
-                     <padding>
-                        <Insets bottom="5.0" left="10.0" right="10.0" top="5.0" />
-                     </padding>
-                     <HBox.margin>
-                        <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
-                     </HBox.margin>
-                  </Label>
-                  <PasswordField maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="24.0" prefWidth="300.0" styleClass="create_account_password">
-                     <HBox.margin>
-                        <Insets bottom="10.0" right="10.0" />
-                     </HBox.margin>
-                  </PasswordField>
-               </children>
-            </HBox>
-            <Label prefHeight="36.0" styleClass="create_account_step" text="3. save your account">
-               <padding>
-                  <Insets right="20.0" />
-               </padding>
+            <GridPane maxWidth="-Infinity" minWidth="-Infinity" prefWidth="804.0">
+              <columnConstraints>
+                  <ColumnConstraints hgrow="SOMETIMES" maxWidth="-Infinity" minWidth="-Infinity" prefWidth="70.0" />
+                  <ColumnConstraints hgrow="SOMETIMES" maxWidth="402.0" minWidth="10.0" prefWidth="363.0" />
+                <ColumnConstraints hgrow="SOMETIMES" maxWidth="-Infinity" minWidth="-Infinity" prefWidth="70.0" />
+                <ColumnConstraints hgrow="SOMETIMES" maxWidth="302.0" minWidth="10.0" prefWidth="291.0" />
+              </columnConstraints>
+              <rowConstraints>
+                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+              </rowConstraints>
                <VBox.margin>
-                  <Insets left="10.0" />
+                  <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
                </VBox.margin>
-            </Label>
-            <HBox alignment="CENTER_LEFT" prefWidth="200.0">
                <children>
-                  <Button mnemonicParsing="false" onMouseClicked="#openFileChooser" styleClass="file_chooser" text="Save As ..." />
-                  <TextField fx:id="savePath" editable="false" styleClass="file_chooser_label" HBox.hgrow="ALWAYS">
-                     <HBox.margin>
+                  <Label alignment="CENTER_RIGHT" prefHeight="24.0" prefWidth="60.0" styleClass="create_account_field_label" text="ID:">
+                     <padding>
                         <Insets right="10.0" />
-                     </HBox.margin>
+                     </padding>
+                  </Label>
+                  <Label alignment="CENTER_RIGHT" prefHeight="24.0" prefWidth="60.0" styleClass="create_account_field_label" text="Pub:" GridPane.columnIndex="2" GridPane.rowIndex="1">
+                     <padding>
+                        <Insets right="10.0" />
+                     </padding>
+                  </Label>
+                  <Label alignment="CENTER_RIGHT" prefHeight="24.0" prefWidth="60.0" styleClass="create_account_field_label" text="Prv:" GridPane.rowIndex="1">
+                     <padding>
+                        <Insets right="10.0" />
+                     </padding>
+                  </Label>
+                  <Label alignment="CENTER_RIGHT" prefHeight="24.0" prefWidth="60.0" styleClass="create_account_field_label" text="IV:" GridPane.columnIndex="2">
+                     <padding>
+                        <Insets right="10.0" />
+                     </padding>
+                  </Label>
+                  <TextField fx:id="cAccountId" editable="false" styleClass="text_common" GridPane.columnIndex="1">
+                     <GridPane.margin>
+                        <Insets right="10.0" />
+                     </GridPane.margin>
+                  </TextField>
+                  <TextField fx:id="cAccountIv" editable="false" styleClass="text_common" GridPane.columnIndex="3">
+                     <GridPane.margin>
+                        <Insets right="10.0" />
+                     </GridPane.margin>
+                  </TextField>
+                  <TextField fx:id="cAccountPrv" editable="false" styleClass="text_common" GridPane.columnIndex="1" GridPane.rowIndex="1">
+                     <GridPane.margin>
+                        <Insets right="10.0" />
+                     </GridPane.margin>
+                  </TextField>
+                  <TextField fx:id="cAccountPub" editable="false" styleClass="text_common" GridPane.columnIndex="3" GridPane.rowIndex="1">
+                     <GridPane.margin>
+                        <Insets right="10.0" />
+                     </GridPane.margin>
+                  </TextField>
+                  <Label alignment="CENTER_RIGHT" prefHeight="24.0" prefWidth="60.0" styleClass="create_account_field_label" text="Sec:" GridPane.rowIndex="2">
+                     <padding>
+                        <Insets right="10.0" />
+                     </padding>
+                  </Label>
+                  <TextField fx:id="cAccountSec" editable="false" styleClass="text_common" GridPane.columnIndex="1" GridPane.rowIndex="2">
+                     <GridPane.margin>
+                        <Insets right="10.0" />
+                     </GridPane.margin>
                   </TextField>
                </children>
-               <VBox.margin>
-                  <Insets left="10.0" top="10.0" />
-               </VBox.margin>
-            </HBox>
-            <HBox alignment="CENTER_LEFT" prefWidth="200.0">
-               <VBox.margin>
-                  <Insets left="10.0" top="20.0" />
-               </VBox.margin>
-            </HBox>
+            </GridPane>
          </children>
          <stylesheets>
             <URL value="@../css/workspace.css" />

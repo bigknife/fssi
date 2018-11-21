@@ -22,6 +22,20 @@
     -fx-text-fill: #9bb7b7;
 }
 
+.button_normal {
+    -fx-background-color: #6D7884;
+    -fx-font-size: 12px;
+    -fx-text-fill: #080d13;
+    -fx-background-radius: 5px;
+    -fx-font-weight: bold;
+}
+
+.button_normal:hover {
+    -fx-background-color: #383f45;
+    -fx-text-fill: #9bb7b7;
+}
+
+
 .file_chooser {
     -fx-background-color: #275571;
     -fx-font-size: 12px;
@@ -38,4 +52,11 @@
 .file_chooser:hover {
     -fx-background-color: #0f151f;
     -fx-text-fill: #a2c2c2;
+}
+
+.text_common {
+    -fx-background-color: transparent;
+    -fx-border-color: #ADBBC4;
+    -fx-border-width: 0 0 1px 0px;
+    -fx-text-fill: #E9ECEF;
 }
