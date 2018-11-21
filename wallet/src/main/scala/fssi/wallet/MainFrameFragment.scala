@@ -3,6 +3,7 @@ import fssi.wallet.controller.{MainFrameController, WorkspaceLoader}
 import scalafx.scene.Scene
 import scalafx.stage.Stage
 import scalafx.Includes._
+import scalafx.beans.property.StringProperty
 
 trait MainFrameFragment extends RouteSupport {
   private var mainFrameScene: Scene = _
@@ -25,4 +26,8 @@ trait MainFrameFragment extends RouteSupport {
     // workspace to default view (may be dashboard)
     WorkspaceLoader << "ui/workspace/create_account.fxml"
   }
+}
+
+object MainFrameFragment {
+  val mainTitle: StringProperty = StringProperty("")
 }

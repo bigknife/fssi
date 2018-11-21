@@ -2,7 +2,9 @@ package fssi.wallet.controller
 import java.net.URL
 import java.util.ResourceBundle
 
+import fssi.wallet.MainFrameFragment
 import javafx.fxml.FXMLLoader
+import javafx.scene.control.Label
 import javafx.scene.input.MouseEvent
 import javafx.scene.layout.BorderPane
 import scalafx.stage.{Screen, Stage}
@@ -17,11 +19,16 @@ class MainFrameController extends javafx.fxml.Initializable{
   @javafx.fxml.FXML
   var workspace: BorderPane = _
 
+  @javafx.fxml.FXML
+  var cMainTitle: Label = _
+
   override def initialize(location: URL, resources: ResourceBundle): Unit = {
     WorkspaceLoader.listen {(oldValue, newValue) =>
       println(s"workspace changing view: $oldValue => $newValue")
       loadWorkspace(newValue)
     }
+
+    cMainTitle.textProperty() <== MainFrameFragment.mainTitle
   }
 
   @javafx.fxml.FXML

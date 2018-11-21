@@ -15,7 +15,7 @@ import fssi.interpreter.{Setting, runner}
 import fssi.base._
 import fssi.types.base.RandomSeed
 import fssi.types.biz.Account
-import fssi.wallet.{Program, WorkingThreadPool}
+import fssi.wallet.{MainFrameFragment, Program, WorkingThreadPool}
 import javafx.scene.control.{Label, TextArea, TextField}
 import scalafx.application.Platform
 import scalafx.stage.FileChooser
@@ -67,6 +67,8 @@ class CreateAccountController extends javafx.fxml.Initializable {
 
     cRandomText.textProperty() <== randomString
     //cSavePath.textProperty() <==> savePathProperty
+
+    MainFrameFragment.mainTitle.value = "Create Account"
   }
 
   @FXML
