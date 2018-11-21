@@ -13,6 +13,8 @@ import fssi.scp.types.{Message, _}
 import org.scalameta.logger
 import org.scalatest.Matchers._
 
+import scala.collection.immutable.TreeSet
+
 class TestApp(nodeID: NodeID,
               nodeKey: PrivateKey,
               slotIndex: SlotIndex,
@@ -42,6 +44,7 @@ class TestApp(nodeID: NodeID,
   private var externalizedValues: Vector[Value] = Vector.empty
 
   val setting: Setting = Setting(
+    initFakeValue = TestValue(TreeSet.empty),
     quorumSet = quorumSet,
     localNode = nodeID,
     privateKey = nodeKey,

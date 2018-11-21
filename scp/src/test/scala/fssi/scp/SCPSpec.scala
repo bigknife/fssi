@@ -18,6 +18,7 @@ class SCPSpec extends FunSuite with TestSupport {
     val previousValue: Value = TestValue(TreeSet(1))
 
     val setting = Setting(
+      initFakeValue = TestValue(TreeSet.empty),
       quorumSet = QuorumSet.slices(
         QuorumSet.Slices.flat(1, nodeId)
       ),
