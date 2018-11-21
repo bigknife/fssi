@@ -114,7 +114,7 @@ trait HandleNominationProgram[F[_]] extends SCP[F] with EmitProgram[F] {
             }
           } yield ()
         }
-      } yield true
+      } yield acceptNew || voteNew || candidateNew
     }
   }
 
