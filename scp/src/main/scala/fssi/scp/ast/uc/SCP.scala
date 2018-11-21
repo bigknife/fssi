@@ -11,7 +11,10 @@ trait SCP[F[_]] {
 
   /** initialize node scp
     */
-  def initialize(nodeId: NodeID, quorumSet: QuorumSet, fakeValue: Value): SP[F, Unit]
+  def initialize(nodeId: NodeID,
+                 quorumSet: QuorumSet,
+                 currentHeight: BigInt,
+                 fakeValue: Value): SP[F, Unit]
 
   /** nominate fake value to update round leaders
     */

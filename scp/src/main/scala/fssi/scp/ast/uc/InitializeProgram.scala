@@ -10,10 +10,13 @@ trait InitializeProgram[F[_]] extends SCP[F] with BaseProgram[F] {
 
   import model._
 
-  def initialize(nodeId: NodeID, quorumSet: QuorumSet, fakeValue: Value): SP[F, Unit] = {
+  def initialize(nodeId: NodeID,
+                 quorumSet: QuorumSet,
+                 currentHeight: BigInt,
+                 fakeValue: Value): SP[F, Unit] = {
     for {
       _ <- nodeService.cacheNodeQuorumSet(nodeId, quorumSet)
-      _ <- nominateFakeValue(nodeId, SlotIndex(0), fakeValue)
+      _ <- nominateFakeValue(nodeId, SlotIndex(currentHeight + 1), fakeValue)
     } yield ()
   }
 

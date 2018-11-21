@@ -54,7 +54,7 @@ class SandBoxTest extends FunSuite {
     val context    = new TestContext
     val methodName = "tokenQuery"
     val full       = "com.fssi.sample.InterfaceSample#tokenQuerySample(Context,String)"
-    val parameter  = PString(account1)
+    val parameter  = Option(PString(account1))
     val r = for {
       contract <- sandBox.buildUnsignedContract(pubKey, outputFile)
       _        <- sandBox.executeContract(pubKey, context, contract, Method(methodName, full), parameter)

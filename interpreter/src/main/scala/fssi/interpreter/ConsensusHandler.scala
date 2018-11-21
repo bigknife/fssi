@@ -17,13 +17,14 @@ class ConsensusHandler
     with UnsignedBytesSupport
     with LogSupport {
 
-  override def initialize(node: ConsensusNode): Stack[Unit] = Stack { setting =>
-    setting match {
-      case coreNodeSetting: CoreNodeSetting =>
-        implicit val scpSetting: fssi.scp.interpreter.Setting = resolveSCPSetting(coreNodeSetting)
-        Portal.initialize
-      case _ =>
-    }
+  override def initialize(node: ConsensusNode, currentHeight: BigInt): Stack[Unit] = Stack {
+    setting =>
+      setting match {
+        case coreNodeSetting: CoreNodeSetting =>
+          implicit val scpSetting: fssi.scp.interpreter.Setting = resolveSCPSetting(coreNodeSetting)
+          Portal.initialize(currentHeight)
+        case _ =>
+      }
   }
 
   override def destroy(): Stack[Unit] = Stack {}

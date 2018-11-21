@@ -22,17 +22,18 @@ trait StartupProgram[F[_]] extends CoreNodeProgram[F] with BaseProgram[F] {
                   applicationMessageHandler: Message.Handler[ApplicationMessage, Unit])
     : SP[F, (Node.ConsensusNode, Node.ApplicationNode)] = {
     for {
-      _               <- contract.assertRuntime()
-      _               <- contract.initializeRuntime()
-      _               <- log.info("contract runtime checking passed.")
-      _               <- store.loadAndCheck(root)
-      _               <- log.info("store loaded, and checking passed.")
-      consensusNode   <- network.startupConsensusNode(consensusMessageHandler)
-      applicationNode <- network.startupApplicationNode(applicationMessageHandler)
-      _               <- log.info("network startup.")
-      _               <- consensus.initialize(consensusNode)
-      _               <- log.info("consensus engine initialized.")
-      _               <- log.info("CoreNode startup!")
+      _                   <- contract.assertRuntime()
+      _                   <- contract.initializeRuntime()
+      _                   <- log.info("contract runtime checking passed.")
+      _                   <- store.loadAndCheck(root)
+      _                   <- log.info("store loaded, and checking passed.")
+      consensusNode       <- network.startupConsensusNode(consensusMessageHandler)
+      applicationNode     <- network.startupApplicationNode(applicationMessageHandler)
+      _                   <- log.info("network startup.")
+      lastDeterminedBlock <- store.getLatestDeterminedBlock()
+      _                   <- consensus.initialize(consensusNode, lastDeterminedBlock.height)
+      _                   <- log.info("consensus engine initialized.")
+      _                   <- log.info("CoreNode startup!")
     } yield (consensusNode, applicationNode)
   }
 
@@ -43,16 +44,17 @@ trait StartupProgram[F[_]] extends CoreNodeProgram[F] with BaseProgram[F] {
   def startupSemi(root: File, consensusMessageHandler: Message.Handler[ConsensusMessage, Unit])
     : SP[F, Node.ConsensusNode] = {
     for {
-      _             <- contract.assertRuntime()
-      _             <- contract.initializeRuntime()
-      _             <- log.info("contract runtime checking passed.")
-      _             <- store.loadAndCheck(root)
-      _             <- log.info("store loaded, and checking passed.")
-      consensusNode <- network.startupConsensusNode(consensusMessageHandler)
-      _             <- log.info("network startup.")
-      _             <- consensus.initialize(consensusNode)
-      _             <- log.info("consensus engine initialized.")
-      _             <- log.info("CoreNode startup!")
+      _                   <- contract.assertRuntime()
+      _                   <- contract.initializeRuntime()
+      _                   <- log.info("contract runtime checking passed.")
+      _                   <- store.loadAndCheck(root)
+      _                   <- log.info("store loaded, and checking passed.")
+      consensusNode       <- network.startupConsensusNode(consensusMessageHandler)
+      _                   <- log.info("network startup.")
+      lastDeterminedBlock <- store.getLatestDeterminedBlock()
+      _                   <- consensus.initialize(consensusNode, lastDeterminedBlock.height)
+      _                   <- log.info("consensus engine initialized.")
+      _                   <- log.info("CoreNode startup!")
     } yield consensusNode
   }
 }
