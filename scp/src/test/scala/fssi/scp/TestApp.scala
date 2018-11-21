@@ -48,7 +48,8 @@ class TestApp(nodeID: NodeID,
     quorumSet = quorumSet,
     localNode = nodeID,
     privateKey = nodeKey,
-    applicationCallback = this
+    applicationCallback = this,
+    broadcastTimeout = 0
   )
   private val scp: SCP[Op] = SCP[Model.Op]
 
