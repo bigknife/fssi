@@ -32,7 +32,7 @@ import types._
 
   /** check if only nominate fake value
     */
-  def isOnlyNominateFakeValue(slotIndex: SlotIndex): P[F, Boolean]
+  def isOnlyNominateFakeValue(voted: ValueSet): P[F, Boolean]
 
   /** compute a value's hash
     */
