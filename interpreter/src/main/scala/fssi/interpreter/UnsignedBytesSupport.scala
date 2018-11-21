@@ -8,7 +8,7 @@ trait UnsignedBytesSupport {
   def calculateUnsignedBlockBytes(block: Block): Array[Byte] = {
     import block._
     height.asBytesValue.bytes ++ chainId.asBytesValue.bytes ++ preWorldState.asBytesValue.bytes ++ curWorldState.asBytesValue.bytes ++ transactions
-      .foldLeft(Array.emptyByteArray)((acc, n) => acc ++ calculateUnsignedTransactionBytes(n)) ++ receipts.toArray.asBytesValue.bytes ++ timestamp.asBytesValue.bytes
+      .foldLeft(Array.emptyByteArray)((acc, n) => acc ++ calculateUnsignedTransactionBytes(n)) ++ receipts.toArray.asBytesValue.bytes
   }
 
   def calculateUnsignedTransactionBytes(transaction: Transaction): Array[Byte] = {

@@ -23,7 +23,8 @@ class SCPSpec extends FunSuite with TestSupport {
       ),
       localNode = nodeId,
       privateKey = null,
-      applicationCallback = null
+      applicationCallback = null,
+      initFakeValue = null
     )
 
     val p = scp.handleAppRequest(nodeId, slotIndex, value, previousValue)

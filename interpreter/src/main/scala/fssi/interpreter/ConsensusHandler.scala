@@ -52,10 +52,11 @@ class ConsensusHandler
                           receipts,
                           timestamp,
                           Hash.empty)
-        val hash       = Hash(crypto.hash(calculateUnsignedBlockBytes(block)))
-        val blockValue = BlockValue(block.copy(hash = hash))
-        Portal.handleRequest(nodeId, slotIndex, BlockValue(lastDeterminedBlock), blockValue)
-        log.debug(s"try to agree block value: $blockValue")
+        val hash          = Hash(crypto.hash(calculateUnsignedBlockBytes(block)))
+        val blockValue    = BlockValue(block.copy(hash = hash))
+        val previousValue = BlockValue(lastDeterminedBlock)
+        Portal.handleRequest(nodeId, slotIndex, previousValue, blockValue)
+        log.debug(s"try to agree block value: $blockValue , previousValue: $previousValue")
       case _ =>
     }
   }
