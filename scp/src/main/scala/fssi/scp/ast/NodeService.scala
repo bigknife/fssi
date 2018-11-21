@@ -30,6 +30,10 @@ import types._
     */
   def isNominatingStopped(slotIndex: SlotIndex): P[F, Boolean]
 
+  /** check if only nominate fake value
+    */
+  def isOnlyNominateFakeValue(slotIndex: SlotIndex): P[F, Boolean]
+
   /** compute a value's hash
     */
   def hashValue(slotIndex: SlotIndex, previousValue: Value, round: Int, value: Value): P[F, Long]

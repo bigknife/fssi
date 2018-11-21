@@ -61,6 +61,17 @@ class NodeServiceHandler
     !nominationStatus.nominationStarted.unsafe()
   }
 
+  /** check if only nominate fake value
+    */
+  override def isOnlyNominateFakeValue(slotIndex: SlotIndex): Stack[Boolean] = Stack { setting =>
+    assertSlotIndex(setting.localNode, slotIndex)
+
+    val nominationStatus = NominationStatus.getInstance(slotIndex)
+    val votes            = nominationStatus.votes.unsafe()
+    // we put fake value when nominate
+    votes.size <= 1
+  }
+
   /** compute a value's hash
     *
     * @see SCPDriver.cpp#66 notice: added hash_K
