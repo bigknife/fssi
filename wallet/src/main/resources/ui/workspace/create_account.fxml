@@ -10,7 +10,6 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-
 <StackPane style="-fx-background-color: transparent;" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="fssi.wallet.controller.workspace.CreateAccountController">
    <children>
       <VBox maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" minHeight="-Infinity" minWidth="-Infinity" styleClass="workspace-background-dark">
@@ -123,7 +122,7 @@
             <HBox alignment="CENTER_LEFT" prefWidth="200.0">
                <children>
                   <Button mnemonicParsing="false" onMouseClicked="#openFileChooser" styleClass="file_chooser" text="Save As ..." />
-                  <TextField fx:id="savePath" styleClass="file_chooser_label" HBox.hgrow="ALWAYS">
+                  <TextField fx:id="savePath" editable="false" styleClass="file_chooser_label" HBox.hgrow="ALWAYS">
                      <HBox.margin>
                         <Insets right="10.0" />
                      </HBox.margin>

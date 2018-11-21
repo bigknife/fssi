@@ -11,10 +11,16 @@ import scalafx.beans.property.StringProperty
 import scalafx.scene.canvas.GraphicsContext
 import scalafx.scene.paint.Color
 import fssi.base.BytesValue.implicits._
-import fssi.wallet.WorkingThreadPool
+import fssi.interpreter.{Setting, runner}
+import fssi.types.base.RandomSeed
+import fssi.wallet.{Program, WorkingThreadPool}
 import javafx.scene.control.{TextArea, TextField}
 import scalafx.application.Platform
 import scalafx.stage.FileChooser
+import io.circe._
+import io.circe.syntax._
+import io.circe.generic.auto._
+import fssi.types.json.implicits._
 
 class CreateAccountController extends javafx.fxml.Initializable{
   @FXML
@@ -80,14 +86,30 @@ class CreateAccountController extends javafx.fxml.Initializable{
   @FXML
   def openFileChooser(): Unit = {
     val fc = new FileChooser
-    val file = fc.showSaveDialog(canvasParent.getScene.getWindow)
-    savePathProperty.value = file.getAbsolutePath
+    Option(fc.showSaveDialog(canvasParent.getScene.getWindow)) foreach {file =>
+      savePathProperty.value = file.getAbsolutePath
+
+
+    }
+
   }
 
   private def randomByte(x: Double, y: Double): (Int, Byte) = {
     val factor = scala.util.Random.nextDouble() * 1024 + System.currentTimeMillis()
     val i = scala.util.Random.nextInt(1024)
     (i, BigDecimal(factor + x * y).toByte)
+  }
+
+  private def createAccount(): Unit = {
+    val p = Program.toolProgram.createAccount(RandomSeed(randomBytes))
+    runner.runIOAttempt(p, Setting.defaultInstance).unsafeRunSync() match {
+      case Left(t) => t.printStackTrace()
+      case Right((account, sk)) =>
+        val jsonAccount = account.asJson.spaces2
+        val jsonSk = sk.asJson.spaces2
+        println(jsonAccount)
+        println(jsonSk)
+    }
   }
 
 }
