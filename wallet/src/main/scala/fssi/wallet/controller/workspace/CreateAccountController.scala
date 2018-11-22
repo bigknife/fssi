@@ -16,7 +16,7 @@ import fssi.base._
 import fssi.types.base.RandomSeed
 import fssi.types.biz.Account
 import fssi.wallet.{MainFrameFragment, Program, WorkingThreadPool}
-import javafx.scene.control.{Label, TextArea, TextField}
+import javafx.scene.control.{Label, ProgressIndicator, TextArea, TextField}
 import scalafx.application.Platform
 import scalafx.stage.FileChooser
 import io.circe._
@@ -44,6 +44,8 @@ class CreateAccountController extends javafx.fxml.Initializable {
   var cAccountId: TextField = _
   @FXML
   var cAccountSec: TextField = _
+  @FXML
+  var cWorkingIndicator: ProgressIndicator = _
 
   var gc: GraphicsContext                = _
   val currentAccount: Var[Account]       = Var.empty
@@ -69,6 +71,8 @@ class CreateAccountController extends javafx.fxml.Initializable {
     //cSavePath.textProperty() <==> savePathProperty
 
     MainFrameFragment.mainTitle.value = "Create Account"
+
+    cWorkingIndicator.visibleProperty().value = false
   }
 
   @FXML
@@ -153,6 +157,7 @@ class CreateAccountController extends javafx.fxml.Initializable {
       alert.showAndWait()
       ()
     } else {
+      cWorkingIndicator.visibleProperty().value = true
       WorkingThreadPool.delay {
         createAccount() match {
           case Left(t) =>
@@ -163,6 +168,7 @@ class CreateAccountController extends javafx.fxml.Initializable {
                 contentText = t.getStackTrace.mkString("\n\t")
               }
               alert.showAndWait()
+              cWorkingIndicator.visibleProperty().value = false
             }
 
           case Right((account, sk)) =>
@@ -174,6 +180,8 @@ class CreateAccountController extends javafx.fxml.Initializable {
               cAccountPrv.textProperty().value = account.encPrivKey.asBytesValue.bcBase58
               cAccountPub.textProperty().value = account.pubKey.asBytesValue.bcBase58
               cAccountSec.textProperty().value = sk.asBytesValue.bcBase58
+
+              cWorkingIndicator.visibleProperty().value = false
             }
         }
       }

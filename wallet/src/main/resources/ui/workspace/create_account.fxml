@@ -14,19 +14,24 @@
    <children>
       <VBox maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" minHeight="-Infinity" minWidth="-Infinity" styleClass="workspace-background-dark">
          <children>
-            <HBox alignment="CENTER_LEFT" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="60.0" prefWidth="200.0" styleClass="workspace-title-bar">
+            <StackPane>
                <children>
-                  <ImageView fitHeight="36.0" fitWidth="36.0" pickOnBounds="true" preserveRatio="true">
-                     <image>
-                        <Image url="@../image/create_account_logo.png" />
-                     </image>
-                     <HBox.margin>
-                        <Insets left="24.0" right="10.0" />
-                     </HBox.margin>
-                  </ImageView>
-                  <Label maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" minHeight="-Infinity" minWidth="-Infinity" styleClass="workspace-title-text" text="Create Account" />
+                  <HBox alignment="CENTER_LEFT" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="60.0" prefWidth="200.0" styleClass="workspace-title-bar">
+                     <children>
+                        <ImageView fitHeight="36.0" fitWidth="36.0" pickOnBounds="true" preserveRatio="true">
+                           <image>
+                              <Image url="@../image/create_account_logo.png" />
+                           </image>
+                           <HBox.margin>
+                              <Insets left="24.0" right="10.0" />
+                           </HBox.margin>
+                        </ImageView>
+                        <Label maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" minHeight="-Infinity" minWidth="-Infinity" styleClass="workspace-title-text" text="Create Account" />
+                     </children>
+                  </HBox>
+                  <ProgressIndicator fx:id="cWorkingIndicator" maxHeight="-Infinity" maxWidth="-Infinity" prefHeight="24.0" prefWidth="24.0" visible="false" />
                </children>
-            </HBox>
+            </StackPane>
             <HBox fx:id="cCanvasParent" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" onMouseDragged="#mouseDragged" onMousePressed="#mousePressed" onMouseReleased="#mouseReleased" prefHeight="400.0" prefWidth="804.0" styleClass="create_account_mouse_track_pad">
                <VBox.margin>
                   <Insets left="10.0" right="10.0" top="10.0" />
