@@ -11,7 +11,14 @@ trait SCP[F[_]] {
 
   /** initialize node scp
     */
-  def initialize(): SP[F, Unit]
+  def initialize(nodeId: NodeID,
+                 quorumSet: QuorumSet,
+                 currentHeight: BigInt,
+                 fakeValue: Value): SP[F, Unit]
+
+  /** nominate fake value to update round leaders
+    */
+  def nominateFakeValue(nodeId: NodeID, slotIndex: SlotIndex, fakeValue: Value): SP[F, Unit]
 
   /** handle request of application
     */
@@ -24,12 +31,20 @@ trait SCP[F[_]] {
     */
   def handleSCPEnvelope[M <: Message](envelope: Envelope[M], previousValue: Value): SP[F, Boolean]
 
+  /** broadcast nominate and ballot message until externalized
+    */
+  def broadcastMessageRegularly(slotIndex: SlotIndex): SP[F, Unit]
+
+  /** stop broadcast all of nominate and ballot message
+    */
+  def stopBroadcastMessage(): SP[F, Unit]
+
   /** a bridge function, nomination process can bump to ballot process
     */
   private[scp] def bumpState(slotIndex: SlotIndex,
-                            previousValue: Value,
-                            compositeValue: Value,
-                            force: Boolean): SP[F, Boolean]
+                             previousValue: Value,
+                             compositeValue: Value,
+                             force: Boolean): SP[F, Boolean]
 }
 
 object SCP {
@@ -37,7 +52,7 @@ object SCP {
     new HandleAppRequestProgram[F] with HandleSCPEnvelopeProgram[F] with HandleNominationProgram[F]
     with HandleBallotMessageProgram[F] with BumpStateProgram[F] with AttemptAcceptPrepareProgram[F]
     with AttemptConfirmPrepareProgram[F] with AttemptAcceptCommitProgram[F]
-    with AttemptConfirmCommitProgram[F] with InitializeProgram[F] {
+    with AttemptConfirmCommitProgram[F] with InitializeProgram[F] with BroadcastMessageProgram[F] {
       private[uc] val model: Model[F] = M
     }
 }

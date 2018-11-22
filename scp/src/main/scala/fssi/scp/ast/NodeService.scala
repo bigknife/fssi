@@ -10,7 +10,7 @@ import scala.collection.immutable._
 import types._
 @sp trait NodeService[F[_]] {
 
-  def cacheNodeQuorumSet(): P[F, Unit]
+  def cacheNodeQuorumSet(nodeId: NodeID, quorumSet: QuorumSet): P[F, Unit]
 
   /** compute next round timeout (in ms)
     *
@@ -30,9 +30,17 @@ import types._
     */
   def isNominatingStopped(slotIndex: SlotIndex): P[F, Boolean]
 
+  /** check if only nominate fake value
+    */
+  def isOnlyNominateFakeValue(voted: ValueSet): P[F, Boolean]
+
   /** compute a value's hash
     */
   def hashValue(slotIndex: SlotIndex, previousValue: Value, round: Int, value: Value): P[F, Long]
+
+  /** start nomination process, set nominationStarted to true
+    */
+  def startNominating(slotIndex: SlotIndex): P[F, Unit]
 
   /** stop nomination process, set nominationStarted to false
     */
@@ -96,8 +104,7 @@ import types._
     *
     * @see BallotProtocol.cpp#937-938
     */
-  def canBallotBeHighestCommitPotentially(slotIndex: SlotIndex,
-                                          ballot: Ballot): P[F, Boolean]
+  def canBallotBeHighestCommitPotentially(slotIndex: SlotIndex, ballot: Ballot): P[F, Boolean]
 
   /** check a ballot can be potentially raise h, be confirmed prepared, to a commit
     *
@@ -111,9 +118,10 @@ import types._
     *
     * @see BallotProtocol.cpp#961
     */
-  def needSetLowestCommitBallotUnderHigh(slotIndex: SlotIndex,
-                                         high: Ballot): P[F, Boolean]
+  def needSetLowestCommitBallotUnderHigh(slotIndex: SlotIndex, high: Ballot): P[F, Boolean]
   def notNecessarySetLowestCommitBallotUnderHigh(slotIndex: SlotIndex,
                                                  high: Ballot): P[F, Boolean] =
     needSetLowestCommitBallotUnderHigh(slotIndex, high).map(!_)
+
+  def broadcastTimeout(): P[F, Long]
 }

@@ -19,6 +19,7 @@ trait ApplicationMessageHandler extends LogSupport {
             log.info(s"edge node handle application message success")
           case Left(e) =>
             log.error(s"edge node handle application message failed: ${e.getMessage}", Some(e))
+            throw e
         }
     }
 

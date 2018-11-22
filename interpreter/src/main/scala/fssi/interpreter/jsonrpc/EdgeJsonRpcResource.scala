@@ -37,10 +37,10 @@ class EdgeJsonRpcResource(clientMessageHandler: Message.Handler[ClientMessage, T
         jso("type") match {
           case Some(t) if t.isString =>
             t.asString match {
-              case Some("Transfer")        => true
-              case Some("PublishContract") => true
-              case Some("RunContract")     => true
-              case _                       => false
+              case Some("Transfer") => true
+              case Some("Deploy")   => true
+              case Some("Run")      => true
+              case _                => false
             }
           case None => false
         }

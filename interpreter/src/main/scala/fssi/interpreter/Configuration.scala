@@ -4,6 +4,7 @@ import java.io.File
 
 import fssi.interpreter.Configuration._
 import fssi.scp.types.QuorumSet
+import fssi.types.biz.Account.SecretKey
 import fssi.types.biz.{Account, Node}
 
 case class Configuration(
@@ -19,19 +20,23 @@ object Configuration {
 
   trait P2PConfig extends NetWorkConfig {
     def seeds: Vector[Node.Addr]
-    def account: Account
+    def account: (Account, SecretKey)
   }
 
   case class ConsensusConfig(host: String,
                              port: Int,
                              seeds: Vector[Node.Addr],
-                             account: Account,
+                             account: (Account, SecretKey),
                              quorumSet: QuorumSet,
                              maxTimeoutSeconds: Long,
-                             maxNominatingTimes: Int)
+                             maxNominatingTimes: Int,
+                             broadcastTimeout: Long)
       extends P2PConfig
 
-  case class ApplicationConfig(host: String, port: Int, seeds: Vector[Node.Addr], account: Account)
+  case class ApplicationConfig(host: String,
+                               port: Int,
+                               seeds: Vector[Node.Addr],
+                               account: (Account, SecretKey))
       extends P2PConfig
 
   case class CoreNodeConfig(chainId: String,
@@ -64,7 +69,8 @@ object Configuration {
       core.consensus.account,
       core.consensus.scp.quorums,
       core.consensus.scp.maxTimeoutSeconds,
-      core.consensus.scp.maxNominatingTimes
+      core.consensus.scp.maxNominatingTimes,
+      core.consensus.scp.broadcastTimeout
     )
     val coreApplicationConfig = ApplicationConfig(core.application.host,
                                                   core.application.port,

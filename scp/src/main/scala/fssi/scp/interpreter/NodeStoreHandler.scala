@@ -8,7 +8,7 @@ import fssi.scp.types._
 
 import scala.collection.immutable.Set
 
-class NodeStoreHandler extends NodeStore.Handler[Stack] {
+class NodeStoreHandler extends NodeStore.Handler[Stack] with LogSupport {
 
   /** check the envelope to see if it's newer than local cache
     */
@@ -53,9 +53,13 @@ class NodeStoreHandler extends NodeStore.Handler[Stack] {
                                           envelope: Envelope[M]): Stack[Unit] = Stack {
     envelope.statement.message match {
       case n: Message.Nomination =>
+        log.info(s"receive node $nodeId nomination message: $envelope")
         val nominationStatus: NominationStatus = slotIndex
         nominationStatus.latestNominations := nominationStatus.latestNominations
           .unsafe() + (nodeId -> envelope.copy(statement = envelope.statement.withMessage(n)))
+        log.info(
+          s"current latest nominations: ${nominationStatus.latestNominations.unsafe().keys.size} ---> : ${nominationStatus.latestNominations
+            .unsafe()}")
         ()
       case b: Message.BallotMessage =>
         val ballotStatus: BallotStatus = slotIndex
@@ -782,7 +786,20 @@ class NodeStoreHandler extends NodeStore.Handler[Stack] {
     ()
   }
 
-  override def localNode(): Stack[NodeID] = Stack { setting => setting.localNode
+  override def localNode(): Stack[NodeID] = Stack { setting =>
+    setting.localNode
+  }
+
+  override def nominateEnvelope(slotIndex: SlotIndex): Stack[Option[Envelope[Message.Nomination]]] =
+    Stack {
+      val nominationStatus: NominationStatus = slotIndex
+      nominationStatus.lastEnvelope.unsafe()
+    }
+
+  override def ballotEnvelope(
+      slotIndex: SlotIndex): Stack[Option[Envelope[Message.BallotMessage]]] = Stack {
+    val ballotStatus: BallotStatus = slotIndex
+    ballotStatus.latestEmitEnvelope.unsafe()
   }
 
   implicit def getNominationStatus(slotIndex: SlotIndex): NominationStatus = {

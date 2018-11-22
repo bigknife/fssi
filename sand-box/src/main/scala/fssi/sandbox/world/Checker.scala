@@ -187,6 +187,9 @@ class Checker extends BaseLogger {
               acc
             }
           }
+        case _ =>
+          track += "exposed method must obey rule of: 'methodAlias = qualifiedClassName#methodName(Context,arguments*)'";
+          acc
       }
     }
     if (track.isEmpty) {
