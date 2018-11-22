@@ -2,7 +2,6 @@ package fssi
 package interpreter
 
 import java.io.File
-import java.lang
 
 import fssi.ast.Store
 import fssi.types.biz.{Account, Block}
@@ -217,6 +216,7 @@ class StoreHandler extends Store.Handler[Stack] with LogSupport {
     bcsVar.foreach { bcs =>
       val height = block.height
       //block
+      bcs.putMeta(height, MetaKey.ChainID, MetaData(block.chainId.getBytes("utf-8")))
       bcs.putMeta(height, MetaKey.Height, MetaData(block.height.toByteArray))
       bcs.putBlock(BlockKey.preWorldState(height), BlockData(block.preWorldState.value))
       bcs.putBlock(BlockKey.curWorldState(height), BlockData(block.curWorldState.value))
@@ -247,7 +247,6 @@ class StoreHandler extends Store.Handler[Stack] with LogSupport {
       }
 
       bcs.commit(height)
-      ()
     }
   }
 

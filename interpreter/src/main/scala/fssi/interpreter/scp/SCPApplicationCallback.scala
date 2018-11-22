@@ -1,6 +1,4 @@
 package fssi.interpreter.scp
-import java.util.concurrent.{ExecutorService, Executors}
-
 import fssi.ast.uc.CoreNodeProgram
 import fssi.interpreter.Setting.CoreNodeSetting
 import fssi.interpreter.{LogSupport, UnsignedBytesSupport}
@@ -11,8 +9,13 @@ import fssi.types.base.Hash
 import fssi.types.implicits._
 import fssi.utils._
 import fssi.interpreter._
+import fssi.scp.Portal
 
-trait SCPApplicationCallback extends ApplicationCallback with UnsignedBytesSupport with LogSupport {
+trait SCPApplicationCallback
+    extends ApplicationCallback
+    with UnsignedBytesSupport
+    with LogSupport
+    with SCPSupport {
 
   def coreNodeSetting: CoreNodeSetting
 
@@ -41,6 +44,7 @@ trait SCPApplicationCallback extends ApplicationCallback with UnsignedBytesSuppo
             case _             => Value.Validity.Invalid
           }
         } else Value.Validity.Invalid
+      case FakeValue(_) => Value.Validity.Invalid
     }
 
   override def combineValues(nodeId: NodeID,
@@ -56,8 +60,7 @@ trait SCPApplicationCallback extends ApplicationCallback with UnsignedBytesSuppo
             } else
               throw new RuntimeException(
                 s"scp value set were not inconsistent, found chainId(${acc.chainId},${n.chainId}) , height(${acc.height},${n.height})")
-          case (acc, n) =>
-            throw new RuntimeException(s"scp value set were inconsistent, found ($acc,$n)")
+          case _ => ac
         }
       }
       val blockValue = newValue.asInstanceOf[BlockValue]
@@ -81,6 +84,7 @@ trait SCPApplicationCallback extends ApplicationCallback with UnsignedBytesSuppo
       val newHashedBlock =
         newBlock.copy(hash = Hash(crypto.hash(calculateUnsignedBlockBytes(newBlock))))
       Some(BlockValue(newHashedBlock))
+    case FakeValue(_) => None
   }
 
   override def valueConfirmed(slotIndex: SlotIndex, value: Value): Unit = {
@@ -88,6 +92,7 @@ trait SCPApplicationCallback extends ApplicationCallback with UnsignedBytesSuppo
       case BlockValue(block) =>
         log.info(s"confirmed block value slotIndex: ${slotIndex.value} --> hash: ${block.hash}")
       // TODO: handle value confirmed
+      case FakeValue(_) =>
     }
   }
 
@@ -103,7 +108,16 @@ trait SCPApplicationCallback extends ApplicationCallback with UnsignedBytesSuppo
             .runIO(CoreNodeProgram.instance.newBlockGenerated(block), coreNodeSetting)
             .unsafeRunSync()
           log.info(s"externalized: ${slotIndex.value} --> ${block.hash}")
+          log.info(s"start to nominate fake value on slotIndex: ${slotIndex.value + 1}")
+          implicit val scpSetting: fssi.scp.interpreter.Setting = resolveSCPSetting(coreNodeSetting)
+          val newSlotIndex                                      = SlotIndex(slotIndex.value + 1)
+          Portal.nominateFakeValue(scpSetting.localNode, newSlotIndex, FakeValue(newSlotIndex))
+          log.info(s"stop broadcast message on slotIndex: $slotIndex")
+          Portal.stopBroadcastMessage()
+          log.info(s"start broadcast message on slotIndex: $newSlotIndex")
+          Portal.startBroadcastMessage(newSlotIndex)
         }
+      case FakeValue(_) =>
     }
   }
 

@@ -17,13 +17,14 @@ class ConsensusHandler
     with UnsignedBytesSupport
     with LogSupport {
 
-  override def initialize(node: ConsensusNode): Stack[Unit] = Stack { setting =>
-    setting match {
-      case coreNodeSetting: CoreNodeSetting =>
-        implicit val scpSetting: fssi.scp.interpreter.Setting = resolveSCPSetting(coreNodeSetting)
-        Portal.initialize
-      case _ =>
-    }
+  override def initialize(node: ConsensusNode, currentHeight: BigInt): Stack[Unit] = Stack {
+    setting =>
+      setting match {
+        case coreNodeSetting: CoreNodeSetting =>
+          implicit val scpSetting: fssi.scp.interpreter.Setting = resolveSCPSetting(coreNodeSetting)
+          Portal.initialize(currentHeight)
+        case _ =>
+      }
   }
 
   override def destroy(): Stack[Unit] = Stack {}
@@ -51,10 +52,11 @@ class ConsensusHandler
                           receipts,
                           timestamp,
                           Hash.empty)
-        val hash       = Hash(crypto.hash(calculateUnsignedBlockBytes(block)))
-        val blockValue = BlockValue(block.copy(hash = hash))
-        Portal.handleRequest(nodeId, slotIndex, BlockValue(lastDeterminedBlock), blockValue)
-        log.debug(s"try to agree block value: $blockValue")
+        val hash          = Hash(crypto.hash(calculateUnsignedBlockBytes(block)))
+        val blockValue    = BlockValue(block.copy(hash = hash))
+        val previousValue = BlockValue(lastDeterminedBlock)
+        Portal.handleRequest(nodeId, slotIndex, previousValue, blockValue)
+        log.debug(s"try to agree block value: $blockValue , previousValue: $previousValue")
       case _ =>
     }
   }

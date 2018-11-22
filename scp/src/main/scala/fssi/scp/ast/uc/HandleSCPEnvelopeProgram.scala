@@ -19,7 +19,7 @@ trait HandleSCPEnvelopeProgram[F[_]] extends SCP[F] with BaseProgram[F] {
                                                previousValue: Value): SP[F, Boolean] = {
 
     val statement = envelope.statement
-    val nodeId = statement.from
+    val nodeId    = statement.from
     val slotIndex = statement.slotIndex
     val message   = statement.message
 
@@ -33,6 +33,7 @@ trait HandleSCPEnvelopeProgram[F[_]] extends SCP[F] with BaseProgram[F] {
       for {
         _ <- info(s"[$nodeId][$slotIndex] handling scp envelope with message: $message)")
         _ <- saveEnvelope(nodeId, slotIndex, envelope)
+        _ <- cacheNodeQuorumSet(nodeId, envelope.statement.quorumSet)
         _ <- debug(s"[$nodeId][$slotIndex] saved sane scp envelope")
         handled <- message match {
           case _: Message.Nomination =>

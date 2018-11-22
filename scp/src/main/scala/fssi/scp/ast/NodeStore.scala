@@ -247,9 +247,14 @@ import types._
     */
   def canEmit[M <: Message](slotIndex: SlotIndex, envelope: Envelope[M]): P[F, Boolean]
 
-  def envelopeReadyToBeEmitted[M <: Message](slotIndex: SlotIndex, envelope: Envelope[M]): P[F, Unit]
+  def envelopeReadyToBeEmitted[M <: Message](slotIndex: SlotIndex,
+                                             envelope: Envelope[M]): P[F, Unit]
 
   def shouldProcess[M <: Message](slotIndex: SlotIndex, envelope: Envelope[M]): P[F, Boolean]
 
   def localNode(): P[F, NodeID]
+
+  def nominateEnvelope(slotIndex: SlotIndex): P[F, Option[Envelope[Message.Nomination]]]
+
+  def ballotEnvelope(slotIndex: SlotIndex): P[F, Option[Envelope[Message.BallotMessage]]]
 }

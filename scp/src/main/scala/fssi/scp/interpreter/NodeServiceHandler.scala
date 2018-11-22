@@ -1,6 +1,7 @@
 package fssi.scp
 package interpreter
 
+import fssi.base.Base58
 import fssi.base.implicits._
 import fssi.scp.ast._
 import fssi.scp.interpreter.store._
@@ -16,9 +17,9 @@ class NodeServiceHandler
     with QuorumSetSupport {
   import log._
 
-  override def cacheNodeQuorumSet(): Stack[Unit] = Stack { setting =>
-    setting.quorumSet match {
-      case QuorumSet.QuorumSlices(slices) => addNodeSlices(setting.localNode, slices)
+  override def cacheNodeQuorumSet(nodeId: NodeID, quorumSet: QuorumSet): Stack[Unit] = Stack {
+    quorumSet match {
+      case QuorumSet.QuorumSlices(slices) => addNodeSlices(nodeId, slices)
       case QuorumSet.QuorumRef(_)         =>
     }
   }
@@ -28,8 +29,9 @@ class NodeServiceHandler
     * @see SCPDriver.cpp#79
     */
   override def computeTimeout(round: Int): Stack[Long] = Stack { setting =>
-    if (round > setting.maxTimeoutSeconds) setting.maxTimeoutSeconds * 1000L
-    else round * 1000L
+//    if (round > setting.maxTimeoutSeconds) setting.maxTimeoutSeconds * 1000L
+//    else round * 1000L
+    10 * 1000L
   }
 
   /** check if in-nominating and no any candidate produced
@@ -56,7 +58,14 @@ class NodeServiceHandler
     assertSlotIndex(setting.localNode, slotIndex)
 
     val nominationStatus = NominationStatus.getInstance(slotIndex)
-    nominationStatus.nominationStarted.unsafe()
+    !nominationStatus.nominationStarted.unsafe()
+  }
+
+  /** check if only nominate fake value
+    */
+  override def isOnlyNominateFakeValue(voted: ValueSet): Stack[Boolean] = Stack { setting =>
+    // we put fake value when nominate
+    voted.size <= 1
   }
 
   /** compute a value's hash
@@ -74,6 +83,14 @@ class NodeServiceHandler
         slotIndex.value.toByteArray ++ previousValue.rawBytes ++ NodeServiceHandler.hash_K ++ BigInt(
           round).toByteArray ++ value.rawBytes).toLong
     }
+  }
+
+  /** start nomination process
+    */
+  override def startNominating(slotIndex: SlotIndex): Stack[Unit] = Stack { setting =>
+    assertSlotIndex(setting.localNode, slotIndex)
+    NominationStatus.getInstance(slotIndex).nominationStarted := true
+    ()
   }
 
   /** stop nomination process
@@ -131,6 +148,7 @@ class NodeServiceHandler
         }
       log.debug(s"found ${leaders.size} leaders at new top priority: $newTopPriority")
       nominationStatus.roundLeaders := leaders
+      log.info(s"current leaders : $leaders on $slotIndex for previous value: $previousValue")
       leaders
   }
 
@@ -206,7 +224,8 @@ class NodeServiceHandler
     val fromNode  = envelope.statement.from
     val publicKey = crypto.rebuildECPublicKey(fromNode.value, cryptoUtil.SECP256K1)
     val source    = fixedStatementBytes(envelope.statement)
-    crypto.verifySignature(signature.value, source, publicKey)
+    val verified  = crypto.verifySignature(signature.value, source, publicKey)
+    verified
   }
 
   /** check the statement to see if it is illegal
@@ -361,6 +380,8 @@ class NodeServiceHandler
     (p.isEmpty || !(high <= p.get && high.incompatible(p.get))) &&
     (pPrime.isEmpty || !(high <= pPrime.get && high.incompatible(pPrime.get)))
   }
+
+  override def broadcastTimeout(): Stack[Long] = Stack(setting => setting.broadcastTimeout)
 
   //////
   /** MUST be deterministic

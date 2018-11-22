@@ -11,8 +11,8 @@ import io.scalecube.cluster.{Cluster, ClusterConfig}
 import io.scalecube.transport.{Address, Message => CubeMessage}
 import bigknife.jsonrpc._
 import fssi.interpreter.jsonrpc.EdgeJsonRpcResource
-import fssi.types.biz.Message.ApplicationMessage.TransactionMessage
-import fssi.types.biz.Message.ClientMessage.QueryTransaction
+import fssi.types.biz.Message.ApplicationMessage.{QueryMessage, TransactionMessage}
+import fssi.types.biz.Message.ClientMessage.{QueryTransaction, SendTransaction}
 import fssi.types.implicits._
 import fssi.types.json.implicits._
 import io.circe._
@@ -34,7 +34,7 @@ class NetworkHandler extends Network.Handler[Stack] with LogSupport {
     }
     val converter: CubeMessage => ConsensusMessage = cub => cub.data[ConsensusMessage]
     val node =
-      startP2PNode(consensusOnce, p2pConfig, converter, handler)
+      startP2PNode(consensusOnce, p2pConfig, converter, handler, "consensus node")
     ConsensusNode(node)
   }
 
@@ -46,7 +46,8 @@ class NetworkHandler extends Network.Handler[Stack] with LogSupport {
         case edgeNodeSetting: EdgeNodeSetting => edgeNodeSetting.config.applicationConfig
       }
       val converter: CubeMessage => ApplicationMessage = cube => cube.data[ApplicationMessage]
-      val node                                         = startP2PNode(applicationOnce, applicationConfig, converter, handler)
+      val node =
+        startP2PNode(applicationOnce, applicationConfig, converter, handler, "application node")
       ApplicationNode(node)
   }
 
@@ -58,8 +59,10 @@ class NetworkHandler extends Network.Handler[Stack] with LogSupport {
           val config   = edgeNodeSetting.config.jsonRPCConfig
           val address  = Node.Addr(config.host, config.port)
           val resource = new EdgeJsonRpcResource(handler)
-          server.run("edgeNode", "v1", resource, address.port, address.host)
-          val account = edgeNodeSetting.config.applicationConfig.account
+          server.run("edge", "v1", resource, address.port, address.host)
+          log.info(
+            s"edge node json rpc service startup: http://${config.host}:${config.port}/jsonrpc/edge/v1")
+          val (account, _) = edgeNodeSetting.config.applicationConfig.account
           ServiceNode(Node(address, account))
         case _ =>
           throw new RuntimeException("unsupported edge node setting to startup service node")
@@ -82,14 +85,19 @@ class NetworkHandler extends Network.Handler[Stack] with LogSupport {
           case consensusMessage: ConsensusMessage =>
             consensusOnce.foreach(cluster =>
               cluster.spreadGossip(CubeMessage.fromData(consensusMessage)))
-          case _ =>
+          case _ => throw new RuntimeException(s"core node unsupported broadcast message: $message")
         }
       case _: EdgeNodeSetting =>
         message match {
-          case applicationMessage: ApplicationMessage =>
+          case sendTransaction: SendTransaction =>
+            applicationOnce.foreach(
+              cluster =>
+                cluster.spreadGossip(
+                  CubeMessage.fromData(TransactionMessage(sendTransaction.payload))))
+          case queryTransaction: QueryTransaction =>
             applicationOnce.foreach(cluster =>
-              cluster.spreadGossip(CubeMessage.fromData(applicationMessage)))
-          case _ =>
+              cluster.spreadGossip(CubeMessage.fromData(QueryMessage(queryTransaction.payload))))
+          case _ => throw new RuntimeException(s"edge node unsupported broadcast message: $message")
         }
       case _ =>
     }
@@ -127,7 +135,8 @@ class NetworkHandler extends Network.Handler[Stack] with LogSupport {
   private def startP2PNode[M <: Message](clusterOnce: Once[Cluster],
                                          p2pConfig: P2PConfig,
                                          converter: CubeMessage => M,
-                                         handler: Message.Handler[M, Unit]): Node = {
+                                         handler: Message.Handler[M, Unit],
+                                         memberTag: String): Node = {
     val config =
       ClusterConfig
         .builder()
@@ -143,7 +152,7 @@ class NetworkHandler extends Network.Handler[Stack] with LogSupport {
       cluster.listenMembership().subscribe { membershipEvent =>
         log.info(
           s"receive P2P Membership Event: ${membershipEvent.`type`()}, ${membershipEvent.member()}")
-        printMembers(clusterOnce)
+        printMembers(clusterOnce, memberTag)
       }
 
       val subscription: CubeMessage => Unit = { gossip =>
@@ -169,7 +178,7 @@ class NetworkHandler extends Network.Handler[Stack] with LogSupport {
       ()
     }
 
-    val node = Node(Node.Addr(p2pConfig.host, p2pConfig.port), p2pConfig.account)
+    val node = Node(Node.Addr(p2pConfig.host, p2pConfig.port), p2pConfig.account._1)
     log.info(s"node ($node) started ")
     node
   }
@@ -181,9 +190,9 @@ class NetworkHandler extends Network.Handler[Stack] with LogSupport {
     }
   }
 
-  private def printMembers(clusterOnce: Once[Cluster]): Unit = {
-    log.info("current members")
+  private def printMembers(clusterOnce: Once[Cluster], memberTag: String): Unit = {
     import scala.collection.JavaConverters._
+    log.info(s"$memberTag current members:")
     clusterOnce.unsafe().members().asScala.foreach(member => log.info(s"-- $member --"))
   }
 }

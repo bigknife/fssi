@@ -3,7 +3,7 @@ package types
 package json
 import fssi.types.base.{Hash, Signature, Timestamp, WorldState}
 import fssi.types.biz._
-import fssi.types.biz.Block.WorldStates
+import fssi.types.base.WorldState
 import io.circe._
 import io.circe.syntax._
 import io.circe.generic.auto._
@@ -26,14 +26,14 @@ class BlockJsonCodecSpec extends FunSuite {
     val currentDataState     = WorldState("currentDataState".getBytes())
     val currentReceiptState  = WorldState("currentReceiptState".getBytes())
 
-    val previousWorldStates = WorldStates(
+    val previousWorldStates = WorldState(
       blockState = previousBlockState,
       tokenState = previousTokenState,
       contractState = previousContractState,
       dataState = previousDataState,
       receiptState = previousReceiptState
     )
-    val currentWorldStates = WorldStates(
+    val currentWorldStates = WorldState(
       blockState = currentBlockState,
       tokenState = currentTokenState,
       contractState = currentContractState,
