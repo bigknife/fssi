@@ -13,10 +13,4 @@ object EdgeNodeSettingParser extends OptionParser[Setting.EdgeNodeSetting]("edge
     .abbr("w")
     .text("working directory")
     .action((x, c) => c.copy(workingDir = x))
-
-  opt[String]("password")
-    .abbr("p")
-    .required()
-    .text("password of the bound account")
-    .action((x, c) => c.copy(password = x.getBytes("utf-8")))
 }

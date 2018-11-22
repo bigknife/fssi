@@ -25,19 +25,18 @@ object Setting {
     */
   sealed trait P2PNodeSetting extends Setting {
     def workingDir: File
-    def password: Array[Byte]
   }
 
   /** setting for running core node
     */
-  case class CoreNodeSetting(workingDir: File, password: Array[Byte]) extends P2PNodeSetting {
+  case class CoreNodeSetting(workingDir: File) extends P2PNodeSetting {
     private lazy val configFile: File = new File(workingDir, "fssi.conf")
     lazy val config: CoreNodeConfig   = configFile.asCoreNodeConfig
 
     def isFullFunctioning: Boolean = config.mode.equalsIgnoreCase("full")
   }
 
-  case class EdgeNodeSetting(workingDir: File, password: Array[Byte]) extends P2PNodeSetting {
+  case class EdgeNodeSetting(workingDir: File) extends P2PNodeSetting {
     private lazy val configFile: File = new File(workingDir, "fssi.conf")
     lazy val config: EdgeNodeConfig   = configFile.asEdgeNodeConfig
   }
