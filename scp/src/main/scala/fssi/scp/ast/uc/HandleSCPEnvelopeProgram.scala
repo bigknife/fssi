@@ -31,29 +31,29 @@ trait HandleSCPEnvelopeProgram[F[_]] extends SCP[F] with BaseProgram[F] {
 
     ifM(envelopeCheckingFailed, false.pureSP[F]) {
       for {
-        _ <- info(s"[$nodeId][$slotIndex] handling scp envelope with message: $message)")
+//        _ <- info(s"[$nodeId][$slotIndex] handling scp envelope with message: $message)")
         _ <- saveEnvelope(nodeId, slotIndex, envelope)
         _ <- cacheNodeQuorumSet(nodeId, envelope.statement.quorumSet)
         _ <- debug(s"[$nodeId][$slotIndex] saved sane scp envelope")
         handled <- message match {
           case _: Message.Nomination =>
             for {
-              _ <- info(s"[$nodeId][$slotIndex] handling nomination envelope")
+              _ <- debug(s"[$nodeId][$slotIndex] handling nomination envelope")
               x <- handleNomination(nodeId,
                                     slotIndex,
                                     previousValue,
                                     statement.asInstanceOf[Statement[Message.Nomination]])
-              _ <- info(s"[$nodeId][$slotIndex] handled nomination envelope: $x")
+              _ <- debug(s"[$nodeId][$slotIndex] handled nomination envelope: $x")
             } yield x
 
           case _: Message.BallotMessage =>
             for {
-              _ <- info(s"[$nodeId][$slotIndex] handling ballot envelope")
+              _ <- debug(s"[$nodeId][$slotIndex] handling ballot envelope")
               x <- handleBallotMessage(nodeId,
                                        slotIndex,
                                        previousValue,
                                        envelope.asInstanceOf[Envelope[Message.BallotMessage]])
-              _ <- info(s"[$nodeId][$slotIndex] handled ballot envelope: $x")
+              _ <- debug(s"[$nodeId][$slotIndex] handled ballot envelope: $x")
             } yield x
         }
       } yield handled

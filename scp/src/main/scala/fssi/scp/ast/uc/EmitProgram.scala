@@ -17,15 +17,14 @@ trait EmitProgram[F[_]] extends SCP[F] with BaseProgram[F] {
     for {
       _        <- debug(s"[$slotIndex] try to emit message: $message")
       envelope <- putInEnvelope(slotIndex, message)
-      emitable <- canEmit(slotIndex, envelope)
-      _ <- ifThen(emitable) {
+      _ <- ifThen(handleSCPEnvelope(envelope, previousValue)) {
         for {
-          _ <- info(s"[$slotIndex] can emit now")
-          _ <- ifThen(handleSCPEnvelope(envelope, previousValue)) {
+          _        <- debug(s"[$slotIndex] message handled locally success")
+          emitable <- canEmit(slotIndex, envelope)
+          _ <- ifThen(emitable) {
             for {
-              _ <- info(s"[$slotIndex] message handled locally success")
               _ <- broadcastEnvelope(slotIndex, envelope)
-              _ <- info(s"[$slotIndex] broadcast message to peers")
+              _ <- info(s"[$slotIndex] emit nomination message to peers")
             } yield ()
           }
         } yield ()
@@ -46,7 +45,7 @@ trait EmitProgram[F[_]] extends SCP[F] with BaseProgram[F] {
           _ <- info(s"[$slotIndex] emitting message: $message should be processed ")
           _ <- ifThen(handleSCPEnvelope(envelope, previousValue)) {
             for {
-              emitable      <- canEmit(slotIndex, envelope)
+              emitable <- canEmit(slotIndex, envelope)
               _ <- ifThen(emitable) {
                 for {
                   _ <- info(

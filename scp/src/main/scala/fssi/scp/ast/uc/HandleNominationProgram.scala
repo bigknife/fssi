@@ -21,7 +21,7 @@ trait HandleNominationProgram[F[_]] extends SCP[F] with EmitProgram[F] {
                        statement: Statement[Message.Nomination]): SP[F, Boolean] = {
 
     ifM(isNominatingStopped(slotIndex), false.pureSP[F]) {
-      ifM(isOnlyNominateFakeValue(statement.message.voted), false.pureSP[F]) {
+      ifM(isOnlyNominateFakeValue(statement.message.voted), true.pureSP[F]) {
         // try to accept votes from the message
         def tryAcceptVotes(xs: ValueSet): SP[F, StateChanged] = {
           xs.foldLeft(false.pureSP[F]) { (acc, n) =>

@@ -15,19 +15,22 @@ class NodeStoreHandler extends NodeStore.Handler[Stack] with LogSupport {
   override def isNewerEnvelope[M <: Message](nodeId: NodeID,
                                              slotIndex: SlotIndex,
                                              envelope: Envelope[M]): Stack[Boolean] = Stack {
+    setting =>
     val r = envelope.statement.message match {
       case n: Message.Nomination =>
         val nominationStatus: NominationStatus = slotIndex
         nominationStatus.latestNominations.map {
           _.get(nodeId) match {
+            case _  if n.voted.size == 1 && n.voted.headOption.exists(_.rawBytes.length == 0) && setting.localNode == nodeId=> true
             case Some(env) =>
-              val oldMessage = env.statement.message
-              val isDiff     = env != envelope
-              val votedGrow = n.voted.size >= oldMessage.voted.size && oldMessage.voted.forall(
-                n.voted.contains)
-              val acceptedGrow = n.accepted.size >= oldMessage.accepted.size && oldMessage.accepted
-                .forall(n.accepted.contains)
-              isDiff && votedGrow && acceptedGrow
+//              val oldMessage = env.statement.message
+//              val isDiff     = env != envelope
+//              val votedGrow = n.voted.size >= oldMessage.voted.size && oldMessage.voted.forall(
+//                n.voted.contains)
+//              val acceptedGrow = n.accepted.size >= oldMessage.accepted.size && oldMessage.accepted
+//                .forall(n.accepted.contains)
+//              isDiff && votedGrow && acceptedGrow
+              n.isNewerThan(env.statement.message)
             case None => true
           }
         }
@@ -50,16 +53,17 @@ class NodeStoreHandler extends NodeStore.Handler[Stack] with LogSupport {
     */
   override def saveEnvelope[M <: Message](nodeId: NodeID,
                                           slotIndex: SlotIndex,
-                                          envelope: Envelope[M]): Stack[Unit] = Stack {
+                                          envelope: Envelope[M]): Stack[Unit] = Stack { setting =>
     envelope.statement.message match {
       case n: Message.Nomination =>
-        log.info(s"receive node $nodeId nomination message: $envelope")
         val nominationStatus: NominationStatus = slotIndex
         nominationStatus.latestNominations := nominationStatus.latestNominations
           .unsafe() + (nodeId -> envelope.copy(statement = envelope.statement.withMessage(n)))
-        log.info(
-          s"current latest nominations: ${nominationStatus.latestNominations.unsafe().keys.size} ---> : ${nominationStatus.latestNominations
-            .unsafe()}")
+        if (setting.localNode != nodeId)
+          log.info(
+            s"on new nomination from peer, now : ${nominationStatus.latestNominations.unsafe().keys.size} ---> : ${nominationStatus.latestNominations
+              .map(_.keys)
+              .unsafe()}")
         ()
       case b: Message.BallotMessage =>
         val ballotStatus: BallotStatus = slotIndex
@@ -786,8 +790,7 @@ class NodeStoreHandler extends NodeStore.Handler[Stack] with LogSupport {
     ()
   }
 
-  override def localNode(): Stack[NodeID] = Stack { setting =>
-    setting.localNode
+  override def localNode(): Stack[NodeID] = Stack { setting => setting.localNode
   }
 
   override def nominateEnvelope(slotIndex: SlotIndex): Stack[Option[Envelope[Message.Nomination]]] =

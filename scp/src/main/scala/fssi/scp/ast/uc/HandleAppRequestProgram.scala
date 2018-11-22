@@ -63,34 +63,35 @@ trait HandleAppRequestProgram[F[_]] extends SCP[F] with EmitProgram[F] {
       for {
         _        <- startNominating(slotIndex)
         round    <- currentNominateRound(slotIndex)
-        _        <- info(s"[$nodeId][$slotIndex] handling app request at round: $round")
+        _        <- debug(s"[$nodeId][$slotIndex] handling app request at round: $round")
         newVotes <- narrowDownVotes(round)
         _        <- debug(s"[$nodeId][$slotIndex] narrowdown votes: $newVotes")
         voted <- ifM(newVotes.isEmpty, right = false) {
           for {
             _        <- voteNewNominations(slotIndex, newVotes)
-            _        <- info(s"[$nodeId][$slotIndex] vote new nomination: $newVotes")
+            _        <- debug(s"[$nodeId][$slotIndex] vote new nomination: $newVotes")
             message  <- createNominationMessage(slotIndex)
-            envelope <- putInEnvelope(slotIndex, message)
-            handled  <- handleSCPEnvelope(envelope, previousValue)
-            _        <- info(s"[$nodeId][$slotIndex] handle nomination envelope locally: $handled")
-            _ <- ifThen(handled) {
-              for {
-                _ <- emitNomination(slotIndex, previousValue, message)
-                _ <- info(s"[$nodeId][$slotIndex] broadcast nomination envelope to peers")
-              } yield ()
-
-            }
-          } yield handled
+//            envelope <- putInEnvelope(slotIndex, message)
+//            handled  <- handleSCPEnvelope(envelope, previousValue)
+//            _        <- debug(s"[$nodeId][$slotIndex] handle nomination envelope locally: $handled")
+//            _ <- ifThen(handled) {
+//              for {
+//                _ <- emitNomination(slotIndex, previousValue, message)
+//              } yield ()
+//
+//            }
+//          } yield handled
+            _ <- emitNomination(slotIndex, previousValue, message)
+          } yield true
         }
 
         timeout <- computeTimeout(round)
         _       <- gotoNextNominateRound(slotIndex)
-        _       <- info(s"[$nodeId][$slotIndex] has gone to next round")
+        _       <- debug(s"[$nodeId][$slotIndex] has gone to next round")
         _ <- delayExecuteProgram(NOMINATE_TIMER,
                                  handleAppRequest(nodeId, slotIndex, value, previousValue),
                                  timeout)
-        _ <- info(s"[$nodeId][$slotIndex] delay execute handleAppRequest after $timeout")
+        _ <- debug(s"[$nodeId][$slotIndex] delay execute handleAppRequest after $timeout")
       } yield voted
     }
   }

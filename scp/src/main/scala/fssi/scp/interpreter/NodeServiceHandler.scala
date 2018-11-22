@@ -1,7 +1,6 @@
 package fssi.scp
 package interpreter
 
-import fssi.base.Base58
 import fssi.base.implicits._
 import fssi.scp.ast._
 import fssi.scp.interpreter.store._
@@ -43,10 +42,10 @@ class NodeServiceHandler
       val nominationStatus  = NominationStatus.getInstance(slotIndex)
       val nominationStarted = nominationStatus.nominationStarted.getOrElse(false)
       if (timeout && !nominationStarted) {
-        info(s"triggered by nomination timer, but nomination had been stopped")
+        debug(s"triggered by nomination timer, but nomination had been stopped")
         false
       } else {
-        info(s"triggered by application request")
+        debug(s"triggered by application request")
         true
       }
 
@@ -65,7 +64,7 @@ class NodeServiceHandler
     */
   override def isOnlyNominateFakeValue(voted: ValueSet): Stack[Boolean] = Stack { setting =>
     // we put fake value when nominate
-    voted.size <= 1
+    voted.size <= 1 && voted.headOption.exists(_.rawBytes.length == 0)
   }
 
   /** compute a value's hash
@@ -148,7 +147,7 @@ class NodeServiceHandler
         }
       log.debug(s"found ${leaders.size} leaders at new top priority: $newTopPriority")
       nominationStatus.roundLeaders := leaders
-      log.info(s"current leaders : $leaders on $slotIndex for previous value: $previousValue")
+      log.debug(s"current leaders : $leaders on $slotIndex for previous value: $previousValue")
       leaders
   }
 
@@ -223,6 +222,7 @@ class NodeServiceHandler
     val signature = envelope.signature
     val fromNode  = envelope.statement.from
     val publicKey = crypto.rebuildECPublicKey(fromNode.value, cryptoUtil.SECP256K1)
+     val str = envelope.statement.asBytesValue.bcBase58
     val source    = fixedStatementBytes(envelope.statement)
     val verified  = crypto.verifySignature(signature.value, source, publicKey)
     verified
