@@ -50,9 +50,13 @@ trait SCPApplicationCallback
   override def combineValues(nodeId: NodeID,
                              slotIndex: SlotIndex,
                              value: ValueSet): Option[Value] = {
-    if (value.isEmpty) None
+    val validValues = value.filter {
+      case _: BlockValue => true
+      case _             => false
+    }
+    if (validValues.isEmpty) None
     else {
-      val newValue: Value = value.filter(_.isInstanceOf[BlockValue]).reduceLeft { (ac, value) =>
+      val newValue: Value = validValues.reduceLeft { (ac, value) =>
         (ac, value) match {
           case (BlockValue(acc), BlockValue(n)) =>
             if (acc.chainId == n.chainId && acc.height == n.height) {

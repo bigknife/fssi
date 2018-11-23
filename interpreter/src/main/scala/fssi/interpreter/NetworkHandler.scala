@@ -1,5 +1,7 @@
 package fssi
 package interpreter
+import java.util.concurrent.{ExecutorService, Executors}
+
 import fssi.ast.Network
 import fssi.interpreter.Configuration.P2PConfig
 import fssi.interpreter.Setting.{CoreNodeSetting, EdgeNodeSetting}
@@ -25,6 +27,8 @@ class NetworkHandler extends Network.Handler[Stack] with LogSupport {
   val applicationOnce: Once[Cluster] = Once.empty
 
   val transactionOnce: Once[Map[String, Transaction]] = Once(Map.empty)
+
+  val executor: ExecutorService = Executors.newSingleThreadExecutor()
 
   override def startupConsensusNode(
       handler: Message.Handler[ConsensusMessage, Unit]): Stack[ConsensusNode] = Stack { setting =>
@@ -173,7 +177,9 @@ class NetworkHandler extends Network.Handler[Stack] with LogSupport {
         .listenGossips()
         .subscribe { gossip =>
           log.debug(s"start handle Gossip message: $gossip")
-          subscription(gossip)
+          executor.submit(new Runnable {
+            override def run(): Unit = subscription(gossip)
+          })
         }
       ()
     }
