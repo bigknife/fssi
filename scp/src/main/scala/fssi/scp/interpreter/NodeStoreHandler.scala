@@ -15,34 +15,40 @@ class NodeStoreHandler extends NodeStore.Handler[Stack] with LogSupport {
   override def isNewerEnvelope[M <: Message](nodeId: NodeID,
                                              slotIndex: SlotIndex,
                                              envelope: Envelope[M]): Stack[Boolean] = Stack {
-    val r = envelope.statement.message match {
-      case n: Message.Nomination =>
-        val nominationStatus: NominationStatus = slotIndex
-        nominationStatus.latestNominations.map {
-          _.get(nodeId) match {
-            case Some(env) =>
-              val oldMessage = env.statement.message
-              val isDiff     = env != envelope
-              val votedGrow = n.voted.size >= oldMessage.voted.size && oldMessage.voted.forall(
-                n.voted.contains)
-              val acceptedGrow = n.accepted.size >= oldMessage.accepted.size && oldMessage.accepted
-                .forall(n.accepted.contains)
-              isDiff && votedGrow && acceptedGrow
-            case None => true
+    setting =>
+      val r = envelope.statement.message match {
+        case n: Message.Nomination =>
+          val nominationStatus: NominationStatus = slotIndex
+          nominationStatus.latestNominations.map {
+            _.get(nodeId) match {
+              case _
+                  if n.voted.size == 1 && n.voted.headOption
+                    .exists(_.rawBytes.length == 0) && setting.localNode == nodeId =>
+                true
+              case Some(env) =>
+//              val oldMessage = env.statement.message
+//              val isDiff     = env != envelope
+//              val votedGrow = n.voted.size >= oldMessage.voted.size && oldMessage.voted.forall(
+//                n.voted.contains)
+//              val acceptedGrow = n.accepted.size >= oldMessage.accepted.size && oldMessage.accepted
+//                .forall(n.accepted.contains)
+//              isDiff && votedGrow && acceptedGrow
+                n.isNewerThan(env.statement.message)
+              case None => true
+            }
           }
-        }
-      case coming: Message.BallotMessage =>
-        val ballotStatus: BallotStatus = slotIndex
+        case coming: Message.BallotMessage =>
+          val ballotStatus: BallotStatus = slotIndex
 
-        ballotStatus.latestEnvelopes.map {
-          _.get(nodeId) match {
-            case Some(old) =>
-              isNewerBallotMessage(coming, old.statement.message)
-            case None => true
+          ballotStatus.latestEnvelopes.map {
+            _.get(nodeId) match {
+              case Some(old) =>
+                isNewerBallotMessage(coming, old.statement.message)
+              case None => true
+            }
           }
-        }
-    }
-    r.unsafe()
+      }
+      r.unsafe()
   }
 
   /** save new envelope, if it's a nomination message, save it into NominationStorage,
@@ -50,17 +56,21 @@ class NodeStoreHandler extends NodeStore.Handler[Stack] with LogSupport {
     */
   override def saveEnvelope[M <: Message](nodeId: NodeID,
                                           slotIndex: SlotIndex,
-                                          envelope: Envelope[M]): Stack[Unit] = Stack {
+                                          envelope: Envelope[M]): Stack[Unit] = Stack { setting =>
     envelope.statement.message match {
       case n: Message.Nomination =>
-        log.info(s"receive node $nodeId nomination message: $envelope")
         val nominationStatus: NominationStatus = slotIndex
         nominationStatus.latestNominations := nominationStatus.latestNominations
           .unsafe() + (nodeId -> envelope.copy(statement = envelope.statement.withMessage(n)))
         log.info(
-          s"current latest nominations --> ${nominationStatus.latestNominations.unsafe().keys.size},vote --> ${nominationStatus.votes
-            .unsafe()
-            .size}, accept --> ${nominationStatus.accepted.unsafe().size}")
+          s"current latest nominations --> ${nominationStatus.latestNominations.unsafe().keys.size}")
+        nominationStatus.latestNominations.foreach { map =>
+          map.keySet.foreach { node =>
+            log.info(
+              s"node $node vote --> ${map(node).statement.message.voted.size}, accept --> ${map(
+                node).statement.message.accepted.size}")
+          }
+        }
         ()
       case b: Message.BallotMessage =>
         val ballotStatus: BallotStatus = slotIndex
@@ -77,6 +87,12 @@ class NodeStoreHandler extends NodeStore.Handler[Stack] with LogSupport {
       peerNodeId: NodeID): Stack[Option[Envelope[Message.Nomination]]] = Stack {
     val nominationStatus: NominationStatus = slotIndex
     nominationStatus.latestNominations.map(_.get(peerNodeId)).unsafe()
+  }
+
+  override def nominationsReceived(
+      slotIndex: SlotIndex): Stack[Map[NodeID, Envelope[Message.Nomination]]] = Stack {
+    val nominationStatus: NominationStatus = slotIndex
+    nominationStatus.latestNominations.unsafe()
   }
 
   /** remove an envelope
@@ -789,8 +805,7 @@ class NodeStoreHandler extends NodeStore.Handler[Stack] with LogSupport {
     ()
   }
 
-  override def localNode(): Stack[NodeID] = Stack { setting =>
-    setting.localNode
+  override def localNode(): Stack[NodeID] = Stack { setting => setting.localNode
   }
 
   override def nominateEnvelope(slotIndex: SlotIndex): Stack[Option[Envelope[Message.Nomination]]] =

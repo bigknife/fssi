@@ -18,8 +18,7 @@ trait AttemptAcceptPrepareProgram[F[_]] extends SCP[F] with EmitProgram[F] {
     lazy val ignoreByCurrentPhase: SP[F, Boolean] =
       currentBallotPhase(slotIndex).map(_ == Ballot.Phase.Externalize)
 
-    def tryAcceptHighestBallot(nodeID: NodeID,
-                               candidates: BallotSet,
+    def tryAcceptHighestBallot(candidates: BallotSet,
                                phase: Ballot.Phase): SP[F, Boolean] =
       candidates
         .foldRight(Option.empty[Ballot].pureSP[F]) { (n, acc) =>
@@ -30,10 +29,10 @@ trait AttemptAcceptPrepareProgram[F[_]] extends SCP[F] with EmitProgram[F] {
                 canBePrepared <- ifM(ballotCannotBePrepared(slotIndex, n), false.pureSP[F]) {
                   for {
                     nodeAccepted <- nodesAcceptedPrepare(slotIndex, n)
-                    accepted <- ifM(isVBlocking(nodeID, nodeAccepted), true.pureSP[F]) {
+                    accepted <- ifM(isLocalVBlocking(nodeAccepted), true.pureSP[F]) {
                       for {
                         nodeVoted <- nodesVotedPrepare(slotIndex, n)
-                        byQuorum  <- isQuorum(nodeID, nodeVoted ++ nodeAccepted)
+                        byQuorum  <- isLocalQuorum(nodeVoted ++ nodeAccepted)
                       } yield byQuorum
                     }
                   } yield accepted
@@ -55,11 +54,10 @@ trait AttemptAcceptPrepareProgram[F[_]] extends SCP[F] with EmitProgram[F] {
     // AST:
     ifM(ignoreByCurrentPhase, false.pureSP[F]) {
       for {
-        localNode       <- localNode()
         candidates      <- prepareCandidatesWithHint(slotIndex, hint)
         _               <- info(s"[$slotIndex][AttemptAcceptPrepare] found prepare candidates: $candidates")
         phase           <- currentBallotPhase(slotIndex)
-        highestAccepted <- tryAcceptHighestBallot(localNode, candidates, phase)
+        highestAccepted <- tryAcceptHighestBallot(candidates, phase)
         _ <- info(
           s"[$slotIndex][AttemptAcceptPrepare] accepted highest candidates at phase:$phase: $highestAccepted")
         _ <- ifThen(highestAccepted) {

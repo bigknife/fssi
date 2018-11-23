@@ -23,15 +23,15 @@ object BallotStatus {
     heardFromQuorum = Var(false),
     phase = Var(Ballot.Phase.Prepare),
     currentBallot = Var(Ballot.bottom),
-    prepared = Var(None),
-    preparedPrime = Var(None),
-    highBallot = Var(None),
-    commit = Var(None),
+    prepared = Var(Option.empty),
+    preparedPrime = Var(Option.empty),
+    highBallot = Var(Option.empty),
+    commit = Var(Option.empty),
     latestEnvelopes = Var(Map.empty),
     valueOverride = Var(Option.empty),
     currentMessageLevel = Var(0),
     latestGeneratedEnvelope = Var.empty,
-    latestEmitEnvelope = Var(None)
+    latestEmitEnvelope = Var(Option.empty)
   )
   private val instances: Var[Map[SlotIndex, BallotStatus]] = Var(Map.empty)
 

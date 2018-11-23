@@ -1,7 +1,6 @@
 package fssi.scp
 package interpreter
 
-import fssi.base.Base58
 import fssi.base.implicits._
 import fssi.scp.ast._
 import fssi.scp.interpreter.store._
@@ -43,10 +42,10 @@ class NodeServiceHandler
       val nominationStatus  = NominationStatus.getInstance(slotIndex)
       val nominationStarted = nominationStatus.nominationStarted.getOrElse(false)
       if (timeout && !nominationStarted) {
-        info(s"triggered by nomination timer, but nomination had been stopped")
+        debug(s"triggered by nomination timer, but nomination had been stopped")
         false
       } else {
-        info(s"triggered by application request")
+        debug(s"triggered by application request")
         true
       }
 
@@ -147,7 +146,7 @@ class NodeServiceHandler
         }
       log.debug(s"found ${leaders.size} leaders at new top priority: $newTopPriority")
       nominationStatus.roundLeaders := leaders
-      log.info(s"current leaders : $leaders on $slotIndex for previous value: $previousValue")
+      log.debug(s"current leaders : $leaders on $slotIndex for previous value: $previousValue")
       leaders
   }
 

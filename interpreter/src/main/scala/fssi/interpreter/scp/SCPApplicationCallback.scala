@@ -127,21 +127,15 @@ trait SCPApplicationCallback
 
   override def broadcastEnvelope[M <: Message](slotIndex: SlotIndex,
                                                envelope: Envelope[M]): Unit = {
-    import io.circe._
-    import io.circe.syntax._
-    import io.circe.generic.auto._
-    import fssi.scp.interpreter.json.implicits._
-    import fssi.interpreter.scp.BlockValue.implicits._
     val transferredEnvelope = envelope.to[Message]
     val scpEnvelope         = SCPEnvelope(transferredEnvelope)
     if (slotIndex.value == envelope.statement.slotIndex.value) {
-      log.debug(s"broadcast scp envelope ${transferredEnvelope.asJson.noSpaces}")
       runner
         .runIOAttempt(CoreNodeProgram.instance.broadcastConsensusMessage(scpEnvelope),
                       coreNodeSetting)
         .unsafeRunSync() match {
         case Right(_) =>
-          log.info(s"broadcast scp envelope ${transferredEnvelope.asJson.noSpaces} success")
+          log.debug(s"broadcast scp envelope $transferredEnvelope success")
         case Left(e) => log.error(s"broadcast scp envelope failed: ${e.getMessage}", Some(e))
       }
     } else
