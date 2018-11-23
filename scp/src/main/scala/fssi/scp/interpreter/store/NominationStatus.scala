@@ -27,11 +27,11 @@ object NominationStatus {
     accepted = Var(ValueSet.empty),
     candidates = Var(ValueSet.empty),
     latestNominations = Var(Map.empty),
-    lastEnvelope = Var(None),
+    lastEnvelope = Var(Option.empty),
     roundLeaders = Var(Set.empty),
     nominationStarted = Var(false),
-    latestCompositeCandidate = Var(None),
-    previousValue = Var(None)
+    latestCompositeCandidate = Var(Option.empty),
+    previousValue = Var(Option.empty)
   )
 
   private lazy val instances: Var[Map[SlotIndex, NominationStatus]] = Var(Map.empty)

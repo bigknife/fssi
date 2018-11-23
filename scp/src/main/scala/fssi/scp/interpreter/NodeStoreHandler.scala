@@ -63,9 +63,14 @@ class NodeStoreHandler extends NodeStore.Handler[Stack] with LogSupport {
         nominationStatus.latestNominations := nominationStatus.latestNominations
           .unsafe() + (nodeId -> envelope.copy(statement = envelope.statement.withMessage(n)))
         log.info(
-          s"current latest nominations --> ${nominationStatus.latestNominations.unsafe().keys.size},vote --> ${nominationStatus.votes
-            .unsafe()
-            .size}, accept --> ${nominationStatus.accepted.unsafe().size}")
+          s"current latest nominations --> ${nominationStatus.latestNominations.unsafe().keys.size}")
+        nominationStatus.latestNominations.foreach { map =>
+          map.keySet.foreach { node =>
+            log.info(
+              s"node $node vote --> ${map(node).statement.message.voted.size}, accept --> ${map(
+                node).statement.message.accepted.size}")
+          }
+        }
         ()
       case b: Message.BallotMessage =>
         val ballotStatus: BallotStatus = slotIndex
