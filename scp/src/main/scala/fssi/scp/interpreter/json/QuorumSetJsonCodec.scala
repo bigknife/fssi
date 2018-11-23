@@ -22,11 +22,11 @@ trait QuorumSetJsonCodec {
   }
 
   implicit val slicesDecoder: Decoder[Slices] = (hCursor: HCursor) =>
-    hCursor.as[Flat] match {
-      case Right(flat) => Right(flat)
+    hCursor.as[Nest] match {
+      case Right(nest) => Right(nest)
       case Left(_) =>
-        hCursor.as[Nest] match {
-          case Right(nest) => Right(nest)
+        hCursor.as[Flat] match {
+          case Right(flat) => Right(flat)
           case Left(e)     => Left(DecodingFailure(e.getMessage(), List()))
         }
   }
