@@ -2,7 +2,7 @@ package fssi.interpreter.scp
 import fssi.ast.uc.CoreNodeProgram
 import fssi.interpreter.Setting.CoreNodeSetting
 import fssi.interpreter.{LogSupport, UnsignedBytesSupport}
-import fssi.scp.interpreter.ApplicationCallback
+import fssi.scp.interpreter.{ApplicationCallback, FakeValue}
 import fssi.scp.types._
 import fssi.scp.types.implicits._
 import fssi.types.base.Hash
@@ -115,7 +115,7 @@ trait SCPApplicationCallback
           log.info(s"start to nominate fake value on slotIndex: ${slotIndex.value + 1}")
           implicit val scpSetting: fssi.scp.interpreter.Setting = resolveSCPSetting(coreNodeSetting)
           val newSlotIndex                                      = SlotIndex(slotIndex.value + 1)
-          Portal.nominateFakeValue(scpSetting.localNode, newSlotIndex, FakeValue(newSlotIndex))
+          Portal.nominateFakeValue(scpSetting.localNode, newSlotIndex)
           log.info(s"stop broadcast message on slotIndex: $slotIndex")
           Portal.stopBroadcastMessage()
           log.info(s"start broadcast message on slotIndex: $newSlotIndex")

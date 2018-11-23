@@ -1,7 +1,7 @@
 package fssi.interpreter.scp
 import fssi.interpreter.Setting.CoreNodeSetting
 import fssi.scp.interpreter.Setting
-import fssi.scp.types.{NodeID, SlotIndex}
+import fssi.scp.types.NodeID
 import fssi.utils._
 
 trait SCPSupport {
@@ -13,7 +13,6 @@ trait SCPSupport {
     val privKeyBytes =
       crypto.des3cbcDecrypt(account.encPrivKey.value, ensuredBytes, account.iv.value)
     Setting(
-      initFakeValue = FakeValue(SlotIndex(0)),
       localNode = NodeID(config.account._1.pubKey.value),
       maxTimeoutSeconds = config.maxTimeoutSeconds.toInt,
       quorumSet = config.quorumSet,

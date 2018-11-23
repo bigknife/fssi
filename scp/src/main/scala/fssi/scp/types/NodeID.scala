@@ -9,6 +9,8 @@ case class NodeID(value: Array[Byte]) {
     case _             => false
   }
 
+  override def hashCode(): Int = BigInt(value).toInt
+
   override def toString: String = Base58.encode(value)
 }
 

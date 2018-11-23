@@ -22,7 +22,7 @@ class ConsensusHandler
       setting match {
         case coreNodeSetting: CoreNodeSetting =>
           implicit val scpSetting: fssi.scp.interpreter.Setting = resolveSCPSetting(coreNodeSetting)
-          Portal.initialize(currentHeight)
+          Portal.initialize(SlotIndex(currentHeight + 1))
         case _ =>
       }
   }
