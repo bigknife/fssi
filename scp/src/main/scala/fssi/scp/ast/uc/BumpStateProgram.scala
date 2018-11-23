@@ -96,10 +96,9 @@ trait BumpStateProgram[F[_]] extends SCP[F] with EmitProgram[F] {
 
     for {
       phase       <- currentBallotPhase(slotIndex)
-      aheads      <- nodesAheadLocal(slotIndex)
-      quorumNodes <- totallyQuorumNodes(aheads)
-      localNode <- localNode()
-      nowHeard    <- isQuorum(localNode, quorumNodes)
+      aheadNodes      <- nodesAheadLocal(slotIndex)
+      quorumNodes <- totallyQuorumNodes(aheadNodes)
+      nowHeard    <- isLocalQuorum(quorumNodes)
       everHeard   <- isHeardFromQuorum(slotIndex)
       _           <- heardFromQuorum(slotIndex, nowHeard)
       _ <- ifThen((nowHeard && !everHeard) && phase != Ballot.Phase.Externalize)(

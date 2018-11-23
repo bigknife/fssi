@@ -13,6 +13,8 @@ import fssi.scp.types.{Message, _}
 import org.scalameta.logger
 import org.scalatest.Matchers._
 
+import scala.collection.immutable.TreeSet
+
 class TestApp(nodeID: NodeID,
               nodeKey: PrivateKey,
               slotIndex: SlotIndex,
@@ -46,7 +48,7 @@ class TestApp(nodeID: NodeID,
     localNode = nodeID,
     privateKey = nodeKey,
     applicationCallback = this,
-    initFakeValue = null
+    broadcastTimeout = 0
   )
   private val scp: SCP[Op] = SCP[Model.Op]
 

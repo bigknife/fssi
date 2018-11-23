@@ -7,6 +7,11 @@ public class TestContext implements Context {
         return null;
     }
 
+    public SqlStore sqlStore() {
+        System.out.println("Test:Get SQL Store");
+        return null;
+    }
+
     @Override
     public TokenQuery tokenQuery() {
         System.out.println("Test:Get Token Query");

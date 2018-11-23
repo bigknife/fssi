@@ -3,7 +3,7 @@ package fssi.scp.interpreter
 import fssi.scp.types.{SlotIndex, Value}
 
 case class FakeValue(slotIndex: SlotIndex) extends Value {
-  override def rawBytes: Array[Byte] = slotIndex.value.toByteArray
+  override def rawBytes: Array[Byte] = Array.emptyByteArray
   override def compare(that: Value): Int = that match {
     case fakeValue: FakeValue =>
       Ordering[BigInt].compare(slotIndex.value, fakeValue.slotIndex.value)

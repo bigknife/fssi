@@ -141,7 +141,7 @@ trait SCPApplicationCallback
                       coreNodeSetting)
         .unsafeRunSync() match {
         case Right(_) =>
-          log.info(s"broadcast scp envelope ${transferredEnvelope.asJson.noSpaces} success")
+//          log.info(s"broadcast scp envelope ${transferredEnvelope.asJson.noSpaces} success")
         case Left(e) => log.error(s"broadcast scp envelope failed: ${e.getMessage}", Some(e))
       }
     } else
