@@ -61,12 +61,11 @@ class NodeServiceHandler
     !nominationStatus.nominationStarted.unsafe()
   }
 
-  /** check if only nominate fake value
-    */
-  override def isOnlyNominateFakeValue(voted: ValueSet): Stack[Boolean] = Stack { setting =>
-    // we put fake value when nominate
-    voted.size <= 1
-  }
+  override def filtrateVotes(values: ValueSet): Stack[ValueSet] =
+    Stack(values.filterNot {
+      case _: FakeValue => true
+      case _            => false
+    })
 
   /** compute a value's hash
     *
@@ -382,6 +381,8 @@ class NodeServiceHandler
   }
 
   override def broadcastTimeout(): Stack[Long] = Stack(setting => setting.broadcastTimeout)
+
+  override def blockFakeValue(slotIndex: SlotIndex): Stack[FakeValue] = Stack(FakeValue(slotIndex))
 
   //////
   /** MUST be deterministic

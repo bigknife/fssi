@@ -4,9 +4,9 @@ package ast
 import bigknife.sop._
 import bigknife.sop.macros._
 import bigknife.sop.implicits._
+import fssi.scp.interpreter.FakeValue
 
 import scala.collection.immutable._
-
 import types._
 @sp trait NodeService[F[_]] {
 
@@ -29,10 +29,6 @@ import types._
   /** check if nominating is stopped
     */
   def isNominatingStopped(slotIndex: SlotIndex): P[F, Boolean]
-
-  /** check if only nominate fake value
-    */
-  def isOnlyNominateFakeValue(voted: ValueSet): P[F, Boolean]
 
   /** compute a value's hash
     */
@@ -124,4 +120,6 @@ import types._
     needSetLowestCommitBallotUnderHigh(slotIndex, high).map(!_)
 
   def broadcastTimeout(): P[F, Long]
+  def blockFakeValue(slotIndex: SlotIndex): P[F, FakeValue]
+  def filtrateVotes(values: ValueSet): P[F, ValueSet]
 }

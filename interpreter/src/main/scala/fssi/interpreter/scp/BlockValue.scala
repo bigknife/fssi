@@ -46,19 +46,12 @@ object BlockValue {
     import io.circe._
     import io.circe.generic.auto._
     import io.circe.syntax._
-    import fssi.types.json.implicits._
 
     implicit val valueEncoder: Encoder[Value] = {
       case blockValue: BlockValue => blockValue.asJson
-      case fakeValue: FakeValue   => fakeValue.asJson
     }
 
-    implicit val valueDecoder: Decoder[Value] = (hCursor: HCursor) => {
-      hCursor.as[BlockValue] match {
-        case Right(value) => Right(value)
-        case Left(_)      => hCursor.as[FakeValue]
-      }
-    }
+    implicit val valueDecoder: Decoder[Value] = (hCursor: HCursor) => hCursor.as[BlockValue]
   }
 
 }
