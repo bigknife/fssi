@@ -24,7 +24,8 @@ trait EmitProgram[F[_]] extends SCP[F] with BaseProgram[F] {
           _ <- ifThen(emitable) {
             for {
               _ <- broadcastEnvelope(slotIndex, envelope)
-              _ <- info(s"[$slotIndex] emit nomination message to peers")
+              nominations <- nominationsReceived(slotIndex)
+              _ <- info(s"[$slotIndex] emit nomination message to peers, now ${nominations.keys.size} ---> : ${nominations.keys}")
             } yield ()
           }
         } yield ()

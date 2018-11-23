@@ -24,17 +24,15 @@ trait AttemptConfirmCommitProgram[F[_]] extends SCP[F] with EmitProgram[F] {
         canConfirm <- canConfirmCommitNow(slotIndex, ballotToExternalize.get)
       } yield !canConfirm)
 
-    def isCounterConfirmed(nodeId: NodeID,
-                           interval: CounterInterval,
+    def isCounterConfirmed(interval: CounterInterval,
                            ballot: Ballot): SP[F, Boolean] = {
       for {
         acceptedNodes <- nodesAcceptedCommit(slotIndex, ballot, interval)
-        accepted      <- isQuorum(nodeId, acceptedNodes)
+        accepted      <- isLocalQuorum(acceptedNodes)
       } yield accepted
     }
 
-    def confirmedCommitCounterInterval(nodeId: NodeID,
-                                       boundaries: CounterSet,
+    def confirmedCommitCounterInterval(boundaries: CounterSet,
                                        ballot: Ballot): SP[F, CounterInterval] = {
       // Option[interval], everAccepted, lastAccepted
       val x = boundaries.foldRight((Option.empty[CounterInterval], false, false).pureSP[F]) {
@@ -44,7 +42,7 @@ trait AttemptConfirmCommitProgram[F[_]] extends SCP[F] with EmitProgram[F] {
             next <- ifM(pre._2 && !pre._3, pre) {
               val interval = pre._1.map(_.withFirst(n)).getOrElse(CounterInterval(n))
               for {
-                accepted <- isCounterConfirmed(nodeId, interval, ballot)
+                accepted <- isCounterConfirmed(interval, ballot)
                 _ <- if (accepted)
                   info(s"[$slotIndex][AttemptConfirmCommit] confirm interval: $interval, $ballot")
                 else info(s"[$slotIndex][AttemptConfirmCommit] reject interval: $interval, $ballot")
@@ -69,8 +67,7 @@ trait AttemptConfirmCommitProgram[F[_]] extends SCP[F] with EmitProgram[F] {
         boundaries <- commitBoundaries(slotIndex, ballot)
         _ <- info(
           s"[$slotIndex][AttemptConfirmCommit] found boundaries $boundaries at phase $phase")
-        localNode <- localNode()
-        interval  <- confirmedCommitCounterInterval(localNode, boundaries, ballot)
+        interval  <- confirmedCommitCounterInterval(boundaries, ballot)
         confirmed <- ifM(interval.notAvailable, false) {
           val newC = Ballot(interval.first, ballot.value)
           val newH = Ballot(interval.second, ballot.value)

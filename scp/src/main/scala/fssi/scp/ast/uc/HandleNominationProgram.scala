@@ -30,10 +30,10 @@ trait HandleNominationProgram[F[_]] extends SCP[F] with EmitProgram[F] {
               acceptedNodes <- nodesAcceptedNomination(slotIndex, n)
               accepted <- ifM(hasNominationValueAccepted(slotIndex, n), false.pureSP[F]) {
                 for {
-                  agreed <- ifM(isVBlocking(nodeId, acceptedNodes), true.pureSP[F]) {
+                  agreed <- ifM(isLocalVBlocking(acceptedNodes), true.pureSP[F]) {
                     for {
                       votedNodes <- nodesVotedNomination(slotIndex, n)
-                      x          <- isQuorum(nodeId, votedNodes ++ acceptedNodes)
+                      x          <- isLocalQuorum(votedNodes ++ acceptedNodes)
                       _ <- if (x) debug(s"[$nodeId][$slotIndex] accepted $n by quorum")
                       else debug(s"[$nodeId][$slotIndex] did not accept $n by quorum")
                     } yield x
@@ -56,7 +56,7 @@ trait HandleNominationProgram[F[_]] extends SCP[F] with EmitProgram[F] {
             for {
               pre           <- acc
               acceptedNodes <- nodesAcceptedNomination(slotIndex, n)
-              confirmed     <- isQuorum(nodeId, acceptedNodes)
+              confirmed     <- isLocalQuorum(acceptedNodes)
               _ <- ifThen(confirmed) {
                 for {
                   _ <- info(s"[$nodeId][$slotIndex] confirmed nomination: $n")

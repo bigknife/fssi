@@ -257,4 +257,6 @@ import types._
   def nominateEnvelope(slotIndex: SlotIndex): P[F, Option[Envelope[Message.Nomination]]]
 
   def ballotEnvelope(slotIndex: SlotIndex): P[F, Option[Envelope[Message.BallotMessage]]]
+
+  def nominationsReceived(slotIndex: SlotIndex): P[F, Map[NodeID, Envelope[Message.Nomination]]]
 }
