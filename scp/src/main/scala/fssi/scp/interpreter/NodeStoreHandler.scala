@@ -211,9 +211,8 @@ class NodeStoreHandler extends NodeStore.Handler[Stack] with LogSupport {
       val ballotStatus: BallotStatus = slotIndex
       ballotStatus.valueOverride
         .map {
-          case Some(v)      => Ballot(counter, v)
-          case Option.empty => Ballot(counter, attempt)
-          case x            => throw new RuntimeException(s"unsupported match $x")
+          case Some(v) => Ballot(counter, v)
+          case _       => Ballot(counter, attempt)
         }
         .unsafe()
     }
