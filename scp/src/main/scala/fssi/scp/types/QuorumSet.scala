@@ -1,6 +1,4 @@
 package fssi.scp.types
-import fssi.scp.interpreter.LogSupport
-import org.slf4j.LoggerFactory
 
 sealed trait QuorumSet
 
@@ -68,25 +66,17 @@ object QuorumSet {
      */
     }
 
-    trait Implicits extends LogSupport {
+    trait Implicits {
       import fssi.base.implicits._
       import fssi.scp.types.implicits._
       implicit def flatToBytes(flat: Flat): Array[Byte] =
         flat.threshold.asBytesValue.bytes ++ flat.validators.toArray.asBytesValue.bytes
 
       implicit def nestToBytes(nest: Nest): Array[Byte] = {
-        import fssi.utils._
         val threshold  = nest.threshold.asBytesValue.any
         val validators = nest.validators.toArray.asBytesValue.any
         val inners     = nest.inners.toArray.asBytesValue.any
-
-        log.error("=============================================")
-        log.error(s"      hash threshold: ${crypto.sha3(threshold.bytes).asBytesValue.bcBase58}")
-        log.error(s"      hash validators: ${crypto.sha3(validators.bytes).asBytesValue.bcBase58}")
-        log.error(s"      hash inners: ${crypto.sha3(inners.bytes).asBytesValue.bcBase58}")
-        log.error(s"nest : $nest")
-        log.error("=============================================")
-        nest.threshold.asBytesValue.bytes ++ nest.validators.toArray.asBytesValue.bytes ++ nest.inners.toArray.asBytesValue.bytes
+        (threshold ++ validators ++ inners).bytes
       }
 
       implicit def slicesToBytes(slices: Slices): Array[Byte] = slices match {
