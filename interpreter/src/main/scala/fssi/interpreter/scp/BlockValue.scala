@@ -14,6 +14,11 @@ case class BlockValue(block: Block) extends Value {
     bytes
   }
 
+  override def hashCode: Int = {
+    31 * (31 * (31 * 17 + block.height.hashCode()) + block.curWorldState
+      .hashCode()) + block.preWorldState.hashCode()
+  }
+
   override def compare(v: Value): Int =
     v match {
       case that: BlockValue =>
