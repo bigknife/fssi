@@ -15,11 +15,9 @@ case class Statement[M <: Message](
 }
 
 object Statement {
-  private val log = LoggerFactory.getLogger(getClass)
   trait Implicits {
     import fssi.base.implicits._
     import fssi.scp.types.implicits._
-    import fssi.utils.crypto
 
     implicit def statementToBytes[M <: Message](statement: Statement[M]): Array[Byte] = {
       val from      = statement.from.asBytesValue.any
@@ -27,16 +25,6 @@ object Statement {
       val timestamp = statement.timestamp.asBytesValue.any
       val quorum    = statement.quorumSet.asBytesValue.any
       val message   = statement.message.asBytesValue.any
-
-      log.error("=============================================")
-      log.error(s"from ${from.bcBase58}")
-      log.error(s"      hash from: ${crypto.sha3(from.bytes).asBytesValue.bcBase58}")
-      log.error(s"      hash slotIndex: ${crypto.sha3(slotIndex.bytes).asBytesValue.bcBase58}")
-      log.error(s"      hash timestamp: ${crypto.sha3(timestamp.bytes).asBytesValue.bcBase58}")
-      log.error(s"      hash quorum: ${crypto.sha3(quorum.bytes).asBytesValue.bcBase58}")
-      log.error(s"      hash messdage: ${crypto.sha3(message.bytes).asBytesValue.bcBase58}")
-      log.error("=============================================")
-
       (from ++ slotIndex ++ timestamp ++ quorum ++ message).bytes
     }
   }
