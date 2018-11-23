@@ -13,11 +13,11 @@ trait UnsignedBytesSupport {
 
   def calculateUnsignedTransactionBytes(transaction: Transaction): Array[Byte] = {
     transaction match {
-      case Transaction.Transfer(id, payer, publicKeyForVerifying, payee, token, _, _) =>
-        id.asBytesValue.bytes ++ payer.asBytesValue.bytes ++ publicKeyForVerifying.asBytesValue.bytes ++ payee.asBytesValue.bytes ++ token.asBytesValue.bytes
-      case Transaction.Deploy(id, owner, publicKeyForVerifying, contract, _, _) =>
+      case Transaction.Transfer(id, payer, publicKeyForVerifying, payee, token, _, timestamp) =>
+        id.asBytesValue.bytes ++ payer.asBytesValue.bytes ++ publicKeyForVerifying.asBytesValue.bytes ++ payee.asBytesValue.bytes ++ token.asBytesValue.bytes ++ timestamp.asBytesValue.bytes
+      case Transaction.Deploy(id, owner, publicKeyForVerifying, contract, _, timestamp) =>
         id.asBytesValue.bytes ++ owner.asBytesValue.bytes ++ publicKeyForVerifying.asBytesValue.bytes ++ calculateContractBytes(
-          contract)
+          contract) ++ timestamp.asBytesValue.bytes
       case Transaction.Run(id,
                            caller,
                            publicKeyForVerifying,
@@ -26,8 +26,8 @@ trait UnsignedBytesSupport {
                            methodAlias,
                            contractParameter,
                            _,
-                           _) =>
-        id.asBytesValue.bytes ++ caller.asBytesValue.bytes ++ publicKeyForVerifying.asBytesValue.bytes ++ contractName.asBytesValue.bytes ++ contractVersion.asBytesValue.bytes ++ methodAlias.asBytesValue.bytes ++ contractParameter.asBytesValue.bytes
+                           timestamp) =>
+        id.asBytesValue.bytes ++ caller.asBytesValue.bytes ++ publicKeyForVerifying.asBytesValue.bytes ++ contractName.asBytesValue.bytes ++ contractVersion.asBytesValue.bytes ++ methodAlias.asBytesValue.bytes ++ contractParameter.asBytesValue.bytes ++ timestamp.asBytesValue.bytes
     }
   }
 
