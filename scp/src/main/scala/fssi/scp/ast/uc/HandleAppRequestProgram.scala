@@ -63,8 +63,9 @@ trait HandleAppRequestProgram[F[_]] extends SCP[F] with EmitProgram[F] {
       for {
         _        <- startNominating(slotIndex)
         round    <- currentNominateRound(slotIndex)
-        _        <- debug(s"[$nodeId][$slotIndex] handling app request at round: $round")
-        newVotes <- narrowDownVotes(round)
+        _        <- info(s"[$nodeId][$slotIndex] handling app request at round: $round")
+        votes    <- narrowDownVotes(round)
+        newVotes <- filtrateVotes(votes)
         _        <- debug(s"[$nodeId][$slotIndex] narrowdown votes: $newVotes")
         voted <- ifM(newVotes.isEmpty, right = false) {
           for {

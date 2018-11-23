@@ -21,51 +21,50 @@ trait HandleNominationProgram[F[_]] extends SCP[F] with EmitProgram[F] {
                        statement: Statement[Message.Nomination]): SP[F, Boolean] = {
 
     ifM(isNominatingStopped(slotIndex), false.pureSP[F]) {
-      ifM(isOnlyNominateFakeValue(statement.message.voted), true.pureSP[F]) {
-        // try to accept votes from the message
-        def tryAcceptVotes(xs: ValueSet): SP[F, StateChanged] = {
-          xs.foldLeft(false.pureSP[F]) { (acc, n) =>
-            for {
-              pre           <- acc
-              acceptedNodes <- nodesAcceptedNomination(slotIndex, n)
-              accepted <- ifM(hasNominationValueAccepted(slotIndex, n), false.pureSP[F]) {
-                for {
-                  agreed <- ifM(isLocalVBlocking(acceptedNodes), true.pureSP[F]) {
-                    for {
-                      votedNodes <- nodesVotedNomination(slotIndex, n)
-                      x          <- isLocalQuorum(votedNodes ++ acceptedNodes)
-                      _ <- if (x) debug(s"[$nodeId][$slotIndex] accepted $n by quorum")
-                      else debug(s"[$nodeId][$slotIndex] did not accept $n by quorum")
-                    } yield x
-                  }
-                } yield agreed
-              }
-              _ <- ifThen(accepted) {
-                for {
-                  _ <- info(s"[$nodeId][$slotIndex] accepted $n")
-                  _ <- acceptNewNomination(slotIndex, n)
-                } yield ()
-              }
-            } yield pre || accepted
-          }
+      // try to accept votes from the message
+      def tryAcceptVotes(xs: ValueSet): SP[F, StateChanged] = {
+        xs.foldLeft(false.pureSP[F]) { (acc, n) =>
+          for {
+            pre           <- acc
+            acceptedNodes <- nodesAcceptedNomination(slotIndex, n)
+            accepted <- ifM(hasNominationValueAccepted(slotIndex, n), false.pureSP[F]) {
+              for {
+                agreed <- ifM(isLocalVBlocking(acceptedNodes), true.pureSP[F]) {
+                  for {
+                    votedNodes <- nodesVotedNomination(slotIndex, n)
+                    x          <- isLocalQuorum(votedNodes ++ acceptedNodes)
+                    _ <- if (x) debug(s"[$nodeId][$slotIndex] accepted $n by quorum")
+                    else debug(s"[$nodeId][$slotIndex] did not accept $n by quorum")
+                  } yield x
+                }
+              } yield agreed
+            }
+            _ <- ifThen(accepted) {
+              for {
+                _ <- info(s"[$nodeId][$slotIndex] accepted $n")
+                _ <- acceptNewNomination(slotIndex, n)
+              } yield ()
+            }
+          } yield pre || accepted
         }
+      }
 
-        // then try to confirm local accepted votes to make a candidates
-        def tryCandidate(xs: ValueSet): SP[F, StateChanged] = {
-          xs.foldLeft(false.pureSP[F]) { (acc, n) =>
-            for {
-              pre           <- acc
-              acceptedNodes <- nodesAcceptedNomination(slotIndex, n)
-              confirmed     <- isLocalQuorum(acceptedNodes)
-              _ <- ifThen(confirmed) {
-                for {
-                  _ <- info(s"[$nodeId][$slotIndex] confirmed nomination: $n")
-                  _ <- candidateNewNomination(slotIndex, n)
-                } yield ()
-              }
-            } yield pre || confirmed
-          }
+      // then try to confirm local accepted votes to make a candidates
+      def tryCandidate(xs: ValueSet): SP[F, StateChanged] = {
+        xs.foldLeft(false.pureSP[F]) { (acc, n) =>
+          for {
+            pre           <- acc
+            acceptedNodes <- nodesAcceptedNomination(slotIndex, n)
+            confirmed     <- isLocalQuorum(acceptedNodes)
+            _ <- ifThen(confirmed) {
+              for {
+                _ <- info(s"[$nodeId][$slotIndex] confirmed nomination: $n")
+                _ <- candidateNewNomination(slotIndex, n)
+              } yield ()
+            }
+          } yield pre || confirmed
         }
+      }
 
         // once candidates maked, bump to ballot protocol
         // plus, if no candidate maked as so far, try to vote from nomination message.
@@ -121,7 +120,6 @@ trait HandleNominationProgram[F[_]] extends SCP[F] with EmitProgram[F] {
         } yield true
       }
     }
-  }
 
   private[uc] def tryGetNewValueFromNomination(nodeId: NodeID,
                                                slotIndex: SlotIndex,

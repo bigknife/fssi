@@ -60,12 +60,11 @@ class NodeServiceHandler
     !nominationStatus.nominationStarted.unsafe()
   }
 
-  /** check if only nominate fake value
-    */
-  override def isOnlyNominateFakeValue(voted: ValueSet): Stack[Boolean] = Stack { setting =>
-    // we put fake value when nominate
-    voted.size <= 1 && voted.headOption.exists(_.rawBytes.length == 0)
-  }
+  override def filtrateVotes(values: ValueSet): Stack[ValueSet] =
+    Stack(values.filterNot {
+      case _: FakeValue => true
+      case _            => false
+    })
 
   /** compute a value's hash
     *
@@ -222,7 +221,6 @@ class NodeServiceHandler
     val signature = envelope.signature
     val fromNode  = envelope.statement.from
     val publicKey = crypto.rebuildECPublicKey(fromNode.value, cryptoUtil.SECP256K1)
-     val str = envelope.statement.asBytesValue.bcBase58
     val source    = fixedStatementBytes(envelope.statement)
     val verified  = crypto.verifySignature(signature.value, source, publicKey)
     verified
@@ -382,6 +380,8 @@ class NodeServiceHandler
   }
 
   override def broadcastTimeout(): Stack[Long] = Stack(setting => setting.broadcastTimeout)
+
+  override def blockFakeValue(slotIndex: SlotIndex): Stack[FakeValue] = Stack(FakeValue(slotIndex))
 
   //////
   /** MUST be deterministic

@@ -2,7 +2,7 @@ package fssi.interpreter.scp
 import fssi.ast.uc.CoreNodeProgram
 import fssi.interpreter.Setting.CoreNodeSetting
 import fssi.interpreter.{LogSupport, UnsignedBytesSupport}
-import fssi.scp.interpreter.ApplicationCallback
+import fssi.scp.interpreter.{ApplicationCallback, FakeValue}
 import fssi.scp.types._
 import fssi.scp.types.implicits._
 import fssi.types.base.Hash
@@ -50,9 +50,13 @@ trait SCPApplicationCallback
   override def combineValues(nodeId: NodeID,
                              slotIndex: SlotIndex,
                              value: ValueSet): Option[Value] = {
-    if (value.isEmpty) None
+    val validValues = value.filter {
+      case _: BlockValue => true
+      case _             => false
+    }
+    if (validValues.isEmpty) None
     else {
-      val newValue: Value = value.reduceLeft { (ac, value) =>
+      val newValue: Value = validValues.reduceLeft { (ac, value) =>
         (ac, value) match {
           case (BlockValue(acc), BlockValue(n)) =>
             if (acc.chainId == n.chainId && acc.height == n.height) {
@@ -111,7 +115,7 @@ trait SCPApplicationCallback
           log.info(s"start to nominate fake value on slotIndex: ${slotIndex.value + 1}")
           implicit val scpSetting: fssi.scp.interpreter.Setting = resolveSCPSetting(coreNodeSetting)
           val newSlotIndex                                      = SlotIndex(slotIndex.value + 1)
-          Portal.nominateFakeValue(scpSetting.localNode, newSlotIndex, FakeValue(newSlotIndex))
+          Portal.nominateFakeValue(scpSetting.localNode, newSlotIndex)
           log.info(s"stop broadcast message on slotIndex: $slotIndex")
           Portal.stopBroadcastMessage()
           log.info(s"start broadcast message on slotIndex: $newSlotIndex")

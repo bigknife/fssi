@@ -4,7 +4,6 @@ package interpreter
 import fssi.scp.types._
 
 case class Setting(
-    initFakeValue: Value,
     maxTimeoutSeconds: Int = 30 * 60, // max neutralization time
     quorumSet: QuorumSet, // quorum set, only support Slices now
     localNode: NodeID, // local Node ID

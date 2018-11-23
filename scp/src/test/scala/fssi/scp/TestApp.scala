@@ -44,7 +44,6 @@ class TestApp(nodeID: NodeID,
   private var externalizedValues: Vector[Value] = Vector.empty
 
   val setting: Setting = Setting(
-    initFakeValue = TestValue(TreeSet.empty),
     quorumSet = quorumSet,
     localNode = nodeID,
     privateKey = nodeKey,

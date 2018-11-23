@@ -4,26 +4,24 @@ package ast
 package uc
 import bigknife.sop._
 import bigknife.sop.implicits._
-import fssi.scp.types.{NodeID, QuorumSet, SlotIndex, Value}
+import fssi.scp.types.{NodeID, QuorumSet, SlotIndex}
 
 trait InitializeProgram[F[_]] extends SCP[F] with BaseProgram[F] {
 
   import model._
 
-  def initialize(nodeId: NodeID,
-                 quorumSet: QuorumSet,
-                 currentHeight: BigInt,
-                 fakeValue: Value): SP[F, Unit] = {
+  def initialize(nodeId: NodeID, quorumSet: QuorumSet, slotIndex: SlotIndex): SP[F, Unit] = {
     for {
       _ <- nodeService.cacheNodeQuorumSet(nodeId, quorumSet)
-      _ <- nominateFakeValue(nodeId, SlotIndex(currentHeight + 1), fakeValue)
-      _ <- broadcastMessageRegularly(SlotIndex(currentHeight + 1))
+      _ <- nominateFakeValue(nodeId, slotIndex)
+      _ <- broadcastMessageRegularly(slotIndex)
     } yield ()
   }
 
-  def nominateFakeValue(nodeId: NodeID, slotIndex: SlotIndex, fakeValue: Value): SP[F, Unit] = {
+  def nominateFakeValue(nodeId: NodeID, slotIndex: SlotIndex): SP[F, Unit] = {
     for {
-      _ <- handleAppRequest(nodeId, slotIndex, fakeValue, fakeValue)
+      fakeValue <- nodeService.blockFakeValue(slotIndex)
+      _         <- handleAppRequest(nodeId, slotIndex, fakeValue, fakeValue)
     } yield ()
   }
 }

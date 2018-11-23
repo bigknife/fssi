@@ -11,9 +11,7 @@ object EdgeNodeMain extends StackConsoleMain[EdgeNodeSetting] {
   private val instance = EdgeNodeProgram.instance
 
   val defaultEdgeNodeSetting = EdgeNodeSetting(
-    workingDir = new File(System.getProperty("user.home"), ".fssi"),
-    password = Array.emptyByteArray
-  )
+    workingDir = new File(System.getProperty("user.home"), ".fssi"))
 
   override def cmdArgs(xs: Array[String]): Option[EdgeNodeSetting] =
     EdgeNodeSettingParser.parse(xs, defaultEdgeNodeSetting)

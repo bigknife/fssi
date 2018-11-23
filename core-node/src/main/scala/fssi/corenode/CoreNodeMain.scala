@@ -16,9 +16,7 @@ object CoreNodeMain extends StackConsoleMain[CoreNodeSetting] {
   private val instance = CoreNodeProgram.instance
 
   val defaultCoreNodeSetting: CoreNodeSetting = CoreNodeSetting(
-    workingDir = new java.io.File(new java.io.File(System.getProperty("user.home")), ".fssi"),
-    password = Array.emptyByteArray
-  )
+    workingDir = new java.io.File(new java.io.File(System.getProperty("user.home")), ".fssi"))
 
   override def cmdArgs(xs: Array[String]): Option[CoreNodeSetting] = {
     CoreNodeSettingParser.parse(xs, defaultCoreNodeSetting)

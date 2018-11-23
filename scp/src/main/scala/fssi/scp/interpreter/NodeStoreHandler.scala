@@ -62,11 +62,10 @@ class NodeStoreHandler extends NodeStore.Handler[Stack] with LogSupport {
         val nominationStatus: NominationStatus = slotIndex
         nominationStatus.latestNominations := nominationStatus.latestNominations
           .unsafe() + (nodeId -> envelope.copy(statement = envelope.statement.withMessage(n)))
-        if (setting.localNode != nodeId)
-          log.info(
-            s"on new nomination from peer, now : ${nominationStatus.latestNominations.unsafe().keys.size} ---> : ${nominationStatus.latestNominations
-              .map(_.keys)
-              .unsafe()}")
+        log.info(
+          s"current latest nominations --> ${nominationStatus.latestNominations.unsafe().keys.size},vote --> ${nominationStatus.votes
+            .unsafe()
+            .size}, accept --> ${nominationStatus.accepted.unsafe().size}")
         ()
       case b: Message.BallotMessage =>
         val ballotStatus: BallotStatus = slotIndex
@@ -184,6 +183,7 @@ class NodeStoreHandler extends NodeStore.Handler[Stack] with LogSupport {
   override def candidateNewNomination(slotIndex: SlotIndex, value: Value): Stack[Unit] = Stack {
     val nominationStatus: NominationStatus = slotIndex
     nominationStatus.candidates := nominationStatus.candidates.map(_ + value).unsafe(); ()
+    log.info(s"candidate size --> ${nominationStatus.candidates.unsafe().size}")
   }
 
   override def isLeader(nodeID: NodeID, slotIndex: SlotIndex): Stack[Boolean] = Stack {
@@ -208,6 +208,7 @@ class NodeStoreHandler extends NodeStore.Handler[Stack] with LogSupport {
         .map {
           case Some(v) => Ballot(counter, v)
           case None    => Ballot(counter, attempt)
+          case x       => throw new RuntimeException(s"unsupported match $x")
         }
         .unsafe()
     }
@@ -928,7 +929,6 @@ class NodeStoreHandler extends NodeStore.Handler[Stack] with LogSupport {
     }
     isDiff && isGrow
   }
-
 }
 
 object NodeStoreHandler {

@@ -8,6 +8,8 @@ import fssi.scp.ast._
 import fssi.scp.interpreter.store._
 import fssi.scp.types._
 
+import scala.util.Try
+
 class ApplicationServiceHandler extends ApplicationService.Handler[Stack] with LogSupport {
 
   private val timerCache: Var[Map[String, Vector[Timer]]] = Var(Map.empty)
@@ -82,7 +84,7 @@ class ApplicationServiceHandler extends ApplicationService.Handler[Stack] with L
           else m + (tag                 -> Vector(timer))
         }
         timer.schedule(new TimerTask {
-          override def run(): Unit = task.run()
+          override def run(): Unit = try { task.run() } finally timer.cancel()
         }, timeout)
       }
   }
@@ -105,13 +107,15 @@ class ApplicationServiceHandler extends ApplicationService.Handler[Stack] with L
   /** listener, phase upgrade to confirm
     */
   override def phaseUpgradeToConfirm(slotIndex: SlotIndex, ballot: Ballot): Stack[Unit] = Stack {
-    setting => setting.applicationCallback.valueConfirmed(slotIndex, ballot.value)
+    setting =>
+      setting.applicationCallback.valueConfirmed(slotIndex, ballot.value)
   }
 
   /** listener, phase upgrade to externalize
     */
   override def phaseUpgradeToExternalize(slotIndex: SlotIndex, ballot: Ballot): Stack[Unit] =
-    Stack { setting => setting.applicationCallback.valueExternalized(slotIndex, ballot.value)
+    Stack { setting =>
+      setting.applicationCallback.valueExternalized(slotIndex, ballot.value)
     }
 
   /** broadcast message envelope

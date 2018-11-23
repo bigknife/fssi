@@ -1,4 +1,5 @@
-package fssi.interpreter.scp
+package fssi.scp.interpreter
+
 import fssi.scp.types.{SlotIndex, Value}
 
 case class FakeValue(slotIndex: SlotIndex) extends Value {

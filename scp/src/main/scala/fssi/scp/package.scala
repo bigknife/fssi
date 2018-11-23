@@ -10,15 +10,14 @@ package object scp {
   object Portal {
     private lazy val scp = SCP[fssi.scp.ast.components.Model.Op]
 
-    def initialize(currentHeight: BigInt)(implicit setting: Setting): Unit = {
+    def initialize(slotIndex: SlotIndex)(implicit setting: Setting): Unit = {
       val program =
-        scp.initialize(setting.localNode, setting.quorumSet, currentHeight, setting.initFakeValue)
+        scp.initialize(setting.localNode, setting.quorumSet, slotIndex)
       fssi.scp.interpreter.runner.runIO(program, setting).unsafeRunSync()
     }
 
-    def nominateFakeValue(nodeId: NodeID, slotIndex: SlotIndex, fakeValue: Value)(
-        implicit setting: Setting): Unit = {
-      val program = scp.nominateFakeValue(nodeId, slotIndex, fakeValue)
+    def nominateFakeValue(nodeId: NodeID, slotIndex: SlotIndex)(implicit setting: Setting): Unit = {
+      val program = scp.nominateFakeValue(nodeId, slotIndex)
       fssi.scp.interpreter.runner.runIO(program, setting).unsafeRunSync()
     }
 
