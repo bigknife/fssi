@@ -211,9 +211,9 @@ class NodeStoreHandler extends NodeStore.Handler[Stack] with LogSupport {
       val ballotStatus: BallotStatus = slotIndex
       ballotStatus.valueOverride
         .map {
-          case Some(v) => Ballot(counter, v)
-          case None    => Ballot(counter, attempt)
-          case x       => throw new RuntimeException(s"unsupported match $x")
+          case Some(v)      => Ballot(counter, v)
+          case Option.empty => Ballot(counter, attempt)
+          case x            => throw new RuntimeException(s"unsupported match $x")
         }
         .unsafe()
     }
@@ -805,7 +805,8 @@ class NodeStoreHandler extends NodeStore.Handler[Stack] with LogSupport {
     ()
   }
 
-  override def localNode(): Stack[NodeID] = Stack { setting => setting.localNode
+  override def localNode(): Stack[NodeID] = Stack { setting =>
+    setting.localNode
   }
 
   override def nominateEnvelope(slotIndex: SlotIndex): Stack[Option[Envelope[Message.Nomination]]] =
