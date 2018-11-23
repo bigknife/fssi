@@ -1,5 +1,5 @@
 package fssi.scp.types
-import fssi.scp.types.Statement.getClass
+import fssi.scp.interpreter.LogSupport
 import org.slf4j.LoggerFactory
 
 sealed trait QuorumSet
@@ -68,10 +68,9 @@ object QuorumSet {
      */
     }
 
-    trait Implicits {
+    trait Implicits extends LogSupport {
       import fssi.base.implicits._
       import fssi.scp.types.implicits._
-      private val log = LoggerFactory.getLogger(getClass)
       implicit def flatToBytes(flat: Flat): Array[Byte] =
         flat.threshold.asBytesValue.bytes ++ flat.validators.toArray.asBytesValue.bytes
 
@@ -85,6 +84,7 @@ object QuorumSet {
         log.error(s"      hash threshold: ${crypto.sha3(threshold.bytes).asBytesValue.bcBase58}")
         log.error(s"      hash validators: ${crypto.sha3(validators.bytes).asBytesValue.bcBase58}")
         log.error(s"      hash inners: ${crypto.sha3(inners.bytes).asBytesValue.bcBase58}")
+        log.error(s"nest : $nest")
         log.error("=============================================")
         nest.threshold.asBytesValue.bytes ++ nest.validators.toArray.asBytesValue.bytes ++ nest.inners.toArray.asBytesValue.bytes
       }
