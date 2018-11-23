@@ -22,10 +22,9 @@ object Statement {
     implicit def statementToBytes[M <: Message](statement: Statement[M]): Array[Byte] = {
       val from      = statement.from.asBytesValue.any
       val slotIndex = statement.slotIndex.asBytesValue.any
-      val timestamp = statement.timestamp.asBytesValue.any
       val quorum    = statement.quorumSet.asBytesValue.any
       val message   = statement.message.asBytesValue.any
-      (from ++ slotIndex ++ timestamp ++ quorum ++ message).bytes
+      (from ++ slotIndex ++ quorum ++ message).bytes
     }
   }
 }
