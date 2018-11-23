@@ -28,7 +28,7 @@ object BallotStatus {
     highBallot = Var(None),
     commit = Var(None),
     latestEnvelopes = Var(Map.empty),
-    valueOverride = Var(None),
+    valueOverride = Var(Option.empty),
     currentMessageLevel = Var(0),
     latestGeneratedEnvelope = Var.empty,
     latestEmitEnvelope = Var(None)
