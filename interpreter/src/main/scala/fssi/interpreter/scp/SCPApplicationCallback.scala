@@ -52,7 +52,7 @@ trait SCPApplicationCallback
                              value: ValueSet): Option[Value] = {
     if (value.isEmpty) None
     else {
-      val newValue: Value = value.reduceLeft { (ac, value) =>
+      val newValue: Value = value.filter(_.isInstanceOf[BlockValue]).reduceLeft { (ac, value) =>
         (ac, value) match {
           case (BlockValue(acc), BlockValue(n)) =>
             if (acc.chainId == n.chainId && acc.height == n.height) {
