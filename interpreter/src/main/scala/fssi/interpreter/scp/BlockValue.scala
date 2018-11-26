@@ -29,13 +29,17 @@ case class BlockValue(block: Block) extends Value {
         val heightOrder = Ordering[BigInt].compare(this.block.height, that.block.height)
         if (heightOrder != 0) heightOrder
         else {
-          val tsOrder =
-            Ordering[Long].compare(this.block.timestamp.value, that.block.timestamp.value)
-          if (tsOrder != 0) tsOrder
+          val thisEncoding = rawBytes.asBytesValue.bcBase58
+          val thatEncoding = that.rawBytes.asBytesValue.bcBase58
+          val contentOrder = Ordering[String].compare(thisEncoding, thatEncoding)
+
+          if (contentOrder != 0) {
+            val timeOrder = Ordering[Long].compare(this.block.timestamp.value, that.block.timestamp.value)
+            if (timeOrder != 0) timeOrder
+            else contentOrder
+          }
           else {
-            val thisEncoding = rawBytes.asBytesValue.bcBase58
-            val thatEncoding = that.rawBytes.asBytesValue.bcBase58
-            Ordering[String].compare(thisEncoding, thatEncoding)
+            contentOrder
           }
         }
       case _ => -1
