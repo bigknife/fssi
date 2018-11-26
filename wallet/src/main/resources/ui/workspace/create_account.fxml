@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.canvas.*?>
+<?import java.net.*?>
+<?import javafx.geometry.*?>
+<?import javafx.scene.image.*?>
+<?import java.lang.*?>
+<?import java.util.*?>
+<?import javafx.scene.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<StackPane style="-fx-background-color: transparent;" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="fssi.wallet.controller.workspace.CreateAccountController">
+   <children>
+      <VBox maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" minHeight="-Infinity" minWidth="-Infinity" styleClass="workspace-background-dark">
+         <children>
+            <StackPane>
+               <children>
+                  <HBox alignment="CENTER_LEFT" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="60.0" prefWidth="200.0" styleClass="workspace-title-bar">
+                     <children>
+                        <ImageView fitHeight="36.0" fitWidth="36.0" pickOnBounds="true" preserveRatio="true">
+                           <image>
+                              <Image url="@../image/create_account_logo.png" />
+                           </image>
+                           <HBox.margin>
+                              <Insets left="24.0" right="10.0" />
+                           </HBox.margin>
+                        </ImageView>
+                        <Label maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" minHeight="-Infinity" minWidth="-Infinity" styleClass="workspace-title-text" text="Create Account" />
+                     </children>
+                  </HBox>
+                  <ProgressIndicator fx:id="cWorkingIndicator" maxHeight="-Infinity" maxWidth="-Infinity" prefHeight="24.0" prefWidth="24.0" visible="false" />
+               </children>
+            </StackPane>
+            <HBox fx:id="cCanvasParent" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" onMouseDragged="#mouseDragged" onMousePressed="#mousePressed" onMouseReleased="#mouseReleased" prefHeight="400.0" prefWidth="804.0" styleClass="create_account_mouse_track_pad">
+               <VBox.margin>
+                  <Insets left="10.0" right="10.0" top="10.0" />
+               </VBox.margin>
+               <children>
+                  <Canvas fx:id="cCanvas" height="200.0" width="335.0" HBox.hgrow="ALWAYS" />
+               </children>
+               <padding>
+                  <Insets bottom="1.0" left="1.0" right="1.0" top="1.0" />
+               </padding>
+            </HBox>
+            <HBox alignment="CENTER" maxHeight="-Infinity" maxWidth="-Infinity" prefWidth="804.0" styleClass="create_account_mouse_track_result">
+               <children>
+                  <Label fx:id="cRandomText" styleClass="create_account_random_text" text="random text" />
+               </children>
+               <VBox.margin>
+                  <Insets left="10.0" right="10.0" />
+               </VBox.margin>
+               <padding>
+                  <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
+               </padding>
+            </HBox>
+            <HBox>
+               <children>
+                  <Button mnemonicParsing="false" onMouseClicked="#resetAll" prefHeight="36.0" prefWidth="100.0" styleClass="button_normal" text="Reset All">
+                     <HBox.margin>
+                        <Insets right="10.0" />
+                     </HBox.margin>
+                  </Button>
+                  <Button mnemonicParsing="false" onMouseClicked="#generate" prefHeight="36.0" prefWidth="100.0" styleClass="button_primary" text="Generate">
+                     <HBox.margin>
+                        <Insets right="10.0" />
+                     </HBox.margin>
+                  </Button>
+                  <Button mnemonicParsing="false" onMouseClicked="#saveAs" prefHeight="36.0" prefWidth="100.0" styleClass="button_primary" text="Save As ...">
+                     <HBox.margin>
+                        <Insets right="10.0" />
+                     </HBox.margin>
+                  </Button>
+               </children>
+               <VBox.margin>
+                  <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
+               </VBox.margin>
+            </HBox>
+            <GridPane maxWidth="-Infinity" minWidth="-Infinity" prefWidth="804.0">
+              <columnConstraints>
+                  <ColumnConstraints hgrow="SOMETIMES" maxWidth="-Infinity" minWidth="-Infinity" prefWidth="70.0" />
+                  <ColumnConstraints hgrow="SOMETIMES" maxWidth="402.0" minWidth="10.0" prefWidth="363.0" />
+                <ColumnConstraints hgrow="SOMETIMES" maxWidth="-Infinity" minWidth="-Infinity" prefWidth="70.0" />
+                <ColumnConstraints hgrow="SOMETIMES" maxWidth="302.0" minWidth="10.0" prefWidth="291.0" />
+              </columnConstraints>
+              <rowConstraints>
+                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+              </rowConstraints>
+               <VBox.margin>
+                  <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
+               </VBox.margin>
+               <children>
+                  <Label alignment="CENTER_RIGHT" prefHeight="24.0" prefWidth="60.0" styleClass="create_account_field_label" text="ID:">
+                     <padding>
+                        <Insets right="10.0" />
+                     </padding>
+                  </Label>
+                  <Label alignment="CENTER_RIGHT" prefHeight="24.0" prefWidth="60.0" styleClass="create_account_field_label" text="Pub:" GridPane.columnIndex="2" GridPane.rowIndex="1">
+                     <padding>
+                        <Insets right="10.0" />
+                     </padding>
+                  </Label>
+                  <Label alignment="CENTER_RIGHT" prefHeight="24.0" prefWidth="60.0" styleClass="create_account_field_label" text="Prv:" GridPane.rowIndex="1">
+                     <padding>
+                        <Insets right="10.0" />
+                     </padding>
+                  </Label>
+                  <Label alignment="CENTER_RIGHT" prefHeight="24.0" prefWidth="60.0" styleClass="create_account_field_label" text="IV:" GridPane.columnIndex="2">
+                     <padding>
+                        <Insets right="10.0" />
+                     </padding>
+                  </Label>
+                  <TextField fx:id="cAccountId" editable="false" styleClass="text_common" GridPane.columnIndex="1">
+                     <GridPane.margin>
+                        <Insets right="10.0" />
+                     </GridPane.margin>
+                  </TextField>
+                  <TextField fx:id="cAccountIv" editable="false" styleClass="text_common" GridPane.columnIndex="3">
+                     <GridPane.margin>
+                        <Insets right="10.0" />
+                     </GridPane.margin>
+                  </TextField>
+                  <TextField fx:id="cAccountPrv" editable="false" styleClass="text_common" GridPane.columnIndex="1" GridPane.rowIndex="1">
+                     <GridPane.margin>
+                        <Insets right="10.0" />
+                     </GridPane.margin>
+                  </TextField>
+                  <TextField fx:id="cAccountPub" editable="false" styleClass="text_common" GridPane.columnIndex="3" GridPane.rowIndex="1">
+                     <GridPane.margin>
+                        <Insets right="10.0" />
+                     </GridPane.margin>
+                  </TextField>
+                  <Label alignment="CENTER_RIGHT" prefHeight="24.0" prefWidth="60.0" styleClass="create_account_field_label" text="Sec:" GridPane.rowIndex="2">
+                     <padding>
+                        <Insets right="10.0" />
+                     </padding>
+                  </Label>
+                  <TextField fx:id="cAccountSec" editable="false" styleClass="text_common" GridPane.columnIndex="1" GridPane.rowIndex="2">
+                     <GridPane.margin>
+                        <Insets right="10.0" />
+                     </GridPane.margin>
+                  </TextField>
+               </children>
+            </GridPane>
+         </children>
+         <stylesheets>
+            <URL value="@../css/workspace.css" />
+            <URL value="@../css/create_account.css" />
+         </stylesheets>
+      </VBox>
+   </children>
+   <padding>
+      <Insets bottom="1.0" left="1.0" right="1.0" top="3.0" />
+   </padding>
+</StackPane>

@@ -100,11 +100,9 @@ object BCSKey {
       override val segments: Array[String] = Array("transactions")
     }
 
-    /*
     def receiptList(height: BigInt): BlockKey = new _BlockKey(height) {
       override val segments: Array[String] = Array("receipts")
     }
-     */
 
     def blockTimestamp(height: BigInt): BlockKey = new _BlockKey(height) {
       override val segments: Array[String] = Array("timestamp")
@@ -132,7 +130,7 @@ object BCSKey {
         case P(height, key) if key == "preWorldState" => Some(preWorldState(BigInt(height)))
         case P(height, key) if key == "curWorldState" => Some(curWorldState(BigInt(height)))
         case P(height, key) if key == "transactions"  => Some(transactionList(BigInt(height)))
-        //case P(height, key) if key == "receipts"      => Some(receiptList(BigInt(height)))
+        case P(height, key) if key == "receipts"      => Some(receiptList(BigInt(height)))
         case P(height, key) if key == "timestamp" => Some(blockTimestamp(BigInt(height)))
         case P(height, key) if key == "hash"      => Some(blockHash(BigInt(height)))
         case _                                    => None

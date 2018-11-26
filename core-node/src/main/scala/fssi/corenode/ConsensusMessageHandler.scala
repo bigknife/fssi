@@ -18,7 +18,7 @@ trait ConsensusMessageHandler extends LogSupport {
           val program = coreNodeProgram.processConsensusMessage(scpEnvelope)
           runner.runIOAttempt(program, coreNodeSetting).unsafeRunSync() match {
             case Right(_) =>
-              log.info(
+              log.debug(
                 s"core node handle consensus message from node [${scpEnvelope.value.statement.from}] success")
             case Left(e) =>
               log.error(

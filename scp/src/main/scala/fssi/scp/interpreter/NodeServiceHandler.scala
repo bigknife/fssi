@@ -310,7 +310,7 @@ class NodeServiceHandler
     msg match {
       case Message.Prepare(b, Some(p), _, _, _) if b.counter > 0 => ValueSet(b.value, p.value)
       case Message.Prepare(_, Some(p), _, _, _)                  => ValueSet(p.value)
-      case Message.Prepare(b, None, _, _, _)                     => ValueSet(b.value)
+      case Message.Prepare(b, _, _, _, _)                        => ValueSet(b.value)
       case Message.Confirm(b, _, _, _)                           => ValueSet(b.value)
       case Message.Externalize(x, _, _)                          => ValueSet(x)
     }

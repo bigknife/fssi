@@ -14,7 +14,7 @@ trait SafetyGuard {
           highestSlotIndex := highestSlotIndex.map(_ + (nodeId -> slotIndex)).unsafe
         else if (slotIndex.value < oldSlotIndex.value)
           throw new RuntimeException(
-            s"invalid slotIndex: $slotIndex, because a higer one exists now")
+            s"invalid slotIndex: $slotIndex, because a higher one exists now")
         else ()
       case None =>
         highestSlotIndex := highestSlotIndex.map(_ + (nodeId -> slotIndex)).unsafe

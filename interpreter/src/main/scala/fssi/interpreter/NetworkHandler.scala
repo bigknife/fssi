@@ -13,13 +13,17 @@ import io.scalecube.cluster.{Cluster, ClusterConfig}
 import io.scalecube.transport.{Address, Message => CubeMessage}
 import bigknife.jsonrpc._
 import fssi.interpreter.jsonrpc.EdgeJsonRpcResource
+import fssi.interpreter.scp.SCPEnvelope
 import fssi.types.biz.Message.ApplicationMessage.{QueryMessage, TransactionMessage}
 import fssi.types.biz.Message.ClientMessage.{QueryTransaction, SendTransaction}
 import fssi.types.implicits._
 import fssi.types.json.implicits._
+import io.circe.syntax._
 import io.circe._
 import io.circe.parser._
 import io.circe.generic.auto._
+import fssi.interpreter.scp.BlockValue.implicits._
+import fssi.scp.interpreter.json.implicits._
 
 class NetworkHandler extends Network.Handler[Stack] with LogSupport {
 
@@ -36,7 +40,18 @@ class NetworkHandler extends Network.Handler[Stack] with LogSupport {
       case coreNodeSetting: CoreNodeSetting => coreNodeSetting.config.consensusConfig
       case _                                => throw new RuntimeException("unsupported setting to startup consensus")
     }
-    val converter: CubeMessage => ConsensusMessage = cub => cub.data[ConsensusMessage]
+    val converter: CubeMessage => ConsensusMessage = cub => {
+      val jsonString = cub.data[String]()
+      val scpEither = for {
+        json <- parse(jsonString)
+        r    <- json.as[SCPEnvelope]
+      } yield r
+      scpEither match {
+        case Right(envelope) => envelope
+        case Left(e) =>
+          throw new RuntimeException(s"consensus node can not handle message: $jsonString", e)
+      }
+    }
     val node =
       startP2PNode(consensusOnce, p2pConfig, converter, handler, "consensus node")
     ConsensusNode(node)
@@ -87,8 +102,11 @@ class NetworkHandler extends Network.Handler[Stack] with LogSupport {
       case _: CoreNodeSetting =>
         message match {
           case consensusMessage: ConsensusMessage =>
-            consensusOnce.foreach(cluster =>
-              cluster.spreadGossip(CubeMessage.fromData(consensusMessage)))
+            consensusMessage match {
+              case scpEnvelope: SCPEnvelope =>
+                consensusOnce.foreach(cluster =>
+                  cluster.spreadGossip(CubeMessage.fromData(scpEnvelope.asJson.noSpaces)))
+            }
           case _ => throw new RuntimeException(s"core node unsupported broadcast message: $message")
         }
       case _: EdgeNodeSetting =>

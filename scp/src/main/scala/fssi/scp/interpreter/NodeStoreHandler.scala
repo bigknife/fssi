@@ -63,9 +63,14 @@ class NodeStoreHandler extends NodeStore.Handler[Stack] with LogSupport {
         nominationStatus.latestNominations := nominationStatus.latestNominations
           .unsafe() + (nodeId -> envelope.copy(statement = envelope.statement.withMessage(n)))
         log.info(
-          s"current latest nominations --> ${nominationStatus.latestNominations.unsafe().keys.size},vote --> ${nominationStatus.votes
-            .unsafe()
-            .size}, accept --> ${nominationStatus.accepted.unsafe().size}")
+          s"current latest nominations --> ${nominationStatus.latestNominations.unsafe().keys.size}")
+        nominationStatus.latestNominations.foreach { map =>
+          map.keySet.foreach { node =>
+            log.info(
+              s"node $node vote --> ${map(node).statement.message.voted.size}, accept --> ${map(
+                node).statement.message.accepted.size}")
+          }
+        }
         ()
       case b: Message.BallotMessage =>
         val ballotStatus: BallotStatus = slotIndex
@@ -170,10 +175,14 @@ class NodeStoreHandler extends NodeStore.Handler[Stack] with LogSupport {
   override def acceptNewNomination(slotIndex: SlotIndex, value: Value): Stack[Unit] = Stack {
     setting =>
       val nominationStatus: NominationStatus = slotIndex
-
       if (setting.applicationCallback
             .validateValue(setting.localNode, slotIndex, value) == Value.Validity.FullyValidated)
-        nominationStatus.votes := nominationStatus.votes.map(_ + value).unsafe()
+        nominationStatus.votes := nominationStatus.votes
+          .map { x =>
+            if (x.contains(value)) x
+            else x + value
+          }
+          .unsafe()
 
       nominationStatus.accepted := nominationStatus.accepted.map(_ + value).unsafe(); ()
   }
@@ -207,8 +216,7 @@ class NodeStoreHandler extends NodeStore.Handler[Stack] with LogSupport {
       ballotStatus.valueOverride
         .map {
           case Some(v) => Ballot(counter, v)
-          case None    => Ballot(counter, attempt)
-          case x       => throw new RuntimeException(s"unsupported match $x")
+          case _       => Ballot(counter, attempt)
         }
         .unsafe()
     }
@@ -444,7 +452,7 @@ class NodeStoreHandler extends NodeStore.Handler[Stack] with LogSupport {
     (for {
       e <- ballotStatus.latestEmitEnvelope
       g <- ballotStatus.latestGeneratedEnvelope
-    } yield if (g != e) Some(g.statement.message) else None).getOrElse(None)
+    } yield if (!e.contains(g)) Some(g.statement.message) else None).getOrElse(None)
   }
 
   /** find candidate ballot to prepare from local stored envelopes received from other peers
@@ -800,7 +808,8 @@ class NodeStoreHandler extends NodeStore.Handler[Stack] with LogSupport {
     ()
   }
 
-  override def localNode(): Stack[NodeID] = Stack { setting => setting.localNode
+  override def localNode(): Stack[NodeID] = Stack { setting =>
+    setting.localNode
   }
 
   override def nominateEnvelope(slotIndex: SlotIndex): Stack[Option[Envelope[Message.Nomination]]] =

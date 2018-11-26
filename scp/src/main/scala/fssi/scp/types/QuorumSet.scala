@@ -69,12 +69,15 @@ object QuorumSet {
     trait Implicits {
       import fssi.base.implicits._
       import fssi.scp.types.implicits._
-
       implicit def flatToBytes(flat: Flat): Array[Byte] =
         flat.threshold.asBytesValue.bytes ++ flat.validators.toArray.asBytesValue.bytes
 
-      implicit def nestToBytes(nest: Nest): Array[Byte] =
-        nest.threshold.asBytesValue.bytes ++ nest.validators.toArray.asBytesValue.bytes ++ nest.inners.toArray.asBytesValue.bytes
+      implicit def nestToBytes(nest: Nest): Array[Byte] = {
+        val threshold  = nest.threshold.asBytesValue.any
+        val validators = nest.validators.toArray.asBytesValue.any
+        val inners     = nest.inners.toArray.asBytesValue.any
+        (threshold ++ validators ++ inners).bytes
+      }
 
       implicit def slicesToBytes(slices: Slices): Array[Byte] = slices match {
         case f: Slices.Flat => f.asBytesValue.bytes
