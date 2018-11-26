@@ -2,12 +2,13 @@ package fssi.interpreter.scp
 
 import fssi.interpreter.UnsignedBytesSupport
 import fssi.scp.types._
-import fssi.store.mpt.Hash
 import fssi.types.biz._
 import fssi.types.implicits._
 import fssi.store.implicits._
+import org.slf4j.LoggerFactory
 
 case class BlockValue(block: Block) extends Value {
+  lazy val log = LoggerFactory.getLogger(getClass)
 
   override def rawBytes: Array[Byte] = {
     val bytes = UnsignedBytesSupport.calculateUnsignedBlockBytes(block)
@@ -15,8 +16,11 @@ case class BlockValue(block: Block) extends Value {
   }
 
   override def hashCode: Int = {
-    31 * (31 * (31 * 17 + block.height.hashCode()) + block.curWorldState
-      .hashCode()) + block.preWorldState.hashCode()
+    val heightCode    = block.height.hashCode()
+    val curWorldState = block.curWorldState.asBytesValue.bcBase58.hashCode()
+    val preWorldState = block.preWorldState.asBytesValue.bcBase58.hashCode()
+    val r             = 31 * (31 * (31 * 17 + heightCode) + curWorldState) + preWorldState
+    r
   }
 
   override def compare(v: Value): Int =
