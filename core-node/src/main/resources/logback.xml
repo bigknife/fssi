@@ -28,6 +28,10 @@
         <appender-ref ref="COLOR" />
     </logger>
 
+    <logger name="fssi.scp.ast.envelope.local" additivity="false" level="info">
+        <appender-ref ref="COLOR" />
+    </logger>
+
     <root level="error">
         <appender-ref ref="COLOR"/>
     </root>
