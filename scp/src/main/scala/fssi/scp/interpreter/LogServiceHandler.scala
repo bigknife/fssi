@@ -54,44 +54,48 @@ class LogServiceHandler extends LogService.Handler[Stack] {
           envelopeLogger.info(s"externalize: c.n=${x.`c.n`}, h.n=${x.`h.n`}")
 
       }
+
+    }
+
+    if(envelopeSavedLogger.isDebugEnabled) {
       val slotIndex = envelope.statement.slotIndex
       val bs        = BallotStatus.getInstance(slotIndex)
       val ns        = NominationStatus.getInstance(slotIndex)
-      envelopeSavedLogger.info("==== LOCAL NOMINATION ====")
+      envelopeSavedLogger.debug("==== LOCAL NOMINATION ==============================================================")
       ns.latestNominations.foreach { map =>
         map.foreach {
           case (nodeId, env) =>
             val node = nodeId.asBytesValue.bcBase58
             val nom  = env.statement.message
-            envelopeSavedLogger.info(
+            envelopeSavedLogger.debug(
               s"=   $node -> voted ${nom.voted.size}, accepted ${nom.accepted.size}")
         }
       }
-      envelopeSavedLogger.info("==========================")
+      envelopeSavedLogger.debug("====================================================================================")
 
-      envelopeSavedLogger.info("==== LOCAL BALLOTMESSAGE ====")
+      envelopeSavedLogger.debug("==== LOCAL BALLOTMESSAGE ===========================================================")
       bs.latestEnvelopes.foreach { map =>
         map.foreach {
           case (nodeId, env) =>
             val node = nodeId.asBytesValue.bcBase58
             env.statement.message match {
               case x: Message.Nomination =>
-                envelopeSavedLogger.info(
+                envelopeSavedLogger.debug(
                   s"=    $nodeId -> nom: voted ${x.voted.size}, accepted ${x.accepted.size}")
               case x: Message.Prepare =>
-                envelopeSavedLogger.info(
+                envelopeSavedLogger.debug(
                   s"=    $nodeId -> prepare: b.c=${x.b.counter}, p'.c=${x.`p'`
                     .map(_.counter)}, p.c=${x.p.map(_.counter)}, c.n=${x.`c.n`}, h.n=${x.`h.n`}")
               case x: Message.Confirm =>
-                envelopeSavedLogger.info(
+                envelopeSavedLogger.debug(
                   s"=    $nodeId -> confirm: b.c=${x.b.counter}, p.n=${x.`p.n`}, c.n=${x.`c.n`}, h.n=${x.`h.n`}")
               case x: Message.Externalize =>
-                envelopeSavedLogger.info(
+                envelopeSavedLogger.debug(
                   s"=    $nodeId -> externalize: c.n=${x.`c.n`}, h.n=${x.`h.n`}")
             }
         }
       }
-      envelopeSavedLogger.info("==========================")
+      envelopeSavedLogger.debug("====================================================================================")
     }
   }
 }

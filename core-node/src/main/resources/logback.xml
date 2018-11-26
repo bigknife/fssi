@@ -7,6 +7,12 @@
         </encoder>
     </appender>
 
+    <appender name="ENVELOPE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%date %highlight(%-5level) %cyan([%-4.30thread]) - %colorize(%msg) %n</pattern>
+        </encoder>
+    </appender>
+
     <!--
     <logger name="scalap" additivity="false" level="debug">
         <appender-ref ref="COLOR" />
@@ -25,11 +31,11 @@
     -->
 
     <logger name="fssi.scp.ast.envelope" additivity="false" level="info">
-        <appender-ref ref="COLOR" />
+        <appender-ref ref="ENVELOPE" />
     </logger>
 
-    <logger name="fssi.scp.ast.envelope.local" additivity="false" level="info">
-        <appender-ref ref="COLOR" />
+    <logger name="fssi.scp.ast.envelope.local" additivity="false" level="debug">
+        <appender-ref ref="ENVELOPE" />
     </logger>
 
     <root level="error">

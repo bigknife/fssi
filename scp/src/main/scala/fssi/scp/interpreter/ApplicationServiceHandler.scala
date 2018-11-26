@@ -84,7 +84,9 @@ class ApplicationServiceHandler extends ApplicationService.Handler[Stack] with L
           else m + (tag                 -> Vector(timer))
         }
         timer.schedule(new TimerTask {
-          override def run(): Unit = try { task.run() } finally timer.cancel()
+          override def run(): Unit = try {
+            SCPThreadPool.submit(task)
+          } finally timer.cancel()
         }, timeout)
       }
   }
