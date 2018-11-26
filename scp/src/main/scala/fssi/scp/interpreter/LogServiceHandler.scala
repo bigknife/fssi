@@ -41,17 +41,18 @@ class LogServiceHandler extends LogService.Handler[Stack] {
 
   override def infoEnvelope[M <: Message](envelope: Envelope[M]): Stack[Unit] = Stack {
     if (envelopeLogger.isInfoEnabled) {
+      val nodeId = envelope.statement.from
       envelope.statement.message match {
         case x: Message.Nomination =>
-          envelopeLogger.info(s"nom: voted ${x.voted.size}, accepted ${x.accepted.size}")
+          envelopeLogger.info(s"nom: $nodeId -> ${} voted ${x.voted.size}, accepted ${x.accepted.size}")
         case x: Message.Prepare =>
-          envelopeLogger.info(s"prepare: b.c=${x.b.counter}, p'.c=${x.`p'`
+          envelopeLogger.info(s"prepare: $nodeId -> b.c=${x.b.counter}, p'.c=${x.`p'`
             .map(_.counter)}, p.c=${x.p.map(_.counter)}, c.n=${x.`c.n`}, h.n=${x.`h.n`}")
         case x: Message.Confirm =>
           envelopeLogger.info(
-            s"confirm: b.c=${x.b.counter}, p.n=${x.`p.n`}, c.n=${x.`c.n`}, h.n=${x.`h.n`}")
+            s"confirm: $nodeId -> b.c=${x.b.counter}, p.n=${x.`p.n`}, c.n=${x.`c.n`}, h.n=${x.`h.n`}")
         case x: Message.Externalize =>
-          envelopeLogger.info(s"externalize: c.n=${x.`c.n`}, h.n=${x.`h.n`}")
+          envelopeLogger.info(s"externalize: $nodeId -> c.n=${x.`c.n`}, h.n=${x.`h.n`}")
 
       }
 
