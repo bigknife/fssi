@@ -13,5 +13,6 @@ import types._
   def warn(message: String, cause: Option[Throwable] = None): P[F, Unit]
   def error(message: String, cause: Option[Throwable] = None): P[F, Unit]
 
-  def infoEnvelope[M <: Message](envelope: Envelope[M]): P[F, Unit]
+  def infoReceivedEnvelope[M <: Message](envelope: Envelope[M]): P[F, Unit]
+  def infoSentEnvelope[M <: Message](envelope: Envelope[M]): P[F, Unit]
 }

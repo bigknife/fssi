@@ -25,7 +25,8 @@ trait EmitProgram[F[_]] extends SCP[F] with BaseProgram[F] {
             for {
               _ <- broadcastEnvelope(slotIndex, envelope)
               nominations <- nominationsReceived(slotIndex)
-              _ <- info(s"[$slotIndex] emit nomination message to peers, now ${nominations.keys.size} ---> : ${nominations.keys}")
+              _ <- infoSentEnvelope(envelope)
+              //_ <- info(s"[$slotIndex] emit nomination message to peers, now ${nominations.keys.size} ---> : ${nominations.keys}")
             } yield ()
           }
         } yield ()
@@ -49,10 +50,11 @@ trait EmitProgram[F[_]] extends SCP[F] with BaseProgram[F] {
               emitable <- canEmit(slotIndex, envelope)
               _ <- ifThen(emitable) {
                 for {
-                  _ <- info(
+                  _ <- debug(
                     s"[$slotIndex] message: $message was handled successfully and then is to be broadcast")
                   _ <- envelopeReadyToBeEmitted(slotIndex, envelope)
                   _ <- broadcastEnvelope(slotIndex, envelope)
+                  _ <- infoSentEnvelope(envelope)
                 } yield ()
               }
             } yield ()
