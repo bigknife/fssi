@@ -1,0 +1,96 @@
+.root {
+    -fx-background-color: #D8D8D8;
+    -fx-font-family: Metropolis;
+}
+.title_bar {
+    -fx-background-color: rgb(15,23,28);
+    -fx-effect: dropshadow(gaussian, black,5, 0.3, 0, 1)
+}
+.app_bar {
+  -fx-background-color: rgb(15,23,28,0.99);
+    -fx-effect: dropshadow(gaussian, black,5, 0.3, 0, 1)
+}
+.system_button {
+  -fx-background-color: null;
+}
+.system_title {
+  -fx-text-fill: #4A4A4A;
+  -fx-font-size: 18px;
+}
+.app_title {
+    -fx-text-fill: #E9ECEF;
+    -fx-font-size: 32px;
+}
+.search_bar_bg {
+    -fx-background-color: #1B2A32;
+    -fx-background-radius: 10px;
+}
+.search_text_field {
+    -fx-background-color: null;
+    -fx-border-width: 0;
+    -fx-text-fill: #D8D8D8;
+}
+.left_side {
+    -fx-background-color: rgb(15,23,28);
+    -fx-effect: dropshadow(gaussian, black,5, 0.3, 0, 1)
+}
+
+.system_close {
+    -fx-background-size: 24px;
+    -fx-background-repeat: no-repeat;
+    /*-fx-background-position: 100%;*/
+    -fx-background-radius: 0;
+    -fx-background-image: url('../image/window-close-line.png');
+}
+.system_close:hover {
+    -fx-background-color: #882D31;
+}
+.system_min {
+    -fx-background-size: 24px;
+    -fx-background-repeat: no-repeat;
+    -fx-background-position: 100%;
+    -fx-background-radius: 0;
+    -fx-background-image: url('../image/window-min-line.png');
+}
+.system_min:hover {
+    -fx-background-color: #882D31;
+}
+.system_max {
+    -fx-background-size: 24px;
+    -fx-background-repeat: no-repeat;
+    /*-fx-background-position: 100%;*/
+    -fx-background-radius: 0;
+    -fx-background-image: url('../image/window-max-line.png');
+}
+.system_max:hover {
+    -fx-background-color: #882D31;
+}
+
+.menu_item_level1 {
+    -fx-background-color: rgb(41,65,78,0.8);
+    -fx-font-size: 14px;
+    -fx-text-fill: #ADBBC4;
+    -fx-alignment: CENTER_LEFT;
+    -fx-background-radius: 0px;
+}
+.menu_item_level1:hover {
+    -fx-background-color: rgb(41,65,78,0.9);
+    -fx-text-fill: #FF9B1D;
+}
+
+.menu_item_level2 {
+    -fx-background-color: rgb(41,65,78,.5);
+    -fx-font-size: 12px;
+    -fx-text-fill: #ADBBC4;
+    -fx-alignment: CENTER_LEFT;
+    -fx-background-radius: 0px;
+}
+.menu_item_level2:hover {
+    -fx-background-color: rgb(41,65,78,0.7);
+    -fx-text-fill: #C27413;
+}
+.who_am_i {
+    -fx-background-color: null;
+    -fx-text-fill: #4A4A4A;
+    -fx-font-size: 12px;
+}

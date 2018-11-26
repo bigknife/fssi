@@ -24,7 +24,7 @@ object Statement {
       val slotIndex = statement.slotIndex.asBytesValue.any
       val quorum    = statement.quorumSet.asBytesValue.any
       val message   = statement.message.asBytesValue.any
-      (from ++ slotIndex  ++ quorum ++ message).bytes
+      (from ++ slotIndex ++ quorum ++ message).bytes
     }
   }
 }

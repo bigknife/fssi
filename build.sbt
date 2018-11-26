@@ -52,13 +52,16 @@ lazy val pContractScaffold = contractScaffold().dependsOn(pTypes)
 
 lazy val pTool = tool()
   .dependsOn(pInterperter)
-  .dependsOn(pJsonRpc)
   .dependsOn(pSandBox)
   .settings(
     packMain := Map("tool" -> "fssi.tool.ToolMain")
   )
 
 lazy val pWallet = wallet()
+  .dependsOn(pBase)
+  .dependsOn(pInterperter)
+  .dependsOn(pSandBox)
+
 
 lazy val pCoreNode = coreNode()
   .dependsOn(pInterperter)
