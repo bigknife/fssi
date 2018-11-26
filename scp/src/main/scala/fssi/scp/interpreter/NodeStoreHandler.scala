@@ -177,7 +177,12 @@ class NodeStoreHandler extends NodeStore.Handler[Stack] with LogSupport {
       val nominationStatus: NominationStatus = slotIndex
       if (setting.applicationCallback
             .validateValue(setting.localNode, slotIndex, value) == Value.Validity.FullyValidated)
-        nominationStatus.votes := nominationStatus.votes.map(_ + value).unsafe()
+        nominationStatus.votes := nominationStatus.votes
+          .map { x =>
+            if (x.contains(value)) x
+            else x + value
+          }
+          .unsafe()
 
       nominationStatus.accepted := nominationStatus.accepted.map(_ + value).unsafe(); ()
   }
