@@ -24,7 +24,7 @@
     </logger>
     -->
 
-    <logger name="fssi.scp.ast.envelope" additivity="false" level="error">
+    <logger name="fssi.scp.ast.envelope" additivity="false" level="info">
         <appender-ref ref="COLOR" />
     </logger>
 
