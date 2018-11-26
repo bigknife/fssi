@@ -34,7 +34,8 @@ trait HandleSCPEnvelopeProgram[F[_]] extends SCP[F] with BaseProgram[F] {
 //        _ <- info(s"[$nodeId][$slotIndex] handling scp envelope with message: $message)")
         _ <- saveEnvelope(nodeId, slotIndex, envelope)
         _ <- cacheNodeQuorumSet(nodeId, envelope.statement.quorumSet)
-        _ <- debug(s"[$nodeId][$slotIndex] saved sane scp envelope")
+        //_ <- debug(s"[$nodeId][$slotIndex] saved sane scp envelope")
+        _ <- infoEnvelope(envelope)
         handled <- message match {
           case _: Message.Nomination =>
             for {

@@ -7,6 +7,7 @@
         </encoder>
     </appender>
 
+    <!--
     <logger name="scalap" additivity="false" level="debug">
         <appender-ref ref="COLOR" />
     </logger>
@@ -21,8 +22,13 @@
     <logger name="io.scalecube.transport" additivity="false" level="error">
         <appender-ref ref="COLOR" />
     </logger>
+    -->
 
-    <root level="warn">
+    <logger name="fssi.scp.ast.envelope" additivity="false" level="error">
+        <appender-ref ref="COLOR" />
+    </logger>
+
+    <root level="error">
         <appender-ref ref="COLOR"/>
     </root>
 
