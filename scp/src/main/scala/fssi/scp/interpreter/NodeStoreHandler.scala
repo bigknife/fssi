@@ -452,7 +452,7 @@ class NodeStoreHandler extends NodeStore.Handler[Stack] with LogSupport {
     (for {
       e <- ballotStatus.latestEmitEnvelope
       g <- ballotStatus.latestGeneratedEnvelope
-    } yield if (g != e) Some(g.statement.message) else None).getOrElse(None)
+    } yield if (!e.contains(g)) Some(g.statement.message) else None).getOrElse(None)
   }
 
   /** find candidate ballot to prepare from local stored envelopes received from other peers
