@@ -1,6 +1,6 @@
 package fssi
 package interpreter
-import java.util.concurrent.{ExecutorService, Executors}
+import java.util.concurrent.{CompletableFuture, ExecutorService, Executors}
 
 import fssi.ast.Network
 import fssi.interpreter.Configuration.P2PConfig
@@ -104,12 +104,8 @@ class NetworkHandler extends Network.Handler[Stack] with LogSupport {
           case consensusMessage: ConsensusMessage =>
             consensusMessage match {
               case scpEnvelope: SCPEnvelope =>
-//                consensusOnce.foreach(cluster =>
-//                  cluster.spreadGossip(CubeMessage.fromData(scpEnvelope.asJson.noSpaces)))
                 consensusOnce.foreach(cluster =>
-                  cluster.members().forEach { member =>
-                    cluster.send(member, CubeMessage.fromData(scpEnvelope.asJson.noSpaces))
-                })
+                  cluster.spreadGossip(CubeMessage.fromData(scpEnvelope.asJson.noSpaces)))
             }
           case _ => throw new RuntimeException(s"core node unsupported broadcast message: $message")
         }
