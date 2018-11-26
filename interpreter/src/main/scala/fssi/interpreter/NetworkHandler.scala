@@ -23,6 +23,7 @@ import io.circe._
 import io.circe.parser._
 import io.circe.generic.auto._
 import fssi.interpreter.scp.BlockValue.implicits._
+import fssi.scp.interpreter.SCPThreadPool
 import fssi.scp.interpreter.json.implicits._
 
 class NetworkHandler extends Network.Handler[Stack] with LogSupport {
@@ -32,7 +33,7 @@ class NetworkHandler extends Network.Handler[Stack] with LogSupport {
 
   val transactionOnce: Once[Map[String, Transaction]] = Once(Map.empty)
 
-  val executor: ExecutorService = Executors.newSingleThreadExecutor()
+  //val executor: ExecutorService = Executors.newSingleThreadExecutor()
 
   override def startupConsensusNode(
       handler: Message.Handler[ConsensusMessage, Unit]): Stack[ConsensusNode] = Stack { setting =>
@@ -104,8 +105,19 @@ class NetworkHandler extends Network.Handler[Stack] with LogSupport {
           case consensusMessage: ConsensusMessage =>
             consensusMessage match {
               case scpEnvelope: SCPEnvelope =>
-                consensusOnce.foreach(cluster =>
-                  cluster.spreadGossip(CubeMessage.fromData(scpEnvelope.asJson.noSpaces)))
+                consensusOnce.foreach { cluster =>
+                  //cluster.spreadGossip(CubeMessage.fromData(scpEnvelope.asJson.noSpaces)))
+                  import scala.collection.JavaConverters._
+
+                  cluster.members().asScala.foreach { m =>
+                    //log.error(s"sending to ${m.address()}")
+                    val msg = CubeMessage.fromData(scpEnvelope.asJson.noSpaces)
+                    val future = new CompletableFuture[Void]
+                    cluster.send(m, msg, future)
+                    //future.get()
+                    //log.error(s"sent to ${m.address()}")
+                  }
+                }
             }
           case _ => throw new RuntimeException(s"core node unsupported broadcast message: $message")
         }
@@ -197,7 +209,16 @@ class NetworkHandler extends Network.Handler[Stack] with LogSupport {
         .listenGossips()
         .subscribe { gossip =>
           log.debug(s"start handle Gossip message: $gossip")
-          executor.submit(new Runnable {
+          SCPThreadPool.submit(new Runnable {
+            override def run(): Unit = subscription(gossip)
+          })
+        }
+
+      cluster
+        .listen()
+        .subscribe { gossip =>
+          log.debug(s"start handle Direct message: $gossip")
+          SCPThreadPool.submit(new Runnable {
             override def run(): Unit = subscription(gossip)
           })
         }
