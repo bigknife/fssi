@@ -58,7 +58,7 @@ class LogServiceHandler extends LogService.Handler[Stack] {
 
       envelope.statement.message match {
         case x: Message.Nomination =>
-          logger.info(s"[$prefix]nom$idx: $nodeId -> ${} voted ${x.voted.size}, accepted ${x.accepted.size}")
+          logger.info(s"[$prefix]nom$idx: $nodeId -> voted ${x.voted.size}, accepted ${x.accepted.size}")
         case x: Message.Prepare =>
           logger.info(s"[$prefix]prepare$idx: $nodeId -> b.c=${x.b.counter}, p'.c=${x.`p'`
             .map(_.counter)}, p.c=${x.p.map(_.counter)}, c.n=${x.`c.n`}, h.n=${x.`h.n`}")
