@@ -30,7 +30,7 @@ trait BroadcastMessageProgram[F[_]] extends SCP[F] with BaseProgram[F] {
       _ <- ifThen(ballotMessage.nonEmpty) {
         for {
           _ <- broadcastEnvelope(slotIndex, ballotMessage.get)
-          _ <- infoSentEnvelope(nominateMessage.get)
+          _ <- infoSentEnvelope(ballotMessage.get)
         } yield ()
       }
       _ <- delayExecuteProgram(BROADCAST_TIMER, broadcastMessageRegularly(slotIndex), timeout)
