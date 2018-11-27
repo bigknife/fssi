@@ -49,13 +49,12 @@ trait HandleSCPEnvelopeProgram[F[_]] extends SCP[F] with BaseProgram[F] {
           case _: Message.BallotMessage =>
             for {
               _ <- debug(s"[$nodeId][$slotIndex] handling ballot envelope")
-//              x <- handleBallotMessage(nodeId,
-//                                       slotIndex,
-//                                       previousValue,
-//                                       envelope.asInstanceOf[Envelope[Message.BallotMessage]])
-//              _ <- debug(s"[$nodeId][$slotIndex] handled ballot envelope: $x")
-              _ <- debug(s"[$nodeId][$slotIndex] handled ballot envelope: ")
-            } yield true
+              x <- handleBallotMessage(nodeId,
+                                       slotIndex,
+                                       previousValue,
+                                       envelope.asInstanceOf[Envelope[Message.BallotMessage]])
+              _ <- debug(s"[$nodeId][$slotIndex] handled ballot envelope: $x")
+            } yield x
         }
       } yield handled
 

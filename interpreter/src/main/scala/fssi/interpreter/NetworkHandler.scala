@@ -202,8 +202,8 @@ class NetworkHandler extends Network.Handler[Stack] with LogSupport {
         .portAutoIncrement(false)
         .seedMembers(p2pConfig.seeds.map(x => Address.create(x.host, x.port)): _*)
         .suspicionMult(ClusterConfig.DEFAULT_WAN_SUSPICION_MULT)
-        .pingInterval(30 * 60 * 1000)
-        .pingTimeout(20 * 60 * 1000)
+//        .pingInterval(30 * 60 * 1000)
+//        .pingTimeout(20 * 60 * 1000)
         .build()
 
     clusterOnce := Cluster.joinAwait(config)
