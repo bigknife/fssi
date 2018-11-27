@@ -85,7 +85,11 @@ class ApplicationServiceHandler extends ApplicationService.Handler[Stack] with L
         }
         timer.schedule(new TimerTask {
           override def run(): Unit = try {
-            SCPThreadPool.submit(task)
+            if (tag == BROADCAST_TIMER) {
+              SCPThreadPool.broadcast(task)
+            } else {
+              SCPThreadPool.submit(task)
+            }
           } finally timer.cancel()
         }, timeout)
       }
