@@ -19,13 +19,20 @@ trait BroadcastMessageProgram[F[_]] extends SCP[F] with BaseProgram[F] {
       timeout         <- broadcastTimeout()
       _               <- debug(s"broadcast $slotIndex message regularly,timeout: $timeout millis")
       nominateMessage <- nominateEnvelope(slotIndex)
-      _ <- debug(
-        s"broadcast nominate message: $nominateMessage ,to broadcast: ${nominateMessage.nonEmpty}")
-      _             <- ifThen(nominateMessage.nonEmpty)(broadcastEnvelope(slotIndex, nominateMessage.get))
+      _ <- ifThen(nominateMessage.nonEmpty) {
+        for {
+          _ <- broadcastEnvelope(slotIndex, nominateMessage.get)
+          _ <- infoSentEnvelope(nominateMessage.get)
+        } yield ()
+      }
+
       ballotMessage <- ballotEnvelope(slotIndex)
-      _ <- debug(
-        s"broadcast ballot message: $ballotMessage ,to broadcast: ${ballotMessage.nonEmpty}")
-      _ <- ifThen(ballotMessage.nonEmpty)(broadcastEnvelope(slotIndex, ballotMessage.get))
+      _ <- ifThen(ballotMessage.nonEmpty) {
+        for {
+          _ <- broadcastEnvelope(slotIndex, ballotMessage.get)
+          _ <- infoSentEnvelope(nominateMessage.get)
+        } yield ()
+      }
       _ <- delayExecuteProgram(BROADCAST_TIMER, broadcastMessageRegularly(slotIndex), timeout)
     } yield ()
   }
