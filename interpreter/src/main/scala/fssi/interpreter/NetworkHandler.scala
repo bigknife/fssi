@@ -1,6 +1,6 @@
 package fssi
 package interpreter
-import java.util.concurrent.{CompletableFuture, ExecutorService, Executors}
+import java.util.concurrent.{CompletableFuture, ExecutorService, Executors, TimeUnit}
 
 import fssi.ast.Network
 import fssi.interpreter.Configuration.P2PConfig
@@ -126,10 +126,11 @@ class NetworkHandler extends Network.Handler[Stack] with LogSupport {
                             val future = new CompletableFuture[Void]
                             cluster.send(m, msg, future)
                             log.error(s"seding to ${m.address()}")
-                            future.get()
+                            future.get(x.config.consensusConfig.maxTimeoutSeconds, TimeUnit.SECONDS)
                             log.error(s"sent to ${m.address()}")
                           } catch {
-                            case e => e.printStackTrace()
+                            case e =>
+                              log.error(s"sending consensus messaged timeout: ${e.getMessage}")
                           }
 
                         }
