@@ -5,7 +5,7 @@ package interpreter
 import fssi.scp.ast._
 import fssi.scp.interpreter.store.{BallotStatus, NominationStatus}
 import fssi.scp.types.{Envelope, Message}
-import org.slf4j.LoggerFactory
+import org.slf4j.{Logger, LoggerFactory}
 import fssi.scp.types.implicits._
 import fssi.base.BytesValue.implicits._
 
@@ -16,7 +16,9 @@ class LogServiceHandler extends LogService.Handler[Stack] {
   // all ast logs use the same name: fssi.ast
   private val logger = LoggerFactory.getLogger("fssi.scp.ast")
 
-  private lazy val envelopeLogger      = LoggerFactory.getLogger("fssi.scp.ast.envelope")
+  private lazy val envelopeReceivedLogger      = LoggerFactory.getLogger("fssi.scp.ast.envelope.recv")
+  private lazy val envelopeSentLogger      = LoggerFactory.getLogger("fssi.scp.ast.envelope.sent")
+
   private lazy val envelopeSavedLogger = LoggerFactory.getLogger("fssi.scp.ast.envelope.local")
 
   override def debug(message: String, cause: Option[Throwable]): Stack[Unit] = Stack {
@@ -39,29 +41,43 @@ class LogServiceHandler extends LogService.Handler[Stack] {
     else logger.error(message)
   }
 
-  override def infoEnvelope[M <: Message](envelope: Envelope[M]): Stack[Unit] = Stack {
-    if (envelopeLogger.isInfoEnabled) {
+  override def infoReceivedEnvelope[M <: Message](envelope: Envelope[M]): Stack[Unit] = Stack {
+    infoEnvelope(envelopeReceivedLogger, "RECV", envelope)
+    infoSavedEnvelope(envelope)
+  }
+
+  override def infoSentEnvelope[M <: Message](envelope: Envelope[M]): Stack[Unit] = Stack {
+    infoEnvelope(envelopeSentLogger, "SEND", envelope)
+    infoSavedEnvelope(envelope)
+  }
+
+  private def infoEnvelope[M <: Message](log: Logger, prefix: String, envelope: Envelope[M]): Unit = {
+    if (logger.isInfoEnabled) {
       val nodeId = envelope.statement.from
+      val idx = envelope.statement.slotIndex
+
       envelope.statement.message match {
         case x: Message.Nomination =>
-          envelopeLogger.info(s"nom: $nodeId -> ${} voted ${x.voted.size}, accepted ${x.accepted.size}")
+          logger.info(s"[$prefix]nom$idx: $nodeId -> ${} voted ${x.voted.size}, accepted ${x.accepted.size}")
         case x: Message.Prepare =>
-          envelopeLogger.info(s"prepare: $nodeId -> b.c=${x.b.counter}, p'.c=${x.`p'`
+          logger.info(s"[$prefix]prepare$idx: $nodeId -> b.c=${x.b.counter}, p'.c=${x.`p'`
             .map(_.counter)}, p.c=${x.p.map(_.counter)}, c.n=${x.`c.n`}, h.n=${x.`h.n`}")
         case x: Message.Confirm =>
-          envelopeLogger.info(
-            s"confirm: $nodeId -> b.c=${x.b.counter}, p.n=${x.`p.n`}, c.n=${x.`c.n`}, h.n=${x.`h.n`}")
+          logger.info(
+            s"[$prefix]confirm$idx: $nodeId -> b.c=${x.b.counter}, p.n=${x.`p.n`}, c.n=${x.`c.n`}, h.n=${x.`h.n`}")
         case x: Message.Externalize =>
-          envelopeLogger.info(s"externalize: $nodeId -> c.n=${x.`c.n`}, h.n=${x.`h.n`}")
-
+          logger.info(s"[$prefix]externalize$idx: $nodeId -> c.n=${x.`c.n`}, h.n=${x.`h.n`}")
       }
-
     }
+  }
 
+  private def infoSavedEnvelope[M <: Message](envelope: Envelope[M]): Unit = {
     if(envelopeSavedLogger.isDebugEnabled) {
+      val idx = envelope.statement.slotIndex
       val slotIndex = envelope.statement.slotIndex
       val bs        = BallotStatus.getInstance(slotIndex)
       val ns        = NominationStatus.getInstance(slotIndex)
+      envelopeSavedLogger.debug("")
       envelopeSavedLogger.debug("==== LOCAL NOMINATION ==============================================================")
       ns.latestNominations.foreach { map =>
         map.foreach {
@@ -69,11 +85,12 @@ class LogServiceHandler extends LogService.Handler[Stack] {
             val node = nodeId.asBytesValue.bcBase58
             val nom  = env.statement.message
             envelopeSavedLogger.debug(
-              s"=   $node -> voted ${nom.voted.size}, accepted ${nom.accepted.size}")
+              s"=   $idx, $node -> voted ${nom.voted.size}, accepted ${nom.accepted.size}")
         }
       }
       envelopeSavedLogger.debug("====================================================================================")
 
+      envelopeSavedLogger.debug("")
       envelopeSavedLogger.debug("==== LOCAL BALLOTMESSAGE ===========================================================")
       bs.latestEnvelopes.foreach { map =>
         map.foreach {
@@ -82,21 +99,22 @@ class LogServiceHandler extends LogService.Handler[Stack] {
             env.statement.message match {
               case x: Message.Nomination =>
                 envelopeSavedLogger.debug(
-                  s"=    $nodeId -> nom: voted ${x.voted.size}, accepted ${x.accepted.size}")
+                  s"=    $idx, $nodeId -> nom: voted ${x.voted.size}, accepted ${x.accepted.size}")
               case x: Message.Prepare =>
                 envelopeSavedLogger.debug(
-                  s"=    $nodeId -> prepare: b.c=${x.b.counter}, p'.c=${x.`p'`
+                  s"=    $idx, $nodeId -> prepare: b.c=${x.b.counter}, p'.c=${x.`p'`
                     .map(_.counter)}, p.c=${x.p.map(_.counter)}, c.n=${x.`c.n`}, h.n=${x.`h.n`}")
               case x: Message.Confirm =>
                 envelopeSavedLogger.debug(
-                  s"=    $nodeId -> confirm: b.c=${x.b.counter}, p.n=${x.`p.n`}, c.n=${x.`c.n`}, h.n=${x.`h.n`}")
+                  s"=    $idx, $nodeId -> confirm: b.c=${x.b.counter}, p.n=${x.`p.n`}, c.n=${x.`c.n`}, h.n=${x.`h.n`}")
               case x: Message.Externalize =>
                 envelopeSavedLogger.debug(
-                  s"=    $nodeId -> externalize: c.n=${x.`c.n`}, h.n=${x.`h.n`}")
+                  s"=    $idx, $nodeId -> externalize: c.n=${x.`c.n`}, h.n=${x.`h.n`}")
             }
         }
       }
       envelopeSavedLogger.debug("====================================================================================")
+      envelopeSavedLogger.debug("")
     }
   }
 }
