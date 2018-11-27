@@ -74,7 +74,9 @@ class ConsensusHandler
                 resolveSCPSetting(coreNodeSetting)
 
               val previousValue = BlockValue(lastDeterminedBlock)
+              Portal.handleEnvelope(x.value, previousValue)
 
+              /*
               val nodeId = envelope.statement.from
               EnvelopePool.put(x)
 
@@ -88,7 +90,7 @@ class ConsensusHandler
                 EnvelopePool.setWorkingBallot(nodeId, x)
                 Portal.handleEnvelope(x.value, previousValue)
                 EnvelopePool.endWorkingBallot(nodeId, x)
-              }
+              }*/
           }
         case _ =>
       }

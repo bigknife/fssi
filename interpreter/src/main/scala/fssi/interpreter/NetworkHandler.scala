@@ -267,10 +267,46 @@ class NetworkHandler extends Network.Handler[Stack] with LogSupport {
       cluster
         .listen()
         .subscribe { gossip =>
-          log.debug(s"start handle Direct message: $gossip")
+          // gossip to ApplicationMessage, ConsensusMessage
+          val msg = converter(gossip)
+          msg match {
+            case x: ApplicationMessage =>
+              //todo tuning
+              handler(x)
+
+            case x: SCPEnvelope =>
+              val nodeId = x.value.statement.from
+              EnvelopePool.put(x)
+
+              EnvelopePool.getUnworkingNom(nodeId).foreach { x =>
+                EnvelopePool.setWorkingNom(nodeId, x)
+                //Portal.handleEnvelope(x.value, previousValue)
+                SCPThreadPool.submit(new Runnable {
+                  override def run(): Unit = {
+                    handler(x)
+                  }
+                })
+                EnvelopePool.endWorkingNom(nodeId, x)
+              }
+
+              EnvelopePool.getUnworkingBallot(nodeId).foreach { x =>
+                EnvelopePool.setWorkingBallot(nodeId, x)
+                //Portal.handleEnvelope(x.value, previousValue)
+                EnvelopePool.endWorkingBallot(nodeId, x)
+              }
+          }
+
+          /*
+          log.error(s"gossip got message")
           SCPThreadPool.submit(new Runnable {
-            override def run(): Unit = subscription(gossip)
+            override def run(): Unit = {
+              log.error("gossip message handling in SCPThreadPool")
+              subscription(gossip)
+              log.error("gossip message handled in SCPThreadPool")
+            }
           })
+          log.error("gossip message to SCPThreadPool")
+          */
         }
       ()
     }
