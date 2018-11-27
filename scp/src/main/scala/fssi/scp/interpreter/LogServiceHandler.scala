@@ -52,21 +52,21 @@ class LogServiceHandler extends LogService.Handler[Stack] {
   }
 
   private def infoEnvelope[M <: Message](log: Logger, prefix: String, envelope: Envelope[M]): Unit = {
-    if (logger.isInfoEnabled) {
+    if (log.isInfoEnabled) {
       val nodeId = envelope.statement.from
       val idx = envelope.statement.slotIndex
 
       envelope.statement.message match {
         case x: Message.Nomination =>
-          logger.info(s"[$prefix]nom$idx: $nodeId -> ${} voted ${x.voted.size}, accepted ${x.accepted.size}")
+          log.info(s"[$prefix]nom@${idx.value}: $nodeId -> voted ${x.voted.size}, accepted ${x.accepted.size}")
         case x: Message.Prepare =>
-          logger.info(s"[$prefix]prepare$idx: $nodeId -> b.c=${x.b.counter}, p'.c=${x.`p'`
+          log.info(s"[$prefix]prepare@${idx.value}: $nodeId -> b.c=${x.b.counter}, p'.c=${x.`p'`
             .map(_.counter)}, p.c=${x.p.map(_.counter)}, c.n=${x.`c.n`}, h.n=${x.`h.n`}")
         case x: Message.Confirm =>
-          logger.info(
-            s"[$prefix]confirm$idx: $nodeId -> b.c=${x.b.counter}, p.n=${x.`p.n`}, c.n=${x.`c.n`}, h.n=${x.`h.n`}")
+          log.info(
+            s"[$prefix]confirm@${idx.value}: $nodeId -> b.c=${x.b.counter}, p.n=${x.`p.n`}, c.n=${x.`c.n`}, h.n=${x.`h.n`}")
         case x: Message.Externalize =>
-          logger.info(s"[$prefix]externalize$idx: $nodeId -> c.n=${x.`c.n`}, h.n=${x.`h.n`}")
+          log.info(s"[$prefix]externalize@${idx.value}: $nodeId -> c.n=${x.`c.n`}, h.n=${x.`h.n`}")
       }
     }
   }
