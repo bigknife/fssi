@@ -4,9 +4,9 @@ package uc
 
 import types._
 import components._
-
 import bigknife.sop._
 import bigknife.sop.implicits._
+import cats.free.FreeApplicative.FA
 
 trait HandleSCPEnvelopeProgram[F[_]] extends SCP[F] with BaseProgram[F] {
   import model.nodeService._
@@ -55,6 +55,7 @@ trait HandleSCPEnvelopeProgram[F[_]] extends SCP[F] with BaseProgram[F] {
 //                                       previousValue,
 //                                       envelope.asInstanceOf[Envelope[Message.BallotMessage]])
 //              _ <- debug(s"[$nodeId][$slotIndex] handled ballot envelope: $x")
+              _ <- debug(s"[$nodeId][$slotIndex] handled ballot envelope: ")
             } yield true
         }
       } yield handled
