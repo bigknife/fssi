@@ -100,7 +100,7 @@ class NetworkHandler extends Network.Handler[Stack] with LogSupport {
 
   override def broadcastMessage(message: Message): Stack[Unit] = Stack { setting =>
     setting match {
-      case _: CoreNodeSetting =>
+      case x: CoreNodeSetting =>
         message match {
           case consensusMessage: ConsensusMessage =>
             consensusMessage match {
@@ -109,14 +109,22 @@ class NetworkHandler extends Network.Handler[Stack] with LogSupport {
                   //cluster.spreadGossip(CubeMessage.fromData(scpEnvelope.asJson.noSpaces)))
                   import scala.collection.JavaConverters._
 
-                  cluster.members().asScala.foreach { m =>
-                    //log.error(s"sending to ${m.address()}")
-                    val msg = CubeMessage.fromData(scpEnvelope.asJson.noSpaces)
-                    val future = new CompletableFuture[Void]
-                    cluster.send(m, msg, future)
-                    //future.get()
-                    //log.error(s"sent to ${m.address()}")
-                  }
+                  cluster
+                    .members()
+                    .asScala
+                    .filter(
+                      y =>
+                        y.address().host() != x.config.consensusConfig.host && y
+                          .address()
+                          .port() != x.config.consensusConfig.port)
+                    .foreach { m =>
+                      //log.error(s"sending to ${m.address()}")
+                      val msg    = CubeMessage.fromData(scpEnvelope.asJson.noSpaces)
+                      val future = new CompletableFuture[Void]
+                      cluster.send(m, msg, future)
+                      //future.get()
+                      //log.error(s"sent to ${m.address()}")
+                    }
                 }
             }
           case _ => throw new RuntimeException(s"core node unsupported broadcast message: $message")
@@ -194,9 +202,9 @@ class NetworkHandler extends Network.Handler[Stack] with LogSupport {
       val subscription: CubeMessage => Unit = { gossip =>
         scala.util.Try {
           val message = converter(gossip)
-          log.debug("start to handle json message by gossiping")
+          val ts      = System.currentTimeMillis()
           handler(message)
-          log.debug("handled json message by gossiping")
+          log.error(s"Message Handled, ${System.currentTimeMillis() - ts} ms")
         } match {
           case scala.util.Success(_) =>
             log.debug("Gossip message handled successful")
