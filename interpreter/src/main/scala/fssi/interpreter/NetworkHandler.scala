@@ -126,7 +126,8 @@ class NetworkHandler extends Network.Handler[Stack] with LogSupport {
                             val future = new CompletableFuture[Void]
                             cluster.send(m, msg, future)
                             log.error(s"seding to ${m.address()}")
-                            future.get(x.config.consensusConfig.maxTimeoutSeconds, TimeUnit.SECONDS)
+                            future.get(x.config.consensusConfig.broadcastTimeout,
+                                       TimeUnit.MILLISECONDS)
                             log.error(s"sent to ${m.address()}")
                           } catch {
                             case e =>
