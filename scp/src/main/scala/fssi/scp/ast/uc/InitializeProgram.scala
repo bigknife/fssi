@@ -14,7 +14,7 @@ trait InitializeProgram[F[_]] extends SCP[F] with BaseProgram[F] {
     for {
       _ <- nodeService.cacheNodeQuorumSet(nodeId, quorumSet)
       _ <- nominateFakeValue(nodeId, slotIndex)
-      _ <- broadcastMessageRegularly(slotIndex)
+//      _ <- broadcastMessageRegularly(slotIndex)
     } yield ()
   }
 
