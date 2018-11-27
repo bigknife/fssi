@@ -122,8 +122,8 @@ class NetworkHandler extends Network.Handler[Stack] with LogSupport {
                       val msg    = CubeMessage.fromData(scpEnvelope.asJson.noSpaces)
                       val future = new CompletableFuture[Void]
                       cluster.send(m, msg, future)
-                      //future.get()
-                      //log.error(s"sent to ${m.address()}")
+                      future.get()
+                      log.error(s"sent to ${m.address()}")
                     }
                 }
             }
