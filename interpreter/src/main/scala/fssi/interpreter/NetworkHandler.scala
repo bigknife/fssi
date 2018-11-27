@@ -222,6 +222,8 @@ class NetworkHandler extends Network.Handler[Stack] with LogSupport {
                   log.error(s"externalize, ${System
                     .currentTimeMillis() - ts} ms $from -> c.n=${x0.`c.n`}, h.n=${x0.`h.n`}")
               }
+
+            case _ =>
           }
 
         } match {
