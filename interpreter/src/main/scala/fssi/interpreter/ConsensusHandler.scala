@@ -81,13 +81,13 @@ class ConsensusHandler
               EnvelopePool.getUnworkingNom(nodeId).foreach { x =>
                 EnvelopePool.setWorkingNom(nodeId, x)
                 Portal.handleEnvelope(x.value, previousValue)
-                EnvelopePool.endWorkingNom(nodeId)
+                EnvelopePool.endWorkingNom(nodeId, x)
               }
 
               EnvelopePool.getUnworkingBallot(nodeId).foreach { x =>
                 EnvelopePool.setWorkingBallot(nodeId, x)
                 Portal.handleEnvelope(x.value, previousValue)
-                EnvelopePool.endWorkingBallot(nodeId)
+                EnvelopePool.endWorkingBallot(nodeId, x)
               }
           }
         case _ =>

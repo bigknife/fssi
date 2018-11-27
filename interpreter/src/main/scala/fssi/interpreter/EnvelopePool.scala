@@ -110,12 +110,26 @@ trait EnvelopePool {
     }
   }
 
-  def endWorkingBallot(nodeId: NodeID): Unit = {
+  def endWorkingBallot(nodeId: NodeID, envelope: SCPEnvelope): Unit = {
     workingBallot.update(_ - nodeId.toString)
+    nomPool.update {m =>
+      val xs = m.get(nodeId.toString)
+      if (xs.isDefined) {
+        m + (nodeId.toString ->  xs.get.filter(_ != envelope))
+      }
+      else m
+    }
   }
 
-  def endWorkingNom(nodeID: NodeID): Unit = {
+  def endWorkingNom(nodeID: NodeID, envelope: SCPEnvelope): Unit = {
     workingNom.update(_ - nodeID.toString)
+    ballotPool.update {m =>
+      val xs = m.get(nodeID.toString)
+      if (xs.isDefined) {
+        m + (nodeID.toString ->  xs.get.filter(_ != envelope))
+      }
+      else m
+    }
   }
 }
 
