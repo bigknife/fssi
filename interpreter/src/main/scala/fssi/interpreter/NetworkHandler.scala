@@ -293,7 +293,12 @@ class NetworkHandler extends Network.Handler[Stack] with LogSupport {
               EnvelopePool.getUnworkingBallot(nodeId).foreach { x =>
                 EnvelopePool.setWorkingBallot(nodeId, x)
                 //Portal.handleEnvelope(x.value, previousValue)
-                EnvelopePool.endWorkingBallot(nodeId, x)
+                SCPThreadPool.submit(new Runnable {
+                  override def run(): Unit = {
+                    handler(msg)
+                    EnvelopePool.endWorkingNom(nodeId, x)
+                  }
+                })
               }
           }
 
