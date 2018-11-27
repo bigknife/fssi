@@ -4,6 +4,7 @@ import fssi.base.Var
 import fssi.interpreter.scp.SCPEnvelope
 import fssi.scp.interpreter.NodeStoreHandler
 import fssi.scp.types.{Message, NodeID}
+import org.slf4j.LoggerFactory
 
 trait EnvelopePool {
   private val nomPool: Var[Map[String, Vector[SCPEnvelope]]] = Var(Map.empty)
@@ -11,6 +12,8 @@ trait EnvelopePool {
 
   private val workingNom: Var[Map[String,Option[SCPEnvelope]]] = Var(Map.empty)
   private val workingBallot: Var[Map[String, Option[SCPEnvelope]]] = Var(Map.empty)
+
+  private lazy val log = LoggerFactory.getLogger(getClass)
 
   def put(envelope: SCPEnvelope): Unit = {
     val key = envelope.value.statement.from.toString
@@ -56,11 +59,22 @@ trait EnvelopePool {
         }
         else ballotPool.update(_ + (key -> Vector(envelope)))
     }
+
+    nomPool.foreach {map =>
+       map.mapValues(_.size).foreach {
+         case (nodeId, size) => log.error(s"nomPool: ${nodeId.take(4)}-$size")
+       }
+    }
+    ballotPool.foreach {map =>
+      map.mapValues(_.size).foreach {
+        case (nodeId, size) => log.error(s"ballotPool: ${nodeId.take(4)}-$size")
+      }
+    }
   }
 
   def getUnworkingNom(nodeId: NodeID): Option[SCPEnvelope] = {
     val key = nodeId.toString
-    nomPool.map(_.get(nodeId.toString)).unsafe().flatMap {envelopes =>
+    val r = nomPool.map(_.get(nodeId.toString)).unsafe().flatMap {envelopes =>
       val xs = envelopes.filter(x => workingNom.map{y =>
         !y.get(key).exists(_.contains(x))
       }.unsafe())
@@ -76,11 +90,15 @@ trait EnvelopePool {
         sorted.lastOption
       }
     }
+
+    log.error(s"working ballot: ${nodeId.toString.take(4)}-${r.map(x => true)}")
+
+    r
   }
 
   def getUnworkingBallot(nodeId: NodeID): Option[SCPEnvelope] = {
     val key = nodeId.toString
-    ballotPool.map(_.get(nodeId.toString)).unsafe().flatMap {envelopes =>
+    val r = ballotPool.map(_.get(nodeId.toString)).unsafe().flatMap {envelopes =>
       val xs = envelopes.filter(x => workingBallot.map{y =>
         !y.get(key).exists(_.contains(x))
       }.unsafe())
@@ -96,6 +114,10 @@ trait EnvelopePool {
         sorted.lastOption
       }
     }
+
+    log.error(s"working ballot: ${nodeId.toString.take(4)}-${r.map(x => true)}")
+
+    r
   }
 
   def setWorkingBallot(nodeId: NodeID, envelope: SCPEnvelope): Unit = {
