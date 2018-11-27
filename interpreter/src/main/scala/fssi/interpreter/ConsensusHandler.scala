@@ -66,13 +66,29 @@ class ConsensusHandler
       setting match {
         case coreNodeSetting: CoreNodeSetting =>
           message match {
-            case SCPEnvelope(envelope) =>
-              log.debug(s"handling scp envelope: $envelope")
+            case x @ SCPEnvelope(envelope) =>
+              // todo: add envelopes pool, and
+              // 1. put to envlopes pool
+              // 2.
               implicit val scpSetting: fssi.scp.interpreter.Setting =
                 resolveSCPSetting(coreNodeSetting)
+
               val previousValue = BlockValue(lastDeterminedBlock)
-              Portal.handleEnvelope(envelope, previousValue)
-              log.debug(s"handled scp envelope: $envelope")
+
+              val nodeId = envelope.statement.from
+              EnvelopePool.put(x)
+
+              EnvelopePool.getUnworkingNom(nodeId).foreach { x =>
+                EnvelopePool.setWorkingNom(nodeId, x)
+                Portal.handleEnvelope(x.value, previousValue)
+                EnvelopePool.endWorkingNom(nodeId)
+              }
+
+              EnvelopePool.getUnworkingBallot(nodeId).foreach { x =>
+                EnvelopePool.setWorkingBallot(nodeId, x)
+                Portal.handleEnvelope(x.value, previousValue)
+                EnvelopePool.endWorkingBallot(nodeId)
+              }
           }
         case _ =>
       }
