@@ -296,7 +296,7 @@ class NetworkHandler extends Network.Handler[Stack] with LogSupport {
                 SCPThreadPool.submit(new Runnable {
                   override def run(): Unit = {
                     handler(msg)
-                    EnvelopePool.endWorkingNom(nodeId, x)
+                    EnvelopePool.endWorkingBallot(nodeId, x)
                   }
                 })
               }
