@@ -91,7 +91,7 @@ trait EnvelopePool {
       }
     }
 
-    log.error(s"working ballot: ${nodeId.toString.take(4)}-${r.map(x => true)}")
+    log.error(s"working ballot: ${nodeId.toString.take(4)}-${r.map(x => x.hashCode())}")
 
     r
   }
@@ -115,7 +115,7 @@ trait EnvelopePool {
       }
     }
 
-    log.error(s"working ballot: ${nodeId.toString.take(4)}-${r.map(x => true)}")
+    log.error(s"working ballot: ${nodeId.toString.take(4)}-${r.map(x => x.hashCode())}")
 
     r
   }
@@ -142,7 +142,7 @@ trait EnvelopePool {
       else m
     }
 
-    log.error(s"end working ballot: ${nodeId.toString.take(4)}")
+    log.error(s"end working ballot: ${nodeId.toString.take(4)}-${envelope.hashCode()}")
   }
 
   def endWorkingNom(nodeID: NodeID, envelope: SCPEnvelope): Unit = {
@@ -154,7 +154,7 @@ trait EnvelopePool {
       }
       else m
     }
-    log.error(s"end working nom: ${nodeID.toString.take(4)}")
+    log.error(s"end working nom: ${nodeID.toString.take(4)}-${envelope.hashCode()}")
   }
 }
 
