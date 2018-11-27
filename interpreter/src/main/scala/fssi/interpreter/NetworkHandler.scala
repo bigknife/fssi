@@ -25,6 +25,7 @@ import fssi.interpreter.scp.BlockValue.implicits._
 import fssi.scp.interpreter.SCPThreadPool
 import fssi.scp.interpreter.json.implicits._
 import fssi.types.json.implicits._
+import rx.schedulers.Schedulers
 
 class NetworkHandler extends Network.Handler[Stack] with LogSupport {
 
@@ -281,6 +282,7 @@ class NetworkHandler extends Network.Handler[Stack] with LogSupport {
 
       cluster
         .listen()
+        .subscribeOn(Schedulers.io())
         .subscribe { gossip =>
           // gossip to ApplicationMessage, ConsensusMessage
           val msg = converter(gossip)
