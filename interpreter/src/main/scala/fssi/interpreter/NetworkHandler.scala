@@ -126,7 +126,8 @@ class NetworkHandler extends Network.Handler[Stack] with LogSupport {
                             val future = new CompletableFuture[Void]
                             cluster.send(m, msg, future)
                             log.error(s"seding to ${m.address()}")
-                            future.get(x.config.consensusConfig.maxTimeoutSeconds, TimeUnit.SECONDS)
+                            future.get(x.config.consensusConfig.broadcastTimeout,
+                                       TimeUnit.MILLISECONDS)
                             log.error(s"sent to ${m.address()}")
                           } catch {
                             case e =>
@@ -206,7 +207,7 @@ class NetworkHandler extends Network.Handler[Stack] with LogSupport {
     clusterOnce := Cluster.joinAwait(config)
     clusterOnce.foreach { cluster =>
       cluster.listenMembership().subscribe { membershipEvent =>
-        log.info(
+        log.error(
           s"receive P2P Membership Event: ${membershipEvent.`type`()}, ${membershipEvent.member()}")
         printMembers(clusterOnce, memberTag)
       }
