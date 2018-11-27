@@ -204,7 +204,26 @@ class NetworkHandler extends Network.Handler[Stack] with LogSupport {
           val message = converter(gossip)
           val ts      = System.currentTimeMillis()
           handler(message)
-          log.error(s"Message Handled, ${System.currentTimeMillis() - ts} ms")
+          message match {
+            case SCPEnvelope(
+                fssi.scp.types.Envelope(fssi.scp.types.Statement(from, slotIndex, _, _, x), _)) =>
+              x match {
+                case x0: fssi.scp.types.Message.Nomination =>
+                  log.error(
+                    s"nom, ${System.currentTimeMillis() - ts} ms $from -> voted ${x0.voted.size}, accepted ${x0.accepted.size}")
+                case x0: fssi.scp.types.Message.Prepare =>
+                  log.error(
+                    s"prepare, ${System.currentTimeMillis() - ts} ms $from ->  b.c=${x0.b.counter}, p'.c=${x0.`p'`
+                      .map(_.counter)}, p.c=${x0.p.map(_.counter)}, c.n=${x0.`c.n`}, h.n=${x0.`h.n`}")
+                case x0: fssi.scp.types.Message.Confirm =>
+                  log.error(
+                    s"confirm, ${System.currentTimeMillis() - ts} ms $from -> b.c=${x0.b.counter}, p.n=${x0.`p.n`}, c.n=${x0.`c.n`}, h.n=${x0.`h.n`}")
+                case x0: fssi.scp.types.Message.Externalize =>
+                  log.error(s"externalize, ${System
+                    .currentTimeMillis() - ts} ms $from -> c.n=${x0.`c.n`}, h.n=${x0.`h.n`}")
+              }
+          }
+
         } match {
           case scala.util.Success(_) =>
             log.debug("Gossip message handled successful")
