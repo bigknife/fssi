@@ -186,6 +186,7 @@ class StoreHandler extends Store.Handler[Stack] with LogSupport {
             timestamp = timestamp,
             hash = hash
           )
+
         }
       }
       .unsafe()
