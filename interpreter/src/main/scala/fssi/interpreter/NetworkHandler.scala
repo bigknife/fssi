@@ -272,7 +272,7 @@ class NetworkHandler extends Network.Handler[Stack] with LogSupport {
           msg match {
             case x: ApplicationMessage =>
               //todo tuning
-              handler(x)
+              handler(msg)
 
             case x: SCPEnvelope =>
               val nodeId = x.value.statement.from
@@ -283,7 +283,7 @@ class NetworkHandler extends Network.Handler[Stack] with LogSupport {
                 //Portal.handleEnvelope(x.value, previousValue)
                 SCPThreadPool.submit(new Runnable {
                   override def run(): Unit = {
-                    handler(x)
+                    handler(msg)
                   }
                 })
                 EnvelopePool.endWorkingNom(nodeId, x)
