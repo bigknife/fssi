@@ -6,7 +6,6 @@ import types._
 import components._
 import bigknife.sop._
 import bigknife.sop.implicits._
-import cats.free.FreeApplicative.FA
 
 trait HandleSCPEnvelopeProgram[F[_]] extends SCP[F] with BaseProgram[F] {
   import model.nodeService._

@@ -120,6 +120,7 @@ class StoreHandler extends Store.Handler[Stack] with LogSupport {
 
   override def getLatestDeterminedBlock(): Stack[Block] = Stack {
     // get persisted and de-serialized to a block
+    val start = System.currentTimeMillis()
     require(bcsVar.isDefined)
     bcsVar
       .map { bcs =>
@@ -176,7 +177,7 @@ class StoreHandler extends Store.Handler[Stack] with LogSupport {
             )
           }: _*)
 
-          Block(
+          val block = Block(
             height = height,
             chainId = chainId,
             preWorldState = preWorldState,
@@ -186,6 +187,11 @@ class StoreHandler extends Store.Handler[Stack] with LogSupport {
             timestamp = timestamp,
             hash = hash
           )
+
+          val end = System.currentTimeMillis()
+          log.error(
+            s"==================get latest determined block takes: ${end - start} millis=============================")
+          block
         }
       }
       .unsafe()
