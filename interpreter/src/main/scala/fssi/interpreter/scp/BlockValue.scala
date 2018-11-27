@@ -34,11 +34,11 @@ case class BlockValue(block: Block) extends Value {
           val contentOrder = Ordering[String].compare(thisEncoding, thatEncoding)
 
           if (contentOrder != 0) {
-            val timeOrder = Ordering[Long].compare(this.block.timestamp.value, that.block.timestamp.value)
+            val timeOrder =
+              Ordering[Long].compare(this.block.timestamp.value, that.block.timestamp.value)
             if (timeOrder != 0) timeOrder
             else contentOrder
-          }
-          else {
+          } else {
             contentOrder
           }
         }
@@ -59,6 +59,7 @@ object BlockValue {
     import io.circe._
     import io.circe.generic.auto._
     import io.circe.syntax._
+    import fssi.types.json.implicits._
 
     implicit val valueEncoder: Encoder[Value] = {
       case blockValue: BlockValue => blockValue.asJson

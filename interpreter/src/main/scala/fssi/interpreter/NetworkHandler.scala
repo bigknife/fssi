@@ -17,7 +17,6 @@ import fssi.interpreter.scp.SCPEnvelope
 import fssi.types.biz.Message.ApplicationMessage.{QueryMessage, TransactionMessage}
 import fssi.types.biz.Message.ClientMessage.{QueryTransaction, SendTransaction}
 import fssi.types.implicits._
-import fssi.types.json.implicits._
 import io.circe.syntax._
 import io.circe._
 import io.circe.parser._
@@ -25,6 +24,7 @@ import io.circe.generic.auto._
 import fssi.interpreter.scp.BlockValue.implicits._
 import fssi.scp.interpreter.SCPThreadPool
 import fssi.scp.interpreter.json.implicits._
+import fssi.types.json.implicits._
 
 class NetworkHandler extends Network.Handler[Stack] with LogSupport {
 
@@ -205,15 +205,14 @@ class NetworkHandler extends Network.Handler[Stack] with LogSupport {
           val ts      = System.currentTimeMillis()
           message match {
             case SCPEnvelope(
-            fssi.scp.types.Envelope(fssi.scp.types.Statement(from, slotIndex, _, _, x), _)) =>
+                fssi.scp.types.Envelope(fssi.scp.types.Statement(from, slotIndex, _, _, x), _)) =>
               x match {
                 case x0: fssi.scp.types.Message.Nomination =>
                   log.error(
                     s"GOT: nom, $from -> voted ${x0.voted.size}, accepted ${x0.accepted.size}")
                 case x0: fssi.scp.types.Message.Prepare =>
-                  log.error(
-                    s"GOT: prepare, $from ->  b.c=${x0.b.counter}, p'.c=${x0.`p'`
-                      .map(_.counter)}, p.c=${x0.p.map(_.counter)}, c.n=${x0.`c.n`}, h.n=${x0.`h.n`}")
+                  log.error(s"GOT: prepare, $from ->  b.c=${x0.b.counter}, p'.c=${x0.`p'`
+                    .map(_.counter)}, p.c=${x0.p.map(_.counter)}, c.n=${x0.`c.n`}, h.n=${x0.`h.n`}")
                 case x0: fssi.scp.types.Message.Confirm =>
                   log.error(
                     s"GOT: confirm, $from -> b.c=${x0.b.counter}, p.n=${x0.`p.n`}, c.n=${x0.`c.n`}, h.n=${x0.`h.n`}")
@@ -226,7 +225,6 @@ class NetworkHandler extends Network.Handler[Stack] with LogSupport {
 
           handler(message)
 
-
           message match {
             case SCPEnvelope(
                 fssi.scp.types.Envelope(fssi.scp.types.Statement(from, slotIndex, _, _, x), _)) =>
@@ -235,12 +233,12 @@ class NetworkHandler extends Network.Handler[Stack] with LogSupport {
                   log.error(
                     s"HANDLED: nom, ${System.currentTimeMillis() - ts} ms $from -> voted ${x0.voted.size}, accepted ${x0.accepted.size}")
                 case x0: fssi.scp.types.Message.Prepare =>
-                  log.error(
-                    s"HANDLED: prepare, ${System.currentTimeMillis() - ts} ms $from ->  b.c=${x0.b.counter}, p'.c=${x0.`p'`
-                      .map(_.counter)}, p.c=${x0.p.map(_.counter)}, c.n=${x0.`c.n`}, h.n=${x0.`h.n`}")
+                  log.error(s"HANDLED: prepare, ${System
+                    .currentTimeMillis() - ts} ms $from ->  b.c=${x0.b.counter}, p'.c=${x0.`p'`
+                    .map(_.counter)}, p.c=${x0.p.map(_.counter)}, c.n=${x0.`c.n`}, h.n=${x0.`h.n`}")
                 case x0: fssi.scp.types.Message.Confirm =>
-                  log.error(
-                    s"HANDLED: confirm, ${System.currentTimeMillis() - ts} ms $from -> b.c=${x0.b.counter}, p.n=${x0.`p.n`}, c.n=${x0.`c.n`}, h.n=${x0.`h.n`}")
+                  log.error(s"HANDLED: confirm, ${System
+                    .currentTimeMillis() - ts} ms $from -> b.c=${x0.b.counter}, p.n=${x0.`p.n`}, c.n=${x0.`c.n`}, h.n=${x0.`h.n`}")
                 case x0: fssi.scp.types.Message.Externalize =>
                   log.error(s"HANDLED: externalize, ${System
                     .currentTimeMillis() - ts} ms $from -> c.n=${x0.`c.n`}, h.n=${x0.`h.n`}")
