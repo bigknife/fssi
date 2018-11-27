@@ -303,7 +303,8 @@ class NetworkHandler extends Network.Handler[Stack] with LogSupport {
                     val start = System.currentTimeMillis()
                     handler(msg)
                     val end = System.currentTimeMillis()
-                    log.error(s"handle nominate message takes ${end - start} millis")
+                    log.error(
+                      s"============= handle nominate message takes ${end - start} millis ==========")
                     EnvelopePool.endWorkingNom(nodeId, x)
                   }
                 })
@@ -318,7 +319,8 @@ class NetworkHandler extends Network.Handler[Stack] with LogSupport {
                     val start = System.currentTimeMillis()
                     handler(msg)
                     val end = System.currentTimeMillis()
-                    log.error(s"handle ballot message takes ${end - start} millis")
+                    log.error(
+                      s"============== handle ballot message takes ${end - start} millis ==============")
                     EnvelopePool.endWorkingBallot(nodeId, x)
                   }
                 })
