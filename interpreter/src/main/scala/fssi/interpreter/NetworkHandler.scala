@@ -207,7 +207,7 @@ class NetworkHandler extends Network.Handler[Stack] with LogSupport {
     clusterOnce := Cluster.joinAwait(config)
     clusterOnce.foreach { cluster =>
       cluster.listenMembership().subscribe { membershipEvent =>
-        log.info(
+        log.error(
           s"receive P2P Membership Event: ${membershipEvent.`type`()}, ${membershipEvent.member()}")
         printMembers(clusterOnce, memberTag)
       }
