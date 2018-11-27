@@ -141,6 +141,8 @@ trait EnvelopePool {
       }
       else m
     }
+
+    log.error(s"end working ballot: ${nodeId.toString.take(4)}")
   }
 
   def endWorkingNom(nodeID: NodeID, envelope: SCPEnvelope): Unit = {
@@ -152,6 +154,7 @@ trait EnvelopePool {
       }
       else m
     }
+    log.error(s"end working nom: ${nodeID.toString.take(4)}")
   }
 }
 
