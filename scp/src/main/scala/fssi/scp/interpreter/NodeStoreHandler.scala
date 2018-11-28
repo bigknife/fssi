@@ -10,8 +10,6 @@ import scala.collection.immutable.Set
 
 class NodeStoreHandler extends NodeStore.Handler[Stack] with LogSupport {
 
-  private lazy val slotIndexSafeVar = Var[Option[SlotIndex]](None)
-
   /** check the envelope to see if it's newer than local cache
     */
   override def isNewerEnvelope[M <: Message](nodeId: NodeID,
@@ -941,17 +939,8 @@ class NodeStoreHandler extends NodeStore.Handler[Stack] with LogSupport {
     isDiff && isGrow
   }
 
-  override def currentSlotIndex(): Stack[SlotIndex] = Stack {
-    slotIndexSafeVar
-      .map {
-        case Some(slotIndex) => slotIndex
-        case None            => throw new RuntimeException("current slot index is undiscriminated")
-      }
-      .unsafe()
-  }
-
-  override def newSlotIndex(slotIndex: SlotIndex): Stack[Unit] = Stack {
-    slotIndexSafeVar := Some(slotIndex); ()
+  override def currentSlotIndex(): Stack[SlotIndex] = Stack { setting =>
+    setting.applicationCallback.currentSlotIndex()
   }
 }
 
