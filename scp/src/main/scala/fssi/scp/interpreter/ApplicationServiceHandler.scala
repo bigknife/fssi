@@ -8,8 +8,6 @@ import fssi.scp.ast._
 import fssi.scp.interpreter.store._
 import fssi.scp.types._
 
-import scala.util.Try
-
 class ApplicationServiceHandler extends ApplicationService.Handler[Stack] with LogSupport {
 
   private val timerCache: Var[Map[String, Vector[Timer]]] = Var(Map.empty)
@@ -83,15 +81,19 @@ class ApplicationServiceHandler extends ApplicationService.Handler[Stack] with L
           if (m.contains(tag)) m + (tag -> (m(tag) :+ timer))
           else m + (tag                 -> Vector(timer))
         }
-        timer.schedule(new TimerTask {
-          override def run(): Unit = try {
-            if (tag == BROADCAST_TIMER) {
-              SCPThreadPool.broadcast(task)
-            } else {
-              SCPThreadPool.submit(task)
-            }
-          } finally timer.cancel()
-        }, timeout)
+        timer.schedule(
+          new TimerTask {
+            override def run(): Unit =
+              try {
+                if (tag == BROADCAST_TIMER) {
+                  SCPThreadPool.broadcast(task)
+                } else {
+                  SCPThreadPool.submit(task)
+                }
+              } finally timer.cancel()
+          },
+          timeout
+        )
       }
   }
 
