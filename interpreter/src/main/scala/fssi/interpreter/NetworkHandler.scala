@@ -34,8 +34,8 @@ class NetworkHandler extends Network.Handler[Stack] with LogSupport {
   val applicationOnce: Once[Cluster] = Once.empty
 
   val transactionOnce: Once[Map[String, Transaction]] = Once(Map.empty)
-  val appMessageWorker: Once[AnyRef] = Once.empty
-  val consensusMessageWorker: Once[AnyRef] = Once.empty
+  val appMessageWorker: Once[AnyRef]                  = Once.empty
+  val consensusMessageWorker: Once[AnyRef]            = Once.empty
 
   //val executor: ExecutorService = Executors.newSingleThreadExecutor()
 
@@ -68,6 +68,7 @@ class NetworkHandler extends Network.Handler[Stack] with LogSupport {
       val applicationConfig = setting match {
         case coreNodeSetting: CoreNodeSetting => coreNodeSetting.config.applicationConfig
         case edgeNodeSetting: EdgeNodeSetting => edgeNodeSetting.config.applicationConfig
+        case _ => throw new RuntimeException("un matched config")
       }
       val converter: CubeMessage => ApplicationMessage = cube => cube.data[ApplicationMessage]
       val node =
@@ -128,13 +129,16 @@ class NetworkHandler extends Network.Handler[Stack] with LogSupport {
       case _: EdgeNodeSetting =>
         message match {
           case sendTransaction: SendTransaction =>
-            applicationOnce.foreach(
-              cluster =>
-                cluster.spreadGossip(
-                  CubeMessage.fromData(TransactionMessage(sendTransaction.payload))))
+            applicationOnce.foreach { cluster =>
+              cluster.spreadGossip(
+                CubeMessage.fromData(TransactionMessage(sendTransaction.payload)))
+              ()
+            }
           case queryTransaction: QueryTransaction =>
-            applicationOnce.foreach(cluster =>
-              cluster.spreadGossip(CubeMessage.fromData(QueryMessage(queryTransaction.payload))))
+            applicationOnce.foreach { cluster =>
+              cluster.spreadGossip(CubeMessage.fromData(QueryMessage(queryTransaction.payload)))
+              ()
+            }
           case _ => throw new RuntimeException(s"edge node unsupported broadcast message: $message")
         }
       case _ =>
@@ -203,9 +207,6 @@ class NetworkHandler extends Network.Handler[Stack] with LogSupport {
           x
         }
     }
-
-
-    
 
     clusterOnce.foreach { cluster =>
       printMembers(clusterOnce, memberTag)
