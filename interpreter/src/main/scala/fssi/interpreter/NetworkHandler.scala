@@ -3,7 +3,7 @@ package interpreter
 import java.util.concurrent.{CompletableFuture, ExecutorService, Executors, TimeUnit}
 
 import fssi.ast.Network
-import fssi.interpreter.Configuration.P2PConfig
+import fssi.interpreter.Configuration.{ApplicationConfig, ConsensusConfig, P2PConfig}
 import fssi.interpreter.Setting.{CoreNodeSetting, EdgeNodeSetting}
 import fssi.types.biz.Node.{ApplicationNode, ConsensusNode, ServiceNode}
 import fssi.types.biz._
@@ -34,7 +34,8 @@ class NetworkHandler extends Network.Handler[Stack] with LogSupport {
   val applicationOnce: Once[Cluster] = Once.empty
 
   val transactionOnce: Once[Map[String, Transaction]] = Once(Map.empty)
-  val messageWorker: Once[AnyRef] = Once.empty
+  val appMessageWorker: Once[AnyRef] = Once.empty
+  val consensusMessageWorker: Once[AnyRef] = Once.empty
 
   //val executor: ExecutorService = Executors.newSingleThreadExecutor()
 
@@ -188,11 +189,22 @@ class NetworkHandler extends Network.Handler[Stack] with LogSupport {
       Cluster.joinAwait(config)
     }
 
-    messageWorker := {
-      val x = MessageWorker(MessageReceiver, handler)
-      x.startWork()
-      x
+    p2pConfig match {
+      case _: ApplicationConfig =>
+        consensusMessageWorker := {
+          val x = MessageWorker(MessageReceiver, handler)
+          x.startWork()
+          x
+        }
+      case _: ConsensusConfig =>
+        appMessageWorker := {
+          val x = MessageWorker(MessageReceiver, handler)
+          x.startWork()
+          x
+        }
     }
+
+
     
 
     clusterOnce.foreach { cluster =>
