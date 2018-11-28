@@ -1,7 +1,5 @@
 package fssi.scp.interpreter
 
-import java.util.concurrent.ExecutorService
-
 import fssi.scp.types._
 
 /** SCP application callback
@@ -32,6 +30,7 @@ trait ApplicationCallback {
   def canDispatch: Boolean                                         = false
   def dispatch(timer: String, timeout: Long, task: Runnable): Unit = ()
   def cancel(timer: String): Unit                                  = ()
+  def currentSlotIndex(): SlotIndex
 }
 
 object ApplicationCallback {
@@ -82,5 +81,6 @@ object ApplicationCallback {
     override def ballotDidHearFromQuorum(slotIndex: SlotIndex, ballot: Ballot): Unit = {
       throw warning("ballotDidHearFromQuorum")
     }
+    override def currentSlotIndex(): SlotIndex = ???
   }
 }

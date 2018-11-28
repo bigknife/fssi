@@ -261,6 +261,4 @@ import types._
   def nominationsReceived(slotIndex: SlotIndex): P[F, Map[NodeID, Envelope[Message.Nomination]]]
 
   def currentSlotIndex(): P[F, SlotIndex]
-
-  def newSlotIndex(slotIndex: SlotIndex): P[F, Unit]
 }
