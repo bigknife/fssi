@@ -38,8 +38,7 @@ class NodeServiceHandler
   override def canNominateNewValue(slotIndex: SlotIndex, timeout: Boolean): Stack[Boolean] = Stack {
     setting =>
       val curSlotIndex = setting.applicationCallback.currentSlotIndex()
-      if (curSlotIndex.value > slotIndex.value) false
-      else {
+      if (curSlotIndex.value + 1 == slotIndex.value) {
         assertSlotIndex(setting.localNode, slotIndex)
         val nominationStatus  = NominationStatus.getInstance(slotIndex)
         val nominationStarted = nominationStatus.nominationStarted.getOrElse(false)
@@ -50,7 +49,7 @@ class NodeServiceHandler
           debug(s"triggered by application request")
           true
         }
-      }
+      } else false
 
   }
 
