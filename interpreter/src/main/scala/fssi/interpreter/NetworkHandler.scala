@@ -269,39 +269,44 @@ class NetworkHandler extends Network.Handler[Stack] with LogSupport {
               handler(msg)
 
             case x: SCPEnvelope =>
-              val nodeId = x.value.statement.from
+              val start0 = System.currentTimeMillis()
               EnvelopePool.put(x)
-
-              EnvelopePool.getUnworkingNom(nodeId).foreach { x =>
-                EnvelopePool.setWorkingNom(nodeId, x)
-                //Portal.handleEnvelope(x.value, previousValue)
-                SCPThreadPool.submit(new Runnable {
-                  override def run(): Unit = {
-                    val start = System.currentTimeMillis()
-                    handler(msg)
-                    val end = System.currentTimeMillis()
-                    log.error(
-                      s"============= handle nominate message takes ${end - start} millis ==========")
-                    EnvelopePool.endWorkingNom(nodeId, x)
+              val end0 = System.currentTimeMillis()
+              log.error(
+                s"!!!!!!!!!!!!!! put envelop in pool takes: ${end0 - start0} millis !!!!!!!!!!!!!!")
+              val nodeId = x.value.statement.from
+              //Portal.handleEnvelope(x.value, previousValue)
+              SCPThreadPool.submit(new Runnable {
+                override def run(): Unit = {
+                  EnvelopePool.getUnworkingNom(nodeId).foreach {
+                    x =>
+                      log.error("---------------start working on nom---------------------")
+                      EnvelopePool.setWorkingNom(nodeId, x)
+                      val start = System.currentTimeMillis()
+                      handler(msg)
+                      val end = System.currentTimeMillis()
+                      log.error(
+                        s"============= handle nominate message takes ${end - start} millis ==========")
+                      EnvelopePool.endWorkingNom(nodeId, x)
                   }
-                })
+                }
+              })
 
-              }
-
-              EnvelopePool.getUnworkingBallot(nodeId).foreach { x =>
-                EnvelopePool.setWorkingBallot(nodeId, x)
-                //Portal.handleEnvelope(x.value, previousValue)
-                SCPThreadPool.submit(new Runnable {
-                  override def run(): Unit = {
-                    val start = System.currentTimeMillis()
-                    handler(msg)
-                    val end = System.currentTimeMillis()
-                    log.error(
-                      s"============== handle ballot message takes ${end - start} millis ==============")
-                    EnvelopePool.endWorkingBallot(nodeId, x)
+              SCPThreadPool.submit(new Runnable {
+                override def run(): Unit = {
+                  EnvelopePool.getUnworkingBallot(nodeId).foreach {
+                    x =>
+                      EnvelopePool.setWorkingBallot(nodeId, x)
+                      log.error("---------------start working on ballot---------------------")
+                      val start = System.currentTimeMillis()
+                      handler(msg)
+                      val end = System.currentTimeMillis()
+                      log.error(
+                        s"============== handle ballot message takes ${end - start} millis ==============")
+                      EnvelopePool.endWorkingBallot(nodeId, x)
                   }
-                })
-              }
+                }
+              })
           }
 
           /*
