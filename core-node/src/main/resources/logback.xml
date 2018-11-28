@@ -63,6 +63,10 @@
         <appender-ref ref="MESSAGE" />
     </logger>
 
+    <logger name="fssi.interpreter.scp.callback" additivity="false" level="info">
+        <appender-ref ref="MESSAGE" />
+    </logger>
+
     <root level="error">
         <appender-ref ref="COLOR"/>
     </root>
