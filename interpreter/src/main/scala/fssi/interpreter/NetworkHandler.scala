@@ -1,6 +1,6 @@
 package fssi
 package interpreter
-import java.util.concurrent.{CompletableFuture, ExecutorService, Executors}
+import java.util.concurrent.{CompletableFuture, ExecutorService, Executors, TimeUnit}
 
 import fssi.ast.Network
 import fssi.interpreter.Configuration.P2PConfig
@@ -25,6 +25,7 @@ import fssi.interpreter.scp.BlockValue.implicits._
 import fssi.scp.interpreter.SCPThreadPool
 import fssi.scp.interpreter.json.implicits._
 import fssi.types.json.implicits._
+import rx.schedulers.Schedulers
 
 class NetworkHandler extends Network.Handler[Stack] with LogSupport {
 
@@ -107,35 +108,16 @@ class NetworkHandler extends Network.Handler[Stack] with LogSupport {
               case scpEnvelope: SCPEnvelope =>
                 consensusOnce.foreach { cluster =>
                   //cluster.spreadGossip(CubeMessage.fromData(scpEnvelope.asJson.noSpaces)))
-                  import scala.collection.JavaConverters._
-
-                  cluster
-                    .members()
-                    .asScala
-                    .filter(
-                      y =>
-                        y.address().host() != x.config.consensusConfig.host && y
-                          .address()
-                          .port() != x.config.consensusConfig.port)
-                    .foreach { m =>
-                      //log.error(s"sending to ${m.address()}")
-                      SCPThreadPool.broadcast(new Runnable {
-                        override def run(): Unit = {
-                          try {
-                            val msg    = CubeMessage.fromData(scpEnvelope.asJson.noSpaces)
-                            val future = new CompletableFuture[Void]
-                            cluster.send(m, msg, future)
-                            log.error(s"seding to ${m.address()}")
-                            future.get()
-                            log.error(s"sent to ${m.address()}")
-                          } catch {
-                            case e => e.printStackTrace()
-                          }
-
-                        }
-                      })
-
+                  SCPThreadPool.broadcast(new Runnable {
+                    override def run(): Unit = {
+                      val msg = CubeMessage.fromData(scpEnvelope.asJson.noSpaces)
+                      cluster.otherMembers().forEach { m =>
+                        val future = new CompletableFuture[Void]
+                        cluster.send(m, msg, future)
+                      }
                     }
+                  })
+
                 }
             }
           case _ => throw new RuntimeException(s"core node unsupported broadcast message: $message")
@@ -198,14 +180,14 @@ class NetworkHandler extends Network.Handler[Stack] with LogSupport {
         .portAutoIncrement(false)
         .seedMembers(p2pConfig.seeds.map(x => Address.create(x.host, x.port)): _*)
         .suspicionMult(ClusterConfig.DEFAULT_WAN_SUSPICION_MULT)
-        .pingInterval(30 * 60 * 1000)
-        .pingTimeout(20 * 60 * 1000)
+//        .pingInterval(30 * 60 * 1000)
+//        .pingTimeout(20 * 60 * 1000)
         .build()
 
     clusterOnce := Cluster.joinAwait(config)
     clusterOnce.foreach { cluster =>
       cluster.listenMembership().subscribe { membershipEvent =>
-        log.info(
+        log.error(
           s"receive P2P Membership Event: ${membershipEvent.`type`()}, ${membershipEvent.member()}")
         printMembers(clusterOnce, memberTag)
       }
@@ -277,6 +259,7 @@ class NetworkHandler extends Network.Handler[Stack] with LogSupport {
 
       cluster
         .listen()
+        .subscribeOn(Schedulers.io())
         .subscribe { gossip =>
           // gossip to ApplicationMessage, ConsensusMessage
           val msg = converter(gossip)
@@ -286,31 +269,44 @@ class NetworkHandler extends Network.Handler[Stack] with LogSupport {
               handler(msg)
 
             case x: SCPEnvelope =>
-              val nodeId = x.value.statement.from
+              val start0 = System.currentTimeMillis()
               EnvelopePool.put(x)
-
-              EnvelopePool.getUnworkingNom(nodeId).foreach { x =>
-                EnvelopePool.setWorkingNom(nodeId, x)
-                //Portal.handleEnvelope(x.value, previousValue)
-                SCPThreadPool.submit(new Runnable {
-                  override def run(): Unit = {
-                    handler(msg)
-                    EnvelopePool.endWorkingNom(nodeId, x)
+              val end0 = System.currentTimeMillis()
+              log.error(
+                s"!!!!!!!!!!!!!! put envelop in pool takes: ${end0 - start0} millis !!!!!!!!!!!!!!")
+              val nodeId = x.value.statement.from
+              //Portal.handleEnvelope(x.value, previousValue)
+              SCPThreadPool.submit(new Runnable {
+                override def run(): Unit = {
+                  EnvelopePool.getUnworkingNom(nodeId).foreach {
+                    x =>
+                      log.error("---------------start working on nom---------------------")
+                      EnvelopePool.setWorkingNom(nodeId, x)
+                      val start = System.currentTimeMillis()
+                      handler(msg)
+                      val end = System.currentTimeMillis()
+                      log.error(
+                        s"============= handle nominate message takes ${end - start} millis ==========")
+                      EnvelopePool.endWorkingNom(nodeId, x)
                   }
-                })
+                }
+              })
 
-              }
-
-              EnvelopePool.getUnworkingBallot(nodeId).foreach { x =>
-                EnvelopePool.setWorkingBallot(nodeId, x)
-                //Portal.handleEnvelope(x.value, previousValue)
-                SCPThreadPool.submit(new Runnable {
-                  override def run(): Unit = {
-                    handler(msg)
-                    EnvelopePool.endWorkingBallot(nodeId, x)
+              SCPThreadPool.submit(new Runnable {
+                override def run(): Unit = {
+                  EnvelopePool.getUnworkingBallot(nodeId).foreach {
+                    x =>
+                      EnvelopePool.setWorkingBallot(nodeId, x)
+                      log.error("---------------start working on ballot---------------------")
+                      val start = System.currentTimeMillis()
+                      handler(msg)
+                      val end = System.currentTimeMillis()
+                      log.error(
+                        s"============== handle ballot message takes ${end - start} millis ==============")
+                      EnvelopePool.endWorkingBallot(nodeId, x)
                   }
-                })
-              }
+                }
+              })
           }
 
           /*
