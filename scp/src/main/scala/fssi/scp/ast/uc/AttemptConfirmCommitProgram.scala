@@ -8,7 +8,10 @@ import components._
 import bigknife.sop._
 import bigknife.sop.implicits._
 
-trait AttemptConfirmCommitProgram[F[_]] extends SCP[F] with EmitProgram[F] {
+trait AttemptConfirmCommitProgram[F[_]]
+    extends SCP[F]
+    with EmitProgram[F]
+    with InitializeProgram[F] {
   import model.nodeService._
   import model.nodeStore._
   import model.applicationService._
@@ -24,8 +27,7 @@ trait AttemptConfirmCommitProgram[F[_]] extends SCP[F] with EmitProgram[F] {
         canConfirm <- canConfirmCommitNow(slotIndex, ballotToExternalize.get)
       } yield !canConfirm)
 
-    def isCounterConfirmed(interval: CounterInterval,
-                           ballot: Ballot): SP[F, Boolean] = {
+    def isCounterConfirmed(interval: CounterInterval, ballot: Ballot): SP[F, Boolean] = {
       for {
         acceptedNodes <- nodesAcceptedCommit(slotIndex, ballot, interval)
         accepted      <- isLocalQuorum(acceptedNodes)
@@ -67,7 +69,7 @@ trait AttemptConfirmCommitProgram[F[_]] extends SCP[F] with EmitProgram[F] {
         boundaries <- commitBoundaries(slotIndex, ballot)
         _ <- info(
           s"[$slotIndex][AttemptConfirmCommit] found boundaries $boundaries at phase $phase")
-        interval  <- confirmedCommitCounterInterval(boundaries, ballot)
+        interval <- confirmedCommitCounterInterval(boundaries, ballot)
         confirmed <- ifM(interval.notAvailable, false) {
           val newC = Ballot(interval.first, ballot.value)
           val newH = Ballot(interval.second, ballot.value)
@@ -91,6 +93,7 @@ trait AttemptConfirmCommitProgram[F[_]] extends SCP[F] with EmitProgram[F] {
             _ <- info(s"[$slotIndex][AttemptConfirmCommit] phase upgraded to Externalize")
             c <- currentConfirmedBallot(slotIndex)
             _ <- phaseUpgradeToExternalize(slotIndex, c)
+            _ <- nominateFakeValue(SlotIndex(slotIndex.value + 1))
           } yield ()
         }
         _ <- ifThen(confirmed) {

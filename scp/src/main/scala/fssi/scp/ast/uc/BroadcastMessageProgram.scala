@@ -14,8 +14,9 @@ trait BroadcastMessageProgram[F[_]] extends SCP[F] with BaseProgram[F] {
 
   /** broadcast nominate and ballot message until externalized
     */
-  def broadcastMessageRegularly(slotIndex: SlotIndex): SP[F, Unit] = {
+  def broadcastMessageRegularly(): SP[F, Unit] = {
     for {
+      slotIndex       <- currentSlotIndex()
       timeout         <- broadcastTimeout()
       _               <- debug(s"broadcast $slotIndex message regularly,timeout: $timeout millis")
       nominateMessage <- nominateEnvelope(slotIndex)
@@ -33,13 +34,7 @@ trait BroadcastMessageProgram[F[_]] extends SCP[F] with BaseProgram[F] {
           _ <- infoSentEnvelope(ballotMessage.get)
         } yield ()
       }
-      _ <- delayExecuteProgram(BROADCAST_TIMER, broadcastMessageRegularly(slotIndex), timeout)
-    } yield ()
-  }
-
-  def stopBroadcastMessage(): SP[F, Unit] = {
-    for {
-      _ <- stopDelayTimer(BROADCAST_TIMER)
+      _ <- delayExecuteProgram(BROADCAST_TIMER, broadcastMessageRegularly(), timeout)
     } yield ()
   }
 }
