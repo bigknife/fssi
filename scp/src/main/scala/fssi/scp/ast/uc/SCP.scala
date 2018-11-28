@@ -15,7 +15,7 @@ trait SCP[F[_]] {
 
   /** nominate fake value to update round leaders
     */
-  def nominateFakeValue(nodeId: NodeID, slotIndex: SlotIndex): SP[F, Unit]
+  def nominateFakeValue(slotIndex: SlotIndex): SP[F, Unit]
 
   /** handle request of application
     */
@@ -30,11 +30,7 @@ trait SCP[F[_]] {
 
   /** broadcast nominate and ballot message until externalized
     */
-  def broadcastMessageRegularly(slotIndex: SlotIndex): SP[F, Unit]
-
-  /** stop broadcast all of nominate and ballot message
-    */
-  def stopBroadcastMessage(): SP[F, Unit]
+  def broadcastMessageRegularly(): SP[F, Unit]
 
   /** a bridge function, nomination process can bump to ballot process
     */

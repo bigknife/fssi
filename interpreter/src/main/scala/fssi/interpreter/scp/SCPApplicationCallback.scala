@@ -9,7 +9,6 @@ import fssi.types.base.Hash
 import fssi.types.implicits._
 import fssi.utils._
 import fssi.interpreter._
-import fssi.scp.Portal
 
 trait SCPApplicationCallback
     extends ApplicationCallback
@@ -112,14 +111,6 @@ trait SCPApplicationCallback
             .runIO(CoreNodeProgram.instance.newBlockGenerated(block), coreNodeSetting)
             .unsafeRunSync()
           log.info(s"externalized: ${slotIndex.value} --> ${block.hash}")
-          log.info(s"start to nominate fake value on slotIndex: ${slotIndex.value + 1}")
-          implicit val scpSetting: fssi.scp.interpreter.Setting = resolveSCPSetting(coreNodeSetting)
-          val newSlotIndex                                      = SlotIndex(slotIndex.value + 1)
-          Portal.nominateFakeValue(scpSetting.localNode, newSlotIndex)
-          log.info(s"stop broadcast message on slotIndex: $slotIndex")
-          Portal.stopBroadcastMessage()
-          log.info(s"start broadcast message on slotIndex: $newSlotIndex")
-          Portal.startBroadcastMessage(newSlotIndex)
         }
       case FakeValue(_) =>
     }
