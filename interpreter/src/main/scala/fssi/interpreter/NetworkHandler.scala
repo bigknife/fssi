@@ -34,8 +34,11 @@ class NetworkHandler extends Network.Handler[Stack] with LogSupport {
   val applicationOnce: Once[Cluster] = Once.empty
 
   val transactionOnce: Once[Map[String, Transaction]] = Once(Map.empty)
+
   val appMessageWorker: Once[AnyRef]                  = Once.empty
+  val appMessageReceiver: Once[MessageReceiver]       = Once.empty
   val consensusMessageWorker: Once[AnyRef]            = Once.empty
+  val consensusMessageReceiver: Once[MessageReceiver] = Once.empty
 
   //val executor: ExecutorService = Executors.newSingleThreadExecutor()
 
@@ -68,7 +71,7 @@ class NetworkHandler extends Network.Handler[Stack] with LogSupport {
       val applicationConfig = setting match {
         case coreNodeSetting: CoreNodeSetting => coreNodeSetting.config.applicationConfig
         case edgeNodeSetting: EdgeNodeSetting => edgeNodeSetting.config.applicationConfig
-        case _ => throw new RuntimeException("un matched config")
+        case _                                => throw new RuntimeException("un matched config")
       }
       val converter: CubeMessage => ApplicationMessage = cube => cube.data[ApplicationMessage]
       val node =
@@ -196,13 +199,15 @@ class NetworkHandler extends Network.Handler[Stack] with LogSupport {
     p2pConfig match {
       case _: ConsensusConfig =>
         consensusMessageWorker := {
-          val x = MessageWorker(MessageReceiver(), handler)
+          consensusMessageReceiver := MessageReceiver()
+          val x = MessageWorker(consensusMessageReceiver.unsafe(), handler)
           x.startWork()
           x
         }
       case _: ApplicationConfig =>
         appMessageWorker := {
-          val x = MessageWorker(MessageReceiver(), handler)
+          appMessageReceiver := MessageReceiver()
+          val x = MessageWorker(appMessageReceiver.unsafe(), handler)
           x.startWork()
           x
         }
@@ -219,14 +224,24 @@ class NetworkHandler extends Network.Handler[Stack] with LogSupport {
         .listenGossips()
         .subscribe { gossip =>
           val msg = converter(gossip)
-          MessageReceiver.receive(msg)
+          msg match {
+            case _: Message.ApplicationMessage =>
+              appMessageReceiver.foreach(_.receive(msg))
+            case _: Message.ConsensusMessage =>
+              consensusMessageReceiver.foreach(_.receive(msg))
+          }
         }
 
       cluster
         .listen()
         .subscribe { gossip =>
           val msg = converter(gossip)
-          MessageReceiver.receive(msg)
+          msg match {
+            case _: Message.ApplicationMessage =>
+              appMessageReceiver.foreach(_.receive(msg))
+            case _: Message.ConsensusMessage =>
+              consensusMessageReceiver.foreach(_.receive(msg))
+          }
         }
       ()
     }
