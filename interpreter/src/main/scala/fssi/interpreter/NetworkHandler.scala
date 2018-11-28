@@ -1,7 +1,5 @@
 package fssi
 package interpreter
-import java.util.concurrent.{CompletableFuture, ExecutorService, Executors, TimeUnit}
-
 import fssi.ast.Network
 import fssi.interpreter.Configuration.{ApplicationConfig, ConsensusConfig, P2PConfig}
 import fssi.interpreter.Setting.{CoreNodeSetting, EdgeNodeSetting}
@@ -122,7 +120,7 @@ class NetworkHandler extends Network.Handler[Stack] with LogSupport {
                       val future = new CompletableFuture[Void]
                       cluster.send(m, msg, future)
                     }
-                    */
+                   */
                   })
 
                 }
@@ -216,7 +214,8 @@ class NetworkHandler extends Network.Handler[Stack] with LogSupport {
     clusterOnce.foreach { cluster =>
       printMembers(clusterOnce, memberTag)
       cluster.listenMembership().subscribe { membershipEvent =>
-        log.debug(s"receive P2P Membership Event: ${membershipEvent.`type`()}, ${membershipEvent.member()}")
+        log.debug(
+          s"receive P2P Membership Event: ${membershipEvent.`type`()}, ${membershipEvent.member()}")
         printMembers(clusterOnce, memberTag)
       }
       cluster

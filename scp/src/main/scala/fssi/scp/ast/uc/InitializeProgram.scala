@@ -21,7 +21,6 @@ trait InitializeProgram[F[_]] extends SCP[F] with BaseProgram[F] {
 
   def nominateFakeValue(slotIndex: SlotIndex): SP[F, Unit] = {
     for {
-      _         <- nodeStore.newSlotIndex(slotIndex)
       fakeValue <- nodeService.blockFakeValue(slotIndex)
       nodeId    <- nodeStore.localNode()
       _ <- applicationService.delayExecuteProgram(

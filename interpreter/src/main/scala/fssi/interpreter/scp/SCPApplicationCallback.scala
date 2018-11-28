@@ -133,4 +133,9 @@ trait SCPApplicationCallback
       throw new RuntimeException(
         s"can't broadcast envelope of inconsistent slot index, received: ${slotIndex.value} , envelope: ${envelope.statement.slotIndex.value}")
   }
+
+  override def currentSlotIndex(): SlotIndex = {
+    val block = StoreHandler.instance.getLatestDeterminedBlock()(coreNodeSetting).unsafeRunSync()
+    SlotIndex(block.height)
+  }
 }
