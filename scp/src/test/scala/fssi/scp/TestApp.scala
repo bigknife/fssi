@@ -66,6 +66,8 @@ class TestApp(nodeID: NodeID,
     externalizedValues = Vector.empty
   }
 
+  override def currentSlotIndex(): SlotIndex = SlotIndex(1)
+
   override def validateValue(nodeId: NodeID, slotIndex: SlotIndex, value: Value): Value.Validity = {
     Value.Validity.FullyValidated
   }
