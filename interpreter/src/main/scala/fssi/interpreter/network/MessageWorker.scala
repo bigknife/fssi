@@ -19,19 +19,38 @@ trait MessageWorker[M <: Message] {
   private lazy val wtc = new AtomicInteger(0)
   private lazy val applicationT =
     Executors.newSingleThreadExecutor((r: Runnable) =>
-      new Thread(r, s"mw-app-${atc.getAndIncrement()}"))
+      {
+        val r1 = new Thread(r, s"mw-app-${atc.getAndIncrement()}")
+        r1.setDaemon(true)
+        r1
+      })
   private lazy val nomT =
-    Executors.newSingleThreadExecutor((r: Runnable) =>
-      new Thread(r, s"mw-nom-${ntc.getAndIncrement()}"))
+    Executors.newSingleThreadExecutor((r: Runnable) => {
+      val r1 = new Thread(r, s"mw-nom-${ntc.getAndIncrement()}")
+      r1.setDaemon(true)
+      r1
+    })
+
   private lazy val ballotT =
-    Executors.newSingleThreadExecutor((r: Runnable) =>
-      new Thread(r, s"mw-blt-${btc.getAndIncrement()}"))
+    Executors.newSingleThreadExecutor((r: Runnable) => {
+      val r1 = new Thread(r, s"mw-blt-${btc.getAndIncrement()}")
+      r1.setDaemon(true)
+      r1
+    })
+
   private lazy val workerT =
-    Executors.newSingleThreadExecutor((r: Runnable) =>
-      new Thread(r, s"mw-wrk-${wtc.getAndIncrement()}"))
+    Executors.newSingleThreadExecutor((r: Runnable) => {
+      val r1 = new Thread(r, s"mw-wrk-${wtc.getAndIncrement()}")
+      r1.setDaemon(true)
+      r1
+    })
+
 
   private def _work(message: M): Unit = {
     type NM = fssi.scp.types.Message.Nomination
+    type PM = fssi.scp.types.Message.Prepare
+    type CM = fssi.scp.types.Message.Confirm
+    type EM = fssi.scp.types.Message.Externalize
 
     message match {
       case x: Message.ApplicationMessage =>
@@ -41,7 +60,7 @@ trait MessageWorker[M <: Message] {
               val t0 = System.currentTimeMillis()
               messageHandler(message)
               val t1 = System.currentTimeMillis()
-              log.info(s"handle ${x.getClass.getSimpleName}, time spent: ${t1 - t0} ms")
+              log.info(s"handle app, time spent: ${t1 - t0} ms")
             } catch {
               case t: Throwable => log.error("handle application message failed", t)
             }
@@ -54,7 +73,7 @@ trait MessageWorker[M <: Message] {
               val t0 = System.currentTimeMillis()
               messageHandler(message)
               val t1 = System.currentTimeMillis()
-              log.info(s"handle ${x.getClass.getSimpleName}, time spent: ${t1 - t0} ms")
+              log.info(s"handle nom, time spent: ${t1 - t0} ms")
             } catch {
               case t: Throwable => log.error("handle application message failed", t)
             }
@@ -67,7 +86,15 @@ trait MessageWorker[M <: Message] {
               val t0 = System.currentTimeMillis()
               messageHandler(message)
               val t1 = System.currentTimeMillis()
-              log.info(s"handle ${x.getClass.getSimpleName}, time spent: ${t1 - t0} ms")
+
+              val msgType = x.value.statement.message match {
+                case _: PM => "prepare"
+                case _: CM => "confirm"
+                case _: EM => "externalize"
+                case _: NM => "nom"
+              }
+
+              log.info(s"handle $msgType, time spent: ${t1 - t0} ms")
             } catch {
               case t: Throwable => log.error("handle application message failed", t)
             }
