@@ -168,7 +168,7 @@ trait MessageReceiver {
     }
   }
 
-  monitorThread.schedule(new Runnable {
+  monitorThread.scheduleAtFixedRate(new Runnable {
     override def run(): Unit = {
 
       consensusMessageReceivedCounter.foreach {m =>
@@ -200,7 +200,7 @@ trait MessageReceiver {
         log.debug(s"applicationPool cached message count: ${a.size}")
       }
     }
-  }, 5, TimeUnit.SECONDS)
+  }, 5,5,  TimeUnit.SECONDS)
 }
 
 object MessageReceiver {
