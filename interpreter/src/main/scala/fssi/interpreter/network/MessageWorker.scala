@@ -1,5 +1,6 @@
 package fssi.interpreter.network
 
+import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.{Executors, ThreadFactory}
 
 import fssi.interpreter.scp.SCPEnvelope
@@ -12,14 +13,22 @@ trait MessageWorker[M <: Message] {
 
   private lazy val log = LoggerFactory.getLogger("fssi.interpreter.network.message.worker")
 
+  private lazy val atc = new AtomicInteger(0)
+  private lazy val ntc = new AtomicInteger(0)
+  private lazy val btc = new AtomicInteger(0)
+  private lazy val wtc = new AtomicInteger(0)
   private lazy val applicationT =
-    Executors.newSingleThreadExecutor((r: Runnable) => new Thread(r, "mw-app"))
+    Executors.newSingleThreadExecutor((r: Runnable) =>
+      new Thread(r, s"mw-app-${atc.getAndIncrement()}"))
   private lazy val nomT =
-    Executors.newSingleThreadExecutor((r: Runnable) => new Thread(r, "mw-nom"))
+    Executors.newSingleThreadExecutor((r: Runnable) =>
+      new Thread(r, s"mw-nom-${ntc.getAndIncrement()}"))
   private lazy val ballotT =
-    Executors.newSingleThreadExecutor((r: Runnable) => new Thread(r, "mw-blt"))
+    Executors.newSingleThreadExecutor((r: Runnable) =>
+      new Thread(r, s"mw-blt-${btc.getAndIncrement()}"))
   private lazy val workerT =
-    Executors.newSingleThreadExecutor((r: Runnable) => new Thread(r, "mw-wrk"))
+    Executors.newSingleThreadExecutor((r: Runnable) =>
+      new Thread(r, s"mw-wrk-${wtc.getAndIncrement()}"))
 
   private def _work(message: M): Unit = {
     type NM = fssi.scp.types.Message.Nomination
@@ -91,13 +100,13 @@ trait MessageWorker[M <: Message] {
           //handle nom
           messageReceiver.fetchNomination().foreach {
             case (_, Some(env)) => _work(env.asInstanceOf[M])
-            case _ => ()
+            case _              => ()
           }
 
           // handle ballot
           messageReceiver.fetchBallot().foreach {
             case (_, Some(env)) => _work(env.asInstanceOf[M])
-            case _ => ()
+            case _              => ()
           }
 
           _loop()
@@ -118,10 +127,10 @@ trait MessageWorker[M <: Message] {
 }
 
 object MessageWorker {
-  def apply[M <: Message](_messageReceiver: MessageReceiver, _messageHandler: Message.Handler[M, Unit]): MessageWorker[M] =
+  def apply[M <: Message](_messageReceiver: MessageReceiver,
+                          _messageHandler: Message.Handler[M, Unit]): MessageWorker[M] =
     new MessageWorker[M] {
-      override val messageReceiver: MessageReceiver = _messageReceiver
+      override val messageReceiver: MessageReceiver         = _messageReceiver
       override val messageHandler: Message.Handler[M, Unit] = _messageHandler
     }
 }
-

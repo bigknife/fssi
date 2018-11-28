@@ -196,13 +196,13 @@ class NetworkHandler extends Network.Handler[Stack] with LogSupport {
     p2pConfig match {
       case _: ConsensusConfig =>
         consensusMessageWorker := {
-          val x = MessageWorker(MessageReceiver, handler)
+          val x = MessageWorker(MessageReceiver(), handler)
           x.startWork()
           x
         }
       case _: ApplicationConfig =>
         appMessageWorker := {
-          val x = MessageWorker(MessageReceiver, handler)
+          val x = MessageWorker(MessageReceiver(), handler)
           x.startWork()
           x
         }
