@@ -23,14 +23,15 @@ case class BlockValue(block: Block) extends Value {
     r
   }
 
-  override def compare(v: Value): Int =
-    v match {
+  override def compare(v: Value): Int = {
+    val start = System.currentTimeMillis()
+    val r = v match {
       case that: BlockValue =>
         val heightOrder = Ordering[BigInt].compare(this.block.height, that.block.height)
         if (heightOrder != 0) heightOrder
         else {
-          val thisEncoding = rawBytes.asBytesValue.bcBase58
-          val thatEncoding = that.rawBytes.asBytesValue.bcBase58
+          val thisEncoding = rawBytes.asBytesValue.base64
+          val thatEncoding = that.rawBytes.asBytesValue.base64
           val contentOrder = Ordering[String].compare(thisEncoding, thatEncoding)
 
           if (contentOrder != 0) {
@@ -44,7 +45,9 @@ case class BlockValue(block: Block) extends Value {
         }
       case _ => -1
     }
-
+    log.error(s"compare cost: ${System.currentTimeMillis() - start} millis")
+    r
+  }
   override def equals(obj: scala.Any): Boolean = {
     obj match {
       case value: BlockValue => value.rawBytes sameElements rawBytes
