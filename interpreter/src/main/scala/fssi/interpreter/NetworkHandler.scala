@@ -13,6 +13,7 @@ import io.scalecube.cluster.{Cluster, ClusterConfig}
 import io.scalecube.transport.{Address, Message => CubeMessage}
 import bigknife.jsonrpc._
 import fssi.interpreter.jsonrpc.EdgeJsonRpcResource
+import fssi.interpreter.network.{MessageReceiver, MessageWorker}
 import fssi.interpreter.scp.SCPEnvelope
 import fssi.types.biz.Message.ApplicationMessage.{QueryMessage, TransactionMessage}
 import fssi.types.biz.Message.ClientMessage.{QueryTransaction, SendTransaction}
@@ -33,6 +34,7 @@ class NetworkHandler extends Network.Handler[Stack] with LogSupport {
   val applicationOnce: Once[Cluster] = Once.empty
 
   val transactionOnce: Once[Map[String, Transaction]] = Once(Map.empty)
+  val messageWorker: Once[AnyRef] = Once.empty
 
   //val executor: ExecutorService = Executors.newSingleThreadExecutor()
 
@@ -172,154 +174,46 @@ class NetworkHandler extends Network.Handler[Stack] with LogSupport {
                                          converter: CubeMessage => M,
                                          handler: Message.Handler[M, Unit],
                                          memberTag: String): Node = {
-    val config =
-      ClusterConfig
-        .builder()
-        .listenAddress(p2pConfig.host)
-        .port(p2pConfig.port)
-        .portAutoIncrement(false)
-        .seedMembers(p2pConfig.seeds.map(x => Address.create(x.host, x.port)): _*)
-        .suspicionMult(ClusterConfig.DEFAULT_WAN_SUSPICION_MULT)
-//        .pingInterval(30 * 60 * 1000)
-//        .pingTimeout(20 * 60 * 1000)
-        .build()
 
-    clusterOnce := Cluster.joinAwait(config)
+    clusterOnce := {
+      val config =
+        ClusterConfig
+          .builder()
+          .listenAddress(p2pConfig.host)
+          .port(p2pConfig.port)
+          .portAutoIncrement(false)
+          .seedMembers(p2pConfig.seeds.map(x => Address.create(x.host, x.port)): _*)
+          .suspicionMult(ClusterConfig.DEFAULT_WAN_SUSPICION_MULT)
+          .build()
+      Cluster.joinAwait(config)
+    }
+
+    messageWorker := {
+      val x = MessageWorker(MessageReceiver, handler)
+      x.startWork()
+      x
+    }
+    
+
     clusterOnce.foreach { cluster =>
+      printMembers(clusterOnce, memberTag)
       cluster.listenMembership().subscribe { membershipEvent =>
         log.error(
           s"receive P2P Membership Event: ${membershipEvent.`type`()}, ${membershipEvent.member()}")
         printMembers(clusterOnce, memberTag)
       }
-
-      val subscription: CubeMessage => Unit = { gossip =>
-        scala.util.Try {
-          val message = converter(gossip)
-          val ts      = System.currentTimeMillis()
-          message match {
-            case SCPEnvelope(
-                fssi.scp.types.Envelope(fssi.scp.types.Statement(from, slotIndex, _, _, x), _)) =>
-              x match {
-                case x0: fssi.scp.types.Message.Nomination =>
-                  log.error(
-                    s"GOT: nom, $from -> voted ${x0.voted.size}, accepted ${x0.accepted.size}")
-                case x0: fssi.scp.types.Message.Prepare =>
-                  log.error(s"GOT: prepare, $from ->  b.c=${x0.b.counter}, p'.c=${x0.`p'`
-                    .map(_.counter)}, p.c=${x0.p.map(_.counter)}, c.n=${x0.`c.n`}, h.n=${x0.`h.n`}")
-                case x0: fssi.scp.types.Message.Confirm =>
-                  log.error(
-                    s"GOT: confirm, $from -> b.c=${x0.b.counter}, p.n=${x0.`p.n`}, c.n=${x0.`c.n`}, h.n=${x0.`h.n`}")
-                case x0: fssi.scp.types.Message.Externalize =>
-                  log.error(s"GOT: externalize, $from -> c.n=${x0.`c.n`}, h.n=${x0.`h.n`}")
-              }
-
-            case _ =>
-          }
-
-          handler(message)
-
-          message match {
-            case SCPEnvelope(
-                fssi.scp.types.Envelope(fssi.scp.types.Statement(from, slotIndex, _, _, x), _)) =>
-              x match {
-                case x0: fssi.scp.types.Message.Nomination =>
-                  log.error(
-                    s"HANDLED: nom, ${System.currentTimeMillis() - ts} ms $from -> voted ${x0.voted.size}, accepted ${x0.accepted.size}")
-                case x0: fssi.scp.types.Message.Prepare =>
-                  log.error(s"HANDLED: prepare, ${System
-                    .currentTimeMillis() - ts} ms $from ->  b.c=${x0.b.counter}, p'.c=${x0.`p'`
-                    .map(_.counter)}, p.c=${x0.p.map(_.counter)}, c.n=${x0.`c.n`}, h.n=${x0.`h.n`}")
-                case x0: fssi.scp.types.Message.Confirm =>
-                  log.error(s"HANDLED: confirm, ${System
-                    .currentTimeMillis() - ts} ms $from -> b.c=${x0.b.counter}, p.n=${x0.`p.n`}, c.n=${x0.`c.n`}, h.n=${x0.`h.n`}")
-                case x0: fssi.scp.types.Message.Externalize =>
-                  log.error(s"HANDLED: externalize, ${System
-                    .currentTimeMillis() - ts} ms $from -> c.n=${x0.`c.n`}, h.n=${x0.`h.n`}")
-              }
-
-            case _ =>
-          }
-
-        } match {
-          case scala.util.Success(_) =>
-            log.debug("Gossip message handled successful")
-          case scala.util.Failure(e) =>
-            log.error("Gossip message handled failed", e)
-        }
-      }
-
       cluster
         .listenGossips()
         .subscribe { gossip =>
-          log.debug(s"start handle Gossip message: $gossip")
-          SCPThreadPool.submit(new Runnable {
-            override def run(): Unit = subscription(gossip)
-          })
+          val msg = converter(gossip)
+          MessageReceiver.receive(msg)
         }
 
       cluster
         .listen()
-        .subscribeOn(Schedulers.io())
         .subscribe { gossip =>
-          // gossip to ApplicationMessage, ConsensusMessage
           val msg = converter(gossip)
-          msg match {
-            case x: ApplicationMessage =>
-              //todo tuning
-              handler(msg)
-
-            case x: SCPEnvelope =>
-              val start0 = System.currentTimeMillis()
-              EnvelopePool.put(x)
-              val end0 = System.currentTimeMillis()
-              log.error(
-                s"!!!!!!!!!!!!!! put envelop in pool takes: ${end0 - start0} millis !!!!!!!!!!!!!!")
-              val nodeId = x.value.statement.from
-              //Portal.handleEnvelope(x.value, previousValue)
-              SCPThreadPool.submit(new Runnable {
-                override def run(): Unit = {
-                  EnvelopePool.getUnworkingNom(nodeId).foreach {
-                    x =>
-                      log.error("---------------start working on nom---------------------")
-                      EnvelopePool.setWorkingNom(nodeId, x)
-                      val start = System.currentTimeMillis()
-                      handler(msg)
-                      val end = System.currentTimeMillis()
-                      log.error(
-                        s"============= handle nominate message takes ${end - start} millis ==========")
-                      EnvelopePool.endWorkingNom(nodeId, x)
-                  }
-                }
-              })
-
-              SCPThreadPool.submit(new Runnable {
-                override def run(): Unit = {
-                  EnvelopePool.getUnworkingBallot(nodeId).foreach {
-                    x =>
-                      EnvelopePool.setWorkingBallot(nodeId, x)
-                      log.error("---------------start working on ballot---------------------")
-                      val start = System.currentTimeMillis()
-                      handler(msg)
-                      val end = System.currentTimeMillis()
-                      log.error(
-                        s"============== handle ballot message takes ${end - start} millis ==============")
-                      EnvelopePool.endWorkingBallot(nodeId, x)
-                  }
-                }
-              })
-          }
-
-          /*
-          log.error(s"gossip got message")
-          SCPThreadPool.submit(new Runnable {
-            override def run(): Unit = {
-              log.error("gossip message handling in SCPThreadPool")
-              subscription(gossip)
-              log.error("gossip message handled in SCPThreadPool")
-            }
-          })
-          log.error("gossip message to SCPThreadPool")
-         */
+          MessageReceiver.receive(msg)
         }
       ()
     }
