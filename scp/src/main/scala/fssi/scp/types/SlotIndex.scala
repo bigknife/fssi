@@ -1,6 +1,8 @@
 package fssi.scp.types
 
-case class SlotIndex(value: BigInt) extends AnyVal
+case class SlotIndex(value: BigInt) extends AnyVal {
+  def +(i: BigInt): SlotIndex = SlotIndex(value + i)
+}
 
 object SlotIndex {
   trait Implicits {
