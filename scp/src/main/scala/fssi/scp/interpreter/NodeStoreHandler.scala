@@ -17,8 +17,7 @@ class NodeStoreHandler extends NodeStore.Handler[Stack] with LogSupport {
                                              envelope: Envelope[M]): Stack[Boolean] = Stack {
     setting =>
       val currentSlotIndex = setting.applicationCallback.currentSlotIndex()
-      if (currentSlotIndex.value > slotIndex.value) false
-      else {
+      if (currentSlotIndex.value + 1 == slotIndex.value) {
         val r = envelope.statement.message match {
           case n: Message.Nomination =>
             val nominationStatus: NominationStatus = slotIndex
@@ -52,7 +51,7 @@ class NodeStoreHandler extends NodeStore.Handler[Stack] with LogSupport {
             }
         }
         r.unsafe()
-      }
+      } else false
   }
 
   /** save new envelope, if it's a nomination message, save it into NominationStorage,
