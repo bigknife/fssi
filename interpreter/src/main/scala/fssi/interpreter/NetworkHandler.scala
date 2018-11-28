@@ -216,8 +216,7 @@ class NetworkHandler extends Network.Handler[Stack] with LogSupport {
     clusterOnce.foreach { cluster =>
       printMembers(clusterOnce, memberTag)
       cluster.listenMembership().subscribe { membershipEvent =>
-        log.error(
-          s"receive P2P Membership Event: ${membershipEvent.`type`()}, ${membershipEvent.member()}")
+        log.debug(s"receive P2P Membership Event: ${membershipEvent.`type`()}, ${membershipEvent.member()}")
         printMembers(clusterOnce, memberTag)
       }
       cluster
@@ -260,8 +259,9 @@ class NetworkHandler extends Network.Handler[Stack] with LogSupport {
 
   private def printMembers(clusterOnce: Once[Cluster], memberTag: String): Unit = {
     import scala.collection.JavaConverters._
-    log.info(s"$memberTag current members:")
-    clusterOnce.unsafe().members().asScala.foreach(member => log.info(s"-- $member --"))
+    log.info(s"==== $memberTag current members: =======================")
+    clusterOnce.unsafe().members().asScala.foreach(member => log.info(s"=    -- $member --"))
+    log.info(s"========================================================")
   }
 }
 
