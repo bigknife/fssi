@@ -1,5 +1,6 @@
 package fssi.interpreter.network
 
+import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.{Executors, ThreadFactory, TimeUnit}
 
 import fssi.base.Var
@@ -20,9 +21,10 @@ trait MessageReceiver {
   private val ballotMessagePool: Var[Map[NodeID, Vector[SCPEnvelope]]] = Var(Map.empty)
 
   // monitor thread is used to monitor the message pool
+  private val tc = new AtomicInteger(0)
   private val monitorThread = Executors.newSingleThreadScheduledExecutor(new ThreadFactory {
     override def newThread(r: Runnable): Thread = {
-      val t = new Thread(r, "mr-mon")
+      val t = new Thread(r, s"mr-mon-${tc.getAndIncrement()}")
       t.setDaemon(true)
       t
     }
@@ -201,4 +203,6 @@ trait MessageReceiver {
   }, 5, TimeUnit.SECONDS)
 }
 
-object MessageReceiver extends MessageReceiver
+object MessageReceiver {
+  def apply(): MessageReceiver = new MessageReceiver {}
+}

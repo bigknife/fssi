@@ -5,6 +5,7 @@ package uc
 import bigknife.sop._
 import bigknife.sop.implicits._
 import fssi.scp.types.{NodeID, QuorumSet, SlotIndex}
+import types._
 
 trait InitializeProgram[F[_]] extends SCP[F] with BaseProgram[F] {
 
@@ -23,7 +24,10 @@ trait InitializeProgram[F[_]] extends SCP[F] with BaseProgram[F] {
       _         <- nodeStore.newSlotIndex(slotIndex)
       fakeValue <- nodeService.blockFakeValue(slotIndex)
       nodeId    <- nodeStore.localNode()
-      _         <- handleAppRequest(nodeId, slotIndex, fakeValue, fakeValue)
+      _ <- applicationService.delayExecuteProgram(
+        NOMINATE_TIMER,
+        handleAppRequest(nodeId, slotIndex, fakeValue, fakeValue),
+        0)
     } yield ()
   }
 }
