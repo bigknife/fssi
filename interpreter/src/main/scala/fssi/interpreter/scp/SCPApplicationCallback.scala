@@ -18,6 +18,8 @@ trait SCPApplicationCallback
 
   def coreNodeSetting: CoreNodeSetting
 
+  override def loggerName: String = "fssi.interpreter.scp.callback"
+
   override def validateValue(nodeId: NodeID, slotIndex: SlotIndex, value: Value): Value.Validity =
     value match {
       case BlockValue(block) =>
@@ -94,7 +96,6 @@ trait SCPApplicationCallback
     value match {
       case BlockValue(block) =>
         log.info(s"confirmed block value slotIndex: ${slotIndex.value} --> hash: ${block.hash}")
-      // TODO: handle value confirmed
       case FakeValue(_) =>
     }
   }
