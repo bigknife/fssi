@@ -41,7 +41,7 @@ trait MessageWorker[M <: Message] {
               val t0 = System.currentTimeMillis()
               messageHandler(message)
               val t1 = System.currentTimeMillis()
-              log.info(s"handle blt, time spent: ${t1 - t0} ms")
+              log.info(s"handle ${x.getClass.getSimpleName}, time spent: ${t1 - t0} ms")
             } catch {
               case t: Throwable => log.error("handle application message failed", t)
             }
@@ -54,7 +54,7 @@ trait MessageWorker[M <: Message] {
               val t0 = System.currentTimeMillis()
               messageHandler(message)
               val t1 = System.currentTimeMillis()
-              log.info(s"handle nom, time spent: ${t1 - t0} ms")
+              log.info(s"handle ${x.getClass.getSimpleName}, time spent: ${t1 - t0} ms")
             } catch {
               case t: Throwable => log.error("handle application message failed", t)
             }
@@ -67,7 +67,7 @@ trait MessageWorker[M <: Message] {
               val t0 = System.currentTimeMillis()
               messageHandler(message)
               val t1 = System.currentTimeMillis()
-              log.info(s"handle blt, time spent: ${t1 - t0} ms")
+              log.info(s"handle ${x.getClass.getSimpleName}, time spent: ${t1 - t0} ms")
             } catch {
               case t: Throwable => log.error("handle application message failed", t)
             }

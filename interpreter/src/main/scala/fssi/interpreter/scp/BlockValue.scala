@@ -24,8 +24,7 @@ case class BlockValue(block: Block) extends Value {
   }
 
   override def compare(v: Value): Int = {
-    val start = System.currentTimeMillis()
-    val r = v match {
+    v match {
       case that: BlockValue =>
         val heightOrder = Ordering[BigInt].compare(this.block.height, that.block.height)
         if (heightOrder != 0) heightOrder
@@ -45,8 +44,6 @@ case class BlockValue(block: Block) extends Value {
         }
       case _ => -1
     }
-    log.error(s"compare cost: ${System.currentTimeMillis() - start} millis")
-    r
   }
   override def equals(obj: scala.Any): Boolean = {
     obj match {
