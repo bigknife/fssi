@@ -22,6 +22,7 @@ class TestApp(nodeID: NodeID,
               previousValue: Value,
               standby: Boolean = false)
     extends interpreter.ApplicationCallback {
+  override def currentSlotIndex(): SlotIndex = SlotIndex(0)
 
   // all statements sent to network
   private var statements: Vector[Statement[_ <: Message]] = Vector.empty

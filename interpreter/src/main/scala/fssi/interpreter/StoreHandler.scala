@@ -284,6 +284,7 @@ class StoreHandler extends Store.Handler[Stack] with LogSupport {
           "transfer",
           x.id.asBytesValue.bcBase58,
           x.payer.asBytesValue.bcBase58,
+          x.publicKeyForVerifying.asBytesValue.bcBase58,
           x.payee.asBytesValue.bcBase58,
           x.token.asBytesValue.bcBase58,
           x.signature.asBytesValue.bcBase58,
@@ -295,6 +296,7 @@ class StoreHandler extends Store.Handler[Stack] with LogSupport {
           "deploy",
           x.id.asBytesValue.bcBase58,
           x.owner.asBytesValue.bcBase58,
+          x.publicKeyForVerifying.asBytesValue.bcBase58,
           x.contract.asBytesValue.bcBase58,
           x.signature.asBytesValue.bcBase58,
           x.timestamp.asBytesValue.bcBase58
@@ -305,6 +307,7 @@ class StoreHandler extends Store.Handler[Stack] with LogSupport {
           "run",
           x.id.asBytesValue.bcBase58,
           x.caller.asBytesValue.bcBase58,
+          x.publicKeyForVerifying.asBytesValue.bcBase58,
           x.contractName.asBytesValue.bcBase58,
           x.contractVersion.asBytesValue.bcBase58,
           x.methodAlias.asBytesValue.bcBase58,
@@ -317,7 +320,8 @@ class StoreHandler extends Store.Handler[Stack] with LogSupport {
   }
 
   private def deserializeTransaction(b: TransactionData): Transaction = {
-    new String(b.bytes).split("\n") match {
+    val s = new String(b.bytes)
+    s.split("\n") match {
       case Array("transfer", id, payer, publicKey, payee, token, signature, timestamp) =>
         Transaction.Transfer(
           id = Transaction.ID(BytesValue.decodeBcBase58(id).get.bytes),
@@ -368,7 +372,8 @@ class StoreHandler extends Store.Handler[Stack] with LogSupport {
   private def serializeReceiptLogs(t: Vector[Receipt.Log]): ReceiptData =
     ReceiptData(Receipt.logsToDeterminedBytes(t))
   private def deserializeReceiptLogs(b: ReceiptData): Vector[Receipt.Log] =
-    Receipt.logsFromDeterminedBytes(b.bytes)
+    if (b.bytes.isEmpty) Vector.empty
+    else Receipt.logsFromDeterminedBytes(b.bytes)
 
   override def snapshotTransaction(transaction: Transaction): Stack[Either[FSSIException, Unit]] =
     Stack {
