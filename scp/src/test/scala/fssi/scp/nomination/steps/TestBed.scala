@@ -15,12 +15,12 @@ trait TestBed extends FunSuite with TestSupport with BeforeAndAfterEach with Log
   val (node3, keyOfNode3) = createNodeID()
   val (node4, keyOfNode4) = createNodeID()
 
-  val slot0: SlotIndex     = SlotIndex(0)
+  val slot0: SlotIndex     = SlotIndex(1)
   val slice: Slices        = Slices.flat(4, node0, node1, node2, node3, node4)
   val quorumSet: QuorumSet = QuorumSet.slices(slice)
 
   val app: TestApp =
-    new TestApp(node0, keyOfNode0, SlotIndex(0), quorumSet, TestValue(TreeSet.empty))
+    new TestApp(node0, keyOfNode0, SlotIndex(1), quorumSet, TestValue(TreeSet.empty))
 
   val xValue: Value = TestValue(TreeSet(1, 2))
   val yValue: Value = TestValue(TreeSet(10, 20))

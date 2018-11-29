@@ -20,7 +20,7 @@ trait WaitForV1 extends V1IsTop {
 
     app.onEnvelope(nom1)
     app.numberOfEnvelopes shouldBe 1
-    app.hasNominated(votesY, emptyV)
+    app.shouldHaveNominated(votesY, emptyV)
 
     app.onEnvelope(nom4)
     app.numberOfEnvelopes shouldBe 1

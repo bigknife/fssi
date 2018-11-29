@@ -1,4 +1,5 @@
 package fssi.scp.nomination
+import fssi.scp.interpreter.store.{BallotStatus, NominationStatus}
 import fssi.scp.nomination.steps.{OthersNominateWhatV0Nominates, RestoreNomination, V0IsTop}
 import fssi.scp.types.Ballot
 import fssi.scp.types.Message.Prepare
@@ -26,6 +27,8 @@ class RestoreSuite
   }
 
   test("ballot not started") {
+    NominationStatus.clearInstance(slot1)
+    BallotStatus.cleanInstance(slot1)
     restoreNomination()
 
     app2.numberOfEnvelopes shouldBe 2
@@ -34,6 +37,7 @@ class RestoreSuite
 
   test("ballot started (on value z)") {
     app2.setStatusFromMessage(Prepare(Ballot(1, zValue)))
+    NominationStatus.clearInstance(slot1)
     restoreNomination()
 
     // nomination didn't do anything (already working on z)

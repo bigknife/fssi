@@ -10,7 +10,7 @@ trait OthersNominateWhatV0Nominates extends StepSpec {
 
     votes := ValueSet(xValue)
     app.numberOfEnvelopes shouldBe 1
-    app.hasNominated(votes.unsafe(), accepted.unsafe()) shouldBe true
+    app.shouldHaveNominated(votes.unsafe(), accepted.unsafe())
 
     val nom1: Envelope[Nomination] =
       app.makeNomination(node1, keyOfNode1, votes.unsafe(), accepted.unsafe())
@@ -30,7 +30,7 @@ trait OthersNominateWhatV0Nominates extends StepSpec {
     require(app.onEnvelope(nom3))
     app.numberOfEnvelopes shouldBe 2
     accepted := ValueSet(xValue)
-    app.hasNominated(votes.unsafe(), accepted.unsafe()) shouldBe true
+    app.shouldHaveNominated(votes.unsafe(), accepted.unsafe())
 
     // extra message doesn't do anything
     app.onEnvelope(nom4)

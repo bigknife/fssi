@@ -30,6 +30,6 @@ trait OthersNominateY extends StepSpec{
     app.nominate(xValue)
 
     app.numberOfEnvelopes shouldBe 1
-    app.hasNominated(myVotes.unsafe(), myAccepted.unsafe()) shouldBe true
+    app.shouldHaveNominated(myVotes.unsafe(), myAccepted.unsafe())
   }
 }
