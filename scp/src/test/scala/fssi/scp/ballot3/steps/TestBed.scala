@@ -18,7 +18,7 @@ trait TestBed extends FunSuite with TestSupport with BeforeAndAfterEach with Log
   val (node1, keyOfNode1) = createNodeID()
   val (node2, keyOfNode2) = createNodeID()
 
-  val slot0: SlotIndex     = SlotIndex(0)
+  val slot0: SlotIndex     = SlotIndex(1)
 
   // core3 has an edge case where v-blocking and quorum can be the same
   // v-blocking set size: 2
@@ -27,7 +27,7 @@ trait TestBed extends FunSuite with TestSupport with BeforeAndAfterEach with Log
   val quorumSet: QuorumSet = QuorumSet.slices(slice)
 
   val app: TestApp =
-    new TestApp(node0, keyOfNode0, SlotIndex(0), quorumSet, TestValue(TreeSet.empty))
+    new TestApp(node0, keyOfNode0, SlotIndex(1), quorumSet, TestValue(TreeSet.empty))
 
   val xValue: Value = TestValue(TreeSet(1, 2))
   val yValue: Value = TestValue(TreeSet(10, 20))

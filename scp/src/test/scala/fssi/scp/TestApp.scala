@@ -22,6 +22,7 @@ class TestApp(nodeID: NodeID,
               previousValue: Value,
               standby: Boolean = false)
     extends interpreter.ApplicationCallback {
+
   override def currentSlotIndex(): SlotIndex = SlotIndex(0)
 
   // all statements sent to network
@@ -66,8 +67,6 @@ class TestApp(nodeID: NodeID,
 
     externalizedValues = Vector.empty
   }
-
-  override def currentSlotIndex(): SlotIndex = SlotIndex(1)
 
   override def validateValue(nodeId: NodeID, slotIndex: SlotIndex, value: Value): Value.Validity = {
     Value.Validity.FullyValidated
