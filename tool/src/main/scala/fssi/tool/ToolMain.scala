@@ -30,6 +30,7 @@ object ToolMain extends StackConsoleMain[CmdArgs] {
             createDeployTransaction(accountFile, secretKeyFile, contractFile, outputFile)
           case CreateRunTransactionArgs(accountFile,
                                         secretKeyFile,
+                                        owner,
                                         contractName,
                                         contractVersion,
                                         methodAlias,
@@ -37,6 +38,7 @@ object ToolMain extends StackConsoleMain[CmdArgs] {
                                         outputFile) =>
             createRunTransaction(accountFile,
                                  secretKeyFile,
+                                 owner,
                                  contractName,
                                  contractVersion,
                                  methodAlias,

@@ -41,10 +41,11 @@ object Protocol {
 
   lazy val metaFileName = "contract.meta.conf"
 
-  lazy val ownerKey      = "contract.owner"
-  lazy val nameKey       = "contract.name"
-  lazy val versionKey    = "contract.version"
-  lazy val interfacesKey = "contract.interfaces"
+  lazy val ownerKey       = "contract.owner"
+  lazy val nameKey        = "contract.name"
+  lazy val versionKey     = "contract.version"
+  lazy val descriptionKey = "contract.description"
+  lazy val interfacesKey  = "contract.interfaces"
 
   lazy val allowedResourceFiles = Vector(metaFileName)
 

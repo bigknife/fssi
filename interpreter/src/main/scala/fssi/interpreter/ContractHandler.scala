@@ -61,15 +61,14 @@ class ContractHandler extends Contract.Handler[Stack] {
       sandbox.checkContractDeterminism(pubKey, contractFile)
     }
 
-  override def invokeContract(publicKey: Account.PubKey,
-                              context: Context,
-                              contract: UserContract,
-                              method: UserContract.Method,
-                              params: Option[UserContract.Parameter]): Stack[Receipt] = Stack {
-    val result = sandbox.executeContract(publicKey, context, contract, method, params)
-    // TODO: replenish properties
-    Receipt(Transaction.emptyId, result.isRight, Vector.empty, 0)
-  }
+  override def invokeContract(
+      context: Context,
+      contractCode: UserContract.Code,
+      method: UserContract.Method,
+      params: Option[UserContract.Parameter]): Stack[Either[FSSIException, Unit]] =
+    Stack {
+      sandbox.executeContract(context, contractCode, method, params)
+    }
 
   override def loadContractFromFile(
       pubKey: Account.PubKey,
@@ -114,6 +113,7 @@ class ContractHandler extends Contract.Handler[Stack] {
       transactionId: Transaction.ID,
       caller: Account.ID,
       publicKey: Account.PubKey,
+      owner: Account.ID,
       contractName: UniqueName,
       contractVersion: Version,
       methodAlias: String,
@@ -121,6 +121,7 @@ class ContractHandler extends Contract.Handler[Stack] {
     Transaction.Run(transactionId,
                     caller,
                     publicKey,
+                    owner,
                     contractName,
                     contractVersion,
                     methodAlias,

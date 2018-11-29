@@ -21,9 +21,11 @@ trait BCS {
 
     def getContractData(accountId: String,
                         contractName: String,
+                        version: String,
                         appKey: String): Option[Array[Byte]]
     def putContractData(accountId: String,
                         contractName: String,
+                        version: String,
                         appKey: String,
                         appData: Array[Byte]): Unit
   }
@@ -59,8 +61,9 @@ trait BCS {
 
         override def getContractData(accountId: String,
                                      contractName: String,
+                                     version: String,
                                      appKey: String): Option[Array[Byte]] = {
-          val contractDataKey = StateKey.contractDb(accountId, contractName, appKey)
+          val contractDataKey = StateKey.contractDb(accountId, contractName, version, appKey)
           mptProxy
             .get(contractDataKey.snapshotKey)
             .orElse {
@@ -70,9 +73,10 @@ trait BCS {
 
         override def putContractData(accountId: String,
                                      contractName: String,
+                                     version: String,
                                      appKey: String,
                                      appData: Array[Byte]): Unit = {
-          val contractDataKey = StateKey.contractDb(accountId, contractName, appKey)
+          val contractDataKey = StateKey.contractDb(accountId, contractName, version, appKey)
           mptProxy.put(contractDataKey.snapshotKey, appData)
         }
       }
@@ -250,22 +254,22 @@ trait BCS {
   }
 
   def temporarilyCommit[A](height: BigInt)(f: State => A): Unit = {
-    mpt.transact {proxy =>
+    mpt.transact { proxy =>
       getCachedKeys(proxy, height).foreach(k =>
         proxy.get(k).foreach { data =>
           BCSKey.parseFromSnapshot(k).foreach { bcsKey =>
             proxy.put(bcsKey.persistedKey, data)
           }
-        })
+      })
 
       val h = height
       val state: State = new State {
-        override def height: BigInt = h
-        override def metaRootHash: Array[Byte] = rootHash("meta:persisted:")
-        override def stateRootHash: Array[Byte] = rootHash("state:persisted:")
-        override def blockRootHash: Array[Byte] = rootHash(s"block:$height:persisted:")
+        override def height: BigInt                   = h
+        override def metaRootHash: Array[Byte]        = rootHash("meta:persisted:")
+        override def stateRootHash: Array[Byte]       = rootHash("state:persisted:")
+        override def blockRootHash: Array[Byte]       = rootHash(s"block:$height:persisted:")
         override def transactionRootHash: Array[Byte] = rootHash(s"transaction:$height:persisted:")
-        override def receiptRootHash: Array[Byte] = rootHash(s"receipt:$height:persisted:")
+        override def receiptRootHash: Array[Byte]     = rootHash(s"receipt:$height:persisted:")
 
         private def rootHash(n: String): Array[Byte] = proxy.rootHash(n).get.bytes
       }

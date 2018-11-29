@@ -174,6 +174,13 @@ object CmdArgsParser extends OptionParser[CmdArgs]("fssitool") {
             .action((x, c) =>
               c.asInstanceOf[CreateRunTransactionArgs]
                 .copy(secretKeyFile = x)),
+          opt[String]("owner-id")
+            .abbr("owner")
+            .required()
+            .text("contract owner")
+            .action((x, c) =>
+              c.asInstanceOf[CreateRunTransactionArgs]
+                .copy(owner = Account.ID(BytesValue.decodeBcBase58(x).get.bytes))),
           opt[String]("contract-name")
             .abbr("name")
             .required()

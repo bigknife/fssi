@@ -3,6 +3,7 @@ package biz
 
 import base._
 import fssi.base.BytesValue
+import fssi.types.biz.Contract.UserContract.Parameter.Description
 
 import scala.collection._
 import fssi.types.implicits._
@@ -19,6 +20,9 @@ object Contract {
     */
   case class Version(major: Int, minor: Int, patch: Int) {
     override def toString: String = s"$major.$minor.$patch"
+
+    def >(version: Version): Boolean =
+      major > version.major || (major == version.major && minor > version.minor) || (major == version.major && minor == version.minor && patch > version.patch)
   }
   object Version {
 
@@ -65,6 +69,7 @@ object Contract {
       version: Version,
       code: UserContract.Code,
       methods: immutable.TreeSet[UserContract.Method],
+      description: Description,
       signature: Signature
   ) extends Contract
   object UserContract {
@@ -116,32 +121,41 @@ object Contract {
         def empty: PArray                        = PArray(Array.empty[PrimaryParameter])
         def apply(xs: PrimaryParameter*): PArray = PArray(xs.toArray)
       }
+
+      case class Description(value: Array[Byte])
     }
 
+    def methodsToDeterminedBytes(
+        methods: scala.collection.immutable.TreeSet[UserContract.Method]): Array[Byte] =
+      methods.map(_.toString()).mkString("\n").getBytes("utf-8")
+
+    def bytesToMethods(
+        bytes: Array[Byte]): scala.collection.immutable.TreeSet[UserContract.Method] =
+      scala.collection.immutable.TreeSet(
+        new String(bytes, "utf-8")
+          .split("\n")
+          .map(x => Method.parse(x).get): _*)
+
     def toDeterminedBytes(uc: UserContract): Array[Byte] = {
-      val owner   = uc.owner.asBytesValue.bcBase58
-      val name    = uc.name.asBytesValue.bcBase58
-      val version = uc.version.asBytesValue.bcBase58
-      val code    = uc.code.asBytesValue.bcBase58
-      val methods =
-        uc.methods.map(_.toString).mkString("\n").getBytes("utf-8").asBytesValue.bcBase58
+      val owner     = uc.owner.asBytesValue.bcBase58
+      val name      = uc.name.asBytesValue.bcBase58
+      val version   = uc.version.asBytesValue.bcBase58
+      val code      = uc.code.asBytesValue.bcBase58
+      val methods   = methodsToDeterminedBytes(uc.methods).asBytesValue.bcBase58
+      val desc      = uc.description.asBytesValue.bcBase58
       val signature = uc.signature.asBytesValue.bcBase58
-      Vector(owner, name, version, code, methods, signature).mkString("\n").getBytes("utf-8")
+      Vector(owner, name, version, code, methods, desc, signature).mkString("\n").getBytes("utf-8")
     }
     def fromDeterminedBytes(bytes: Array[Byte]): UserContract = {
       new String(bytes, "utf-8").split("\n") match {
-        case Array(owner, name, version, code, methods, signature) =>
+        case Array(owner, name, version, code, methods, desc, signature) =>
           UserContract(
             owner = Account.ID(BytesValue.decodeBcBase58(owner).get.bytes),
             name = UniqueName(BytesValue.decodeBcBase58(name).get.bytes),
             version = Version(new String(BytesValue.decodeBcBase58(version).get.bytes, "utf-8")).get,
             code = Code(BytesValue.decodeBcBase58(code).get.bytes),
-            methods = {
-              scala.collection.immutable.TreeSet(
-                new String(BytesValue.decodeBcBase58(methods).get.bytes, "utf-8")
-                  .split("\n")
-                  .map(x => Method.parse(x).get): _*)
-            },
+            methods = bytesToMethods(BytesValue.decodeBcBase58(methods).get.bytes),
+            description = Description(BytesValue.decodeBcBase58(desc).get.bytes),
             signature = Signature(BytesValue.decodeBcBase58(signature).get.bytes)
           )
         case _ => throw new RuntimeException("insance user contract data")
@@ -213,6 +227,8 @@ object Contract {
 
       implicit def parameterToBytesValue(p: Parameter): Array[Byte] =
         parameterToDeterminedBytes(p)
+
+      implicit def decToBytesValue(dec: Description): Array[Byte] = dec.value
     }
 
     implicit def userContractToBytesValue(uc: UserContract): Array[Byte] =

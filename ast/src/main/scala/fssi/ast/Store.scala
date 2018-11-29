@@ -57,14 +57,18 @@ import fssi.types.exception.FSSIException
 
   def loadSecretKeyFromFile(secretKeyFile: File): P[F, Either[FSSIException, Account.SecretKey]]
 
+  def canDeployNewTransaction(deploy: Transaction.Deploy): P[F, Boolean]
+
   def snapshotTransaction(transaction: Transaction): P[F, Either[FSSIException, Unit]]
 
-  def loadContract(accountId: Account.ID,
-                   contractName: UniqueName,
-                   version: BizContract.Version): P[F, Option[UserContract]]
+  def loadContractCode(owner: Account.ID,
+                       contractName: UniqueName,
+                       version: BizContract.Version): P[F, Option[UserContract.Code]]
 
-  def prepareKVStore(userContract: UserContract): P[F, KVStore]
-  def prepareTokenQuery(userContract: UserContract): P[F, TokenQuery]
+  def prepareKVStore(caller: Account.ID,
+                     contractName: UniqueName,
+                     version: BizContract.Version): P[F, KVStore]
+  def prepareTokenQuery(): P[F, TokenQuery]
   def createContextInstance(kvStore: KVStore,
                             tokenQuery: TokenQuery,
                             invoker: Account.ID): P[F, Context]

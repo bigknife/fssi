@@ -280,6 +280,25 @@ class StoreHandler extends Store.Handler[Stack] with LogSupport {
       new FSSIException(s"load secret key from file $secretKeyFile failed", Option(e)))
   }
 
+  override def canDeployNewTransaction(deploy: Transaction.Deploy): Stack[Boolean] = Stack {
+    require(bcsVar.isDefined)
+    bcsVar
+      .map { bcs =>
+        val accountId    = deploy.owner.asBytesValue.bcBase58
+        val contractName = deploy.contract.name.asBytesValue.bcBase58
+        bcs.getPersistedState(StateKey.contractVersion(accountId, contractName)).right.get match {
+          case Some(data) =>
+            val str = data.bytes.asBytesValue.utf8String
+            Version(str) match {
+              case Some(value) => deploy.contract.version > value
+              case None        => throw new FSSIException(s"user contract version $str in invalid")
+            }
+          case None => true
+        }
+      }
+      .unsafe()
+  }
+
 // transaction protocol:
   // first line used to express types
   // following lines used to express every fields
@@ -314,6 +333,7 @@ class StoreHandler extends Store.Handler[Stack] with LogSupport {
           x.id.asBytesValue.bcBase58,
           x.caller.asBytesValue.bcBase58,
           x.publicKeyForVerifying.asBytesValue.bcBase58,
+          x.owner.asBytesValue.bcBase58,
           x.contractName.asBytesValue.bcBase58,
           x.contractVersion.asBytesValue.bcBase58,
           x.methodAlias.asBytesValue.bcBase58,
@@ -352,6 +372,7 @@ class StoreHandler extends Store.Handler[Stack] with LogSupport {
                  id,
                  caller,
                  publicKey,
+                 owner,
                  contractName,
                  contractVersion,
                  methodAlias,
@@ -362,6 +383,7 @@ class StoreHandler extends Store.Handler[Stack] with LogSupport {
           id = Transaction.ID(BytesValue.decodeBcBase58(id).get.bytes),
           caller = Account.ID(BytesValue.decodeBcBase58(caller).get.bytes),
           publicKeyForVerifying = Account.PubKey(BytesValue.decodeBcBase58(publicKey).get.bytes),
+          owner = Account.ID(BytesValue.decodeBcBase58(owner).get.bytes),
           contractName = UniqueName(BytesValue.decodeBcBase58(contractName).get.bytes),
           contractVersion =
             Version(new String(BytesValue.decodeBcBase58(contractVersion).get.bytes, "utf-8")).get,
@@ -404,23 +426,37 @@ class StoreHandler extends Store.Handler[Stack] with LogSupport {
                 }
               }
             case deploy: Deploy =>
-              val contract = deploy.contract
-              for {
-                _ <- bcs.putState(
-                  height,
-                  StateKey.contractCode(contract.owner.asBytesValue.bcBase58,
-                                        contract.name.asBytesValue.bcBase58,
-                                        contract.version.toString),
-                  StateData(contract.code.value)
-                )
-                _ <- bcs.putState(
-                  height,
-                  StateKey.contractDesc(contract.owner.asBytesValue.bcBase58,
-                                        contract.asBytesValue.bcBase58,
-                                        contract.version.toString),
-                  serializeContract(contract)
-                )
-              } yield ()
+              val userContract  = deploy.contract
+              val contractOwner = userContract.owner.asBytesValue.bcBase58
+              val contractName  = userContract.name.asBytesValue.bcBase58
+              val version       = userContract.version.asBytesValue.bcBase58
+              bcs.putState(height,
+                           StateKey.contractOwner(contractOwner, contractName),
+                           StateData(userContract.owner.value))
+              val contractsBytesOpt = bcs
+                .getPersistedState(StateKey.contractNames(contractOwner))
+                .right
+                .get
+                .map(_.bytes)
+              val contractsBytes   = contractsBytesOpt.getOrElse(Array.emptyByteArray)
+              val contractNames    = new String(contractsBytes, "utf-8").split("\n").toSet
+              val newContractNames = contractNames + contractName
+              bcs.putState(height,
+                           StateKey.contractNames(contractOwner),
+                           StateData(newContractNames.mkString("\n").getBytes("utf-8")))
+              bcs.putState(height,
+                           StateKey.contractVersion(contractOwner, contractName),
+                           StateData(userContract.version.asBytesValue.bytes))
+              bcs.putState(height,
+                           StateKey.contractCode(contractOwner, contractName, version),
+                           StateData(userContract.code.value))
+              bcs.putState(
+                height,
+                StateKey.contractMethods(contractOwner, contractName, version),
+                StateData(Contract.UserContract.methodsToDeterminedBytes(userContract.methods)))
+              bcs.putState(height,
+                           StateKey.contractDesc(contractOwner, contractName, version),
+                           StateData(userContract.description.value))
             case run: Run =>
               bcs.putState(height,
                            StateKey.contractInvoking(run.caller.asBytesValue.bcBase58,
@@ -433,23 +469,24 @@ class StoreHandler extends Store.Handler[Stack] with LogSupport {
         .map(x => new FSSIException(x.getMessage, Some(x)))
     }
 
-  override def loadContract(accountId: Account.ID,
-                            contractName: UniqueName,
-                            version: Contract.Version): Stack[Option[UserContract]] = Stack {
-    require(bcsVar.isDefined)
-    bcsVar
-      .map { bcs =>
-        bcs
-          .getPersistedState(
-            StateKey.contractDesc(accountId.asBytesValue.bcBase58,
-                                  contractName.asBytesValue.bcBase58,
-                                  version.toString))
-          .right
-          .get
-          .map(deserializeContract)
-      }
-      .unsafe()
-  }
+  override def loadContractCode(owner: Account.ID,
+                                contractName: UniqueName,
+                                version: Contract.Version): Stack[Option[UserContract.Code]] =
+    Stack {
+      require(bcsVar.isDefined)
+      bcsVar
+        .map { bcs =>
+          bcs
+            .getPersistedState(
+              StateKey.contractCode(owner.asBytesValue.bcBase58,
+                                    contractName.asBytesValue.bcBase58,
+                                    version.toString))
+            .right
+            .get
+            .map(x => UserContract.Code(x.bytes))
+        }
+        .unsafe()
+    }
 
   override def currentHeight(): Stack[BigInt] = Stack {
     require(bcsVar.isDefined)
@@ -460,18 +497,21 @@ class StoreHandler extends Store.Handler[Stack] with LogSupport {
       .getOrElse(0)
   }
 
-  override def prepareKVStore(userContract: UserContract): Stack[KVStore] = Stack {
+  override def prepareKVStore(caller: Account.ID,
+                              contractName: UniqueName,
+                              contractVersion: Version): Stack[KVStore] = Stack {
     require(bcsVar.isDefined)
     bcsVar
       .map { bcs =>
-        val height = BigInt(bcs.getPersistedMeta(MetaKey.Height).right.get.get.bytes)
+        val height    = BigInt(bcs.getPersistedMeta(MetaKey.Height).right.get.get.bytes)
+        val accountId = caller.asBytesValue.bcBase58
+        val name      = contractName.asBytesValue.bcBase58
+        val version   = contractVersion.asBytesValue.bcBase58
         new KVStore {
           override def put(key: Array[Byte], value: Array[Byte]): Unit = {
             bcs.putState(
               height,
-              StateKey.contractDb(userContract.owner.asBytesValue.bcBase58,
-                                  userContract.name.asBytesValue.bcBase58,
-                                  key.asBytesValue.bcBase58),
+              StateKey.contractDb(accountId, name, version, key.asBytesValue.bcBase58),
               StateData(value)
             ) match {
               case Right(_) => ()
@@ -480,15 +520,13 @@ class StoreHandler extends Store.Handler[Stack] with LogSupport {
           }
           override def get(key: Array[Byte]): Array[Byte] = {
             bcs.getStateGreedily(
-              StateKey.contractDb(userContract.owner.asBytesValue.bcBase58,
-                                  userContract.name.asBytesValue.bcBase58,
-                                  key.asBytesValue.bcBase58)) match {
+              StateKey.contractDb(accountId, name, version, key.asBytesValue.bcBase58)) match {
               case Right(data) =>
                 data.map(_.bytes) match {
                   case Some(value) => value
                   case None =>
                     throw new FSSIException(
-                      s"value of key ${key.asBytesValue.bcBase58} not found in contract ${userContract.name.asBytesValue.bcBase58} for owner ${userContract.name.asBytesValue.bcBase58}")
+                      s"value of key ${key.asBytesValue.bcBase58} not found in contract $name for caller $accountId")
                 }
               case Left(e) => throw e
             }
@@ -498,7 +536,7 @@ class StoreHandler extends Store.Handler[Stack] with LogSupport {
       .unsafe()
   }
 
-  override def prepareTokenQuery(userContract: UserContract): Stack[TokenQuery] = Stack {
+  override def prepareTokenQuery(): Stack[TokenQuery] = Stack {
     require(bcsVar.isDefined)
     bcsVar
       .map { bcs =>
@@ -519,12 +557,6 @@ class StoreHandler extends Store.Handler[Stack] with LogSupport {
       override def currentAccountId(): String = invoker.asBytesValue.bcBase58
     }
   }
-
-  private def serializeContract(contract: UserContract): StateData =
-    StateData(contract.asJson.noSpaces.asBytesValue.bytes)
-
-  private def deserializeContract(stateData: StateData): UserContract =
-    parse(stateData.bytes.asBytesValue.utf8String).right.get.as[UserContract].right.get
 }
 
 object StoreHandler {

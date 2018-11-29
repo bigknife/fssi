@@ -29,6 +29,8 @@ contract {
   name = "${contract name}"
 
   version = "${contract.version}"
+  
+  description = "${contract.description}"
 
   interfaces {
     # 模板  methodAlias = qualifiedClassName#methodName(Context,arguments*)

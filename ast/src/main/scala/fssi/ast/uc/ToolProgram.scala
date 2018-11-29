@@ -55,6 +55,7 @@ trait ToolProgram[F[_]] {
   def createRunTransaction(
       accountFile: File,
       secretKeyFile: File,
+      owner: Account.ID,
       contractName: UniqueName,
       contractVersion: Contract.Version,
       methodAlias: String,

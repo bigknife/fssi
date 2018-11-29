@@ -56,35 +56,67 @@ trait HandleTransactionProgram[F[_]] extends CoreNodeProgram[F] with BaseProgram
   }
 
   private def runDeployTransaction(deploy: Deploy): SP[F, Receipt] = {
+    val owner = deploy.owner.asBytesValue.bcBase58
+    val name  = deploy.contract.name.asBytesValue.bcBase58
     for {
-      _ <- log.info(
-        s"owner ${deploy.owner.asBytesValue.bcBase58} starts deploying contract ${deploy.contract.name.asBytesValue.bcBase58}")
-      _ <- store.snapshotTransaction(deploy)
-      _ <- log.info(
-        s"owner ${deploy.owner.asBytesValue.bcBase58} deployed contract ${deploy.contract.name.asBytesValue.bcBase58}")
-    } yield Receipt(deploy.id, success = true, Vector.empty, 0)
+      _      <- log.info(s"owner $owner starts deploying contract $name")
+      passed <- store.canDeployNewTransaction(deploy)
+      r <- ifM(
+        passed.pureSP[F], {
+          for {
+            _ <- store.snapshotTransaction(deploy)
+            _ <- log.info(s"owner $owner deployed contract $name success")
+          } yield Receipt(deploy.id, success = true, Vector.empty, 0)
+        }
+      ) {
+        for {
+          _ <- log.info(s"owner $owner deployed contract $name failed")
+        } yield Receipt(deploy.id, success = false, Vector.empty, 0)
+      }
+    } yield r
   }
 
   private def runRunTransaction(run: Run): SP[F, Receipt] = {
+    val caller          = run.caller.asBytesValue.bcBase58
+    val owner           = run.owner.asBytesValue.bcBase58
+    val contractName    = run.contractName.asBytesValue.bcBase58
+    val contractVersion = run.contractVersion
+    val info =
+      s"caller $caller start running contract $contractName belonged to $owner at version $contractVersion"
     for {
-      _ <- log.info(
-        s"caller ${run.caller.asBytesValue.bcBase58} start running contract ${run.contractName.asBytesValue.bcBase58} at version ${run.contractVersion}")
-      userContractOpt <- store.loadContract(run.caller, run.contractName, run.contractVersion)
-      userContract = userContractOpt.get
+      _ <- log.info(info)
+      userContractCodeOpt <- store.loadContractCode(run.owner,
+                                                    run.contractName,
+                                                    run.contractVersion)
       _ <- requireM(
-        userContractOpt.nonEmpty,
+        userContractCodeOpt.nonEmpty,
         new FSSIException(
-          s"contract ${run.contractName.asBytesValue.bcBase58} at version ${run.contractVersion} published by ${run.caller.asBytesValue.bcBase58} not found")
+          s"contract $contractName at version $contractVersion published by $contractVersion not found")
       )
-      kvStore    <- store.prepareKVStore(userContract)
-      tokenQuery <- store.prepareTokenQuery(userContract)
+      kvStore    <- store.prepareKVStore(run.caller, run.contractName, run.contractVersion)
+      tokenQuery <- store.prepareTokenQuery()
       context    <- store.createContextInstance(kvStore, tokenQuery, run.caller)
-      receipt <- contract.invokeContract(run.publicKeyForVerifying,
-                                         context,
-                                         userContractOpt.get,
-                                         Method(run.methodAlias, ""),
-                                         run.contractParameter)
-      _ <- store.snapshotTransaction(run)
-    } yield receipt
+      result <- contract.invokeContract(context,
+                                        userContractCodeOpt.get,
+                                        Method(run.methodAlias, ""),
+                                        run.contractParameter)
+      r <- ifM(
+        result.isRight.pureSP[F], {
+          for {
+            _ <- store.snapshotTransaction(run)
+            msg = s"caller $caller run contract $contractName belonged to $owner at version $contractVersion success"
+            _ <- log.info(msg)
+            logs = Vector(Receipt.Log(label = "INFO", info), Receipt.Log("INFO", msg))
+          } yield Receipt(run.id, success = true, logs, 0)
+        }
+      ) {
+        val error =
+          s"caller $caller run contract $contractName belonged to $owner at version $contractVersion failed: ${result.left.get.getMessage}"
+        for {
+          _ <- log.error(error)
+          logs = Vector(Receipt.Log("INFO", info), Receipt.Log("ERROR", error))
+        } yield Receipt(run.id, success = false, logs, 0)
+      }
+    } yield r
   }
 }

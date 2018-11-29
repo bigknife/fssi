@@ -57,7 +57,7 @@ class SandBoxTest extends FunSuite {
     val parameter  = Option(PString(account1))
     val r = for {
       contract <- sandBox.buildUnsignedContract(pubKey, outputFile)
-      _        <- sandBox.executeContract(pubKey, context, contract, Method(methodName, full), parameter)
+      _        <- sandBox.executeContract(context, contract.code, Method(methodName, full), parameter)
     } yield ()
     r match {
       case Right(_) => println("SUCCESS: run contract success")

@@ -3,6 +3,7 @@ package types
 package json
 
 import fssi.types.base.{Signature, UniqueName}
+import fssi.types.biz.Contract.UserContract.Parameter.Description
 import fssi.types.biz.Contract.Version
 import fssi.types.biz.{Account, Contract}
 import io.circe._
@@ -25,12 +26,14 @@ class ContractJsonCodecSpec extends FunSuite {
     val method =
       Contract.UserContract.Method("register", "fssi.contract.Banana.register(Contract,String)")
     val methods   = TreeSet(method)
+    val desc      = Description("contract description".getBytes("utf-8"))
     val signature = Signature("signature".getBytes())
     val userContract = Contract.UserContract(owner = owner,
                                              name = name,
                                              version = version,
                                              code = code,
                                              methods = methods,
+                                             description = desc,
                                              signature = signature)
 
     val jsonString = userContract.asJson.spaces2
