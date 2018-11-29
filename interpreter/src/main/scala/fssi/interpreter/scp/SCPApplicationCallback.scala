@@ -136,7 +136,7 @@ trait SCPApplicationCallback
   }
 
   override def currentSlotIndex(): SlotIndex = {
-    val block = StoreHandler.instance.getLatestDeterminedBlock()(coreNodeSetting).unsafeRunSync()
-    SlotIndex(block.height)
+    val blockHeight = StoreHandler.instance.currentHeight()(coreNodeSetting).unsafeRunSync()
+    SlotIndex(blockHeight)
   }
 }

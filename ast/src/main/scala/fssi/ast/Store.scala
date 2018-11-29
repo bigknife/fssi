@@ -68,4 +68,6 @@ import fssi.types.exception.FSSIException
   def createContextInstance(kvStore: KVStore,
                             tokenQuery: TokenQuery,
                             invoker: Account.ID): P[F, Context]
+
+  def currentHeight(): P[F, BigInt]
 }

@@ -451,6 +451,15 @@ class StoreHandler extends Store.Handler[Stack] with LogSupport {
       .unsafe()
   }
 
+  override def currentHeight(): Stack[BigInt] = Stack {
+    require(bcsVar.isDefined)
+    bcsVar
+      .map { bcs =>
+        BigInt(bcs.getPersistedMeta(MetaKey.Height).right.get.get.bytes)
+      }
+      .getOrElse(0)
+  }
+
   override def prepareKVStore(userContract: UserContract): Stack[KVStore] = Stack {
     require(bcsVar.isDefined)
     bcsVar

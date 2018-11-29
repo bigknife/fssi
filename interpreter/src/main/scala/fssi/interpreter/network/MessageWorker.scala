@@ -3,7 +3,10 @@ package fssi.interpreter.network
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.{Executors, ThreadFactory}
 
+import fssi.base.Var
+import fssi.interpreter.{Setting, StoreHandler}
 import fssi.interpreter.scp.SCPEnvelope
+import fssi.scp.interpreter.ApplicationCallback
 import fssi.types.biz.Message
 import org.slf4j.LoggerFactory
 
@@ -45,6 +48,20 @@ trait MessageWorker[M <: Message] {
       r1
     })
 
+  private val consensusLatestSlotIndex: Var[BigInt] = Var(BigInt(0))
+
+  private def updateLatestSlotIndex(envelope: SCPEnvelope): Unit = {
+    val comingSlotIndex = envelope.value.statement.slotIndex.value
+    if (comingSlotIndex > consensusLatestSlotIndex.unsafe()) {
+      // trigger updating.
+      // the value will be the min of persisted and coming
+      val block = StoreHandler.instance.getLatestDeterminedBlock()(Setting.defaultInstance).unsafeRunSync()
+      val target = block.height.min(comingSlotIndex)
+      consensusLatestSlotIndex.update(_ => target)
+    }
+    else ()
+  }
+
 
   private def _work(message: M): Unit = {
     type NM = fssi.scp.types.Message.Nomination
@@ -71,9 +88,21 @@ trait MessageWorker[M <: Message] {
           override def run(): Unit =
             try {
               val t0 = System.currentTimeMillis()
-              messageHandler(message)
+              updateLatestSlotIndex(x)
+              val coming = x.value.statement.slotIndex.value
+              consensusLatestSlotIndex.map(_ + 1 == coming).foreach {
+                case true =>
+                  messageHandler(message)
+                case false =>
+                  if (log.isDebugEnabled()) {
+                    log.debug(s"ignore previous nom message, current=${consensusLatestSlotIndex.unsafe()}, " +
+                      s"coming=$coming")
+                  }
+                  else ()
+              }
+
               val t1 = System.currentTimeMillis()
-              log.info(s"handle nom, time spent: ${t1 - t0} ms")
+              log.info(s"handle nom@$coming, time spent: ${t1 - t0} ms")
             } catch {
               case t: Throwable => log.error("handle application message failed", t)
             }
@@ -83,10 +112,6 @@ trait MessageWorker[M <: Message] {
         ballotT.submit(new Runnable {
           override def run(): Unit =
             try {
-              val t0 = System.currentTimeMillis()
-              messageHandler(message)
-              val t1 = System.currentTimeMillis()
-
               val msgType = x.value.statement.message match {
                 case _: PM => "prepare"
                 case _: CM => "confirm"
@@ -94,7 +119,23 @@ trait MessageWorker[M <: Message] {
                 case _: NM => "nom"
               }
 
-              log.info(s"handle $msgType, time spent: ${t1 - t0} ms")
+              val t0 = System.currentTimeMillis()
+              val coming = x.value.statement.slotIndex.value
+
+              updateLatestSlotIndex(x)
+              consensusLatestSlotIndex.map(_ + 1 == coming).foreach {
+                case true =>
+                  messageHandler(message)
+                case false =>
+                  if (log.isDebugEnabled()) {
+                    log.debug(s"ignore previous $msgType message, current=${consensusLatestSlotIndex.unsafe()}, " +
+                      s"coming=$coming")
+                  }
+                  else ()
+              }
+
+              val t1 = System.currentTimeMillis()
+              log.info(s"handle $msgType@$coming, time spent: ${t1 - t0} ms")
             } catch {
               case t: Throwable => log.error("handle application message failed", t)
             }
