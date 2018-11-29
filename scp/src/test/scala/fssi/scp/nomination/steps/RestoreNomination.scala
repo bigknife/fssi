@@ -13,7 +13,7 @@ trait RestoreNomination extends StepSpec {
 
     app2.nominate(yValue)
     app2.numberOfEnvelopes shouldBe 1
-    app2.hasNominated(votes2.unsafe(), ValueSet(xValue)) shouldBe true
+    app2.shouldHaveNominated(votes2.unsafe(), ValueSet(xValue))
 
     val nom1: Envelope[Nomination] =
       app2.makeNomination(node1, keyOfNode1, ValueSet(xValue), ValueSet.empty)

@@ -177,9 +177,9 @@ class TestApp(nodeID: NodeID,
     expectedCompositeValue = compositeValue
   }
 
-  def hasNominated(voted: ValueSet, accepted: ValueSet): Boolean =
+  def shouldHaveNominated(voted: ValueSet, accepted: ValueSet): Unit =
     statements.lastOption map (_.copy(timestamp = started)) contains statementOf(
-      Nomination(voted, accepted))
+      Nomination(voted, accepted)) shouldBe true
 
   def numberOfEnvelopes: Int = {
     statements.size

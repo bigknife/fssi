@@ -22,7 +22,7 @@ trait OthersAcceptYAfterXPrepared extends StepSpec {
     // v-blocking
     app.onEnvelope(acc2)
     app.numberOfEnvelopes shouldBe 4
-    app.hasNominated(votes2.unsafe(), votes2.unsafe()) shouldBe true
+    app.shouldHaveNominated(votes2.unsafe(), votes2.unsafe())
 
     app.forecastNomination(votes2.unsafe(), Some(zValue))
 
