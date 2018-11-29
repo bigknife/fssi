@@ -110,7 +110,6 @@ class LogServiceHandler extends LogService.Handler[Stack] {
       bs.latestEnvelopes.foreach { map =>
         map.foreach {
           case (nodeId, env) =>
-            val node = nodeId.asBytesValue.bcBase58
             env.statement.message match {
               case x: Message.Nomination =>
                 envelopeSavedLogger.debug(

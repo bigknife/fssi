@@ -67,6 +67,11 @@
         <appender-ref ref="MESSAGE" />
     </logger>
 
+    <!-- store -->
+    <logger name="fssi.store" additivity="false" level="warn">
+        <appender-ref ref="COLOR" />
+    </logger>
+
     <root level="error">
         <appender-ref ref="COLOR"/>
     </root>

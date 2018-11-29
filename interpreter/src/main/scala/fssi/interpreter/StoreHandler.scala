@@ -94,7 +94,7 @@ class StoreHandler extends Store.Handler[Stack] with LogSupport {
 
           val metaChainId  = bcs.getPersistedMeta(MetaKey.ChainID).right.get.get
           val blockChainId = bcs.getPersistedBlock(BlockKey.blockChainId(height)).right.get.get
-          require(metaChainId.bytes sameElements blockChainId.bytes, "chain id is not consistent")
+          require(metaChainId.bytes sameElements blockChainId.bytes, "in id is not consistent")
 
           val preWorldState = bcs.getPersistedBlock(BlockKey.preWorldState(height)).right.get.get
           val preBlockWorldState =
@@ -106,7 +106,7 @@ class StoreHandler extends Store.Handler[Stack] with LogSupport {
           val preTimestamp =
             BigInt(1,
                    bcs.getPersistedBlock(BlockKey.blockTimestamp(height - 1)).right.get.get.bytes)
-          require(preTimestamp > timestamp, "timestamp is not sane")
+          require(preTimestamp < timestamp, "timestamp is not sane")
 
           checkHeight(height - 1)
         } else ()
@@ -219,6 +219,12 @@ class StoreHandler extends Store.Handler[Stack] with LogSupport {
       //block
       bcs.putMeta(height, MetaKey.ChainID, MetaData(block.chainId.getBytes("utf-8")))
       bcs.putMeta(height, MetaKey.Height, MetaData(block.height.toByteArray))
+      //todo: remove magic string
+      bcs.putMeta(height, MetaKey.Version, MetaData("0.1".getBytes("utf-8")))
+
+      bcs.putBlock(BlockKey.blockHeight(height), BlockData(height.toByteArray))
+      bcs.putBlock(BlockKey.blockChainId(height), BlockData(block.chainId.getBytes("utf-8")))
+
       bcs.putBlock(BlockKey.preWorldState(height), BlockData(block.preWorldState.value))
       bcs.putBlock(BlockKey.curWorldState(height), BlockData(block.curWorldState.value))
       bcs.putBlock(BlockKey.transactionList(height),
