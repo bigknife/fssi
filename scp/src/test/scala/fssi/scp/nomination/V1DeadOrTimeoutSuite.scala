@@ -18,14 +18,14 @@ class V1DeadOrTimeoutSuite extends FunSuite with V1DeadOrTimeout {
     app.liftNodePriority(node0)
     app.nominate(xValue) shouldBe true
     app.numberOfEnvelopes shouldBe 1
-    app.hasNominated(votesX, emptyV)
+    app.shouldHaveNominated(votesX, emptyV)
   }
 
   test("v2 is new top node"){
     app.liftNodePriority(node2)
     app.nominate(xValue) shouldBe true
     app.numberOfEnvelopes shouldBe 1
-    app.hasNominated(votesX, emptyV)
+    app.shouldHaveNominated(votesZ, emptyV)
   }
 
   test("v3 is new top node"){
