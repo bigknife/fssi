@@ -100,7 +100,7 @@ trait AttemptConfirmCommitProgram[F[_]]
             msg              <- createBallotMessage(slotIndex)
             _                <- emitBallot(slotIndex, previousValue, msg)
             currentSlotIndex <- currentSlotIndex()
-            _                <- nominateFakeValue(SlotIndex(currentSlotIndex.value + 1))
+            _                <- nominateFakeValue(currentSlotIndex + 1)
           } yield ()
         }
       } yield confirmed

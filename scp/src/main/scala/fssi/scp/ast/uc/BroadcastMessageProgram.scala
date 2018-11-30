@@ -16,21 +16,22 @@ trait BroadcastMessageProgram[F[_]] extends SCP[F] with BaseProgram[F] {
     */
   def broadcastMessageRegularly(): SP[F, Unit] = {
     for {
-      slotIndex       <- currentSlotIndex()
+      slotIndex <- currentSlotIndex()
+      nextSlotIndex = slotIndex + 1
       timeout         <- broadcastTimeout()
-      _               <- debug(s"broadcast $slotIndex message regularly,timeout: $timeout millis")
-      nominateMessage <- nominateEnvelope(slotIndex)
+      _               <- debug(s"broadcast $nextSlotIndex message regularly,timeout: $timeout millis")
+      nominateMessage <- nominateEnvelope(nextSlotIndex)
       _ <- ifThen(nominateMessage.nonEmpty) {
         for {
-          _ <- broadcastEnvelope(slotIndex, nominateMessage.get)
+          _ <- broadcastEnvelope(nextSlotIndex, nominateMessage.get)
           _ <- infoSentEnvelope(nominateMessage.get)
         } yield ()
       }
 
-      ballotMessage <- ballotEnvelope(slotIndex)
+      ballotMessage <- ballotEnvelope(nextSlotIndex)
       _ <- ifThen(ballotMessage.nonEmpty) {
         for {
-          _ <- broadcastEnvelope(slotIndex, ballotMessage.get)
+          _ <- broadcastEnvelope(nextSlotIndex, ballotMessage.get)
           _ <- infoSentEnvelope(ballotMessage.get)
         } yield ()
       }
