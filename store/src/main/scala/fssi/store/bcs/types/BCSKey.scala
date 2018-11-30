@@ -148,14 +148,20 @@ object BCSKey {
       override val scheme: String = s"transaction:$height"
     }
 
+    def transactionIds(height: BigInt): TransactionKey = new _TransactionKey(height) {
+      override val segments: Array[String] = Array("transactionIds")
+    }
+
     def transaction(height: BigInt, transactionId: String): TransactionKey =
       new _TransactionKey(height) {
         override val segments: Array[String] = Array(transactionId)
       }
-    private val P = "transaction:(\\d+):snapshot://(.+)".r
+    private val P  = "transaction:(\\d+):snapshot://(.+)".r
+    private val ID = "transaction:(\\d+):snapshot://transactionIds".r
     def parseFromSnapshot(str: String): Option[TransactionKey] = {
       str match {
         case P(height, transactionId) => Some(transaction(BigInt(height), transactionId))
+        case ID(height)               => Some(transactionIds(BigInt(height)))
         case _                        => None
       }
     }

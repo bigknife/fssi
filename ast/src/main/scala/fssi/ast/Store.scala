@@ -74,4 +74,6 @@ import fssi.types.exception.FSSIException
                             invoker: Account.ID): P[F, Context]
 
   def currentHeight(): P[F, BigInt]
+
+  def isTransactionDuplicated(transaction: Transaction): P[F, Boolean]
 }

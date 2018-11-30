@@ -18,6 +18,8 @@ trait HandleTransactionProgram[F[_]] extends CoreNodeProgram[F] with BaseProgram
     for {
       verifyResult      <- crypto.verifyTransactionSignature(transaction)
       _                 <- requireM(verifyResult(), new RuntimeException("transaction signature tampered"))
+      duplicated        <- store.isTransactionDuplicated(transaction)
+      _                 <- requireM(!duplicated, new RuntimeException("transaction id duplicated"))
       receipt           <- runTransaction(transaction)
       determinedBlock   <- store.getLatestDeterminedBlock()
       currentWorldState <- store.getCurrentWorldState()
@@ -70,7 +72,8 @@ trait HandleTransactionProgram[F[_]] extends CoreNodeProgram[F] with BaseProgram
         }
       ) {
         for {
-          _ <- log.info(s"owner $owner deployed contract $name failed")
+          _ <- log.error(
+            s"owner $owner deployed contract $name failed, please check contract owner and version")
         } yield Receipt(deploy.id, success = false, Vector.empty, 0)
       }
     } yield r

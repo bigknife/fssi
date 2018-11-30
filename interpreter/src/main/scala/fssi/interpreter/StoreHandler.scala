@@ -408,7 +408,18 @@ class StoreHandler extends Store.Handler[Stack] with LogSupport {
       require(bcsVar.isDefined)
       bcsVar
         .map { bcs =>
-          val height = BigInt(bcs.getPersistedMeta(MetaKey.Height).right.get.get.bytes)
+          val height = BigInt(bcs.getPersistedMeta(MetaKey.Height).right.get.get.bytes) + 1
+          val transactionIdsBytes = bcs
+            .getSnapshotTransaction(TransactionKey.transactionIds(height))
+            .right
+            .get
+            .map(_.bytes)
+            .getOrElse(Array.emptyByteArray)
+          val transactionIds =
+            new String(transactionIdsBytes, "utf-8").split("\n").toSet.filter(_.nonEmpty)
+          val newTransactionIds = transactionIds + transaction.id.asBytesValue.bcBase58
+          bcs.putTransaction(TransactionKey.transactionIds(height),
+                             TransactionData(newTransactionIds.mkString("\n").getBytes("utf-8")))
           transaction match {
             case transfer: Transfer =>
               bcs.snapshotTransact { proxy =>
@@ -433,13 +444,14 @@ class StoreHandler extends Store.Handler[Stack] with LogSupport {
               bcs.putState(height,
                            StateKey.contractOwner(contractOwner, contractName),
                            StateData(userContract.owner.value))
-              val contractsBytesOpt = bcs
+              val contractsBytes = bcs
                 .getPersistedState(StateKey.contractNames(contractOwner))
                 .right
                 .get
                 .map(_.bytes)
-              val contractsBytes   = contractsBytesOpt.getOrElse(Array.emptyByteArray)
-              val contractNames    = new String(contractsBytes, "utf-8").split("\n").toSet
+                .getOrElse(Array.emptyByteArray)
+              val contractNames =
+                new String(contractsBytes, "utf-8").split("\n").toSet.filter(_.nonEmpty)
               val newContractNames = contractNames + contractName
               bcs.putState(height,
                            StateKey.contractNames(contractOwner),
@@ -480,7 +492,7 @@ class StoreHandler extends Store.Handler[Stack] with LogSupport {
             .getPersistedState(
               StateKey.contractCode(owner.asBytesValue.bcBase58,
                                     contractName.asBytesValue.bcBase58,
-                                    version.toString))
+                                    version.asBytesValue.bcBase58))
             .right
             .get
             .map(x => UserContract.Code(x.bytes))
@@ -503,7 +515,7 @@ class StoreHandler extends Store.Handler[Stack] with LogSupport {
     require(bcsVar.isDefined)
     bcsVar
       .map { bcs =>
-        val height    = BigInt(bcs.getPersistedMeta(MetaKey.Height).right.get.get.bytes)
+        val height    = BigInt(bcs.getPersistedMeta(MetaKey.Height).right.get.get.bytes) + 1
         val accountId = caller.asBytesValue.bcBase58
         val name      = contractName.asBytesValue.bcBase58
         val version   = contractVersion.asBytesValue.bcBase58
@@ -556,6 +568,36 @@ class StoreHandler extends Store.Handler[Stack] with LogSupport {
       override def tokenQuery(): TokenQuery   = query
       override def currentAccountId(): String = invoker.asBytesValue.bcBase58
     }
+  }
+
+  override def isTransactionDuplicated(transaction: Transaction): Stack[Boolean] = Stack {
+    require(bcsVar.isDefined)
+    bcsVar
+      .map { bcs =>
+        val height = BigInt(bcs.getPersistedMeta(MetaKey.Height).right.get.get.bytes)
+        val currentBlockTransactionIdsBytes = bcs
+          .getSnapshotTransaction(TransactionKey.transactionIds(height + 1))
+          .right
+          .get
+          .map(_.bytes)
+          .getOrElse(Array.emptyByteArray)
+        val currentBlockTransactionIds =
+          new String(currentBlockTransactionIdsBytes, "utf-8").split("\n").toSet
+        val transactionId = transaction.id.asBytesValue.bcBase58
+        if (currentBlockTransactionIds.contains(transactionId)) true
+        else {
+          val preBlockTransactionIdsBytes = bcs
+            .getPersistedTransaction(TransactionKey.transactionIds(height))
+            .right
+            .get
+            .map(_.bytes)
+            .getOrElse(Array.emptyByteArray)
+          val preBlockTransactionIds =
+            new String(preBlockTransactionIdsBytes, "utf-8").split("\n").toSet
+          preBlockTransactionIds.contains(transactionId)
+        }
+      }
+      .unsafe()
   }
 }
 
