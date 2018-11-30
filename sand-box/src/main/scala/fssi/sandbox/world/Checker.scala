@@ -328,6 +328,8 @@ class Checker extends BaseLogger {
       errors += s"can't not find $nameKey in contract meta conf file"
     if (!configReader.hasConfigKey(versionKey))
       errors += s"can't not find $versionKey in contract meta conf file"
+    if (!configReader.hasConfigKey(descriptionKey))
+      errors += s"can't not find $descriptionKey in contract meta conf file"
     if (!configReader.hasConfigKey(interfacesKey))
       errors += s"can't not find $interfacesKey in contract meta conf file"
     if (errors.isEmpty) Right(())

@@ -38,7 +38,7 @@ class V0XOthersYSuite extends FunSuite with BeforeAndAfterEach with V0IsTop with
     app.onEnvelope(nom4)
     app.numberOfEnvelopes shouldBe 2
     myVotes := ValueSet(xValue, yValue)
-    app.hasNominated(myVotes.unsafe(), acceptedY.unsafe())
+    app.shouldHaveNominated(myVotes.unsafe(), acceptedY.unsafe())
   }
 
   test("others myAccepted y") {
@@ -59,7 +59,7 @@ class V0XOthersYSuite extends FunSuite with BeforeAndAfterEach with V0IsTop with
     // this causes 'y' to be accepted (v-blocking)
     app.onEnvelope(acc2)
     app.numberOfEnvelopes shouldBe 2
-    app.hasNominated(ValueSet(xValue, yValue), acceptedY.unsafe())
+    app.shouldHaveNominated(ValueSet(xValue, yValue), acceptedY.unsafe())
 
     app.forecastNomination(ValueSet(yValue), Some(yValue))
 

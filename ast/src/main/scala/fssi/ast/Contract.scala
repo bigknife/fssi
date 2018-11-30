@@ -29,11 +29,10 @@ import fssi.types.biz.Message.ApplicationMessage.TransactionMessage
                              output: File): P[F, Either[FSSIException, Unit]]
   def checkContractDeterminism(pubKey: Account.PubKey,
                                contractFile: File): P[F, Either[FSSIException, Unit]]
-  def invokeContract(publicKey: Account.PubKey,
-                     context: Context,
-                     contract: UserContract,
+  def invokeContract(context: Context,
+                     contractCode: UserContract.Code,
                      method: UserContract.Method,
-                     params: Option[UserContract.Parameter]): P[F, Receipt]
+                     params: Option[UserContract.Parameter]): P[F, Either[FSSIException, Unit]]
   def loadContractFromFile(pubKey: Account.PubKey,
                            contractFile: File): P[F, Either[FSSIException, UserContract]]
   def generateTransactionID(): P[F, Transaction.ID]
@@ -49,6 +48,7 @@ import fssi.types.biz.Message.ApplicationMessage.TransactionMessage
   def createRunTransaction(transactionId: Transaction.ID,
                            caller: Account.ID,
                            publicKey: Account.PubKey,
+                           owner: Account.ID,
                            contractName: UniqueName,
                            contractVersion: Version,
                            methodAlias: String,

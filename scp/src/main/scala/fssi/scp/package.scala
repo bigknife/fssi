@@ -1,6 +1,6 @@
 package fssi
 import fssi.scp.ast.uc.SCP
-import fssi.scp.interpreter.Setting
+import fssi.scp.interpreter.{SCPThreadPool, Setting}
 import fssi.scp.types._
 
 package object scp {
@@ -17,9 +17,11 @@ package object scp {
     }
 
     def handleRequest(nodeId: NodeID, slotIndex: SlotIndex, previousValue: Value, value: Value)(
-        implicit setting: Setting): Boolean = {
-      val program = scp.handleAppRequest(nodeId, slotIndex, value, previousValue)
-      fssi.scp.interpreter.runner.runIO(program, setting).unsafeRunSync()
+        implicit setting: Setting): Unit = {
+      SCPThreadPool.submit(() => {
+        val program = scp.handleAppRequest(nodeId, slotIndex, value, previousValue)
+        fssi.scp.interpreter.runner.runIO(program, setting).unsafeRunSync()
+      })
     }
 
     def handleEnvelope[M <: Message](envelope: Envelope[M], previousValue: Value)(

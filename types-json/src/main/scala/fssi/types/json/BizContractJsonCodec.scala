@@ -102,4 +102,10 @@ trait BizContractJsonCodec {
       case x @ Right(_) => x
     }
   }
+
+  implicit val bizUserContractDescJsonEncoder: Encoder[Description] =
+    Encoder[String].contramap(_.value.asBytesValue.bcBase58)
+
+  implicit val bizUserContractDescJsonDecoder: Decoder[Description] =
+    Decoder[String].map(x => Description(BytesValue.decodeBcBase58(x).get.bytes))
 }

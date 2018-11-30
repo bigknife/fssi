@@ -23,6 +23,6 @@ class WaitForV1Suite extends FunSuite with WaitForV1 {
     // picks up 'x' from v1 (as we already have 'y')
     // which also happens to causes 'x' to be accepted
     app.numberOfEnvelopes shouldBe 2
-    app.hasNominated(votesXY, votesX)
+    app.shouldHaveNominated(votesXY, votesX)
   }
 }

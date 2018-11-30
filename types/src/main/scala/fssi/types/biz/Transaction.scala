@@ -64,6 +64,7 @@ object Transaction {
       id: Transaction.ID,
       caller: Account.ID,
       publicKeyForVerifying: Account.PubKey,
+      owner: Account.ID,
       contractName: UniqueName,
       contractVersion: Contract.Version,
       methodAlias: String,
@@ -101,7 +102,7 @@ object Transaction {
 
     implicit def bizRunToBytesValue(a: Run): Array[Byte] = {
       import a._
-      (id.asBytesValue.any ++ caller.asBytesValue.any ++ publicKeyForVerifying.asBytesValue.any ++ contractName.asBytesValue.any ++
+      (id.asBytesValue.any ++ caller.asBytesValue.any ++ publicKeyForVerifying.asBytesValue.any ++ owner.asBytesValue.any ++ contractName.asBytesValue.any ++
         contractVersion.asBytesValue.any ++ methodAlias.asBytesValue.any ++ contractParameter.asBytesValue.any ++
         signature.asBytesValue.any ++ timestamp.asBytesValue.any).bytes
     }

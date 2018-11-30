@@ -90,17 +90,17 @@ trait AttemptConfirmCommitProgram[F[_]]
         phaseNow <- currentBallotPhase(slotIndex)
         _ <- ifThen(phase == Ballot.Phase.Confirm && phaseNow == Ballot.Phase.Externalize) {
           for {
-            _                <- info(s"[$slotIndex][AttemptConfirmCommit] phase upgraded to Externalize")
-            c                <- currentConfirmedBallot(slotIndex)
-            _                <- phaseUpgradeToExternalize(slotIndex, c)
-            currentSlotIndex <- currentSlotIndex()
-            _                <- nominateFakeValue(SlotIndex(currentSlotIndex.value + 1))
+            _ <- info(s"[$slotIndex][AttemptConfirmCommit] phase upgraded to Externalize")
+            c <- currentConfirmedBallot(slotIndex)
+            _ <- phaseUpgradeToExternalize(slotIndex, c)
           } yield ()
         }
         _ <- ifThen(confirmed) {
           for {
-            msg <- createBallotMessage(slotIndex)
-            _   <- emitBallot(slotIndex, previousValue, msg)
+            msg              <- createBallotMessage(slotIndex)
+            _                <- emitBallot(slotIndex, previousValue, msg)
+            currentSlotIndex <- currentSlotIndex()
+            _                <- nominateFakeValue(SlotIndex(currentSlotIndex.value + 1))
           } yield ()
         }
       } yield confirmed

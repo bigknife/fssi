@@ -11,6 +11,7 @@ import fssi.sandbox.inf._
 import fssi.sandbox.types.{ContractMeta, SandBoxVersion}
 import fssi.sandbox.visitor.clazz.DegradeClassVersionVisitor
 import fssi.types.base._
+import fssi.types.biz.Contract.UserContract.Parameter.Description
 import fssi.types.biz.Contract.UserContract._
 import fssi.types.biz.Contract.{UserContract, Version => ContractVersion}
 import fssi.types.biz.{Account, Contract}
@@ -114,6 +115,7 @@ class Builder extends BaseLogger {
           version = ContractVersion(contractMeta.version.value).get,
           code = Code(codeBytes),
           methods = TreeSet(contractMeta.interfaces.map(m => Method(m.alias, m.descriptor)): _*),
+          description = Description(contractMeta.description.value.asBytesValue.bytes),
           signature = Signature.empty
         )
       }
@@ -141,6 +143,7 @@ class Builder extends BaseLogger {
           ContractMeta(owner = configReader.owner,
                        name = configReader.name,
                        version = configReader.version,
+                       description = configReader.description,
                        interfaces = methodDescriptors)
         }
       } else {

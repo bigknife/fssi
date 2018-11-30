@@ -65,6 +65,7 @@ trait TransactionProgram[F[_]] extends ToolProgram[F] with BaseProgram[F] {
   def createRunTransaction(
       accountFile: File,
       secretKeyFile: File,
+      owner: Account.ID,
       contractName: UniqueName,
       contractVersion: Contract.Version,
       methodAlias: String,
@@ -79,6 +80,7 @@ trait TransactionProgram[F[_]] extends ToolProgram[F] with BaseProgram[F] {
       run <- contract.createRunTransaction(transactionId,
                                            account.id,
                                            account.pubKey,
+                                           owner,
                                            contractName,
                                            contractVersion,
                                            methodAlias,

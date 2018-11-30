@@ -20,6 +20,7 @@ trait CreateRunContractTransactionToolProgram extends BaseToolProgram {
 
   def apply(accountFile: File,
             secretKeyFile: File,
+            owner: Account.ID,
             contractName: UniqueName,
             contractVersion: Contract.Version,
             methodAlias: String,
@@ -29,6 +30,7 @@ trait CreateRunContractTransactionToolProgram extends BaseToolProgram {
     for {
       transaction <- toolProgram.createRunTransaction(accountFile,
                                                       secretKeyFile,
+                                                      owner,
                                                       contractName,
                                                       contractVersion,
                                                       methodAlias,

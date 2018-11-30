@@ -51,6 +51,7 @@ object CmdArgs {
   case class CreateRunTransactionArgs(
       accountFile: File = new File(""),
       secretKeyFile: File = new File(""),
+      owner: Account.ID = Account.emptyId,
       contractName: UniqueName = UniqueName.empty,
       contractVersion: Contract.Version = Contract.Version.empty,
       methodAlias: String = "",

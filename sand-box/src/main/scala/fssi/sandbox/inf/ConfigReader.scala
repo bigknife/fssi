@@ -5,7 +5,7 @@ package inf
 import java.io.File
 
 import com.typesafe.config._
-import fssi.sandbox.types.ContractMeta.{MethodDescriptor, Name, Owner, Version}
+import fssi.sandbox.types.ContractMeta._
 
 import scala.collection.JavaConverters._
 import fssi.sandbox.types.Protocol._
@@ -19,6 +19,8 @@ case class ConfigReader(configFile: File) {
   lazy val name: Name = Name(config.getString(nameKey))
 
   lazy val version: Version = Version(config.getString(versionKey))
+
+  lazy val description: Description = Description(config.getString(descriptionKey))
 
   lazy val methodDescriptors: Vector[MethodDescriptor] = config
     .getObject(interfacesKey)

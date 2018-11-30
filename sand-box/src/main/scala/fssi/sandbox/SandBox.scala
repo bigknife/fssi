@@ -50,14 +50,13 @@ class SandBox {
   }
 
   def executeContract(
-      publicKey: Account.PubKey,
       context: Context,
-      contract: Contract.UserContract,
+      contractCode: Contract.UserContract.Code,
       method: Contract.UserContract.Method,
       params: Option[Contract.UserContract.Parameter]): Either[FSSIException, Unit] = {
     for {
       tmpPath      <- builder.createDefaultContractTmpPath
-      contractPath <- builder.buildContractProjectFromBytes(contract.code.value, tmpPath)
+      contractPath <- builder.buildContractProjectFromBytes(contractCode.value, tmpPath)
       methodMeta   <- builder.buildContractMeta(contractPath)(tmpPath)(false)
       methods      <- checker.checkContractDescriptor(methodMeta.interfaces)(tmpPath)(false)
       _            <- checker.isContractMethodExposed(method, params, methods)(tmpPath)(false)

@@ -131,9 +131,9 @@ object BCSKey {
         case P(height, key) if key == "curWorldState" => Some(curWorldState(BigInt(height)))
         case P(height, key) if key == "transactions"  => Some(transactionList(BigInt(height)))
         case P(height, key) if key == "receipts"      => Some(receiptList(BigInt(height)))
-        case P(height, key) if key == "timestamp" => Some(blockTimestamp(BigInt(height)))
-        case P(height, key) if key == "hash"      => Some(blockHash(BigInt(height)))
-        case _                                    => None
+        case P(height, key) if key == "timestamp"     => Some(blockTimestamp(BigInt(height)))
+        case P(height, key) if key == "hash"          => Some(blockHash(BigInt(height)))
+        case _                                        => None
       }
     }
   }
@@ -204,6 +204,29 @@ object BCSKey {
       override val segments: Array[String] = Array(accountId, "balance")
     }
 
+    def contractOwner(accountId: String, contractName: String): StateKey =
+      new _StateKey(accountId) {
+        override val segments: Array[String] =
+          Array(accountId, "contracts", contractName, "owner")
+      }
+
+    def contractNames(accountId: String): StateKey =
+      new _StateKey(accountId) {
+        override val segments: Array[String] = Array(accountId, "contracts")
+      }
+
+    def contractVersion(accountId: String, contractName: String): StateKey =
+      new _StateKey(accountId) {
+        override val segments: Array[String] =
+          Array(accountId, "contracts", contractName, "version")
+      }
+
+    def contractMethods(accountId: String, contractName: String, version: String): StateKey =
+      new _StateKey(accountId) {
+        override val segments: Array[String] =
+          Array(accountId, "contracts", contractName, "versions", version, "methods")
+      }
+
     def contractDesc(accountId: String, contractName: String, version: String): StateKey =
       new _StateKey(accountId) {
         override val segments: Array[String] =
@@ -222,10 +245,19 @@ object BCSKey {
           Array(accountId, "contracts", contractName, "versions", version, "runtime")
       }
 
-    def contractDb(accountId: String, contractName: String, appKey: String): StateKey =
+    def contractDb(accountId: String,
+                   contractName: String,
+                   version: String,
+                   appKey: String): StateKey =
       new _StateKey(accountId) {
         override val segments: Array[String] =
-          Array(accountId, "contracts", contractName, "db", URLEncoder.encode(appKey, "utf-8"))
+          Array(accountId,
+                "contracts",
+                contractName,
+                "versions",
+                version,
+                "db",
+                URLEncoder.encode(appKey, "utf-8"))
       }
 
     def contractInvoking(accountId: String, contractName: String): StateKey =
@@ -234,21 +266,33 @@ object BCSKey {
           Array(accountId, "contracts", contractName, "invoke")
       }
     private val BALANCE = "state:snapshot://(.+)/balance".r
+    private val CONTRACT_BASE_INFO =
+      "state:snapshot://(.+)/contracts/(.+)/(owner|version)".r
+    private val CONTRACT_NAMES_INFO =
+      "state:snapshot://(.+)/contracts".r
     private val CONTRACT_INFO =
-      "state:snapshot://(.+)/contracts/(.+)/versions/(.+)/(desc|code|runtime)".r
-    private val CONTRACT_DB       = "state:snapshot://(.+)/contracts/(.+)/db/(.+)".r
+      "state:snapshot://(.+)/contracts/(.+)/versions/(.+)/(name|version|code|methods|desc|runtime)".r
+    private val CONTRACT_DB       = "state:snapshot://(.+)/contracts/(.+)/versions/(.+)/db/(.+)".r
     private val CONTRACT_INVOKING = "state:snapshot://(.+)/contracts/(.+)/invoke".r
 
     def parseFromSnapshot(str: String): Option[StateKey] = str match {
       case BALANCE(accountId) => Some(balance(accountId))
-      case CONTRACT_INFO(accountId, contractName, version, tag) if tag == "desc" =>
-        Some(contractDesc(accountId, contractName, version))
+      case CONTRACT_BASE_INFO(accountId, contractName, tag) if tag == "owner" =>
+        Some(contractOwner(accountId, contractName))
+      case CONTRACT_NAMES_INFO(accountId) =>
+        Some(contractNames(accountId))
+      case CONTRACT_BASE_INFO(accountId, contractName, tag) if tag == "version" =>
+        Some(contractVersion(accountId, contractName))
       case CONTRACT_INFO(accountId, contractName, version, tag) if tag == "code" =>
         Some(contractCode(accountId, contractName, version))
+      case CONTRACT_INFO(accountId, contractName, version, tag) if tag == "methods" =>
+        Some(contractMethods(accountId, contractName, version))
+      case CONTRACT_INFO(accountId, contractName, version, tag) if tag == "desc" =>
+        Some(contractDesc(accountId, contractName, version))
       case CONTRACT_INFO(accountId, contractName, version, tag) if tag == "runtime" =>
         Some(contractRuntime(accountId, contractName, version))
-      case CONTRACT_DB(accountId, contractName, appKey) =>
-        Some(contractDb(accountId, contractName, appKey))
+      case CONTRACT_DB(accountId, contractName, version, appKey) =>
+        Some(contractDb(accountId, contractName, version, appKey))
       case CONTRACT_INVOKING(accountId, contractName) =>
         Some(contractInvoking(accountId, contractName))
       case _ => None
