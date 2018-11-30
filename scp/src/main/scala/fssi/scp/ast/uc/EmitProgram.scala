@@ -45,7 +45,8 @@ trait EmitProgram[F[_]] extends SCP[F] with BaseProgram[F] {
       _ <- ifThen(shouldProcess) {
         for {
           _ <- info(s"[$slotIndex] emitting message: $message should be processed ")
-          _ <- ifThen(handleSCPEnvelope(envelope, previousValue)) {
+          handled <- handleSCPEnvelope(envelope, previousValue)
+          _ <- ifThen(handled) {
             for {
               emitable <- canEmit(slotIndex, envelope)
               _ <- ifThen(emitable) {

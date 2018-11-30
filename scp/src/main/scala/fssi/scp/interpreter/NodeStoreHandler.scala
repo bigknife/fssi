@@ -16,8 +16,6 @@ class NodeStoreHandler extends NodeStore.Handler[Stack] with LogSupport {
                                              slotIndex: SlotIndex,
                                              envelope: Envelope[M]): Stack[Boolean] = Stack {
     setting =>
-      val currentSlotIndex = setting.applicationCallback.currentSlotIndex()
-      if (currentSlotIndex.value + 1 == slotIndex.value) {
         val r = envelope.statement.message match {
           case n: Message.Nomination =>
             val nominationStatus: NominationStatus = slotIndex
@@ -28,13 +26,6 @@ class NodeStoreHandler extends NodeStore.Handler[Stack] with LogSupport {
                       .exists(_.rawBytes.length == 0) && setting.localNode == nodeId =>
                   true
                 case Some(env) =>
-//              val oldMessage = env.statement.message
-//              val isDiff     = env != envelope
-//              val votedGrow = n.voted.size >= oldMessage.voted.size && oldMessage.voted.forall(
-//                n.voted.contains)
-//              val acceptedGrow = n.accepted.size >= oldMessage.accepted.size && oldMessage.accepted
-//                .forall(n.accepted.contains)
-//              isDiff && votedGrow && acceptedGrow
                   n.isNewerThan(env.statement.message)
                 case None => true
               }
@@ -51,7 +42,6 @@ class NodeStoreHandler extends NodeStore.Handler[Stack] with LogSupport {
             }
         }
         r.unsafe()
-      } else false
   }
 
   /** save new envelope, if it's a nomination message, save it into NominationStorage,
