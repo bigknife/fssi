@@ -91,7 +91,7 @@ trait HandleTransactionProgram[F[_]] extends CoreNodeProgram[F] with BaseProgram
       _ <- requireM(
         userContractCodeOpt.nonEmpty,
         new FSSIException(
-          s"contract $contractName at version $contractVersion published by $contractVersion not found")
+          s"contract $contractName at version $contractVersion published by $owner not found")
       )
       kvStore    <- store.prepareKVStore(run.caller, run.contractName, run.contractVersion)
       tokenQuery <- store.prepareTokenQuery()
