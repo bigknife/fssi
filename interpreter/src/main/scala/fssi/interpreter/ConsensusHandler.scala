@@ -22,7 +22,7 @@ class ConsensusHandler
       setting match {
         case coreNodeSetting: CoreNodeSetting =>
           implicit val scpSetting: fssi.scp.interpreter.Setting = resolveSCPSetting(coreNodeSetting)
-          Portal.initialize(SlotIndex(currentHeight + 1))
+          Portal.initialize(SlotIndex(currentHeight))
         case _ =>
       }
   }
@@ -76,7 +76,7 @@ class ConsensusHandler
               val previousValue = BlockValue(lastDeterminedBlock)
               Portal.handleEnvelope(x.value, previousValue)
 
-              /*
+            /*
               val nodeId = envelope.statement.from
               EnvelopePool.put(x)
 
