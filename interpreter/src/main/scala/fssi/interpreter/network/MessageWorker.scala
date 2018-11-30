@@ -55,9 +55,9 @@ trait MessageWorker[M <: Message] {
     if (comingSlotIndex > consensusLatestSlotIndex.unsafe()) {
       // trigger updating.
       // the value will be the min of persisted and coming
-      val block = StoreHandler.instance.getLatestDeterminedBlock()(Setting.defaultInstance).unsafeRunSync()
-      val target = block.height.min(comingSlotIndex)
-      consensusLatestSlotIndex.update(_ => target)
+      //val block = StoreHandler.instance.getLatestDeterminedBlock()(Setting.defaultInstance).unsafeRunSync()
+      //val target = block.height.min(comingSlotIndex)
+      consensusLatestSlotIndex.update(_ => comingSlotIndex)
     }
     else ()
   }
@@ -90,7 +90,7 @@ trait MessageWorker[M <: Message] {
               val t0 = System.currentTimeMillis()
               updateLatestSlotIndex(x)
               val coming = x.value.statement.slotIndex.value
-              consensusLatestSlotIndex.map(_ + 1 == coming).foreach {
+              consensusLatestSlotIndex.map(_  == coming).foreach {
                 case true =>
                   messageHandler(message)
                 case false =>
@@ -123,7 +123,7 @@ trait MessageWorker[M <: Message] {
               val coming = x.value.statement.slotIndex.value
 
               updateLatestSlotIndex(x)
-              consensusLatestSlotIndex.map(_ + 1 == coming).foreach {
+              consensusLatestSlotIndex.map(_ == coming).foreach {
                 case true =>
                   messageHandler(message)
                 case false =>
