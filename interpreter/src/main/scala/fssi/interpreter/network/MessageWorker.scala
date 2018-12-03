@@ -5,7 +5,7 @@ import java.util.concurrent.{Executors, ThreadFactory}
 
 import fssi.base.Var
 import fssi.interpreter.{Setting, StoreHandler}
-import fssi.interpreter.scp.SCPEnvelope
+import fssi.interpreter.scp.{SCPApplicationCallback, SCPEnvelope}
 import fssi.scp.interpreter.ApplicationCallback
 import fssi.types.biz.Message
 import org.slf4j.LoggerFactory
@@ -13,6 +13,7 @@ import org.slf4j.LoggerFactory
 trait MessageWorker[M <: Message] {
   val messageReceiver: MessageReceiver
   val messageHandler: Message.Handler[M, Unit]
+  val workingSlotIndex: BigInt
 
   private lazy val log = LoggerFactory.getLogger("fssi.interpreter.network.message.worker")
 
@@ -21,12 +22,11 @@ trait MessageWorker[M <: Message] {
   private lazy val btc = new AtomicInteger(0)
   private lazy val wtc = new AtomicInteger(0)
   private lazy val applicationT =
-    Executors.newSingleThreadExecutor((r: Runnable) =>
-      {
-        val r1 = new Thread(r, s"mw-app-${atc.getAndIncrement()}")
-        r1.setDaemon(true)
-        r1
-      })
+    Executors.newSingleThreadExecutor((r: Runnable) => {
+      val r1 = new Thread(r, s"mw-app-${atc.getAndIncrement()}")
+      r1.setDaemon(true)
+      r1
+    })
   private lazy val nomT =
     Executors.newSingleThreadExecutor((r: Runnable) => {
       val r1 = new Thread(r, s"mw-nom-${ntc.getAndIncrement()}")
@@ -48,20 +48,13 @@ trait MessageWorker[M <: Message] {
       r1
     })
 
-  private val consensusLatestSlotIndex: Var[BigInt] = Var(BigInt(0))
+  private lazy val _workingSlotIndex: Var[BigInt] = Var(workingSlotIndex)
 
-  private def updateLatestSlotIndex(envelope: SCPEnvelope): Unit = {
-    val comingSlotIndex = envelope.value.statement.slotIndex.value
-    if (comingSlotIndex > consensusLatestSlotIndex.unsafe()) {
-      // trigger updating.
-      // the value will be the min of persisted and coming
-      //val block = StoreHandler.instance.getLatestDeterminedBlock()(Setting.defaultInstance).unsafeRunSync()
-      //val target = block.height.min(comingSlotIndex)
-      consensusLatestSlotIndex.update(_ => comingSlotIndex)
-    }
-    else ()
+  def incSlotIndex(): Unit = _workingSlotIndex.update(_ + 1)
+
+  def needHandleEnvelope(envelope: SCPEnvelope): Boolean = {
+    _workingSlotIndex.map(_ == envelope.value.statement.slotIndex.value).unsafe()
   }
-
 
   private def _work(message: M): Unit = {
     type NM = fssi.scp.types.Message.Nomination
@@ -87,22 +80,20 @@ trait MessageWorker[M <: Message] {
         nomT.submit(new Runnable {
           override def run(): Unit =
             try {
-              val t0 = System.currentTimeMillis()
-              updateLatestSlotIndex(x)
+              val t0     = System.currentTimeMillis()
               val coming = x.value.statement.slotIndex.value
-              consensusLatestSlotIndex.map(_  == coming).foreach {
-                case true =>
-                  messageHandler(message)
-                case false =>
-                  if (log.isDebugEnabled()) {
-                    log.debug(s"ignore previous nom message, current=${consensusLatestSlotIndex.unsafe()}, " +
+              if (needHandleEnvelope(x)) {
+                messageHandler(message)
+              } else {
+                if (log.isDebugEnabled()) {
+                  log.debug(
+                    s"ignore previous nom message, current=${_workingSlotIndex.unsafe()}, " +
                       s"coming=$coming")
-                  }
-                  else ()
+                }
               }
 
               val t1 = System.currentTimeMillis()
-              log.info(s"handle nom@$coming, time spent: ${t1 - t0} ms")
+              log.info(s"handle nom(${x.value.statement.from})@$coming, time spent: ${t1 - t0} ms")
             } catch {
               case t: Throwable => log.error("handle application message failed", t)
             }
@@ -119,23 +110,21 @@ trait MessageWorker[M <: Message] {
                 case _: NM => "nom"
               }
 
-              val t0 = System.currentTimeMillis()
+              val t0     = System.currentTimeMillis()
               val coming = x.value.statement.slotIndex.value
-
-              updateLatestSlotIndex(x)
-              consensusLatestSlotIndex.map(_ == coming).foreach {
-                case true =>
-                  messageHandler(message)
-                case false =>
-                  if (log.isDebugEnabled()) {
-                    log.debug(s"ignore previous $msgType message, current=${consensusLatestSlotIndex.unsafe()}, " +
+              if (needHandleEnvelope(x)) {
+                messageHandler(message)
+              } else {
+                if (log.isDebugEnabled()) {
+                  log.debug(
+                    s"ignore previous $msgType message, current=${_workingSlotIndex.unsafe()}, " +
                       s"coming=$coming")
-                  }
-                  else ()
+                }
               }
 
               val t1 = System.currentTimeMillis()
-              log.info(s"handle $msgType@$coming, time spent: ${t1 - t0} ms")
+              log.info(
+                s"handle $msgType(${x.value.statement.from})@$coming, time spent: ${t1 - t0} ms")
             } catch {
               case t: Throwable => log.error("handle application message failed", t)
             }
@@ -196,9 +185,17 @@ trait MessageWorker[M <: Message] {
 
 object MessageWorker {
   def apply[M <: Message](_messageReceiver: MessageReceiver,
-                          _messageHandler: Message.Handler[M, Unit]): MessageWorker[M] =
-    new MessageWorker[M] {
+                          _messageHandler: Message.Handler[M, Unit],
+                          __workingSlotIndex: BigInt): MessageWorker[M] = {
+    val m = new MessageWorker[M] {
       override val messageReceiver: MessageReceiver         = _messageReceiver
       override val messageHandler: Message.Handler[M, Unit] = _messageHandler
+      override val workingSlotIndex: BigInt                 = __workingSlotIndex
     }
+
+    SCPApplicationCallback.listenValueExternalized { slotIdx =>
+      m.incSlotIndex()
+    }
+    m
+  }
 }

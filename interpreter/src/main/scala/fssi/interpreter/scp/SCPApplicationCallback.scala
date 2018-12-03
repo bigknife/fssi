@@ -1,5 +1,6 @@
 package fssi.interpreter.scp
 import fssi.ast.uc.CoreNodeProgram
+import fssi.base.Var
 import fssi.interpreter.Setting.CoreNodeSetting
 import fssi.interpreter.{LogSupport, UnsignedBytesSupport}
 import fssi.scp.interpreter.{ApplicationCallback, FakeValue}
@@ -19,6 +20,8 @@ trait SCPApplicationCallback
   def coreNodeSetting: CoreNodeSetting
 
   override def loggerName: String = "fssi.interpreter.scp.callback"
+
+
 
   override def validateValue(nodeId: NodeID, slotIndex: SlotIndex, value: Value): Value.Validity =
     value match {
@@ -111,6 +114,10 @@ trait SCPApplicationCallback
           runner
             .runIO(CoreNodeProgram.instance.newBlockGenerated(block), coreNodeSetting)
             .unsafeRunSync()
+
+          SCPApplicationCallback.valueExternalizedListener.foreach {listeners =>
+            listeners.foreach(_(slotIndex.value))
+          }
           log.info(s"externalized: ${slotIndex.value} --> ${block.hash}")
         }
       case FakeValue(_) =>
@@ -139,4 +146,10 @@ trait SCPApplicationCallback
     val blockHeight = StoreHandler.instance.currentHeight()(coreNodeSetting).unsafeRunSync()
     SlotIndex(blockHeight)
   }
+}
+
+object SCPApplicationCallback {
+  private val valueExternalizedListener: Var[Vector[BigInt => Unit]] = Var(Vector.empty)
+
+  def listenValueExternalized(fun: BigInt => Unit): Unit = valueExternalizedListener.update(_ :+ fun)
 }

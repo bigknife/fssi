@@ -10,6 +10,8 @@ import fssi.utils.Once
 import io.scalecube.cluster.{Cluster, ClusterConfig}
 import io.scalecube.transport.{Address, Message => CubeMessage}
 import bigknife.jsonrpc._
+import cats.data.Kleisli
+import cats.effect.IO
 import fssi.interpreter.jsonrpc.EdgeJsonRpcResource
 import fssi.interpreter.network.{MessageReceiver, MessageWorker}
 import fssi.interpreter.scp.SCPEnvelope
@@ -21,7 +23,7 @@ import io.circe._
 import io.circe.parser._
 import io.circe.generic.auto._
 import fssi.interpreter.scp.BlockValue.implicits._
-import fssi.scp.interpreter.SCPThreadPool
+import fssi.scp.interpreter.{NodeStoreHandler, SCPThreadPool}
 import fssi.scp.interpreter.json.implicits._
 import fssi.types.json.implicits._
 import rx.schedulers.Schedulers
@@ -194,18 +196,20 @@ class NetworkHandler extends Network.Handler[Stack] with LogSupport {
       Cluster.joinAwait(config)
     }
 
+    val workingSlotIndex = StoreHandler.instance.currentHeight().map(_ + 1).run(Setting.defaultInstance).unsafeRunSync()
+
     p2pConfig match {
       case _: ConsensusConfig =>
         consensusMessageWorker := {
           consensusMessageReceiver := MessageReceiver()
-          val x = MessageWorker(consensusMessageReceiver.unsafe(), handler)
+          val x = MessageWorker(consensusMessageReceiver.unsafe(), handler, workingSlotIndex)
           x.startWork()
           x
         }
       case _: ApplicationConfig =>
         appMessageWorker := {
           appMessageReceiver := MessageReceiver()
-          val x = MessageWorker(appMessageReceiver.unsafe(), handler)
+          val x = MessageWorker(appMessageReceiver.unsafe(), handler, workingSlotIndex)
           x.startWork()
           x
         }
@@ -258,7 +262,7 @@ class NetworkHandler extends Network.Handler[Stack] with LogSupport {
 
   private def printMembers(clusterOnce: Once[Cluster], memberTag: String): Unit = {
     import scala.collection.JavaConverters._
-    log.info(s"==== $memberTag current members: =======================")
+    log.info(s"==== $memberTag current members: ===================")
     clusterOnce.unsafe().members().asScala.foreach(member => log.info(s"=    -- $member --"))
     log.info(s"========================================================")
   }
