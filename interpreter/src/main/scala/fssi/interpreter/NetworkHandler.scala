@@ -44,7 +44,7 @@ class NetworkHandler extends Network.Handler[Stack] with LogSupport {
 
   override def startupConsensusNode(
       handler: Message.Handler[ConsensusMessage, Unit]): Stack[ConsensusNode] = Stack { setting =>
-    val p2pConfig = setting match {
+    val consensusConfig = setting match {
       case coreNodeSetting: CoreNodeSetting => coreNodeSetting.config.consensusConfig
       case _                                => throw new RuntimeException("unsupported setting to startup consensus")
     }
@@ -61,7 +61,7 @@ class NetworkHandler extends Network.Handler[Stack] with LogSupport {
       }
     }
     val node =
-      startP2PNode(consensusOnce, p2pConfig, converter, handler, "consensus node")
+      startP2PNode(consensusOnce, consensusConfig, converter, handler, setting, "consensus node")
     ConsensusNode(node)
   }
 
@@ -75,7 +75,12 @@ class NetworkHandler extends Network.Handler[Stack] with LogSupport {
       }
       val converter: CubeMessage => ApplicationMessage = cube => cube.data[ApplicationMessage]
       val node =
-        startP2PNode(applicationOnce, applicationConfig, converter, handler, "application node")
+        startP2PNode(applicationOnce,
+                     applicationConfig,
+                     converter,
+                     handler,
+                     setting,
+                     "application node")
       ApplicationNode(node)
   }
 
@@ -181,6 +186,7 @@ class NetworkHandler extends Network.Handler[Stack] with LogSupport {
                                          p2pConfig: P2PConfig,
                                          converter: CubeMessage => M,
                                          handler: Message.Handler[M, Unit],
+                                         setting: Setting,
                                          memberTag: String): Node = {
 
     clusterOnce := {
@@ -196,7 +202,8 @@ class NetworkHandler extends Network.Handler[Stack] with LogSupport {
       Cluster.joinAwait(config)
     }
 
-    val workingSlotIndex = StoreHandler.instance.currentHeight().map(_ + 1).run(Setting.defaultInstance).unsafeRunSync()
+    val workingSlotIndex =
+      StoreHandler.instance.currentHeight().map(_ + 1).run(setting).unsafeRunSync()
 
     p2pConfig match {
       case _: ConsensusConfig =>
