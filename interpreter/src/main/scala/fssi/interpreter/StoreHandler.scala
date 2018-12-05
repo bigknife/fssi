@@ -14,6 +14,7 @@ import io.circe.generic.auto._
 import better.files._
 import fssi.base.BytesValue
 import fssi.contract.lib.{Context, KVStore, TokenQuery}
+import fssi.interpreter.Setting.CoreNodeSetting
 import fssi.scp.interpreter.store.Var
 
 import scala.util.Try
@@ -501,13 +502,17 @@ class StoreHandler extends Store.Handler[Stack] with LogSupport with UnsignedByt
         .unsafe()
     }
 
-  override def currentHeight(): Stack[BigInt] = Stack {
-    require(bcsVar.isDefined)
-    bcsVar
-      .map { bcs =>
-        BigInt(bcs.getPersistedMeta(MetaKey.Height).right.get.get.bytes)
-      }
-      .getOrElse(0)
+  override def currentHeight(): Stack[BigInt] = Stack { setting =>
+    setting match {
+      case _: CoreNodeSetting =>
+        require(bcsVar.isDefined)
+        bcsVar
+          .map { bcs =>
+            BigInt(bcs.getPersistedMeta(MetaKey.Height).right.get.get.bytes)
+          }
+          .getOrElse(0)
+      case _ => -1
+    }
   }
 
   override def prepareKVStore(caller: Account.ID,
