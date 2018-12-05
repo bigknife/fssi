@@ -7,6 +7,7 @@ import fssi.types.biz._
 import java.io._
 
 import fssi.contract.lib.{Context, KVStore, TokenQuery}
+import fssi.types.ReceiptSet
 import fssi.types.base.{UniqueName, WorldState}
 import fssi.types.biz.Contract.UserContract
 import fssi.types.biz.{Contract => BizContract}
@@ -49,7 +50,7 @@ import fssi.types.exception.FSSIException
 
   def getLatestDeterminedBlock(): P[F, Block]
 
-  def getCurrentWorldState(): P[F, WorldState]
+  def getPreviousBlockWorldState(): P[F, WorldState]
 
   def persistBlock(block: Block): P[F, Unit]
 
@@ -76,4 +77,6 @@ import fssi.types.exception.FSSIException
   def currentHeight(): P[F, BigInt]
 
   def isTransactionDuplicated(transaction: Transaction): P[F, Boolean]
+
+  def blockToPersist(block: Block, receipts: ReceiptSet): P[F, Block]
 }

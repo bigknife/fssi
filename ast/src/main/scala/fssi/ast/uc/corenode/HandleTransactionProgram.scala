@@ -14,23 +14,25 @@ import fssi.types.implicits._
 trait HandleTransactionProgram[F[_]] extends CoreNodeProgram[F] with BaseProgram[F] {
   import model._
 
-  def handleTransaction(transaction: Transaction): SP[F, Receipt] = {
+  def handleTransaction(transaction: Transaction): SP[F, Unit] = {
     for {
-      verifyResult      <- crypto.verifyTransactionSignature(transaction)
-      _                 <- requireM(verifyResult(), new RuntimeException("transaction signature tampered"))
-      duplicated        <- store.isTransactionDuplicated(transaction)
-      _                 <- requireM(!duplicated, new RuntimeException("transaction id duplicated"))
-      receipt           <- runTransaction(transaction)
-      determinedBlock   <- store.getLatestDeterminedBlock()
-      currentWorldState <- store.getCurrentWorldState()
-      _                 <- consensus.tryAgree(transaction, receipt, determinedBlock, currentWorldState)
-    } yield receipt
+      determinedBlock <- store.getLatestDeterminedBlock()
+      _               <- consensus.tryAgree(transaction, determinedBlock)
+    } yield ()
   }
 
-  private def runTransaction(transaction: Transaction): SP[F, Receipt] = transaction match {
-    case transfer: Transfer => runTransferTransaction(transfer)
-    case deploy: Deploy     => runDeployTransaction(deploy)
-    case run: Run           => runRunTransaction(run)
+  def runTransaction(transaction: Transaction): SP[F, Receipt] = {
+    for {
+      verifyResult <- crypto.verifyTransactionSignature(transaction)
+      _            <- requireM(verifyResult(), new RuntimeException("transaction signature tampered"))
+      duplicated   <- store.isTransactionDuplicated(transaction)
+      _            <- requireM(!duplicated, new RuntimeException("transaction id duplicated"))
+      r <- transaction match {
+        case transfer: Transfer => runTransferTransaction(transfer)
+        case deploy: Deploy     => runDeployTransaction(deploy)
+        case run: Run           => runRunTransaction(run)
+      }
+    } yield r
   }
 
   private def runTransferTransaction(transfer: Transfer): SP[F, Receipt] = {
@@ -93,7 +95,7 @@ trait HandleTransactionProgram[F[_]] extends CoreNodeProgram[F] with BaseProgram
                                                     run.contractVersion)
       _ <- requireM(
         userContractCodeOpt.nonEmpty,
-        new FSSIException(
+        new RuntimeException(
           s"contract $contractName at version $contractVersion published by $owner not found")
       )
       kvStore    <- store.prepareKVStore(run.caller, run.contractName, run.contractVersion)

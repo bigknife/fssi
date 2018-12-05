@@ -38,7 +38,9 @@ trait CoreNodeProgram[F[_]] {
 
   /** handle transaction
     */
-  def handleTransaction(transaction: Transaction): SP[F, Receipt]
+  def handleTransaction(transaction: Transaction): SP[F, Unit]
+
+  def runTransaction(transaction: Transaction): SP[F, Receipt]
 
   /** persist new block
     */

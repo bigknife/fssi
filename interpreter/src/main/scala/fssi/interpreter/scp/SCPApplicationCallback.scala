@@ -21,13 +21,21 @@ trait SCPApplicationCallback
 
   override def loggerName: String = "fssi.interpreter.scp.callback"
 
-
-
   override def validateValue(nodeId: NodeID, slotIndex: SlotIndex, value: Value): Value.Validity =
     value match {
       case BlockValue(block) =>
-        val hash = Hash(crypto.hash(calculateUnsignedBlockBytes(block)))
-        if (hash === block.hash) {
+        def hashVerified: Boolean = {
+          val hash = Hash(crypto.hash(calculateUnsignedBlockBytes(block)))
+          hash === block.hash
+        }
+
+        def previousValueVerified: Boolean = {
+          val previousBlockWorldState =
+            StoreHandler.instance.getPreviousBlockWorldState()(coreNodeSetting).unsafeRunSync()
+          previousBlockWorldState === block.preWorldState
+        }
+
+        if (hashVerified && previousValueVerified) {
           val existedBadSignature = block.transactions.exists { transaction =>
             val unsignedBytes = calculateUnsignedTransactionBytes(transaction)
             !crypto.verifySignature(
@@ -115,7 +123,7 @@ trait SCPApplicationCallback
             .runIO(CoreNodeProgram.instance.newBlockGenerated(block), coreNodeSetting)
             .unsafeRunSync()
 
-          SCPApplicationCallback.valueExternalizedListener.foreach {listeners =>
+          SCPApplicationCallback.valueExternalizedListener.foreach { listeners =>
             listeners.foreach(_(slotIndex.value))
           }
           log.info(s"externalized: ${slotIndex.value} --> ${block.hash}")
@@ -151,5 +159,6 @@ trait SCPApplicationCallback
 object SCPApplicationCallback {
   private val valueExternalizedListener: Var[Vector[BigInt => Unit]] = Var(Vector.empty)
 
-  def listenValueExternalized(fun: BigInt => Unit): Unit = valueExternalizedListener.update(_ :+ fun)
+  def listenValueExternalized(fun: BigInt => Unit): Unit =
+    valueExternalizedListener.update(_ :+ fun)
 }

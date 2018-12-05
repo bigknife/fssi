@@ -13,7 +13,7 @@ object WorldState {
 
   /** create an empty world state, chaos
     */
-  def empty: WorldState = WorldState(Array(0))
+  def empty: WorldState = WorldState(Array.emptyByteArray)
 
   trait Implicits {
     implicit def worldStateToBytesValue(a: WorldState): Array[Byte] = a.value
