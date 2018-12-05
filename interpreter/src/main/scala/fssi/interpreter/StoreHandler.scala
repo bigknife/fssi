@@ -14,6 +14,7 @@ import io.circe.generic.auto._
 import better.files._
 import fssi.base.BytesValue
 import fssi.contract.lib.{Context, KVStore, TokenQuery}
+import fssi.interpreter.Setting.CoreNodeSetting
 import fssi.scp.interpreter.store.Var
 
 import scala.util.Try
@@ -27,8 +28,9 @@ import fssi.types.biz.Contract.UserContract
 import fssi.types.biz.Transaction.{Deploy, Run, Transfer}
 import fssi.types.biz._
 import fssi.types.implicits._
+import fssi.utils._
 
-class StoreHandler extends Store.Handler[Stack] with LogSupport {
+class StoreHandler extends Store.Handler[Stack] with LogSupport with UnsignedBytesSupport {
 
   val bcsVar: Var[BCS] = Var.empty
 
@@ -192,7 +194,7 @@ class StoreHandler extends Store.Handler[Stack] with LogSupport {
       .unsafe()
   }
 
-  override def getCurrentWorldState(): Stack[WorldState] = Stack {
+  override def getPreviousBlockWorldState(): Stack[WorldState] = Stack {
     require(bcsVar.isDefined)
     bcsVar
       .map { bcs =>
@@ -500,13 +502,17 @@ class StoreHandler extends Store.Handler[Stack] with LogSupport {
         .unsafe()
     }
 
-  override def currentHeight(): Stack[BigInt] = Stack {
-    require(bcsVar.isDefined)
-    bcsVar
-      .map { bcs =>
-        BigInt(bcs.getPersistedMeta(MetaKey.Height).right.get.get.bytes)
-      }
-      .getOrElse(0)
+  override def currentHeight(): Stack[BigInt] = Stack { setting =>
+    setting match {
+      case _: CoreNodeSetting =>
+        require(bcsVar.isDefined)
+        bcsVar
+          .map { bcs =>
+            BigInt(bcs.getPersistedMeta(MetaKey.Height).right.get.get.bytes)
+          }
+          .getOrElse(0)
+      case _ => -1
+    }
   }
 
   override def prepareKVStore(caller: Account.ID,
@@ -596,6 +602,19 @@ class StoreHandler extends Store.Handler[Stack] with LogSupport {
             new String(preBlockTransactionIdsBytes, "utf-8").split("\n").toSet
           preBlockTransactionIds.contains(transactionId)
         }
+      }
+      .unsafe()
+  }
+
+  override def blockToPersist(block: Block, receipts: ReceiptSet): Stack[Block] = Stack {
+    require(bcsVar.isDefined)
+    bcsVar
+      .map { bcs =>
+        var ultimateStateBytes = Array.emptyByteArray
+        bcs.temporarilyCommit(block.height)(state => ultimateStateBytes = state.stateRootHash)
+        val newBlock =
+          block.copy(curWorldState = WorldState(ultimateStateBytes), receipts = receipts)
+        newBlock.copy(hash = Hash(crypto.hash(calculateUnsignedBlockBytes(newBlock))))
       }
       .unsafe()
   }
