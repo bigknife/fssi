@@ -6,7 +6,7 @@ import fssi.interpreter.{LogSupport, UnsignedBytesSupport}
 import fssi.scp.interpreter.{ApplicationCallback, FakeValue}
 import fssi.scp.types._
 import fssi.scp.types.implicits._
-import fssi.types.base.Hash
+import fssi.types.base.{Hash, WorldState}
 import fssi.types.implicits._
 import fssi.utils._
 import fssi.interpreter._
@@ -30,8 +30,17 @@ trait SCPApplicationCallback
         }
 
         def previousValueVerified: Boolean = {
-          val previousBlockWorldState =
-            StoreHandler.instance.getPreviousBlockWorldState()(coreNodeSetting).unsafeRunSync()
+          val slotState = SCPApplicationCallback.slotState
+          val previousBlockWorldState = slotState.unsafe().get(slotIndex - 1) match {
+            case Some(state) => state
+            case None =>
+              val state =
+                StoreHandler.instance
+                  .getPreviousBlockWorldState()(coreNodeSetting)
+                  .unsafeRunSync()
+              slotState := slotState.unsafe() + (slotIndex - 1 -> state)
+              state
+          }
           previousBlockWorldState === block.preWorldState
         }
 
@@ -157,6 +166,15 @@ trait SCPApplicationCallback
 }
 
 object SCPApplicationCallback {
+
+  lazy val slotState: SafeVar[Map[SlotIndex, WorldState]] =
+    SafeVar[Map[SlotIndex, WorldState]](Map.empty)
+
+  def apply(_coreNodeSetting: CoreNodeSetting): SCPApplicationCallback =
+    new SCPApplicationCallback {
+      override def coreNodeSetting: CoreNodeSetting = _coreNodeSetting
+    }
+
   private val valueExternalizedListener: Var[Vector[BigInt => Unit]] = Var(Vector.empty)
 
   def listenValueExternalized(fun: BigInt => Unit): Unit =

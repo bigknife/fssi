@@ -2,6 +2,7 @@ package fssi.scp.types
 
 case class SlotIndex(value: BigInt) extends AnyVal {
   def +(i: BigInt): SlotIndex = SlotIndex(value + i)
+  def -(i: BigInt): SlotIndex = SlotIndex(value - i)
 }
 
 object SlotIndex {
