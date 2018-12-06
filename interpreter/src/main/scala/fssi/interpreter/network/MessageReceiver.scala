@@ -44,43 +44,51 @@ trait MessageReceiver {
       override def run(): Unit = {
         msg match {
           case x: ApplicationMessage =>
-            applicationMessagePool.synchronized {
-              applicationMessagePool.update(_ :+ x)
-              applicationMessageReceivedCounter.update(_ + 1)
-              ()
+            logTimeCost(s"[RECV] app message", "    pushed into message pool, ") {
+              applicationMessagePool.synchronized {
+                applicationMessagePool.update(_ :+ x)
+                applicationMessageReceivedCounter.update(_ + 1)
+                ()
+              }
             }
 
           case x: SCPEnvelope
               if x.value.statement.message.isInstanceOf[fssi.scp.types.Message.Nomination] =>
-            nomMessagePool.synchronized {
-              nomMessagePool.update { m =>
-                val nodeId = x.value.statement.from
+            logTimeCost(s"[RECV] ${x.messageType}@${x.slotIndex} message " +
+              s"from ${x.value.statement.from}", "    pushed into message pool, ") {
+              nomMessagePool.synchronized {
+                nomMessagePool.update { m =>
+                  val nodeId = x.value.statement.from
 
-                consensusMessageReceivedCounter.map { m =>
-                  m + (nodeId -> (m.getOrElse(nodeId, 0L) + 1))
+                  consensusMessageReceivedCounter.map { m =>
+                    m + (nodeId -> (m.getOrElse(nodeId, 0L) + 1))
+                  }
+
+                  if (m.contains(nodeId)) {
+                    m + (nodeId -> (m(nodeId) :+ x))
+                  } else Map(nodeId -> Vector(x))
                 }
-
-                if (m.contains(nodeId)) {
-                  m + (nodeId     -> (m(nodeId) :+ x))
-                } else Map(nodeId -> Vector(x))
+                ()
               }
-              ()
             }
 
           case x: SCPEnvelope =>
-            ballotMessagePool.synchronized {
-              ballotMessagePool.update { m =>
-                val nodeId = x.value.statement.from
+            logTimeCost(s"[RECV] ${x.messageType}@${x.slotIndex} message " +
+              s"from ${x.value.statement.from}", "    pushed into message pool, ") {
+              ballotMessagePool.synchronized {
+                ballotMessagePool.update { m =>
+                  val nodeId = x.value.statement.from
 
-                consensusMessageReceivedCounter.map { m =>
-                  m + (nodeId -> (m.getOrElse(nodeId, 0L) + 1))
+                  consensusMessageReceivedCounter.map { m =>
+                    m + (nodeId -> (m.getOrElse(nodeId, 0L) + 1))
+                  }
+
+                  if (m.contains(nodeId)) {
+                    m + (nodeId -> (m(nodeId) :+ x))
+                  } else Map(nodeId -> Vector(x))
                 }
-
-                if (m.contains(nodeId)) {
-                  m + (nodeId     -> (m(nodeId) :+ x))
-                } else Map(nodeId -> Vector(x))
+                ()
               }
-              ()
             }
 
           case _ => throw new RuntimeException("no such kind of message")
@@ -212,6 +220,14 @@ trait MessageReceiver {
     5,
     TimeUnit.SECONDS
   )
+
+  private def logTimeCost(startWords: String, endWords: String)(f: => Unit): Unit = {
+    if(log.isDebugEnabled) log.debug(s"$startWords")
+    val start = System.currentTimeMillis()
+    f
+    val end = System.currentTimeMillis()
+    if(log.isDebugEnabled) log.debug(s"$endWords, time spent: ${end - start} ms")
+  }
 }
 
 object MessageReceiver {

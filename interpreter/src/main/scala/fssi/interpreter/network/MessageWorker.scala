@@ -103,12 +103,7 @@ trait MessageWorker[M <: Message] {
         ballotT.submit(new Runnable {
           override def run(): Unit =
             try {
-              val msgType = x.value.statement.message match {
-                case _: PM => "prepare"
-                case _: CM => "confirm"
-                case _: EM => "externalize"
-                case _: NM => "nom"
-              }
+
 
               val t0     = System.currentTimeMillis()
               val coming = x.value.statement.slotIndex.value
@@ -117,14 +112,14 @@ trait MessageWorker[M <: Message] {
               } else {
                 if (log.isDebugEnabled()) {
                   log.debug(
-                    s"ignore previous $msgType message, current=${_workingSlotIndex.unsafe()}, " +
+                    s"ignore previous ${x.messageType} message, current=${_workingSlotIndex.unsafe()}, " +
                       s"coming=$coming")
                 }
               }
 
               val t1 = System.currentTimeMillis()
               log.info(
-                s"handle $msgType(${x.value.statement.from})@$coming, time spent: ${t1 - t0} ms")
+                s"handle ${x.messageType}(${x.value.statement.from})@$coming, time spent: ${t1 - t0} ms")
             } catch {
               case t: Throwable => log.error("handle application message failed", t)
             }
