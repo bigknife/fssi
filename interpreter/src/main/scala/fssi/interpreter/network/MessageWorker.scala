@@ -84,6 +84,9 @@ trait MessageWorker[M <: Message] {
               val coming = x.value.statement.slotIndex.value
               if (needHandleEnvelope(x)) {
                 messageHandler(message)
+                val t1 = System.currentTimeMillis()
+                log.info(
+                  s"handle nom(${x.value.statement.from})@$coming, time spent: ${t1 - t0} ms")
               } else {
                 if (log.isDebugEnabled()) {
                   log.debug(
@@ -92,8 +95,6 @@ trait MessageWorker[M <: Message] {
                 }
               }
 
-              val t1 = System.currentTimeMillis()
-              log.info(s"handle nom(${x.value.statement.from})@$coming, time spent: ${t1 - t0} ms")
             } catch {
               case t: Throwable => log.error("handle application message failed", t)
             }
@@ -103,12 +104,13 @@ trait MessageWorker[M <: Message] {
         ballotT.submit(new Runnable {
           override def run(): Unit =
             try {
-
-
               val t0     = System.currentTimeMillis()
               val coming = x.value.statement.slotIndex.value
               if (needHandleEnvelope(x)) {
                 messageHandler(message)
+                val t1 = System.currentTimeMillis()
+                log.info(
+                  s"handle ${x.messageType}(${x.value.statement.from})@$coming, time spent: ${t1 - t0} ms")
               } else {
                 if (log.isDebugEnabled()) {
                   log.debug(
@@ -117,9 +119,6 @@ trait MessageWorker[M <: Message] {
                 }
               }
 
-              val t1 = System.currentTimeMillis()
-              log.info(
-                s"handle ${x.messageType}(${x.value.statement.from})@$coming, time spent: ${t1 - t0} ms")
             } catch {
               case t: Throwable => log.error("handle application message failed", t)
             }

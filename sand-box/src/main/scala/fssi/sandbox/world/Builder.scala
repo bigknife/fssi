@@ -192,7 +192,7 @@ class Builder extends BaseLogger {
                                     rootPath: Path): Either[FSSIException, Path] = {
     val file = Paths.get(rootPath.toString, "contract-tmp").toFile
     try {
-      val contractRootPath = Paths.get(rootPath.toString, "FSSIContract")
+      val contractRootPath = Paths.get(rootPath.toString, java.util.UUID.randomUUID().toString)
       if (contractRootPath.toFile.exists()) FileUtil.deleteDir(contractRootPath)
       contractRootPath.toFile.mkdirs()
       better.files

@@ -32,10 +32,10 @@ trait QuorumSetJsonCodec {
   }
 
   implicit val quorumRefEncoder: Encoder[QuorumRef] =
-    Encoder[String].contramap(x => x.asBytesValue.bcBase58)
+    Encoder[String].contramap(x => x.asBytesValue.base64)
 
   implicit val quorumRefDecoder: Decoder[QuorumRef] =
-    Decoder[String].map(x => QuorumRef(BytesValue.unsafeDecodeBcBase58(x).bytes))
+    Decoder[String].map(x => QuorumRef(BytesValue.unsafeDecodeBase64(x).bytes))
 
   implicit val quorumSetEncoder: Encoder[QuorumSet] = {
     case slices: QuorumSlices => slices.asJson

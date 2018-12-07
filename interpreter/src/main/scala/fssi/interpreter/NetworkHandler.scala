@@ -26,7 +26,6 @@ import fssi.interpreter.scp.BlockValue.implicits._
 import fssi.scp.interpreter.{NodeStoreHandler, SCPThreadPool}
 import fssi.scp.interpreter.json.implicits._
 import fssi.types.json.implicits._
-import rx.schedulers.Schedulers
 
 class NetworkHandler extends Network.Handler[Stack] with LogSupport {
 
@@ -195,8 +194,11 @@ class NetworkHandler extends Network.Handler[Stack] with LogSupport {
           .portAutoIncrement(false)
           .seedMembers(p2pConfig.seeds.map(x => Address.create(x.host, x.port)): _*)
           .suspicionMult(ClusterConfig.DEFAULT_WAN_SUSPICION_MULT)
-          .pingInterval(5000)
-          .pingTimeout(3000)
+          .pingInterval(ClusterConfig.DEFAULT_WAN_PING_INTERVAL)
+          .pingTimeout(ClusterConfig.DEFAULT_WAN_PING_TIMEOUT)
+          .syncInterval(ClusterConfig.DEFAULT_WAN_SYNC_INTERVAL)
+          .gossipFanout(ClusterConfig.DEFAULT_WAN_GOSSIP_FANOUT)
+          .connectTimeout(ClusterConfig.DEFAULT_WAN_CONNECT_TIMEOUT)
           .build()
       Cluster.joinAwait(config)
     }
@@ -243,7 +245,9 @@ class NetworkHandler extends Network.Handler[Stack] with LogSupport {
       cluster
         .listen()
         .subscribe { gossip =>
-          val msg = converter(gossip)
+          val start = System.currentTimeMillis()
+          val msg   = converter(gossip)
+          val end   = System.currentTimeMillis()
           msg match {
             case _: Message.ApplicationMessage =>
               appMessageReceiver.foreach(_.receive(msg))

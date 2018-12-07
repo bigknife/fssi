@@ -44,7 +44,7 @@ trait MessageReceiver {
       override def run(): Unit = {
         msg match {
           case x: ApplicationMessage =>
-            logTimeCost(s"[RECV] app message", "    pushed into message pool, ") {
+            logTimeCost(s"----- [RECV] app message", "    pushed into message pool, ") {
               applicationMessagePool.synchronized {
                 applicationMessagePool.update(_ :+ x)
                 applicationMessageReceivedCounter.update(_ + 1)
@@ -54,8 +54,10 @@ trait MessageReceiver {
 
           case x: SCPEnvelope
               if x.value.statement.message.isInstanceOf[fssi.scp.types.Message.Nomination] =>
-            logTimeCost(s"[RECV] ${x.messageType}@${x.slotIndex} message " +
-              s"from ${x.value.statement.from}", "    pushed into message pool, ") {
+
+            logTimeCost(s"------ [RECV] ${x.messageType}@${x.slotIndex} message " +
+                          s"from ${x.value.statement.from}",
+                        "    pushed into message pool, ") {
               nomMessagePool.synchronized {
                 nomMessagePool.update { m =>
                   val nodeId = x.value.statement.from
@@ -65,7 +67,7 @@ trait MessageReceiver {
                   }
 
                   if (m.contains(nodeId)) {
-                    m + (nodeId -> (m(nodeId) :+ x))
+                    m + (nodeId     -> (m(nodeId) :+ x))
                   } else Map(nodeId -> Vector(x))
                 }
                 ()
@@ -73,8 +75,9 @@ trait MessageReceiver {
             }
 
           case x: SCPEnvelope =>
-            logTimeCost(s"[RECV] ${x.messageType}@${x.slotIndex} message " +
-              s"from ${x.value.statement.from}", "    pushed into message pool, ") {
+            logTimeCost(s"------ [RECV] ${x.messageType}@${x.slotIndex} message " +
+                          s"from ${x.value.statement.from}",
+                        "    pushed into message pool, ") {
               ballotMessagePool.synchronized {
                 ballotMessagePool.update { m =>
                   val nodeId = x.value.statement.from
@@ -84,7 +87,7 @@ trait MessageReceiver {
                   }
 
                   if (m.contains(nodeId)) {
-                    m + (nodeId -> (m(nodeId) :+ x))
+                    m + (nodeId     -> (m(nodeId) :+ x))
                   } else Map(nodeId -> Vector(x))
                 }
                 ()
@@ -222,11 +225,11 @@ trait MessageReceiver {
   )
 
   private def logTimeCost(startWords: String, endWords: String)(f: => Unit): Unit = {
-    if(log.isDebugEnabled) log.debug(s"$startWords")
-    val start = System.currentTimeMillis()
+    //if (log.isDebugEnabled) log.debug(s"$startWords")
+    //val start = System.currentTimeMillis()
     f
-    val end = System.currentTimeMillis()
-    if(log.isDebugEnabled) log.debug(s"$endWords, time spent: ${end - start} ms")
+    //val end = System.currentTimeMillis()
+    //if (log.isDebugEnabled) log.debug(s"$endWords, time spent: ${end - start} ms")
   }
 }
 

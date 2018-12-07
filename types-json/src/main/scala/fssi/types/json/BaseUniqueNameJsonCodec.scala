@@ -12,8 +12,8 @@ import json.implicits._
 
 trait BaseUniqueNameJsonCodec {
   implicit val baseUniqueNameEncoder: Encoder[UniqueName] =
-    Encoder[String].contramap(_.asBytesValue.bcBase58)
+    Encoder[String].contramap(_.asBytesValue.base64)
 
   implicit val baseUniqueNameDecoder: Decoder[UniqueName] =
-    Decoder[String].map(x => UniqueName(BytesValue.unsafeDecodeBcBase58(x).bytes))
+    Decoder[String].map(x => UniqueName(BytesValue.unsafeDecodeBase64(x).bytes))
 }

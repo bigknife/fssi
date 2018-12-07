@@ -120,6 +120,7 @@ class StoreHandler extends Store.Handler[Stack] with LogSupport with UnsignedByt
     }
   }
 
+  private val latestDeterminedBlock: Var[Block] = Var.empty
   override def getLatestDeterminedBlock(): Stack[Block] = Stack {
     // get persisted and de-serialized to a block
     require(bcsVar.isDefined)
@@ -127,6 +128,13 @@ class StoreHandler extends Store.Handler[Stack] with LogSupport with UnsignedByt
       .map { bcs =>
         // get current height
         val height  = BigInt(bcs.getPersistedMeta(MetaKey.Height).right.get.get.bytes)
+        if (latestDeterminedBlock.isDefined &&
+        latestDeterminedBlock.map(_.height == height).unsafe()) {
+          latestDeterminedBlock.unsafe()
+        } else {
+
+
+
         val chainId = new String(bcs.getPersistedMeta(MetaKey.ChainID).right.get.get.bytes, "utf-8")
         if (height < 0) throw new RuntimeException(s"insane block chain store. height is $height")
         else if (height == 0) Block.genesis(chainId)
@@ -162,12 +170,12 @@ class StoreHandler extends Store.Handler[Stack] with LogSupport with UnsignedByt
               1,
               bcs.getPersistedReceipt(ReceiptKey.receiptResult(height, tid)).right.get.get.bytes)
             val costs = BigInt(1,
-                               bcs
-                                 .getPersistedReceipt(ReceiptKey.receiptCost(height, tid))
-                                 .right
-                                 .get
-                                 .get
-                                 .bytes).toInt
+              bcs
+                .getPersistedReceipt(ReceiptKey.receiptCost(height, tid))
+                .right
+                .get
+                .get
+                .bytes).toInt
             val logs = deserializeReceiptLogs(
               bcs.getPersistedReceipt(ReceiptKey.receiptLogs(height, tid)).right.get.get)
             Receipt(
@@ -178,7 +186,7 @@ class StoreHandler extends Store.Handler[Stack] with LogSupport with UnsignedByt
             )
           }: _*)
 
-          Block(
+          val b = Block(
             height = height,
             chainId = chainId,
             preWorldState = preWorldState,
@@ -188,6 +196,9 @@ class StoreHandler extends Store.Handler[Stack] with LogSupport with UnsignedByt
             timestamp = timestamp,
             hash = hash
           )
+          latestDeterminedBlock := b
+          b
+        }
 
         }
       }
@@ -257,6 +268,9 @@ class StoreHandler extends Store.Handler[Stack] with LogSupport with UnsignedByt
 
       bcs.commit(height)
     }
+
+    latestDeterminedBlock := block
+    ()
   }
 
   override def loadAccountFromFile(accountFile: File): Stack[Either[FSSIException, Account]] =

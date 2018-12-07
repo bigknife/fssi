@@ -69,7 +69,7 @@ class Checker extends BaseLogger {
         FileUtil.findAllFiles(rootPath).filter(file => file.getAbsolutePath.endsWith(".class"))
       classFiles.foreach { file =>
         val classFileName =
-          file.getAbsolutePath.substring(rootPath.toString.length + 1).replace("/", ".")
+          file.getAbsolutePath.substring(rootPath.toString.length + 1).replace(File.separator, ".")
         val className = classFileName.substring(0, classFileName.lastIndexOf(".class"))
         checkClassLoader.findClassFromClassFile(file, className, "", Array.empty)
       }
