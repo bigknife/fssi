@@ -26,7 +26,6 @@ import fssi.interpreter.scp.BlockValue.implicits._
 import fssi.scp.interpreter.{NodeStoreHandler, SCPThreadPool}
 import fssi.scp.interpreter.json.implicits._
 import fssi.types.json.implicits._
-import rx.schedulers.Schedulers
 
 class NetworkHandler extends Network.Handler[Stack] with LogSupport {
 
@@ -241,7 +240,10 @@ class NetworkHandler extends Network.Handler[Stack] with LogSupport {
       cluster
         .listen()
         .subscribe { gossip =>
-          val msg = converter(gossip)
+          val start = System.currentTimeMillis()
+          val msg   = converter(gossip)
+          val end   = System.currentTimeMillis()
+          log.error(s"convert takes: ${end - start} millis")
           msg match {
             case _: Message.ApplicationMessage =>
               appMessageReceiver.foreach(_.receive(msg))

@@ -8,8 +8,8 @@ import types.implicits._
 
 trait BaseHashJsonCodec {
 
-  implicit val hashEncoder: Encoder[Hash] = Encoder[String].contramap(_.asBytesValue.bcBase58)
+  implicit val hashEncoder: Encoder[Hash] = Encoder[String].contramap(_.asBytesValue.base64)
 
   implicit val hashDecoder: Decoder[Hash] =
-    Decoder[String].map(x => Hash(BytesValue.decodeBcBase58(x).get.bytes))
+    Decoder[String].map(x => Hash(BytesValue.unsafeDecodeBase64(x).bytes))
 }

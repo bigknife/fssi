@@ -12,8 +12,8 @@ import fssi.scp.types.implicits._
 trait SignatureJsonCodec {
 
   implicit val signatureEncoder: Encoder[Signature] =
-    Encoder[String].contramap(x => x.asBytesValue.bcBase58)
+    Encoder[String].contramap(x => x.asBytesValue.base64)
 
   implicit val signatureDecoder: Decoder[Signature] =
-    Decoder[String].map(x => Signature(BytesValue.unsafeDecodeBcBase58(x).bytes))
+    Decoder[String].map(x => Signature(BytesValue.unsafeDecodeBase64(x).bytes))
 }
