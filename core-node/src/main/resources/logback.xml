@@ -39,10 +39,10 @@
     <logger name="fssi.scp.ast" additivity="false" level="warn">
         <appender-ref ref="ENVELOPE" />
     </logger>
-    <logger name="fssi.scp.ast.envelope.recv" additivity="false" level="info">
+    <logger name="fssi.scp.ast.envelope.recv" additivity="false" level="error">
         <appender-ref ref="ENVELOPE" />
     </logger>
-    <logger name="fssi.scp.ast.envelope.sent" additivity="false" level="info">
+    <logger name="fssi.scp.ast.envelope.sent" additivity="false" level="error">
         <appender-ref ref="ENVELOPE" />
     </logger>
 
@@ -68,7 +68,7 @@
     </logger>
 
     <!-- store -->
-    <logger name="fssi.store" additivity="false" level="warn">
+    <logger name="fssi.store" additivity="false" level="error">
         <appender-ref ref="COLOR" />
     </logger>
 
