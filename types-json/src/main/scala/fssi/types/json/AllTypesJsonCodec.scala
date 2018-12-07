@@ -3,15 +3,12 @@ package types
 package json
 
 trait AllTypesJsonCodec
-    extends AccountCodec
-    with Base64StringJsonCodec
-    with HexStringJsonCodec
-    with SignatureJsonCodec
-    with JsonMessageCodec
-    with BlockJsonCodec
-    with HashJsonCodec
-    with TransactionJsonCodec
-    with TokenJsonCodec
-    with UniqueNameJsonCodec
-    with VersionJsonCodec
-    with ContractJsonCodec
+    extends BizAccountJsonCodec
+    with BizTransactionJsonCodec
+    with BizSignatureJsonCodec
+    with BizTokenJsonCodec
+    with BizContractJsonCodec
+    with BaseUniqueNameJsonCodec
+    with BaseWorldStateJsonCodec
+    with BaseHashJsonCodec
+    with BizReceiptJsonCodec

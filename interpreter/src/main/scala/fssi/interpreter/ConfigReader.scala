@@ -1,73 +1,126 @@
 package fssi
 package interpreter
+import java.io.File
 
-import bigknife.scalap.ast.types._
-import types._
-import com.typesafe.config._
+import com.typesafe.config.{Config, ConfigFactory}
+import fssi.types.biz._
 
 import scala.collection.JavaConverters._
+import fssi.base._
+import fssi.scp.types.QuorumSet.Slices
+import fssi.scp.types.{NodeID, QuorumSet}
+import fssi.types.biz.Account.SecretKey
 
-/** read fssi.conf
-  * @see config-sample.conf
-  */
-case class ConfigReader(conf: java.io.File) {
-  lazy val config: Config = ConfigFactory.parseFile(conf)
+case class ConfigReader(configFile: File) {
+  private lazy val config: Config = ConfigFactory.parseFile(configFile)
 
-  object p2p {
-    lazy val host: String = config.getString("p2p.host")
-    lazy val port: Int    = config.getInt("p2p.port")
-    lazy val seeds: Vector[Node.Addr] =
-      config
-        .getStringList("p2p.seeds")
-        .asScala
-        .toVector
-        .map(Node.parseAddr)
-        .filter(_.isDefined)
-        .map(_.get)
-    lazy val bindAccount: Account = Account(
-      publicKey = HexString.decode(config.getString("p2p.account.publicKey")),
-      encryptedPrivateKey = HexString.decode(config.getString("p2p.account.encryptedPrivateKey")),
-      iv = HexString.decode(config.getString("p2p.account.iv"))
-    )
-  }
+  def chainId: String = config.getString("chainId")
 
-  object edgeNode {
-    object jsonRpc {
-      lazy val port: Int    = config.getInt("edge-node.jsonrpc.port")
-      lazy val host: String = config.getString("edge-node.jsonrpc.host")
-    }
-  }
+  object core {
+    private val corePrefix: String = "core-node"
+    def mode: String               = config.getString(s"$corePrefix.mode")
 
-  object coreNode {
-    object scp {
-      lazy val quorumSet: QuorumSet = {
-        def configToSimpleQuorumSet(conf: Config): QuorumSet =
-          QuorumSet.simple(conf.getInt("threshold"),
-                           conf
-                             .getStringList("validators")
-                             .asScala
-                             .map(HexString.decode)
-                             .map(_.bytes)
-                             .map(NodeID.apply): _*)
+    object consensus {
+      private val consensusPrefix: String = s"$corePrefix.consensus-network"
+      def host: String                    = config.getString(s"$consensusPrefix.host")
+      def port: Int                       = config.getInt(s"$consensusPrefix.port")
+      def seeds: Vector[Node.Addr]        = getSeeds(config.getConfig(consensusPrefix))
 
-        val quorumsConfig = config.getConfig("core-node.scp.quorums")
-        if (quorumsConfig.hasPath("innerSets")) {
-          // nest
-          val simple    = configToSimpleQuorumSet(quorumsConfig)
-          val innerSets = quorumsConfig.getConfigList("innerSets").asScala
-          if (innerSets.nonEmpty) {
-            innerSets.foldLeft(simple) { (acc, n) =>
-              val qs = configToSimpleQuorumSet(n).asInstanceOf[QuorumSet.Simple]
-              acc.nest(qs.threshold, qs.validators.toSeq: _*)
+      def account: (Account, SecretKey) = getAccount(config.getConfig(s"$consensusPrefix.account"))
+
+      object scp {
+        val scpPrefix = s"$consensusPrefix.scp"
+
+        def quorums: QuorumSet = {
+          val threshold: Int = config.getInt(s"$scpPrefix.quorums.threshold")
+          val validators: Vector[NodeID] = getValidators(
+            config
+              .getStringList(s"$scpPrefix.quorums.validators")
+              .asScala
+              .toVector)
+          val innerSets: Vector[Slices.Flat] =
+            config.getConfigList(s"$scpPrefix.quorums.innerSets").asScala.toVector.map {
+              flatConfig =>
+                val innerThreshold: Int = flatConfig.getInt("threshold")
+                val innerValidators: Vector[NodeID] =
+                  getValidators(flatConfig.getStringList("validators").asScala.toVector)
+                Slices.Flat(innerThreshold, innerValidators)
             }
-          } else simple
-        } else {
-          // simple
-          configToSimpleQuorumSet(quorumsConfig)
+          QuorumSet.slices(Slices.nest(threshold, validators, innerSets: _*))
         }
+
+        def maxTimeoutSeconds: Long = config.getLong(s"$scpPrefix.maxTimeoutSeconds")
+        def maxNominatingTimes: Int = config.getInt(s"$scpPrefix.maxNominatingTimes")
+        def broadcastTimeout: Long  = config.getInt(s"$scpPrefix.broadcastTimeout")
+
+        private def getValidators(validators: Vector[String]): Vector[NodeID] =
+          validators
+            .map(Base58.decode)
+            .filter(_.isDefined)
+            .map(_.get)
+            .map(NodeID(_))
       }
-      lazy val maxTimeoutSeconds: Int = config.getInt("core-node.scp.maxTimeoutSeconds")
-      lazy val maxNominatingTimes: Int = config.getInt("core-node.scp.maxNominatingTimes")
+    }
+
+    object application {
+      private val applicationPrefix: String = s"$corePrefix.application-network"
+      def host: String                      = config.getString(s"$applicationPrefix.host")
+      def port: Int                         = config.getInt(s"$applicationPrefix.port")
+      def seeds: Vector[Node.Addr]          = getSeeds(config.getConfig(applicationPrefix))
+      def account: (Account, SecretKey) =
+        getAccount(config.getConfig(s"$applicationPrefix.account"))
     }
   }
+
+  object edge {
+    private val edgePrefix: String = "edge-node"
+
+    object client {
+      private val clientPrefix: String = s"$edgePrefix.client-network"
+      object jsonRPC {
+        private val jsonRPCPrefix: String = s"$clientPrefix.http-json-rpc"
+        def host: String                  = config.getString(s"$jsonRPCPrefix.host")
+        def port: Int                     = config.getInt(s"$jsonRPCPrefix.port")
+      }
+    }
+
+    object application {
+      private val applicationPrefix: String = s"$edgePrefix.application-network"
+      def host: String                      = config.getString(s"$applicationPrefix.host")
+      def port: Int                         = config.getInt(s"$applicationPrefix.port")
+      def seeds: Vector[Node.Addr]          = getSeeds(config.getConfig(applicationPrefix))
+      def account: (Account, SecretKey) =
+        getAccount(config.getConfig(s"$applicationPrefix.account"))
+    }
+  }
+
+  private def getAccount(accountConfig: Config): (Account, SecretKey) = {
+    val idOpt =
+      Base58.decode(accountConfig.getString(s"id"))
+    require(idOpt.nonEmpty, "account id must encode by base58")
+    val id           = Account.ID(idOpt.get)
+    val publicKeyOpt = Base58.decode(accountConfig.getString(s"publicKey"))
+    require(publicKeyOpt.nonEmpty, "account public key must encode by base58")
+    val publicKey = Account.PubKey(publicKeyOpt.get)
+    val encPriKeyOpt =
+      Base58.decode(accountConfig.getString(s"encryptedPrivateKey"))
+    require(encPriKeyOpt.nonEmpty, "account encrypt private key must encode by base58")
+    val encPriKey = Account.PrivKey(encPriKeyOpt.get)
+    val ivOpt     = Base58.decode(accountConfig.getString(s"iv"))
+    require(ivOpt.nonEmpty, "account iv must encode by base58")
+    val iv           = Account.IV(ivOpt.get)
+    val secretKeyOpt = Base58.decode(accountConfig.getString("secretKey"))
+    require(secretKeyOpt.nonEmpty, "account secret key must encode by base58")
+    val secretKey = SecretKey(secretKeyOpt.get)
+    (Account(encPriKey, publicKey, iv, id), secretKey)
+  }
+
+  private def getSeeds(seedsConfig: Config): Vector[Node.Addr] =
+    seedsConfig
+      .getStringList("seeds")
+      .asScala
+      .toVector
+      .map(Node.parseAddr)
+      .filter(_.isDefined)
+      .map(_.get)
 }

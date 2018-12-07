@@ -7,6 +7,19 @@
         </encoder>
     </appender>
 
+    <appender name="ENVELOPE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%date %highlight(%-5level) %cyan([%-4.30thread]) - %colorize(%msg) %n</pattern>
+        </encoder>
+    </appender>
+
+    <appender name="MESSAGE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%date %highlight(%-5level) %cyan([%-4.30thread]) - %colorize(%msg) %n</pattern>
+        </encoder>
+    </appender>
+
+    <!--
     <logger name="scalap" additivity="false" level="debug">
         <appender-ref ref="COLOR" />
     </logger>
@@ -21,8 +34,45 @@
     <logger name="io.scalecube.transport" additivity="false" level="error">
         <appender-ref ref="COLOR" />
     </logger>
+    -->
 
-    <root level="warn">
+    <logger name="fssi.scp.ast" additivity="false" level="warn">
+        <appender-ref ref="ENVELOPE" />
+    </logger>
+    <logger name="fssi.scp.ast.envelope.recv" additivity="false" level="error">
+        <appender-ref ref="ENVELOPE" />
+    </logger>
+    <logger name="fssi.scp.ast.envelope.sent" additivity="false" level="error">
+        <appender-ref ref="ENVELOPE" />
+    </logger>
+
+    <logger name="fssi.scp.ast.envelope.local" additivity="false" level="info">
+        <appender-ref ref="ENVELOPE" />
+    </logger>
+
+    <!-- Message Receiver and Worker -->
+    <logger name="fssi.interpreter.network.message.worker" additivity="false" level="info">
+        <appender-ref ref="MESSAGE" />
+    </logger>
+
+    <logger name="fssi.interpreter.network.message.receiver" additivity="false" level="info">
+        <appender-ref ref="MESSAGE" />
+    </logger>
+
+    <logger name="fssi.interpreter.NetworkHandler" additivity="false" level="info">
+        <appender-ref ref="MESSAGE" />
+    </logger>
+
+    <logger name="fssi.interpreter.scp.callback" additivity="false" level="info">
+        <appender-ref ref="MESSAGE" />
+    </logger>
+
+    <!-- store -->
+    <logger name="fssi.store" additivity="false" level="error">
+        <appender-ref ref="COLOR" />
+    </logger>
+
+    <root level="error">
         <appender-ref ref="COLOR"/>
     </root>
 

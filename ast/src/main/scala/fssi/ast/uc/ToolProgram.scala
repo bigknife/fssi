@@ -1,160 +1,70 @@
-package fssi
-package ast
+package fssi.ast
 package uc
 
-import types._
-import utils._
-import types.syntax._
 import bigknife.sop._
+import bigknife.sop.macros._
 import bigknife.sop.implicits._
-import java.io.File
-import java.nio.file.Path
 
-import fssi.types.Contract.Parameter
+import fssi.types.base._
+import fssi.types.biz._
+import fssi.ast.uc.tool._
+import java.io._
 
-trait ToolProgram[F[_]] extends BaseProgram[F] {
-  import model._
+trait ToolProgram[F[_]] {
 
-  /** Create an account, only a password is needed.
-    * NOTE: then password is ensured to be 24Bytes length.
+  /** create an account that is compatible with btc
     */
-  def createAccount(password: String): SP[F, Account] = {
-    import crypto._
-    for {
-      keypair <- createKeyPair()
-      (publicKey, privateKey) = keypair
-      iv <- createIVForDes()
-      pk <- desEncryptPrivateKey(privateKey, iv, password = password.getBytes("utf-8"))
-    } yield Account(HexString(publicKey.value), HexString(pk.value), HexString(iv.value))
-  }
+  def createAccount(seed: RandomSeed): SP[F, (Account, Account.SecretKey)]
+
+  /** create a contract project
+    */
+  def createContractProject(projectRoot: File): SP[F, Unit]
+
+  /** compile contract project
+    * @param projectRoot the root path of the contract project
+    * @param output the contract target file
+    * @param sandboxVersion the adapted version for contract
+    */
+  def compileContract(accountFile: File,
+                      secretKeyFile: File,
+                      projectRoot: File,
+                      output: File,
+                      sandboxVersion: String): SP[F, Unit]
 
   /** Create a chain
     * @param dataDir directory where the chain data saved
-    * @param chainID the chain id
+    * @param chainId the chain id
     */
-  def createChain(dataDir: File, chainID: String): SP[F, Unit] = {
-    import chainStore._
-    import blockStore._
-    import tokenStore._
-    import contractStore._
-    import contractDataStore._
-    import blockService._
-    import log._
+  def createChain(rootDir: File, chainId: String): SP[F, Unit]
 
-    for {
-      createRoot   <- createChainRoot(dataDir, chainID)
-      root         <- err.either(createRoot)
-      confFile     <- createDefaultConfigFile(root)
-      _            <- initializeBlockStore(root)
-      _            <- initializeTokenStore(root)
-      _            <- initializeContractStore(root)
-      _            <- initializeContractDataStore(root)
-      genesisBlock <- createGenesisBlock(chainID)
-      _            <- saveBlock(genesisBlock)
-      _            <- info(s"chain initialized, please edit the default config file: $confFile")
-    } yield ()
-  }
-
-  /** Compile contract
-    * @param sandboxVersion version of the sandbox for smart contract running on.
-    */
-  def compileContract(projectDirectory: File, output: File, sandboxVersion: String): SP[F, Unit] = {
-    import contractService._
-    for {
-      compileEither  <- compileContractProject(projectDirectory, sandboxVersion, output)
-      _              <- err.either(compileEither)
-      determinEither <- checkDeterminismOfContractProject(output)
-      _              <- err.either(determinEither)
-    } yield ()
-  }
-
-  /** Create a transfer transaction json rpc protocol
+  /** create transfer transaction
     */
   def createTransferTransaction(accountFile: File,
-                                password: Array[Byte],
+                                secretKeyFile: File,
                                 payee: Account.ID,
-                                token: Token): SP[F, Transaction.Transfer] = {
-    import accountStore._
-    import crypto._
-    import transactionService._
-    for {
-      accountOrFailed <- loadAccountFromFile(accountFile)
-      account         <- err.either(accountOrFailed)
-      privateKeyOrFailed <- desDecryptPrivateKey(account.encryptedPrivateKey.toBytesValue,
-                                                 account.iv.toBytesValue,
-                                                 BytesValue(password))
-      privateKey        <- err.either(privateKeyOrFailed)
-      transferNotSigned <- createUnsignedTransfer(payer = account.id, payee, token)
-      unsignedBytes     <- calculateSingedBytesOfTransaction(transferNotSigned)
-      signature         <- makeSignature(unsignedBytes, privateKey)
-    } yield transferNotSigned.copy(signature = signature)
-  }
+                                token: Token): SP[F, Transaction.Transfer]
 
-  def createPublishContractTransaction(
+  /** create a deploy transaction
+    */
+  def createDeployTransaction(accountFile: File,
+                              secretKeyFile: File,
+                              contractFile: File): SP[F, Transaction.Deploy]
+
+  /** create a run(user contract) transaction
+    */
+  def createRunTransaction(
       accountFile: File,
-      password: Array[Byte],
-      contractFile: File,
+      secretKeyFile: File,
+      owner: Account.ID,
       contractName: UniqueName,
-      contractVersion: Version): SP[F, Transaction.PublishContract] = {
-    import accountStore._
-    import crypto._
-    import transactionService._
-    import contractService._
-
-    for {
-      accountOrFailed <- loadAccountFromFile(accountFile)
-      account         <- err.either(accountOrFailed)
-      privateKeyOrFailed <- desDecryptPrivateKey(account.encryptedPrivateKey.toBytesValue,
-                                                 account.iv.toBytesValue,
-                                                 BytesValue(password))
-      privateKey <- err.either(privateKeyOrFailed)
-      userContractOrFailed <- createUserContractFromContractFile(account,
-                                                                 contractFile,
-                                                                 contractName,
-                                                                 contractVersion)
-      userContract              <- err.either(userContractOrFailed)
-      unsignedUserContractBytes <- calculateSingedBytesOfUserContract(userContract)
-      contractSignature         <- makeSignature(unsignedUserContractBytes, privateKey)
-      publishContractNotSigned <- createUnsignedPublishContractTransaction(
-        account.id,
-        userContract.copy(signature = contractSignature))
-      unsignedBytes <- calculateSingedBytesOfTransaction(publishContractNotSigned)
-      signature     <- makeSignature(unsignedBytes, privateKey)
-    } yield publishContractNotSigned.copy(signature = signature)
-  }
-
-  def createRunContractTransaction(
-      accountFile: File,
-      password: Array[Byte],
-      contractName: UniqueName,
-      contractVersion: Version,
-      method: Contract.Method,
-      parameter: Contract.Parameter): SP[F, Transaction.RunContract] = {
-    import accountStore._
-    import crypto._
-    import transactionService._
-    import contractService._
-
-    for {
-      accountOrFailed <- loadAccountFromFile(accountFile)
-      account         <- err.either(accountOrFailed)
-      privateKeyOrFailed <- desDecryptPrivateKey(account.encryptedPrivateKey.toBytesValue,
-                                                 account.iv.toBytesValue,
-                                                 BytesValue(password))
-      privateKey <- err.either(privateKeyOrFailed)
-      runContractNotSigned <- createUnsignedRunContractTransaction(account.id,
-                                                                   contractName,
-                                                                   contractVersion,
-                                                                   method,
-                                                                   parameter)
-      unsignedBytes <- calculateSingedBytesOfTransaction(runContractNotSigned)
-      signature     <- makeSignature(unsignedBytes, privateKey)
-    } yield runContractNotSigned.copy(signature = signature)
-  }
+      contractVersion: Contract.Version,
+      methodAlias: String,
+      parameter: Option[Contract.UserContract.Parameter]): SP[F, Transaction.Run]
 }
 
 object ToolProgram {
-  def apply[F[_]](implicit M: components.Model[F]): ToolProgram[F] = new ToolProgram[F] {
-    val model: components.Model[F] = M
-  }
+  def apply[F[_]](implicit M: blockchain.Model[F]): ToolProgram[F] =
+    new AccountProgram[F] with ContractProgram[F] with ChainProgram[F] with TransactionProgram[F] {
+      private[uc] val model: blockchain.Model[F] = M
+    }
 }

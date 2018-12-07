@@ -1,17 +1,37 @@
 package fssi
 package edgenode
+import java.io.File
 
-import interpreter.Setting._
-import handler._
+import fssi.ast.uc.EdgeNodeProgram
+import fssi.interpreter.Setting.EdgeNodeSetting
+import fssi.interpreter.StackConsoleMain.Effect
+import fssi.interpreter.{Setting, StackConsoleMain}
 
-object EdgeNodeMain extends App {
+object EdgeNodeMain extends StackConsoleMain[EdgeNodeSetting] {
+  private val instance = EdgeNodeProgram.instance
+
   val defaultEdgeNodeSetting = EdgeNodeSetting(
-    workingDir = new java.io.File(new java.io.File(System.getProperty("user.home")), ".fssi"),
-    password = Array.emptyByteArray
-  )
+    workingDir = new File(System.getProperty("user.home"), ".fssi"))
 
-  EdgeNodeSettingParser.parse(args, defaultEdgeNodeSetting) match {
-    case Some(setting) =>  startup(setting)
-    case _ =>
+  override def cmdArgs(xs: Array[String]): Option[EdgeNodeSetting] =
+    EdgeNodeSettingParser.parse(xs, defaultEdgeNodeSetting)
+
+  override def setting(c: EdgeNodeSetting): Setting = c
+
+  override def program(cmdArgs: Option[EdgeNodeSetting], setting: Setting): Effect = {
+    import instance._
+    cmdArgs match {
+      case Some(edgeNodeSetting) =>
+        for {
+          node <- startup(applicationMessageHandler(edgeNodeSetting),
+                          clientMessageHandler(edgeNodeSetting))
+          _ <- Runtime.getRuntime.addShutdownHook(new Thread() {
+            override def run(): Unit = { shutdown(node._1, node._2); () }
+          })
+          _ <- Thread.currentThread().join()
+        } yield ()
+      case _ =>
+    }
   }
+
 }

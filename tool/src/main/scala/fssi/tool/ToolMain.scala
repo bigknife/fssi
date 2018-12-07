@@ -2,45 +2,60 @@ package fssi
 package tool
 
 import CmdArgs._
+import fssi.interpreter.{Setting, StackConsoleMain}
 import handler._
 
 /** FSSI TOOL Main
   */
-object ToolMain extends App {
+object ToolMain extends StackConsoleMain[CmdArgs] {
 
-  CmdArgsParser.parse(args, Empty) match {
-    case Some(result) =>
-      result match {
-        case CreateAccountArgs(password)       => createAccount(password)
-        case CreateChainArgs(dataDir, chainID) => createChain(dataDir, chainID)
-        case CreateTransferTransactionArgs(accountFile, password, payee, token) =>
-          createTransferTransaction(accountFile, password, payee, token)
-        case CompileContractArgs(projectDirectory, outputDirectory, sandboxVersion) =>
-          compileContract(projectDirectory, outputDirectory, sandboxVersion.toString)
-        case CreatePublishContractTransactionArgs(accountFile,
-                                                  password,
-                                                  contractFile,
-                                                  contractName,
-                                                  contractVersion) =>
-          createPublishContractTransaction(accountFile,
-                                           password,
-                                           contractFile,
-                                           contractName,
-                                           contractVersion)
-        case CreateRunContractTransactionArgs(accountFile,
-                                              password,
-                                              contractName,
-                                              contractVersion,
-                                              method,
-                                              parameter) =>
-          createRunContractTransaction(accountFile,
-                                       password,
-                                       contractName,
-                                       contractVersion,
-                                       method,
-                                       parameter)
-        case _ =>
-      }
-    case None =>
-  }
+  override def cmdArgs(xs: Array[String]): Option[CmdArgs] = CmdArgsParser.parse(xs, Empty)
+  override def program(cmdArgs: Option[CmdArgs], setting: Setting): StackConsoleMain.Effect =
+    cmdArgs match {
+      case Some(result) =>
+        result match {
+          case CreateAccountArgs(randomSeed, accountFile, secretKeyFile) =>
+            createAccount(randomSeed, accountFile, secretKeyFile)
+          case CreateChainArgs(rootDir, chainID) =>
+            createChain(rootDir, chainID)
+          case CreateContractProjectArgs(projectDir) =>
+            createContractProject(projectDir)
+          case CreateTransferTransactionArgs(accountFile,
+                                             secretKeyFile,
+                                             payee,
+                                             token,
+                                             outputFile) =>
+            createTransferTransaction(accountFile, secretKeyFile, payee, token, outputFile)
+          case CreateDeployTransactionArgs(accountFile, secretKeyFile, contractFile, outputFile) =>
+            createDeployTransaction(accountFile, secretKeyFile, contractFile, outputFile)
+          case CreateRunTransactionArgs(accountFile,
+                                        secretKeyFile,
+                                        owner,
+                                        contractName,
+                                        contractVersion,
+                                        methodAlias,
+                                        parameter,
+                                        outputFile) =>
+            createRunTransaction(accountFile,
+                                 secretKeyFile,
+                                 owner,
+                                 contractName,
+                                 contractVersion,
+                                 methodAlias,
+                                 parameter,
+                                 outputFile)
+          case CompileContractArgs(accountFile,
+                                   secretKeyFile,
+                                   projectDirectory,
+                                   outputFile,
+                                   sandboxVersion) =>
+            compileContract(accountFile,
+                            secretKeyFile,
+                            projectDirectory,
+                            outputFile,
+                            sandboxVersion.toString)
+          case _ =>
+        }
+      case _ =>
+    }
 }

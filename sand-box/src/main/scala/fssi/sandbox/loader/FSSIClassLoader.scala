@@ -5,7 +5,6 @@ package loader
 import java.io.{File, FileInputStream}
 import java.nio.file.{Path, Paths}
 
-import fssi.sandbox.visitor._
 import fssi.sandbox.visitor.clazz.CheckClassDeterminismVisitor
 import org.objectweb.asm._
 
@@ -71,7 +70,8 @@ class FSSIClassLoader(val path: Path, val track: scala.collection.mutable.ListBu
       findClassFromLoader(name, methodName, parameterTypes)
     } catch {
       case _: Throwable =>
-        val classFile = Paths.get(path.toString, name.replaceAll("\\.", "/") + ".class").toFile
+        val classFile =
+          Paths.get(path.toString, name.replaceAll("\\.", "/") + ".class").toFile
         findClassFromClassFile(classFile, name, methodName, parameterTypes)
     }
 }

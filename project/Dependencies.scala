@@ -59,6 +59,54 @@ object Dependencies {
       val scopt = "3.7.0"
 
       val config = "1.3.2"
+
+      val xodus = "1.2.3"
+      
+      val apacheHc = "4.5.5"
+
+      val scalafx = "8.0.144-R12"
+
+      val jfoenix = "8.0.7"
+      
+      val controlfx = "8.40.14"
+      
+      val fontawesomefx = "8.9"
+    }
+    
+    lazy val fontawesomefx = {
+      Seq(
+        Dpd("de.jensd", "fontawesomefx", versions.fontawesomefx, autoScalaVersion = false)
+      ).map(_.libraryDependencies)
+    }
+    
+    lazy val controlfx = {
+      Seq(
+        Dpd("org.controlsfx", "controlsfx", versions.controlfx, autoScalaVersion = false)
+      ).map(_.libraryDependencies)
+    }
+
+    lazy val jfoenix = {
+      Seq(
+        Dpd("com.jfoenix", "jfoenix", versions.jfoenix, autoScalaVersion = false)
+      ).map(_.libraryDependencies)
+    }
+    
+    lazy val scalafx = {
+      Seq(
+        Dpd("org.scalafx", "scalafx", versions.scalafx)
+      ).map(_.libraryDependencies)
+    }
+    
+    lazy val apacheHc = {
+      Seq(Dpd("org.apache.httpcomponents", "httpclient", versions.apacheHc, autoScalaVersion = false))
+        .map(_.libraryDependencies)
+    }
+
+    lazy val xodus = {
+      Seq(
+        Dpd("org.jetbrains.xodus", "xodus-openAPI", versions.xodus, autoScalaVersion = false),
+        Dpd("org.jetbrains.xodus", "xodus-environment", versions.xodus, autoScalaVersion = false)
+      ).map(_.libraryDependencies)
     }
 
     lazy val config = {

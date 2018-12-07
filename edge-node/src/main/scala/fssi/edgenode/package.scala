@@ -1,15 +1,7 @@
 package fssi
-
-import interpreter._
-import ast._, uc._
+import fssi.edgenode.handler.{ApplicationMessageHandler, ClientMessageHandler}
 
 package object edgenode {
-  object jsonrpcResource {
-    def apply(_setting: Setting.EdgeNodeSetting,
-              p: EdgeNodeProgram[components.Model.Op]): EdgeJsonRpcResource =
-      new EdgeJsonRpcResource {
-        val setting         = _setting
-        val edgeNodeProgram = p
-      }
-  }
+  object applicationMessageHandler extends ApplicationMessageHandler
+  object clientMessageHandler      extends ClientMessageHandler
 }

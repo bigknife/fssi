@@ -3,42 +3,78 @@ package tool
 
 import scopt._
 import CmdArgs._
-import types._
+import fssi.base.BytesValue
+import types.biz._
+import types.base._
 import interpreter.jsonCodecs._
 
 object CmdArgsParser extends OptionParser[CmdArgs]("fssitool") {
 
-  head("fssi_tool", "0.1.0")
+  head("tool", "0.2")
   help("help").abbr("h").text("print this help messages")
 
   cmd("CreateAccount")
     .action((_, _) => CreateAccountArgs())
     .text("Create An FSSI Account")
     .children(
-      opt[String]("password")
-        .abbr("p")
+      opt[String]("random-seed")
+        .text("a random string to create secret key for account")
+        .abbr("s")
         .required()
-        .action((x, c) => c.asInstanceOf[CreateAccountArgs].copy(password = x))
+        .action((x, c) => c.asInstanceOf[CreateAccountArgs].copy(randomSeed = x)),
+      opt[java.io.File]("account-file")
+        .text("output account json file path")
+        .abbr("af")
+        .required()
+        .action((x, c) => c.asInstanceOf[CreateAccountArgs].copy(accountFile = x)),
+      opt[java.io.File]("key-file")
+        .text("output secret key file")
+        .abbr("kf")
+        .required()
+        .action((x, c) => c.asInstanceOf[CreateAccountArgs].copy(secretKeyFile = x))
     )
 
   cmd("CreateChain")
     .action((_, _) => CreateChainArgs(new java.io.File("."), "testnet"))
     .text("Create a chain")
     .children(
-      opt[java.io.File]("data-dir")
+      opt[java.io.File]("root-dir")
         .abbr("d")
         .required()
-        .action((x, c) => c.asInstanceOf[CreateChainArgs].copy(dataDir = x)),
+        .action((x, c) => c.asInstanceOf[CreateChainArgs].copy(rootDir = x)),
       opt[String]("chain-id")
         .abbr("id")
         .required()
         .action((x, c) => c.asInstanceOf[CreateChainArgs].copy(chainID = x))
     )
 
+  cmd("CreateContractProject")
+    .text("Create Contract Project")
+    .action((_, _) => CreateContractProjectArgs())
+    .children(
+      opt[java.io.File]("project-directory")
+        .abbr("pd")
+        .text("smart contract project root path default current dir")
+        .optional()
+        .action((x, c) => c.asInstanceOf[CreateContractProjectArgs].copy(projectDir = x))
+    )
+
   cmd("CompileContract")
     .text("Compile Smart Contract Project")
     .action((_, _) => CompileContractArgs())
     .children(
+      opt[java.io.File]("account-file")
+        .abbr("af")
+        .required()
+        .text("compiler account file created by 'CreateAccount'")
+        .action((f, c) => c.asInstanceOf[CompileContractArgs].copy(accountFile = f)),
+      opt[java.io.File]("key-file")
+        .abbr("kf")
+        .required()
+        .text("compiler account secret key file")
+        .action((x, c) =>
+          c.asInstanceOf[CompileContractArgs]
+            .copy(secretKeyFile = x)),
       opt[java.io.File]("project-directory")
         .abbr("pd")
         .text("smart contract project root path")
@@ -52,7 +88,9 @@ object CmdArgsParser extends OptionParser[CmdArgs]("fssitool") {
       opt[String]("sandbox-version")
         .abbr("sv")
         .text("supported version of the sandbox on which the smart contract will run, default is 1.0.0(only support 1.0.0 now)")
-        .action((x, c) => c.asInstanceOf[CompileContractArgs].copy(sandboxVersion = CompileContractArgs.SandobxVersion(x)))
+        .action((x, c) =>
+          c.asInstanceOf[CompileContractArgs]
+            .copy(sandboxVersion = CompileContractArgs.SandobxVersion(x)))
     )
 
   cmd("CreateTransaction")
@@ -65,108 +103,121 @@ object CmdArgsParser extends OptionParser[CmdArgs]("fssitool") {
           opt[java.io.File]("account-file")
             .abbr("af")
             .required()
-            .text("payer account file created by 'CreateAccount'")
+            .text("payer's account file created by 'CreateAccount'")
             .action((f, c) => c.asInstanceOf[CreateTransferTransactionArgs].copy(accountFile = f)),
-          opt[String]("password")
-            .abbr("p")
+          opt[java.io.File]("key-file")
+            .abbr("kf")
             .required()
-            .text("payer's account password")
+            .text("payer's account secret key file")
             .action((x, c) =>
               c.asInstanceOf[CreateTransferTransactionArgs]
-                .copy(password = x.getBytes("utf-8"))),
+                .copy(secretKeyFile = x)),
           opt[String]("payee-id")
             .abbr("pi")
             .required()
-            .text("payee's account id, the hex string of it's public key")
+            .text("payee's account id created by 'CreateAccount'")
             .action((x, c) =>
               c.asInstanceOf[CreateTransferTransactionArgs]
-                .copy(payee = Account.ID(HexString.decode(x)))),
+                .copy(payee = Account.ID(BytesValue.decodeBcBase58(x).get.bytes))),
           opt[String]("token")
             .abbr("t")
             .required()
             .text("amount to be transfered, in form of 'number' + 'unit', eg. 100Sweet. ")
             .action((x, c) =>
-              c.asInstanceOf[CreateTransferTransactionArgs].copy(token = Token.parse(x)))
+              c.asInstanceOf[CreateTransferTransactionArgs].copy(token = Token.parse(x))),
+          opt[java.io.File]("output-file")
+            .abbr("o")
+            .text("if set, the message will output to this file")
+            .action((x, c) =>
+              c.asInstanceOf[CreateTransferTransactionArgs].copy(outputFile = Some(x)))
         ),
-      cmd("publishContract")
-        .text("create publish contract transaction")
-        .action((_, _) => CreatePublishContractTransactionArgs())
+      cmd("deploy")
+        .text("create deploy contract transaction")
+        .action((_, _) => CreateDeployTransactionArgs())
         .children(
           opt[java.io.File]("account-file")
             .abbr("af")
             .required()
-            .text("payer account file created by 'CreateAccount'")
-            .action((f, c) =>
-              c.asInstanceOf[CreatePublishContractTransactionArgs].copy(accountFile = f)),
-          opt[String]("password")
-            .abbr("p")
+            .text("contract owner's account file created by 'CreateAccount'")
+            .action((f, c) => c.asInstanceOf[CreateDeployTransactionArgs].copy(accountFile = f)),
+          opt[java.io.File]("key-file")
+            .abbr("kf")
             .required()
-            .text("payer's account password")
+            .text("contract owner's account secret key file")
             .action((x, c) =>
-              c.asInstanceOf[CreatePublishContractTransactionArgs]
-                .copy(password = x.getBytes("utf-8"))),
+              c.asInstanceOf[CreateDeployTransactionArgs]
+                .copy(secretKeyFile = x)),
           opt[java.io.File]("contract-file")
             .abbr("cf")
             .required()
             .text("smart contract file")
-            .action((x, c) =>
-              c.asInstanceOf[CreatePublishContractTransactionArgs].copy(contractFile = x)),
-          opt[String]("contract-name")
-            .abbr("name")
-            .required()
-            .text("the uniquename of the contract, eg. com.blabla.finance")
-            .action((x, c) =>
-              c.asInstanceOf[CreatePublishContractTransactionArgs]
-                .copy(contractName = UniqueName(x))),
-          opt[String]("contract-version")
-            .abbr("version")
-            .required()
-            .text("the version of the contract")
-            .action((x, c) =>
-              c.asInstanceOf[CreatePublishContractTransactionArgs]
-                .copy(contractVersion = Version(x)))
+            .action((x, c) => c.asInstanceOf[CreateDeployTransactionArgs].copy(contractFile = x)),
+          opt[java.io.File]("output-file")
+            .abbr("o")
+            .text("if set, the message will output to this file")
+            .action(
+              (x, c) => c.asInstanceOf[CreateDeployTransactionArgs].copy(outputFile = Some(x)))
         ),
-      cmd("runContract")
+      cmd("run")
         .text("create run contract transaction")
-        .action((_, _) => CreateRunContractTransactionArgs())
+        .action((_, _) => CreateRunTransactionArgs())
         .children(
           opt[java.io.File]("account-file")
             .abbr("af")
             .required()
-            .text("invoker account file created by 'CreateAccount'")
-            .action(
-              (f, c) => c.asInstanceOf[CreateRunContractTransactionArgs].copy(accountFile = f)),
-          opt[String]("password")
-            .abbr("p")
+            .text("contract caller's account file created by 'CreateAccount'")
+            .action((f, c) => c.asInstanceOf[CreateRunTransactionArgs].copy(accountFile = f)),
+          opt[java.io.File]("key-file")
+            .abbr("kf")
             .required()
-            .text("invoker's account password")
+            .text("contract caller's account secret key file")
             .action((x, c) =>
-              c.asInstanceOf[CreateRunContractTransactionArgs]
-                .copy(password = x.getBytes("utf-8"))),
+              c.asInstanceOf[CreateRunTransactionArgs]
+                .copy(secretKeyFile = x)),
+          opt[String]("owner-id")
+            .abbr("owner")
+            .required()
+            .text("contract owner")
+            .action((x, c) =>
+              c.asInstanceOf[CreateRunTransactionArgs]
+                .copy(owner = Account.ID(BytesValue.decodeBcBase58(x).get.bytes))),
           opt[String]("contract-name")
             .abbr("name")
             .required()
-            .text("invoking contract name")
+            .text("calling contract name")
             .action((x, c) =>
-              c.asInstanceOf[CreateRunContractTransactionArgs].copy(contractName = UniqueName(x))),
+              c.asInstanceOf[CreateRunTransactionArgs].copy(contractName = UniqueName(x))),
           opt[String]("contract-version")
             .abbr("version")
             .required()
             .text("the version of the invoking contract")
             .action((x, c) =>
-              c.asInstanceOf[CreateRunContractTransactionArgs]
-                .copy(contractVersion = Version(x))),
-          opt[String]("method")
+              c.asInstanceOf[CreateRunTransactionArgs]
+                .copy(contractVersion = Contract.Version(x).get)),
+          opt[String]("method-alias")
             .abbr("m")
-            .text("method to invoke")
-            .action((x, c) => c.asInstanceOf[CreateRunContractTransactionArgs].copy(method = Contract.Method(x))),
+            .required()
+            .text("alias of method to invoke")
+            .action((x, c) => c.asInstanceOf[CreateRunTransactionArgs].copy(methodAlias = x)),
           opt[String]("parameter")
             .abbr("p")
             .text("parameters for this invoking")
-            .action((x, c) =>
-              c.asInstanceOf[CreateRunContractTransactionArgs]
-                .copy(parameter = io.circe.parser.parse(x).right.get.as[Contract.Parameter].right.get))
+            .action(
+              (x, c) =>
+                c.asInstanceOf[CreateRunTransactionArgs]
+                  .copy(
+                    parameter = Some(
+                      io.circe.parser
+                        .parse(x)
+                        .right
+                        .get
+                        .as[Contract.UserContract.Parameter]
+                        .right
+                        .get))),
+          opt[java.io.File]("output-file")
+            .abbr("o")
+            .text("if set, the message will output to this file")
+            .action((x, c) => c.asInstanceOf[CreateRunTransactionArgs].copy(outputFile = Some(x)))
         )
     )
-
 }

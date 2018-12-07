@@ -1,37 +1,40 @@
-package fssi
-package ast
+package fssi.ast
 package uc
-
-import types._
-import types.syntax._
+import fssi.types.biz.{Message, Transaction}
 import bigknife.sop._
 import bigknife.sop.implicits._
+import fssi.ast.uc.edgenode.{ProcessMessageProgram, ShutdownProgram, StartupProgram}
+import fssi.types.{ApplicationMessage, ClientMessage}
+import fssi.types.biz.Node.{ApplicationNode, ServiceNode}
 
 trait EdgeNodeProgram[F[_]] {
-  val model: components.Model[F]
-  import model._
 
-  /** Start up a edge node.
-    * @return node info
+  /** start up a edge node
+    * @param applicationMessageHandler handler to handle application query message
+    * @param clientMessageHandler handler to handle client json rpc message
     */
-  def startup(handler: JsonMessageHandler): SP[F, Node] = for {
-    n1 <- network.startupP2PNode(handler)
-    n2 <- network.bindAccount(n1)
-    //TODO: some other components should be initialized here
-  } yield n2
+  def startup(applicationMessageHandler: Message.Handler[ApplicationMessage, Unit],
+              clientMessageHandler: Message.Handler[ClientMessage, Transaction])
+    : SP[F, (ApplicationNode, ServiceNode)]
 
-  def broadcastMessage(message: JsonMessage): SP[F, Unit] = for {
-    _ <- network.broadcastMessage(message)
-  } yield ()
+  def shutdown(applicationNode: ApplicationNode, serviceNode: ServiceNode): SP[F, Unit]
 
-  /** Shutdown edge node
-    */
-  def shutdown(node: Node): SP[F, Unit] = for {
-    _ <- network.shutdownP2PNode(node)
-  } yield()
+  def processApplicationMessage(applicationMessage: ApplicationMessage): SP[F, Unit]
+
+  def processClientMessage(clientMessage: ClientMessage): SP[F, Transaction]
 }
+
 object EdgeNodeProgram {
-  def apply[F[_]](implicit M: components.Model[F]): EdgeNodeProgram[F] = new EdgeNodeProgram[F] {
-    val model: components.Model[F] = M
+
+  final class Implementation[G[_]](implicit M: blockchain.Model[G])
+      extends EdgeNodeProgram[G]
+      with StartupProgram[G]
+      with ShutdownProgram[G]
+      with ProcessMessageProgram[G] {
+    override private[uc] val model = M
   }
+
+  def apply[G[_]](implicit M: blockchain.Model[G]): EdgeNodeProgram[G] = new Implementation[G]
+
+  def instance: EdgeNodeProgram[blockchain.Model.Op] = apply[blockchain.Model.Op]
 }

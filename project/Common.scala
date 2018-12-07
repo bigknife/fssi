@@ -83,6 +83,10 @@ object Common {
       Project(id, file(dir))
         .settings(settings)
 
+    object base {
+      def apply(): Project = prj("base", "base")
+    }
+
     object utils {
       def apply(): Project =
         prj("utils", "utils")
@@ -96,6 +100,14 @@ object Common {
         prj("trie", "trie")
           .settings(
             libraryDependencies ++= (all.circe)
+          )
+    }
+
+    object store {
+      def apply(): Project =
+        prj("store", "store")
+          .settings(
+            libraryDependencies ++= (all.xodus ++ all.bcprov ++ all.apacheHc)
           )
     }
 
@@ -119,6 +131,14 @@ object Common {
           )
     }
 
+    object scp {
+      def apply(): Project =
+        prj("scp", "scp")
+          .settings(
+            libraryDependencies ++= (all.sop ++ all.cats ++ all.circe ++ all.bcprov)
+          )
+    }
+
     object interpreter {
       def apply(): Project =
         prj("interpreter", "interpreter")
@@ -130,7 +150,6 @@ object Common {
             libraryDependencies ++= all.scalecube,
             libraryDependencies ++= all.betterfiles,
             libraryDependencies ++= all.leveldb,
-            libraryDependencies ++= all.scalap,
             libraryDependencies ++= all.config
           )
     }
@@ -152,7 +171,7 @@ object Common {
             licenses += ("Apache-2.0", url("https://opensource.org/licenses/Apache-2.0")),
             bintrayRepository := "fssi",
             organization := "fssi",
-            version := "0.1"
+            version := "0.2"
           )
     }
 
@@ -162,6 +181,14 @@ object Common {
           .settings(
             libraryDependencies ++= all.scopt
           )
+    }
+
+    object wallet {
+      def apply(): Project =
+        prj("wallet", "wallet")
+        .settings(
+          libraryDependencies ++= (all.scalafx ++ all.jfoenix ++ all.controlfx ++ all.fontawesomefx)
+        )
     }
 
     object coreNode {
@@ -184,7 +211,15 @@ object Common {
       def apply(): Project = prj("sandBox", "sand-box")
         .settings(
           libraryDependencies ++= all.betterfiles,
-          libraryDependencies ++= all.asm
+          libraryDependencies ++= all.asm,
+          libraryDependencies ++= all.config
+        )
+    }
+
+    object contractScaffold{
+      def apply(): Project = prj("contractScaffold", "contract-scaffold")
+        .settings(
+          libraryDependencies ++= all.betterfiles
         )
     }
 

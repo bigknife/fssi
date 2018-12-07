@@ -3,7 +3,8 @@ package tool
 
 import java.io._
 
-import types._
+import types.biz._
+import types.base._
 import io.circe._
 
 sealed trait CmdArgs
@@ -14,11 +15,15 @@ object CmdArgs {
 
   /** CreateAccount Arguments
     */
-  case class CreateAccountArgs(password: String = "GoodLuck") extends CmdArgs
+  case class CreateAccountArgs(
+      randomSeed: String = "GoodLuck",
+      accountFile: File = new File(""),
+      secretKeyFile: File = new File("")
+  ) extends CmdArgs
 
   /** CreateChain Arguments
     */
-  case class CreateChainArgs(dataDir: File, chainID: String) extends CmdArgs
+  case class CreateChainArgs(rootDir: File, chainID: String) extends CmdArgs
 
   case object CreateTransactionArgsPlaceHolder extends CmdArgs
 
@@ -26,38 +31,43 @@ object CmdArgs {
     */
   case class CreateTransferTransactionArgs(
       accountFile: File = new File(""),
-      password: Array[Byte] = Array.emptyByteArray,
-      payee: Account.ID = Account.ID(HexString.empty),
-      token: Token = Token.Zero
+      secretKeyFile: File = new File(""),
+      payee: Account.ID = Account.emptyId,
+      token: Token = Token.Zero,
+      outputFile: Option[File] = None
   ) extends CmdArgs
 
   /** Create Publish Contract Transaction Arguments
     */
-  case class CreatePublishContractTransactionArgs(
+  case class CreateDeployTransactionArgs(
       accountFile: File = new File(""),
-      password: Array[Byte] = Array.emptyByteArray,
+      secretKeyFile: File = new File(""),
       contractFile: File = new File(""),
-      contractName: UniqueName = UniqueName.empty,
-      contractVersion: Version = Version.empty
+      outputFile: Option[File] = None
   ) extends CmdArgs
 
   /** Create Run Contract Transaction Arguments
     */
-  case class CreateRunContractTransactionArgs(
+  case class CreateRunTransactionArgs(
       accountFile: File = new File(""),
-      password: Array[Byte] = Array.emptyByteArray,
+      secretKeyFile: File = new File(""),
+      owner: Account.ID = Account.emptyId,
       contractName: UniqueName = UniqueName.empty,
-      contractVersion: Version = Version.empty,
-      method: Contract.Method = Contract.Method.empty,
-      parameter: Contract.Parameter = Contract.Parameter.PEmpty
+      contractVersion: Contract.Version = Contract.Version.empty,
+      methodAlias: String = "",
+      parameter: Option[Contract.UserContract.Parameter] = None,
+      outputFile: Option[File] = None
   ) extends CmdArgs
 
   /** Compile Contract Args
     */
   case class CompileContractArgs(
+      accountFile: File = new File(""),
+      secretKeyFile: File = new File(""),
       projectDirectory: File = new File(""),
       outputFile: File = new File(""),
-      sandboxVersion: CompileContractArgs.SandobxVersion = CompileContractArgs.SandobxVersion.`1.0.0`
+      sandboxVersion: CompileContractArgs.SandobxVersion =
+        CompileContractArgs.SandobxVersion.`1.0.0`
   ) extends CmdArgs
 
   object CompileContractArgs {
@@ -69,8 +79,10 @@ object CmdArgs {
 
       def apply(s: String): SandobxVersion = s match {
         case "1.0.0" => `1.0.0`
-        case _ => `1.0.0`
+        case _       => `1.0.0`
       }
     }
   }
+
+  case class CreateContractProjectArgs(projectDir: File = new File(".")) extends CmdArgs
 }

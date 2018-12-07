@@ -1,142 +1,280 @@
 package fssi
 package interpreter
+import fssi.ast.Network
+import fssi.interpreter.Configuration.{ApplicationConfig, ConsensusConfig, P2PConfig}
+import fssi.interpreter.Setting.{CoreNodeSetting, EdgeNodeSetting}
+import fssi.types.biz.Node.{ApplicationNode, ConsensusNode, ServiceNode}
+import fssi.types.biz._
+import fssi.types.{ApplicationMessage, ClientMessage, ConsensusMessage}
+import fssi.utils.Once
+import io.scalecube.cluster.{Cluster, ClusterConfig}
+import io.scalecube.transport.{Address, Message => CubeMessage}
+import bigknife.jsonrpc._
+import cats.data.Kleisli
+import cats.effect.IO
+import fssi.interpreter.jsonrpc.EdgeJsonRpcResource
+import fssi.interpreter.network.{MessageReceiver, MessageWorker}
+import fssi.interpreter.scp.SCPEnvelope
+import fssi.types.biz.Message.ApplicationMessage.{QueryMessage, TransactionMessage}
+import fssi.types.biz.Message.ClientMessage.{QueryTransaction, SendTransaction}
+import fssi.types.implicits._
+import io.circe.syntax._
+import io.circe._
+import io.circe.parser._
+import io.circe.generic.auto._
+import fssi.interpreter.scp.BlockValue.implicits._
+import fssi.scp.interpreter.{NodeStoreHandler, SCPThreadPool}
+import fssi.scp.interpreter.json.implicits._
+import fssi.types.json.implicits._
 
-import utils._
-import types._
-import ast._
+class NetworkHandler extends Network.Handler[Stack] with LogSupport {
 
-import io.scalecube.cluster._
-import io.scalecube.transport._
-import org.slf4j._
-import java.io._
+  val consensusOnce: Once[Cluster]   = Once.empty
+  val applicationOnce: Once[Cluster] = Once.empty
 
-class NetworkHandler extends Network.Handler[Stack] {
-  val clusterOnce: Once[Cluster]  = Once.empty
-  val clientOnce: Once[Transport] = Once.empty
-  val currentNode: Once[Node]     = Once.empty
+  val transactionOnce: Once[Map[String, Transaction]] = Once(Map.empty)
 
-  val logger: Logger = LoggerFactory.getLogger(getClass)
+  val appMessageWorker: Once[AnyRef]                  = Once.empty
+  val appMessageReceiver: Once[MessageReceiver]       = Once.empty
+  val consensusMessageWorker: Once[AnyRef]            = Once.empty
+  val consensusMessageReceiver: Once[MessageReceiver] = Once.empty
 
-  /** startup p2p node
-    */
-  override def startupP2PNode(handler: JsonMessageHandler): Stack[Node] = Stack { setting =>
+  //val executor: ExecutorService = Executors.newSingleThreadExecutor()
+
+  override def startupConsensusNode(
+      handler: Message.Handler[ConsensusMessage, Unit]): Stack[ConsensusNode] = Stack { setting =>
+    val consensusConfig = setting match {
+      case coreNodeSetting: CoreNodeSetting => coreNodeSetting.config.consensusConfig
+      case _                                => throw new RuntimeException("unsupported setting to startup consensus")
+    }
+    val converter: CubeMessage => ConsensusMessage = cub => {
+      val jsonString = cub.data[String]()
+      val scpEither = for {
+        json <- parse(jsonString)
+        r    <- json.as[SCPEnvelope]
+      } yield r
+      scpEither match {
+        case Right(envelope) => envelope
+        case Left(e) =>
+          throw new RuntimeException(s"consensus node can not handle message: $jsonString", e)
+      }
+    }
+    val node =
+      startP2PNode(consensusOnce, consensusConfig, converter, handler, setting, "consensus node")
+    ConsensusNode(node)
+  }
+
+  override def startupApplicationNode(
+      handler: Message.Handler[ApplicationMessage, Unit]): Stack[ApplicationNode] = Stack {
+    setting =>
+      val applicationConfig = setting match {
+        case coreNodeSetting: CoreNodeSetting => coreNodeSetting.config.applicationConfig
+        case edgeNodeSetting: EdgeNodeSetting => edgeNodeSetting.config.applicationConfig
+        case _                                => throw new RuntimeException("un matched config")
+      }
+      val converter: CubeMessage => ApplicationMessage = cube => cube.data[ApplicationMessage]
+      val node =
+        startP2PNode(applicationOnce,
+                     applicationConfig,
+                     converter,
+                     handler,
+                     setting,
+                     "application node")
+      ApplicationNode(node)
+  }
+
+  override def startupServiceNode(
+      handler: Message.Handler[ClientMessage, Transaction]): Stack[ServiceNode] =
+    Stack { setting =>
+      setting match {
+        case edgeNodeSetting: EdgeNodeSetting =>
+          val config   = edgeNodeSetting.config.jsonRPCConfig
+          val address  = Node.Addr(config.host, config.port)
+          val resource = new EdgeJsonRpcResource(handler)
+          server.run("edge", "v1", resource, address.port, address.host)
+          log.info(
+            s"edge node json rpc service startup: http://${config.host}:${config.port}/jsonrpc/edge/v1")
+          val (account, _) = edgeNodeSetting.config.applicationConfig.account
+          ServiceNode(Node(address, account))
+        case _ =>
+          throw new RuntimeException("unsupported edge node setting to startup service node")
+      }
+    }
+
+  override def shutdownConsensusNode(node: ConsensusNode): Stack[Unit] = Stack {
+    shutdownP2PNode(consensusOnce)
+  }
+  override def shutdownApplicationNode(node: ApplicationNode): Stack[Unit] = Stack {
+    shutdownP2PNode(applicationOnce)
+  }
+
+  override def shutdownServiceNode(node: ServiceNode): Stack[Unit] = ???
+
+  override def broadcastMessage(message: Message): Stack[Unit] = Stack { setting =>
     setting match {
-      case x: Setting.P2PNodeSetting =>
-        x.workingDir.mkdirs()
-        val host = x.configReader.p2p.host
-        val port = x.configReader.p2p.port
+      case x: CoreNodeSetting =>
+        message match {
+          case consensusMessage: ConsensusMessage =>
+            consensusMessage match {
+              case scpEnvelope: SCPEnvelope =>
+                consensusOnce.foreach { cluster =>
+                  SCPThreadPool.broadcast(() => {
+//                    cluster.spreadGossip(CubeMessage.fromData(scpEnvelope.asJson.noSpaces))
+                    val msg = CubeMessage.fromData(scpEnvelope.asJson.noSpaces)
+                    cluster.otherMembers().forEach { m =>
+                      cluster.send(m, msg)
+                    }
+                  })
 
-        val config = ClusterConfig
-          .builder()
-          .port(port)
-          .listenAddress(host)
-          .portAutoIncrement(false)
-          .seedMembers(
-            x.configReader.p2p.seeds
-              .map(_.toString())
-              .map(x => Node.parseAddr(x))
-              .filter(_.isDefined)
-              .map(_.get)
-              .map(x => Address.create(x.host, x.port)): _*)
-          .suspicionMult(ClusterConfig.DEFAULT_WAN_SUSPICION_MULT)
-          .build()
-        clusterOnce := Cluster.joinAwait(config)
-        clusterOnce.foreach { cluster =>
-          // print members
-          cluster.listenMembership().subscribe { membershipEvent =>
-            logger.info(
-              s"P2P Membership Event: ${membershipEvent.`type`()}, ${membershipEvent.member()}")
-            printMembers()
-          }
-
-          val subscription: Message => Unit = { gossip =>
-            scala.util.Try {
-              val jsonMessage = gossip.data[JsonMessage]()
-              logger.debug("start to handle json message by gossiping")
-              handler.handle(jsonMessage)
-              logger.debug("handled json message by gossiping")
-            } match {
-              case scala.util.Success(_) =>
-                logger.debug(s"Gossip message handled successfully")
-              case scala.util.Failure(t) =>
-                logger.error(s"Gossip message handled failed", t)
+                }
             }
-          }
-
-          //handle JsonMessage only
-          cluster
-            .listenGossips()
-            .filter({ message =>
-              val s = scala.util.Try {
-                val jsonMessage = message.data[JsonMessage]
-                !handler.ignored(jsonMessage)
-              }.toOption
-              if (s.isDefined) s.get else false
-            })
-            .subscribe { gossip =>
-              logger.debug(s"start to handle Gossip message: $gossip")
-              subscription(gossip)
-            }
-
-          ()
+          case _ => throw new RuntimeException(s"core node unsupported broadcast message: $message")
         }
-
-        val node = Node(Node.Addr(host, port), None)
-
-        logger.info(s"node(${node.address}) startup.")
-        node
-
-      case _ => throw new RuntimeException("CoreNodesetting needed here!")
+      case _: EdgeNodeSetting =>
+        message match {
+          case sendTransaction: SendTransaction =>
+            applicationOnce.foreach { cluster =>
+              cluster.spreadGossip(
+                CubeMessage.fromData(TransactionMessage(sendTransaction.payload)))
+              ()
+            }
+          case queryTransaction: QueryTransaction =>
+            applicationOnce.foreach { cluster =>
+              cluster.spreadGossip(CubeMessage.fromData(QueryMessage(queryTransaction.payload)))
+              ()
+            }
+          case _ => throw new RuntimeException(s"edge node unsupported broadcast message: $message")
+        }
+      case _ =>
     }
   }
 
-  override def bindAccount(node: Node): Stack[Node] = Stack { setting =>
-    setting match {
-      case x: Setting.P2PNodeSetting =>
-        // Read account in the config file.
-        x.workingDir.mkdirs()
-        val account = x.configReader.p2p.bindAccount
-        node.copy(account = Some(account))
-
-      case _ => throw new RuntimeException("CoreNodesetting needed here!")
-    }
-
+  override def handledQueryTransaction(
+      queryTransaction: QueryTransaction): Stack[Option[Transaction]] = Stack {
+    transactionOnce.map(_.get(queryTransaction.payload.asBytesValue.utf8String)).unsafe()
   }
 
-  /** shutdown current node
-    */
-  override def shutdownP2PNode(node: Node): Stack[Unit] = Stack { setting =>
-    clusterOnce foreach { cluster =>
-      cluster.shutdown().get()
-      logger.info(s"node(${node.address}) shutdown.")
-    }
-  }
-
-  override def broadcastMessage(message: JsonMessage): Stack[Unit] = Stack { setting =>
-    clusterOnce foreach { cluster =>
-      cluster.spreadGossip(Message.fromData(message))
+  override def receiveTransactionMessage(applicationMessage: ApplicationMessage): Stack[Unit] =
+    Stack {
+      applicationMessage match {
+        case transactionMessage: TransactionMessage =>
+          val jsonString = transactionMessage.payload.asBytesValue.utf8String
+          parse(jsonString).right.toOption match {
+            case Some(json) =>
+              json.as[Transaction].right.toOption match {
+                case Some(transaction) =>
+                  transactionOnce.updated(
+                    _ + (transaction.id.asBytesValue.utf8String -> transaction)); ()
+                case None =>
+                  throw new RuntimeException(
+                    s"received core node application message: $jsonString can not convert to Transaction")
+              }
+            case None =>
+              throw new RuntimeException(
+                s"received core node application message: $jsonString must be a transaction json")
+          }
+        case _ =>
+      }
       ()
     }
+
+  private def startP2PNode[M <: Message](clusterOnce: Once[Cluster],
+                                         p2pConfig: P2PConfig,
+                                         converter: CubeMessage => M,
+                                         handler: Message.Handler[M, Unit],
+                                         setting: Setting,
+                                         memberTag: String): Node = {
+
+    clusterOnce := {
+      val config =
+        ClusterConfig
+          .builder()
+          .listenAddress(p2pConfig.host)
+          .port(p2pConfig.port)
+          .portAutoIncrement(false)
+          .seedMembers(p2pConfig.seeds.map(x => Address.create(x.host, x.port)): _*)
+          .suspicionMult(ClusterConfig.DEFAULT_WAN_SUSPICION_MULT)
+          .pingInterval(ClusterConfig.DEFAULT_WAN_PING_INTERVAL)
+          .pingTimeout(ClusterConfig.DEFAULT_WAN_PING_TIMEOUT)
+          .syncInterval(ClusterConfig.DEFAULT_WAN_SYNC_INTERVAL)
+          .gossipFanout(ClusterConfig.DEFAULT_WAN_GOSSIP_FANOUT)
+          .connectTimeout(ClusterConfig.DEFAULT_WAN_CONNECT_TIMEOUT)
+          .build()
+      Cluster.joinAwait(config)
+    }
+
+    val workingSlotIndex =
+      StoreHandler.instance.currentHeight().map(_ + 1).run(setting).unsafeRunSync()
+
+    p2pConfig match {
+      case _: ConsensusConfig =>
+        consensusMessageWorker := {
+          consensusMessageReceiver := MessageReceiver()
+          val x = MessageWorker(consensusMessageReceiver.unsafe(), handler, workingSlotIndex)
+          x.startWork()
+          x
+        }
+      case _: ApplicationConfig =>
+        appMessageWorker := {
+          appMessageReceiver := MessageReceiver()
+          val x = MessageWorker(appMessageReceiver.unsafe(), handler, workingSlotIndex)
+          x.startWork()
+          x
+        }
+    }
+
+    clusterOnce.foreach { cluster =>
+      printMembers(clusterOnce, memberTag)
+      cluster.listenMembership().subscribe { membershipEvent =>
+        log.debug(
+          s"receive P2P Membership Event: ${membershipEvent.`type`()}, ${membershipEvent.member()}")
+        printMembers(clusterOnce, memberTag)
+      }
+      cluster
+        .listenGossips()
+        .subscribe { gossip =>
+          val msg = converter(gossip)
+          msg match {
+            case _: Message.ApplicationMessage =>
+              appMessageReceiver.foreach(_.receive(msg))
+            case _: Message.ConsensusMessage =>
+              consensusMessageReceiver.foreach(_.receive(msg))
+          }
+        }
+
+      cluster
+        .listen()
+        .subscribe { gossip =>
+          val start = System.currentTimeMillis()
+          val msg   = converter(gossip)
+          val end   = System.currentTimeMillis()
+          msg match {
+            case _: Message.ApplicationMessage =>
+              appMessageReceiver.foreach(_.receive(msg))
+            case _: Message.ConsensusMessage =>
+              consensusMessageReceiver.foreach(_.receive(msg))
+          }
+        }
+      ()
+    }
+
+    val node = Node(Node.Addr(p2pConfig.host, p2pConfig.port), p2pConfig.account._1)
+    log.info(s"node ($node) started ")
+    node
   }
 
-  /** set node info for current process
-    * @param node a node has been bound an account
-    */
-  override def setCurrentNode(node: Node): Stack[Unit] = Stack { setting =>
-    currentNode := node
+  private def shutdownP2PNode(clusterOnce: Once[Cluster]): Unit = {
+    clusterOnce.foreach { cluster =>
+      cluster.shutdown().get()
+      log.info(s"node ${cluster.address()} shutdown")
+    }
   }
 
-  /** get node info for current process
-    * @return node with bound account
-    */
-  override def getCurrentNode(): Stack[Node] = Stack { setting =>
-    currentNode.unsafe
-  }
-
-  private def printMembers(): Unit = {
-    logger.info("current members:")
+  private def printMembers(clusterOnce: Once[Cluster], memberTag: String): Unit = {
     import scala.collection.JavaConverters._
-    clusterOnce.unsafe().members().asScala.foreach(member => logger.info(s"- $member"))
+    log.info(s"==== $memberTag current members: ===================")
+    clusterOnce.unsafe().members().asScala.foreach(member => log.info(s"=    -- $member --"))
+    log.info(s"========================================================")
   }
 }
 
@@ -144,6 +282,6 @@ object NetworkHandler {
   val instance = new NetworkHandler
 
   trait Implicits {
-    implicit val networkHandlerInstance: NetworkHandler = instance
+    implicit val networkHandler: NetworkHandler = instance
   }
 }

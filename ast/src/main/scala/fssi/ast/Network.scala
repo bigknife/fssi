@@ -1,38 +1,23 @@
-package fssi
-package ast
+package fssi.ast
 
-import types._
 import bigknife.sop._
 import bigknife.sop.macros._
 import bigknife.sop.implicits._
+import fssi.types._
+import fssi.types.biz.Message.ClientMessage.QueryTransaction
+import fssi.types.biz._
+import fssi.types.biz.Node._
 
-/** P2P network service
-  */
 @sp trait Network[F[_]] {
-  /** startup p2p node
-    */
-  def startupP2PNode(handler: JsonMessageHandler): P[F, Node]
+  def startupConsensusNode(handler: Message.Handler[ConsensusMessage, Unit]): P[F, ConsensusNode]
+  def startupApplicationNode(
+      handler: Message.Handler[ApplicationMessage, Unit]): P[F, ApplicationNode]
+  def startupServiceNode(handler: Message.Handler[ClientMessage, Transaction]): P[F, ServiceNode]
 
-  /** shutdown current node
-    */
-  def shutdownP2PNode(node: Node): P[F, Unit]
-
-  /** send json message to some nodes
-    */
-  def broadcastMessage(message: JsonMessage): P[F, Unit]
-
-  /** bind an account to a node, then all actions will
-    * be considered to be acted by this account
-    */
-  def bindAccount(node: Node): P[F, Node]
-
-  /** set node info for current process
-    * @param node a node has been bound an account
-    */
-  def setCurrentNode(node: Node): P[F, Unit]
-
-  /** get node info for current process
-    * @return node with bound account
-    */
-  def getCurrentNode(): P[F, Node]
+  def shutdownConsensusNode(node: ConsensusNode): P[F, Unit]
+  def shutdownApplicationNode(node: ApplicationNode): P[F, Unit]
+  def shutdownServiceNode(node: ServiceNode): P[F, Unit]
+  def broadcastMessage(message: Message): P[F, Unit]
+  def handledQueryTransaction(queryTransaction: QueryTransaction): P[F, Option[Transaction]]
+  def receiveTransactionMessage(applicationMessage: ApplicationMessage): P[F, Unit]
 }
