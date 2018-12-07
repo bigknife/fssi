@@ -196,7 +196,7 @@ class StoreHandler extends Store.Handler[Stack] with LogSupport with UnsignedByt
             timestamp = timestamp,
             hash = hash
           )
-          latestDeterminedBlock.update(_ => b)
+          latestDeterminedBlock := b
           b
         }
 
