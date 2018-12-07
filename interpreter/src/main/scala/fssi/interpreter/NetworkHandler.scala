@@ -248,7 +248,6 @@ class NetworkHandler extends Network.Handler[Stack] with LogSupport {
           val start = System.currentTimeMillis()
           val msg   = converter(gossip)
           val end   = System.currentTimeMillis()
-          log.error(s"convert takes: ${end - start} millis")
           msg match {
             case _: Message.ApplicationMessage =>
               appMessageReceiver.foreach(_.receive(msg))

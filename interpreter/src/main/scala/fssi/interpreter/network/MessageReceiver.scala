@@ -54,6 +54,7 @@ trait MessageReceiver {
 
           case x: SCPEnvelope
               if x.value.statement.message.isInstanceOf[fssi.scp.types.Message.Nomination] =>
+
             logTimeCost(s"------ [RECV] ${x.messageType}@${x.slotIndex} message " +
                           s"from ${x.value.statement.from}",
                         "    pushed into message pool, ") {
@@ -224,11 +225,11 @@ trait MessageReceiver {
   )
 
   private def logTimeCost(startWords: String, endWords: String)(f: => Unit): Unit = {
-    if (log.isDebugEnabled) log.debug(s"$startWords")
-    val start = System.currentTimeMillis()
+    //if (log.isDebugEnabled) log.debug(s"$startWords")
+    //val start = System.currentTimeMillis()
     f
-    val end = System.currentTimeMillis()
-    if (log.isDebugEnabled) log.debug(s"$endWords, time spent: ${end - start} ms")
+    //val end = System.currentTimeMillis()
+    //if (log.isDebugEnabled) log.debug(s"$endWords, time spent: ${end - start} ms")
   }
 }
 

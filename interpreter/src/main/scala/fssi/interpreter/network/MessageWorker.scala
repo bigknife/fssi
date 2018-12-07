@@ -67,7 +67,6 @@ trait MessageWorker[M <: Message] {
         applicationT.submit(new Runnable {
           override def run(): Unit =
             try {
-              log.info("------- Starting  handle app")
               val t0 = System.currentTimeMillis()
               messageHandler(message)
               val t1 = System.currentTimeMillis()
@@ -81,7 +80,6 @@ trait MessageWorker[M <: Message] {
         nomT.submit(new Runnable {
           override def run(): Unit =
             try {
-              log.info(s"------- Starting handle nomination : ${x.value.statement.from}")
               val t0     = System.currentTimeMillis()
               val coming = x.value.statement.slotIndex.value
               if (needHandleEnvelope(x)) {
@@ -106,8 +104,6 @@ trait MessageWorker[M <: Message] {
         ballotT.submit(new Runnable {
           override def run(): Unit =
             try {
-              log.info(
-                s"------- Starting handle ballot : ${x.messageType} (${x.value.statement.from})")
               val t0     = System.currentTimeMillis()
               val coming = x.value.statement.slotIndex.value
               if (needHandleEnvelope(x)) {

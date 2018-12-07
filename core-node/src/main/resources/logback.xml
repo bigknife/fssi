@@ -46,16 +46,16 @@
         <appender-ref ref="ENVELOPE" />
     </logger>
 
-    <logger name="fssi.scp.ast.envelope.local" additivity="false" level="debug">
+    <logger name="fssi.scp.ast.envelope.local" additivity="false" level="info">
         <appender-ref ref="ENVELOPE" />
     </logger>
 
     <!-- Message Receiver and Worker -->
-    <logger name="fssi.interpreter.network.message.worker" additivity="false" level="debug">
+    <logger name="fssi.interpreter.network.message.worker" additivity="false" level="info">
         <appender-ref ref="MESSAGE" />
     </logger>
 
-    <logger name="fssi.interpreter.network.message.receiver" additivity="false" level="debug">
+    <logger name="fssi.interpreter.network.message.receiver" additivity="false" level="info">
         <appender-ref ref="MESSAGE" />
     </logger>
 
