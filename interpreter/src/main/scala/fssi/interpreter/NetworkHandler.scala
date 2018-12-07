@@ -1,7 +1,5 @@
 package fssi
 package interpreter
-import java.util.concurrent.{ExecutorService, Executors}
-
 import fssi.ast.Network
 import fssi.interpreter.Configuration.{ApplicationConfig, ConsensusConfig, P2PConfig}
 import fssi.interpreter.Setting.{CoreNodeSetting, EdgeNodeSetting}
@@ -42,7 +40,7 @@ class NetworkHandler extends Network.Handler[Stack] with LogSupport {
   val consensusMessageWorker: Once[AnyRef]            = Once.empty
   val consensusMessageReceiver: Once[MessageReceiver] = Once.empty
 
-  lazy val executor: ExecutorService = Executors.newSingleThreadExecutor()
+  //val executor: ExecutorService = Executors.newSingleThreadExecutor()
 
   override def startupConsensusNode(
       handler: Message.Handler[ConsensusMessage, Unit]): Stack[ConsensusNode] = Stack { setting =>
@@ -115,21 +113,20 @@ class NetworkHandler extends Network.Handler[Stack] with LogSupport {
 
   override def broadcastMessage(message: Message): Stack[Unit] = Stack { setting =>
     setting match {
-      case _: CoreNodeSetting =>
+      case x: CoreNodeSetting =>
         message match {
           case consensusMessage: ConsensusMessage =>
             consensusMessage match {
               case scpEnvelope: SCPEnvelope =>
                 consensusOnce.foreach { cluster =>
-                  executor.submit(new Runnable {
-                    override def run(): Unit = {
+                  SCPThreadPool.broadcast(() => {
 //                    cluster.spreadGossip(CubeMessage.fromData(scpEnvelope.asJson.noSpaces))
-                      val msg = CubeMessage.fromData(scpEnvelope.asJson.noSpaces)
-                      cluster.otherMembers().forEach { m =>
-                        cluster.send(m, msg)
-                      }
+                    val msg = CubeMessage.fromData(scpEnvelope.asJson.noSpaces)
+                    cluster.otherMembers().forEach { m =>
+                      cluster.send(m, msg)
                     }
                   })
+
                 }
             }
           case _ => throw new RuntimeException(s"core node unsupported broadcast message: $message")
@@ -198,8 +195,6 @@ class NetworkHandler extends Network.Handler[Stack] with LogSupport {
           .portAutoIncrement(false)
           .seedMembers(p2pConfig.seeds.map(x => Address.create(x.host, x.port)): _*)
           .suspicionMult(ClusterConfig.DEFAULT_WAN_SUSPICION_MULT)
-          .pingTimeout(2000)
-          .pingInterval(3000)
           .build()
       Cluster.joinAwait(config)
     }

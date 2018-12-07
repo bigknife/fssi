@@ -17,7 +17,9 @@ trait SCPSupport {
       maxTimeoutSeconds = config.maxTimeoutSeconds.toInt,
       quorumSet = config.quorumSet,
       privateKey = crypto.rebuildECPrivateKey(privKeyBytes, crypto.SECP256K1),
-      applicationCallback = SCPApplicationCallback(coreNode),
+      applicationCallback = new SCPApplicationCallback {
+        override def coreNodeSetting: CoreNodeSetting = coreNode
+      },
       broadcastTimeout = config.broadcastTimeout
     )
   }

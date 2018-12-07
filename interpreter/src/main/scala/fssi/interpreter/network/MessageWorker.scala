@@ -103,6 +103,8 @@ trait MessageWorker[M <: Message] {
         ballotT.submit(new Runnable {
           override def run(): Unit =
             try {
+
+
               val t0     = System.currentTimeMillis()
               val coming = x.value.statement.slotIndex.value
               if (needHandleEnvelope(x)) {
