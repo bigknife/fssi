@@ -71,7 +71,7 @@ class FSSIClassLoader(val path: Path, val track: scala.collection.mutable.ListBu
     } catch {
       case _: Throwable =>
         val classFile =
-          Paths.get(path.toString, name.replaceAll("\\.", File.separator) + ".class").toFile
+          Paths.get(path.toString, name.replaceAll("\\.", "/") + ".class").toFile
         findClassFromClassFile(classFile, name, methodName, parameterTypes)
     }
 }
