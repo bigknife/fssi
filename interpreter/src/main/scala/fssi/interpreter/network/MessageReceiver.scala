@@ -104,13 +104,13 @@ trait MessageReceiver {
     * @return
     */
   def fetchApplicationMessage(): Option[ApplicationMessage] = {
-    applicationMessagePool.synchronized {
+    //applicationMessagePool.synchronized {
       val r = applicationMessagePool.map(_.headOption).unsafe()
       applicationMessagePool.update { m =>
         m.drop(1)
       }
       r
-    }
+    //}
   }
 
   /**
@@ -118,7 +118,7 @@ trait MessageReceiver {
     * @return
     */
   def fetchNomination(): Map[NodeID, Option[SCPEnvelope]] = {
-    nomMessagePool.synchronized {
+    //nomMessagePool.synchronized {
       val r = nomMessagePool
         .map { m =>
           m.map {
@@ -143,7 +143,7 @@ trait MessageReceiver {
       // when got a result of nodeId, then clear all nom of from this node
       nomMessagePool := Map.empty
       r
-    }
+    //}
   }
 
   /**
@@ -151,7 +151,7 @@ trait MessageReceiver {
     * @return
     */
   def fetchBallot(): Map[NodeID, Option[SCPEnvelope]] = {
-    ballotMessagePool.synchronized {
+    //ballotMessagePool.synchronized {
       type BM = fssi.scp.types.Message.BallotMessage
       val r = ballotMessagePool
         .map { m =>
@@ -179,7 +179,7 @@ trait MessageReceiver {
       ballotMessagePool := Map.empty
       r
     }
-  }
+  //}
 
   monitorThread.scheduleAtFixedRate(
     () => {
