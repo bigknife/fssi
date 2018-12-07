@@ -5,7 +5,7 @@ import java.io.{File, FileInputStream}
 import java.nio.file.{Path, Paths}
 
 import fssi.sandbox.visitor.method.CountMethodExpenditureVisitor
-import org.objectweb.asm.{ClassReader, ClassWriter, Opcodes}
+import org.objectweb.asm.{ClassReader, ClassWriter}
 
 import scala.util.Try
 
@@ -25,7 +25,8 @@ class ContractClassLoader(path: Path) extends ClassLoader {
       } match {
         case Some(_) => evaluateClass(name)
         case None =>
-          val classFile = Paths.get(path.toString, s"${name.replaceAll("\\.", "/")}.class").toFile
+          val classFile =
+            Paths.get(path.toString, s"${name.replaceAll("\\.", File.separator)}.class").toFile
           evaluateClassFile(classFile)
       }
       loadList += name -> clazz

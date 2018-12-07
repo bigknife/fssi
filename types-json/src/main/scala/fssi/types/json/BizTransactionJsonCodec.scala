@@ -11,10 +11,10 @@ import json.implicits._
 
 trait BizTransactionJsonCodec {
   implicit val bizTransactionIdEncoder: Encoder[Transaction.ID] =
-    Encoder[String].contramap(_.asBytesValue.bcBase58)
+    Encoder[String].contramap(_.asBytesValue.base64)
 
   implicit val bizTransactionIdDecoder: Decoder[Transaction.ID] =
-    Decoder[String].map(x => Transaction.ID(BytesValue.decodeBcBase58(x).get.bytes))
+    Decoder[String].map(x => Transaction.ID(BytesValue.unsafeDecodeBase64(x).bytes))
 
   implicit val bizTransactionEncoder: Encoder[Transaction] = {
     case x: Transaction.Transfer =>

@@ -13,10 +13,10 @@ import fssi.types.biz.Contract.UserContract.Parameter._
 
 trait BizContractJsonCodec {
   implicit val userContractCodeEncoder: Encoder[Contract.UserContract.Code] =
-    Encoder[String].contramap(_.asBytesValue.bcBase58)
+    Encoder[String].contramap(_.asBytesValue.base64)
 
   implicit val userContractCodeDecoder: Decoder[Contract.UserContract.Code] =
-    Decoder[String].map(x => Contract.UserContract.Code(BytesValue.decodeBcBase58(x).get.bytes))
+    Decoder[String].map(x => Contract.UserContract.Code(BytesValue.unsafeDecodeBase64(x).bytes))
 
   implicit val bizVersionEncoder: Encoder[Contract.Version] =
     Encoder[String].contramap(_.toString)
@@ -104,8 +104,8 @@ trait BizContractJsonCodec {
   }
 
   implicit val bizUserContractDescJsonEncoder: Encoder[Description] =
-    Encoder[String].contramap(_.value.asBytesValue.bcBase58)
+    Encoder[String].contramap(_.value.asBytesValue.base64)
 
   implicit val bizUserContractDescJsonDecoder: Decoder[Description] =
-    Decoder[String].map(x => Description(BytesValue.decodeBcBase58(x).get.bytes))
+    Decoder[String].map(x => Description(BytesValue.unsafeDecodeBase64(x).bytes))
 }
