@@ -26,7 +26,7 @@ class ContractClassLoader(path: Path) extends ClassLoader {
         case Some(_) => evaluateClass(name)
         case None =>
           val classFile =
-            Paths.get(path.toString, s"${name.replaceAll("\\.", File.separator)}.class").toFile
+            Paths.get(path.toString, s"${name.replaceAll("\\.", "/")}.class").toFile
           evaluateClassFile(classFile)
       }
       loadList += name -> clazz
