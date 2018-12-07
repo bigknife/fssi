@@ -268,6 +268,9 @@ class StoreHandler extends Store.Handler[Stack] with LogSupport with UnsignedByt
 
       bcs.commit(height)
     }
+
+    latestDeterminedBlock := block
+    ()
   }
 
   override def loadAccountFromFile(accountFile: File): Stack[Either[FSSIException, Account]] =
