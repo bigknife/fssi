@@ -1,21 +1,26 @@
 package fssi
 package interpreter
+import java.util.concurrent.atomic.AtomicBoolean
+
 import fssi.ast.Consensus
 import fssi.interpreter.Setting.CoreNodeSetting
 import fssi.interpreter.scp.{BlockValue, SCPEnvelope, SCPSupport}
 import fssi.scp._
 import fssi.scp.types.SlotIndex
-import fssi.types.{ConsensusMessage, ReceiptSet, TransactionSet}
 import fssi.types.base.{Hash, Timestamp, WorldState}
 import fssi.types.biz.Node.ConsensusNode
-import fssi.types.biz.{Block, Receipt, Transaction}
-import utils._
+import fssi.types.biz.{Block, Transaction}
+import fssi.types.{ConsensusMessage, ReceiptSet, TransactionSet}
+import fssi.utils._
 
 class ConsensusHandler
     extends Consensus.Handler[Stack]
     with SCPSupport
     with UnsignedBytesSupport
     with LogSupport {
+
+  lazy val transactionPool     = SafeVar(TransactionSet.empty)
+  lazy val isInConsensusStatus = new AtomicBoolean(false)
 
   override def initialize(node: ConsensusNode, currentHeight: BigInt): Stack[Unit] = Stack {
     setting =>
@@ -29,19 +34,36 @@ class ConsensusHandler
 
   override def destroy(): Stack[Unit] = Stack {}
 
-  override def tryAgree(transaction: Transaction, lastDeterminedBlock: Block): Stack[Unit] = Stack {
-    setting =>
-      setting match {
-        case coreNodeSetting: CoreNodeSetting =>
+  override def tryAgree(transaction: Transaction): Stack[Unit] = Stack { setting =>
+    setting match {
+      case coreNodeSetting: CoreNodeSetting =>
+        transactionPool := transactionPool.unsafe() + transaction
+        val attempt = attemptToNomination().map(_ => ())
+        attempt(coreNodeSetting).unsafeRunSync()
+      case _ =>
+    }
+  }
+
+  override def attemptToNomination(): Stack[Boolean] = Stack { setting =>
+    setting match {
+      case coreNodeSetting: CoreNodeSetting =>
+        if (transactionPool.unsafe().isEmpty || isInConsensusStatus.get()) false
+        else {
+          startConsensus()
           implicit val scpSetting: fssi.scp.interpreter.Setting = resolveSCPSetting(coreNodeSetting)
           val nodeId                                            = scpSetting.localNode
           val chainId                                           = coreNodeSetting.config.chainId
-          val height                                            = lastDeterminedBlock.height + 1
-          val slotIndex                                         = SlotIndex(height)
-          val preWorldState                                     = lastDeterminedBlock.curWorldState
-          val transactions                                      = TransactionSet(transaction)
-          val receipts                                          = ReceiptSet.empty
-          val timestamp                                         = Timestamp(System.currentTimeMillis())
+          val lastDeterminedBlock =
+            StoreHandler.instance.getLatestDeterminedBlock()(coreNodeSetting).unsafeRunSync()
+          val height        = lastDeterminedBlock.height + 1
+          val slotIndex     = SlotIndex(height)
+          val preWorldState = lastDeterminedBlock.curWorldState
+          val transactions =
+            transactionPool
+              .unsafe()
+              .take(coreNodeSetting.config.consensusConfig.maxTransactionSizeInBlock)
+          val receipts  = ReceiptSet.empty
+          val timestamp = Timestamp(System.currentTimeMillis())
           val block = Block(height,
                             chainId,
                             preWorldState,
@@ -55,8 +77,11 @@ class ConsensusHandler
           val previousValue = BlockValue(lastDeterminedBlock)
           Portal.handleRequest(nodeId, slotIndex, previousValue, blockValue)
           log.debug(s"try to agree block value: $blockValue , previousValue: $previousValue")
-        case _ =>
-      }
+          transactionPool := transactionPool.unsafe().drop(transactions.size)
+          true
+        }
+      case _ => false
+    }
   }
 
   override def processMessage(message: ConsensusMessage, lastDeterminedBlock: Block): Stack[Unit] =
@@ -73,26 +98,18 @@ class ConsensusHandler
 
               val previousValue = BlockValue(lastDeterminedBlock)
               Portal.handleEnvelope(x.value, previousValue)
-
-            /*
-              val nodeId = envelope.statement.from
-              EnvelopePool.put(x)
-
-              EnvelopePool.getUnworkingNom(nodeId).foreach { x =>
-                EnvelopePool.setWorkingNom(nodeId, x)
-                Portal.handleEnvelope(x.value, previousValue)
-                EnvelopePool.endWorkingNom(nodeId, x)
-              }
-
-              EnvelopePool.getUnworkingBallot(nodeId).foreach { x =>
-                EnvelopePool.setWorkingBallot(nodeId, x)
-                Portal.handleEnvelope(x.value, previousValue)
-                EnvelopePool.endWorkingBallot(nodeId, x)
-              }*/
           }
         case _ =>
       }
     }
+
+  private[interpreter] def startConsensus(): Unit = {
+    isInConsensusStatus.set(true); ()
+  }
+
+  private[interpreter] def stopConsensus(): Unit = {
+    isInConsensusStatus.set(false); ()
+  }
 }
 
 object ConsensusHandler {

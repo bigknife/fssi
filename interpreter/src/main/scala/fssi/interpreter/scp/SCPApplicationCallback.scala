@@ -127,6 +127,14 @@ trait SCPApplicationCallback
             listeners.foreach(_(slotIndex.value))
           }
           log.info(s"externalized: ${slotIndex.value} --> ${block.hash}")
+
+          // start to nominate transaction generated after nomination
+          ConsensusHandler.instance.stopConsensus()
+          val result =
+            ConsensusHandler.instance.attemptToNomination()(coreNodeSetting).unsafeRunSync()
+          if (result)
+            log.info("start to nominate block which transactions generated after nomination")
+          else ()
         }
       case FakeValue(_) =>
     }

@@ -11,6 +11,7 @@ import fssi.types.biz.Node._
 @sp trait Consensus[F[_]] {
   def initialize(node: ConsensusNode, currentHeight: BigInt): P[F, Unit]
   def destroy(): P[F, Unit]
-  def tryAgree(transaction: Transaction, lastDeterminedBlock: Block): P[F, Unit]
+  def tryAgree(transaction: Transaction): P[F, Unit]
   def processMessage(message: ConsensusMessage, lastDeterminedBlock: Block): P[F, Unit]
+  def attemptToNomination(): P[F, Boolean]
 }

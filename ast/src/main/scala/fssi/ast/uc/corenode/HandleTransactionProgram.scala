@@ -14,12 +14,7 @@ import fssi.types.implicits._
 trait HandleTransactionProgram[F[_]] extends CoreNodeProgram[F] with BaseProgram[F] {
   import model._
 
-  def handleTransaction(transaction: Transaction): SP[F, Unit] = {
-    for {
-      determinedBlock <- store.getLatestDeterminedBlock()
-      _               <- consensus.tryAgree(transaction, determinedBlock)
-    } yield ()
-  }
+  def handleTransaction(transaction: Transaction): SP[F, Unit] = consensus.tryAgree(transaction)
 
   def runTransaction(transaction: Transaction): SP[F, Receipt] = {
     for {
