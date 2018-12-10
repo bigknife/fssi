@@ -190,7 +190,7 @@ class Builder extends BaseLogger {
 
   def buildContractProjectFromBytes(contractBytes: Array[Byte],
                                     rootPath: Path): Either[FSSIException, Path] = {
-    val file = Paths.get(rootPath.toString, "contract-tmp").toFile
+    val file = Paths.get(rootPath.toString, java.util.UUID.randomUUID().toString).toFile
     try {
       val contractRootPath = Paths.get(rootPath.toString, java.util.UUID.randomUUID().toString)
       if (contractRootPath.toFile.exists()) FileUtil.deleteDir(contractRootPath)
@@ -211,7 +211,8 @@ class Builder extends BaseLogger {
 
   def createDefaultContractTmpPath: Either[FSSIException, Path] = {
     try {
-      val path = Paths.get(System.getProperty("user.home"), ".fssi")
+      val path =
+        Paths.get(System.getProperty("user.home"), ".fssi", java.util.UUID.randomUUID().toString)
       path.toFile.mkdirs()
       Right(path)
     } catch {

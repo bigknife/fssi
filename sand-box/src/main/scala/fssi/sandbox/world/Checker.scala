@@ -32,7 +32,7 @@ class Checker extends BaseLogger {
   def checkDeterminism(rootPath: Path): Either[FSSIException, Unit] = {
     logger.info(s"check contract determinism for contract $rootPath")
     if (rootPath.toFile.exists()) {
-      val targetPath = Paths.get(rootPath.getParent.toString, "fssi")
+      val targetPath = Paths.get(rootPath.getParent.toString, java.util.UUID.randomUUID().toString)
       try {
         val track = scala.collection.mutable.ListBuffer.empty[String]
         if (!targetPath.toFile.exists()) targetPath.toFile.mkdirs()
