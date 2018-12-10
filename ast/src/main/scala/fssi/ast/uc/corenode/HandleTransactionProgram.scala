@@ -25,8 +25,6 @@ trait HandleTransactionProgram[F[_]] extends CoreNodeProgram[F] with BaseProgram
     for {
       verifyResult <- crypto.verifyTransactionSignature(transaction)
       _            <- requireM(verifyResult(), new RuntimeException("transaction signature tampered"))
-      duplicated   <- store.isTransactionDuplicated(transaction)
-      _            <- requireM(!duplicated, new RuntimeException("transaction id duplicated"))
       r <- transaction match {
         case transfer: Transfer => runTransferTransaction(transfer)
         case deploy: Deploy     => runDeployTransaction(deploy)
@@ -40,6 +38,8 @@ trait HandleTransactionProgram[F[_]] extends CoreNodeProgram[F] with BaseProgram
       s"payer ${transfer.payer.asBytesValue.bcBase58} transacts (${transfer.token}) to payee ${transfer.payee.asBytesValue.bcBase58}"
     for {
       _                <- log.info(message)
+      duplicated       <- store.isTransactionDuplicated(transfer)
+      _                <- requireM(!duplicated, new RuntimeException("transaction id duplicated"))
       snapshotOrFailed <- store.snapshotTransaction(transfer)
       receipt <- ifM(
         snapshotOrFailed.isRight.pureSP[F], {
@@ -63,8 +63,10 @@ trait HandleTransactionProgram[F[_]] extends CoreNodeProgram[F] with BaseProgram
     val owner = deploy.owner.asBytesValue.bcBase58
     val name  = deploy.contract.name.asBytesValue.bcBase58
     for {
-      _      <- log.info(s"owner $owner starts deploying contract $name")
-      passed <- store.canDeployNewTransaction(deploy)
+      _          <- log.info(s"owner $owner starts deploying contract $name")
+      duplicated <- store.isTransactionDuplicated(deploy)
+      _          <- requireM(!duplicated, new RuntimeException("transaction id duplicated"))
+      passed     <- store.canDeployNewTransaction(deploy)
       r <- ifM(
         passed.pureSP[F], {
           for {
