@@ -30,7 +30,8 @@ object Configuration {
                              quorumSet: QuorumSet,
                              maxTimeoutSeconds: Long,
                              maxNominatingTimes: Int,
-                             broadcastTimeout: Long)
+                             broadcastTimeout: Long,
+                             maxTransactionSizeInBlock: Int)
       extends P2PConfig
 
   case class ApplicationConfig(host: String,
@@ -70,7 +71,8 @@ object Configuration {
       core.consensus.scp.quorums,
       core.consensus.scp.maxTimeoutSeconds,
       core.consensus.scp.maxNominatingTimes,
-      core.consensus.scp.broadcastTimeout
+      core.consensus.scp.broadcastTimeout,
+      core.consensus.scp.maxTransactionSizeInBlock
     )
     val coreApplicationConfig = ApplicationConfig(core.application.host,
                                                   core.application.port,
