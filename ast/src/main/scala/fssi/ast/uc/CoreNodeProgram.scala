@@ -40,6 +40,12 @@ trait CoreNodeProgram[F[_]] {
     */
   def handleTransaction(transaction: Transaction): SP[F, Unit]
 
+  /** attempt to agree transaction
+    */
+  def attemptToAgreeTransaction(): SP[F, Unit]
+
+  /** run transaction
+    */
   def runTransaction(transaction: Transaction): SP[F, Receipt]
 
   /** persist new block
@@ -66,6 +72,7 @@ object CoreNodeProgram {
       with StartupProgram[G]
       with ShutdownProgram[G]
       with HandleTransactionProgram[G]
+      with RunTransactionProgram[G]
       with NewBlockGeneratedProgram[G]
       with ProcessMessageProgram[G] {
 

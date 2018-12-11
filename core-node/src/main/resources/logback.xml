@@ -36,17 +36,20 @@
     </logger>
     -->
 
+    <logger name="fssi.interpreter" additivity="false" level="info">
+        <appender-ref ref="ENVELOPE" />
+    </logger>
     <logger name="fssi.scp.ast" additivity="false" level="warn">
         <appender-ref ref="ENVELOPE" />
     </logger>
-    <logger name="fssi.scp.ast.envelope.recv" additivity="false" level="error">
+    <logger name="fssi.scp.ast.envelope.recv" additivity="false" level="warn">
         <appender-ref ref="ENVELOPE" />
     </logger>
-    <logger name="fssi.scp.ast.envelope.sent" additivity="false" level="error">
+    <logger name="fssi.scp.ast.envelope.sent" additivity="false" level="warn">
         <appender-ref ref="ENVELOPE" />
     </logger>
 
-    <logger name="fssi.scp.ast.envelope.local" additivity="false" level="info">
+    <logger name="fssi.scp.ast.envelope.local" additivity="false" level="warn">
         <appender-ref ref="ENVELOPE" />
     </logger>
 
