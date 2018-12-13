@@ -15,16 +15,22 @@ case class Statement[M <: Message](
 }
 
 object Statement {
+  val log = LoggerFactory.getLogger(getClass)
   trait Implicits {
     import fssi.base.implicits._
     import fssi.scp.types.implicits._
 
     implicit def statementToBytes[M <: Message](statement: Statement[M]): Array[Byte] = {
-      val from      = statement.from.asBytesValue.any
+      val from = statement.from.asBytesValue.any
+//      log.error(s"from hash: ------------${from.base64}")
       val slotIndex = statement.slotIndex.asBytesValue.any
-      val quorum    = statement.quorumSet.asBytesValue.any
-      val message   = statement.message.asBytesValue.any
-      (from ++ slotIndex ++ quorum ++ message).bytes
+//      log.error(s"slot index hash: ---------${slotIndex.base64}")
+      val quorum = statement.quorumSet.asBytesValue.any
+//      log.error(s"quorum hash: --------------${quorum.base64}")
+      val message = statement.message.asBytesValue.any
+//      log.error(s"message hash: --------------${message.base64}")
+      val bytes = (from ++ slotIndex ++ quorum ++ message).bytes
+      bytes
     }
   }
 }

@@ -118,23 +118,9 @@ trait SCPApplicationCallback
           throw new RuntimeException(
             s"can not accept block of inconsistent height, slotIndex= ${slotIndex.value} , height: ${block.height}")
         else {
-          log.debug(s"to externalize: ${slotIndex.value} --> ${block.hash}")
           runner
             .runIO(CoreNodeProgram.instance.newBlockGenerated(block), coreNodeSetting)
             .unsafeRunSync()
-
-          SCPApplicationCallback.valueExternalizedListener.foreach { listeners =>
-            listeners.foreach(_(slotIndex.value))
-          }
-          log.info(s"externalized: ${slotIndex.value} --> ${block.hash}")
-
-          // start to nominate transaction generated after nomination
-          ConsensusHandler.instance.stopConsensus()
-          val result =
-            ConsensusHandler.instance.attemptToNomination()(coreNodeSetting).unsafeRunSync()
-          if (result)
-            log.info("start to nominate block which transactions generated after nomination")
-          else ()
         }
       case FakeValue(_) =>
     }
@@ -162,11 +148,4 @@ trait SCPApplicationCallback
     val blockHeight = StoreHandler.instance.currentHeight()(coreNodeSetting).unsafeRunSync()
     SlotIndex(blockHeight)
   }
-}
-
-object SCPApplicationCallback {
-  private val valueExternalizedListener: Var[Vector[BigInt => Unit]] = Var(Vector.empty)
-
-  def listenValueExternalized(fun: BigInt => Unit): Unit =
-    valueExternalizedListener.update(_ :+ fun)
 }

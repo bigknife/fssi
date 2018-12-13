@@ -634,6 +634,44 @@ class StoreHandler extends Store.Handler[Stack] with LogSupport with UnsignedByt
       }
       .unsafe()
   }
+
+  private lazy val transactionPool = SafeVar(TransactionSet.empty)
+  override def acceptNewTransaction(transaction: Transaction): Stack[Unit] = Stack { setting =>
+    setting match {
+      case _: CoreNodeSetting =>
+        transactionPool := transactionPool.unsafe() + transaction
+      case _ =>
+    }
+  }
+
+  override def transactionsToAgree(): Stack[TransactionSet] = Stack { setting =>
+    setting match {
+      case coreNodeSetting: CoreNodeSetting =>
+        transactionPool
+          .unsafe()
+          .take(coreNodeSetting.config.consensusConfig.maxTransactionSizeInBlock)
+      case _ => TransactionSet.empty
+    }
+  }
+
+  override def clearTransactions(transactions: TransactionSet): Stack[Unit] = Stack {
+    transactionPool := transactionPool.unsafe().drop(transactions.size); ()
+  }
+
+  override def calculateTransactions(): Stack[Unit] = Stack { setting =>
+    setting match {
+      case coreNodeSetting: CoreNodeSetting =>
+        log.info("thread sleep to calculate transactions")
+        val millis = coreNodeSetting.config.consensusConfig.maxConsensusWaitTimeout * 1000L
+        Thread.sleep(millis)
+        log.info("thread awaked from calculate transactions")
+      case _ =>
+    }
+  }
+
+  override def hasPreparedTransactions(): Stack[Boolean] = Stack {
+    transactionPool.unsafe().nonEmpty
+  }
 }
 
 object StoreHandler {
