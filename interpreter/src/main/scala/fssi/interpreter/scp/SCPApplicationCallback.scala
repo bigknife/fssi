@@ -121,10 +121,6 @@ trait SCPApplicationCallback
           runner
             .runIO(CoreNodeProgram.instance.newBlockGenerated(block), coreNodeSetting)
             .unsafeRunSync()
-
-          SCPApplicationCallback.valueExternalizedListener.foreach { listeners =>
-            listeners.foreach(_(slotIndex.value))
-          }
         }
       case FakeValue(_) =>
     }
@@ -152,11 +148,4 @@ trait SCPApplicationCallback
     val blockHeight = StoreHandler.instance.currentHeight()(coreNodeSetting).unsafeRunSync()
     SlotIndex(blockHeight)
   }
-}
-
-object SCPApplicationCallback {
-  private val valueExternalizedListener: Var[Vector[BigInt => Unit]] = Var(Vector.empty)
-
-  def listenValueExternalized(fun: BigInt => Unit): Unit =
-    valueExternalizedListener.update(_ :+ fun)
 }

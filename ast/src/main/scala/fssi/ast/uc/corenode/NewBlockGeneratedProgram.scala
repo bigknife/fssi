@@ -34,6 +34,7 @@ trait NewBlockGeneratedProgram[F[_]] extends CoreNodeProgram[F] with BaseProgram
       blockToPersist <- store.blockToPersist(block, receipts)
       _              <- store.persistBlock(blockToPersist)
       _              <- log.info(s"externalized: ${block.height} ----> ${block.hash}")
+      _              <- consensus.notifySubscriberWhenExternalized(block)
       _              <- attemptToAgreeTransaction()
     } yield ()
   }

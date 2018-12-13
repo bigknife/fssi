@@ -103,6 +103,14 @@ class ConsensusHandler
     }
     agreeExecutor.submit(task); ()
   }
+
+  override def subscribeExternalize(f: Block => Unit): Stack[Unit] = Stack {
+    ConsensusHandler.listeners.updated(_ :+ f); ()
+  }
+
+  override def notifySubscriberWhenExternalized(block: Block): Stack[Unit] = Stack {
+    ConsensusHandler.listeners.foreach(_.foreach(_(block)))
+  }
 }
 
 object ConsensusHandler {
@@ -111,4 +119,6 @@ object ConsensusHandler {
   trait Implicits {
     implicit val consensusHandler: ConsensusHandler = instance
   }
+
+  private lazy val listeners: SafeVar[Vector[Block => Unit]] = SafeVar(Vector.empty)
 }

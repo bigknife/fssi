@@ -1,12 +1,12 @@
 package fssi.interpreter.network
 
+import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicInteger
-import java.util.concurrent.{Executors, ThreadFactory}
 
 import fssi.base.Var
-import fssi.interpreter.{Setting, StoreHandler}
-import fssi.interpreter.scp.{SCPApplicationCallback, SCPEnvelope}
-import fssi.scp.interpreter.ApplicationCallback
+import fssi.interpreter.ConsensusHandler
+import fssi.interpreter.Setting.DefaultSetting
+import fssi.interpreter.scp.SCPEnvelope
 import fssi.types.biz.Message
 import org.slf4j.LoggerFactory
 
@@ -187,9 +187,9 @@ object MessageWorker {
       override val workingSlotIndex: BigInt                 = __workingSlotIndex
     }
 
-    SCPApplicationCallback.listenValueExternalized { slotIdx =>
-      m.incSlotIndex()
-    }
+    ConsensusHandler.instance
+      .subscribeExternalize(_ => m.incSlotIndex())(DefaultSetting)
+      .unsafeRunSync()
     m
   }
 }

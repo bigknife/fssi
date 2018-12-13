@@ -16,4 +16,6 @@ import fssi.types.biz.Node._
   def processMessage(message: ConsensusMessage, lastDeterminedBlock: Block): P[F, Unit]
   def agreeTransactions(transactions: TransactionSet): P[F, Unit]
   def prepareExecuteAgreeProgram(program: Any): P[F, Unit]
+  def subscribeExternalize(f: Block => Unit): P[F, Unit]
+  def notifySubscriberWhenExternalized(block: Block): P[F, Unit]
 }

@@ -661,8 +661,10 @@ class StoreHandler extends Store.Handler[Stack] with LogSupport with UnsignedByt
   override def calculateTransactions(): Stack[Unit] = Stack { setting =>
     setting match {
       case coreNodeSetting: CoreNodeSetting =>
+        log.info("thread sleep to calculate transactions")
         val millis = coreNodeSetting.config.consensusConfig.maxConsensusWaitTimeout * 1000L
         Thread.sleep(millis)
+        log.info("thread awaked from calculate transactions")
       case _ =>
     }
   }
