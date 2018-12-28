@@ -30,6 +30,7 @@ trait HandleTransactionProgram[F[_]] extends CoreNodeProgram[F] with BaseProgram
           _            <- consensus.startConsensus()
           _            <- store.calculateTransactions()
           transactions <- store.transactionsToAgree()
+          _            <- log.info(s" try to agree transactions: ${transactions.size}")
           _            <- store.clearTransactions(transactions)
           _            <- consensus.agreeTransactions(transactions)
         } yield ()
