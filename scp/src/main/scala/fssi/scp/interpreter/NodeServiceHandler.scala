@@ -210,13 +210,16 @@ class NodeServiceHandler
         message = message
       )
 
-      val signature =
-        Signature(crypto.makeSignature(fixedStatementBytes(statement), setting.privateKey))
+      val source = fixedStatementBytes(statement)
+
+      val signature = Signature(crypto.makeSignature(source, setting.privateKey))
 
       val envelope = Envelope(statement, signature)
       message match {
         case nomination: Message.Nomination =>
-          infoEnvelope(envelope, isFrom = true, setting)
+//          infoEnvelope(envelope, isFrom = true, setting)
+          log.error(
+            s"FROM: \nnode: ${envelope.statement.from.asBytesValue.bcBase58},\n slot:${slotIndex.value},\n source: ${source.asBytesValue.bcBase58}")
         case _ =>
       }
       envelope
@@ -234,7 +237,9 @@ class NodeServiceHandler
       if (!verified) {
         envelope.statement.message match {
           case nomination: Message.Nomination =>
-            infoEnvelope(envelope, isFrom = false, setting)
+//            infoEnvelope(envelope, isFrom = false, setting)
+            log.error(
+              s"TO: \nnode: ${envelope.statement.from.asBytesValue.bcBase58},\n slot:${envelope.statement.slotIndex.value},\n source: ${source.asBytesValue.bcBase58}")
           case _ =>
         }
       }
