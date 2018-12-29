@@ -329,7 +329,7 @@ class TestApp(nodeID: NodeID,
     message
   )
 
-  override def envelopeToJsonString[M <: Message](envelope: Envelope[M]): String = ???
+  override def statementToJsonString[M <: Message](statement: Statement[M]): String = ???
 }
 
 object TestApp {

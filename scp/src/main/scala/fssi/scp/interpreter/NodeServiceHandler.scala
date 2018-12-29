@@ -217,9 +217,7 @@ class NodeServiceHandler
       val envelope = Envelope(statement, signature)
       message match {
         case nomination: Message.Nomination =>
-//          infoEnvelope(envelope, isFrom = true, setting)
-          log.error(
-            s"FROM: \nnode: ${envelope.statement.from.asBytesValue.bcBase58},\n slot:${slotIndex.value},\n source: ${source.asBytesValue.bcBase58}")
+          infoEnvelope(envelope, isFrom = true, setting)
         case _ =>
       }
       envelope
@@ -237,9 +235,7 @@ class NodeServiceHandler
       if (!verified) {
         envelope.statement.message match {
           case nomination: Message.Nomination =>
-//            infoEnvelope(envelope, isFrom = false, setting)
-            log.error(
-              s"TO: \nnode: ${envelope.statement.from.asBytesValue.bcBase58},\n slot:${envelope.statement.slotIndex.value},\n source: ${source.asBytesValue.bcBase58}")
+            infoEnvelope(envelope, isFrom = false, setting)
           case _ =>
         }
       }
@@ -250,7 +246,7 @@ class NodeServiceHandler
                                          isFrom: Boolean,
                                          setting: Setting): Unit = {
     val prefix = if (isFrom) "FROM: " else "TO: "
-    log.error(s"$prefix: ${setting.applicationCallback.envelopeToJsonString(envelope)}")
+    log.error(s"$prefix: ${setting.applicationCallback.statementToJsonString(envelope.statement)}")
   }
 
   /** check the statement to see if it is illegal

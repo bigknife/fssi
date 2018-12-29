@@ -148,13 +148,13 @@ trait SCPApplicationCallback
     SlotIndex(blockHeight)
   }
 
-  override def envelopeToJsonString[M <: Message](envelope: Envelope[M]): String = {
+  override def statementToJsonString[M <: Message](statement: Statement[M]): String = {
     import io.circe._
     import io.circe.syntax._
     import io.circe.generic.auto._
     import fssi.types.json.implicits._
     import fssi.scp.interpreter.json.implicits._
     import fssi.interpreter.scp.BlockValue.implicits._
-    envelope.to[Message].asJson.spaces2
+    statement.to[Message].asJson.spaces2
   }
 }
