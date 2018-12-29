@@ -214,34 +214,38 @@ class NodeServiceHandler
         Signature(crypto.makeSignature(fixedStatementBytes(statement), setting.privateKey))
 
       val envelope = Envelope(statement, signature)
-      infoEnvelope(envelope, isFrom = true)
+      message match {
+        case nomination: Message.Nomination =>
+          infoEnvelope(envelope, isFrom = true, setting)
+        case _ =>
+      }
       envelope
     }
 
   /** verify the signature of the envelope
     */
   override def isSignatureVerified[M <: Message](envelope: Envelope[M]): Stack[Boolean] = Stack {
-    val signature = envelope.signature
-    val fromNode  = envelope.statement.from
-    val publicKey = crypto.rebuildECPublicKey(fromNode.value, cryptoUtil.SECP256K1)
-    val source    = fixedStatementBytes(envelope.statement)
-    val verified  = crypto.verifySignature(signature.value, source, publicKey)
-    if (!verified) infoEnvelope(envelope, isFrom = false)
-    verified
+    setting =>
+      val signature = envelope.signature
+      val fromNode  = envelope.statement.from
+      val publicKey = crypto.rebuildECPublicKey(fromNode.value, cryptoUtil.SECP256K1)
+      val source    = fixedStatementBytes(envelope.statement)
+      val verified  = crypto.verifySignature(signature.value, source, publicKey)
+      if (!verified) {
+        envelope.statement.message match {
+          case nomination: Message.Nomination =>
+            infoEnvelope(envelope, isFrom = false, setting)
+          case _ =>
+        }
+      }
+      verified
   }
 
-  private def infoEnvelope[M <: Message](envelope: Envelope[M], isFrom: Boolean): Unit = {
-    val prefix    = if (isFrom) "FROM: " else "TO: "
-    val signature = envelope.signature.asBytesValue.base64
-    val slot      = envelope.statement.slotIndex.value
-    val node      = envelope.statement.from.toString
-    val message   = envelope.statement.message
-    message match {
-      case nomination: Message.Nomination =>
-        log.error(
-          s"$prefix[\nnode: $node,\nslot: $slot,\nsignature: $signature,\n,message: $message,\nvoteSize: ${nomination.voted.size},\nacceptSize: ${nomination.accepted.size}]")
-      case _ =>
-    }
+  private def infoEnvelope[M <: Message](envelope: Envelope[M],
+                                         isFrom: Boolean,
+                                         setting: Setting): Unit = {
+    val prefix = if (isFrom) "FROM: " else "TO: "
+    log.error(s"$prefix: ${setting.applicationCallback.envelopeToJsonString(envelope)}")
   }
 
   /** check the statement to see if it is illegal

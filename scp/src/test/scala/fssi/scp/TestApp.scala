@@ -328,6 +328,8 @@ class TestApp(nodeID: NodeID,
     quorumSet,
     message
   )
+
+  override def envelopeToJsonString[M <: Message](envelope: Envelope[M]): String = ???
 }
 
 object TestApp {

@@ -31,6 +31,7 @@ trait ApplicationCallback {
   def dispatch(timer: String, timeout: Long, task: Runnable): Unit = ()
   def cancel(timer: String): Unit                                  = ()
   def currentSlotIndex(): SlotIndex
+  def envelopeToJsonString[M <: Message](envelope: Envelope[M]): String
 }
 
 object ApplicationCallback {
@@ -81,6 +82,7 @@ object ApplicationCallback {
     override def ballotDidHearFromQuorum(slotIndex: SlotIndex, ballot: Ballot): Unit = {
       throw warning("ballotDidHearFromQuorum")
     }
-    override def currentSlotIndex(): SlotIndex = ???
+    override def currentSlotIndex(): SlotIndex                                     = ???
+    override def envelopeToJsonString[M <: Message](envelope: Envelope[M]): String = ???
   }
 }
