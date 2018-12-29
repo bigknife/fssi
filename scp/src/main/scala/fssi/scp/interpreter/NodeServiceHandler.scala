@@ -213,7 +213,9 @@ class NodeServiceHandler
       val signature =
         Signature(crypto.makeSignature(fixedStatementBytes(statement), setting.privateKey))
 
-      Envelope(statement, signature)
+      val envelope = Envelope(statement, signature)
+      infoEnvelope(envelope, isFrom = true)
+      envelope
     }
 
   /** verify the signature of the envelope
@@ -224,7 +226,22 @@ class NodeServiceHandler
     val publicKey = crypto.rebuildECPublicKey(fromNode.value, cryptoUtil.SECP256K1)
     val source    = fixedStatementBytes(envelope.statement)
     val verified  = crypto.verifySignature(signature.value, source, publicKey)
+    if (!verified) infoEnvelope(envelope, isFrom = false)
     verified
+  }
+
+  private def infoEnvelope[M <: Message](envelope: Envelope[M], isFrom: Boolean): Unit = {
+    val prefix    = if (isFrom) "FROM: " else "TO: "
+    val signature = envelope.signature.asBytesValue.base64
+    val slot      = envelope.statement.slotIndex.value
+    val node      = envelope.statement.from.toString
+    val message   = envelope.statement.message
+    message match {
+      case nomination: Message.Nomination =>
+        log.error(
+          s"$prefix[\nnode: $node,\nslot: $slot,\nsignature: $signature,\n,message: $message,\nvoteSize: ${nomination.voted.size},\nacceptSize: ${nomination.accepted.size}]")
+      case _ =>
+    }
   }
 
   /** check the statement to see if it is illegal
