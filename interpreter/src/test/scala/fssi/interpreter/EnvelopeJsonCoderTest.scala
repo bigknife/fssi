@@ -1,7 +1,7 @@
 package fssi.interpreter
 import fssi.base.BytesValue
 import fssi.scp.interpreter.Setting
-import fssi.scp.types.{Envelope, Message, NodeID}
+import fssi.scp.types.{Envelope, Message, NodeID, Statement}
 
 object EnvelopeJsonCoderTest extends App {
 
@@ -52,6 +52,16 @@ object EnvelopeJsonCoderTest extends App {
         crypto.rebuildECPublicKey(toEnvelope.statement.from.value, crypto.SECP256K1)
       )
     verified
+  }
+
+  val statementJsonString =
+    "{\n  \"from\" : \"AqsDUJpYn0zqefI++DjtarDzxFlcjZE7midBtCY4445v\",\n  \"slotIndex\" : {\n    \"value\" : 6\n  },\n  \"timestamp\" : {\n    \"value\" : 1546072989528\n  },\n  \"quorumSet\" : {\n    \"slices\" : {\n      \"threshold\" : 3,\n      \"validators\" : [\n        \"AqsDUJpYn0zqefI++DjtarDzxFlcjZE7midBtCY4445v\",\n        \"A5DmLPO4uJXWONCCXCIh8IB7Ye5cckL59a9cYc7IrDGu\",\n        \"As3lk1RRKpUZCO9s3YC6wWq51nBi4wj8+mFqLsDOhnjn\",\n        \"AgUyAdJBRmZQF/fcqbQ/Y6k5AbakymwPmgxVofIzO01X\"\n      ],\n      \"inners\" : [\n        {\n          \"threshold\" : 1,\n          \"validators\" : [\n          ]\n        },\n        {\n          \"threshold\" : 1,\n          \"validators\" : [\n          ]\n        }\n      ]\n    }\n  },\n  \"message\" : {\n    \"type\" : \"nominate\",\n    \"body\" : \"{\\\"voted\\\":[{\\\"block\\\":{\\\"height\\\":6,\\\"chainId\\\":\\\"testNet\\\",\\\"preWorldState\\\":\\\"MjhmOTE0NzA1ZTI0OTQwMWU3YmViMTg5M2JjMjE4OTY3MmExZmNiMDNlMWI3MjhhNGMwYzllMjU3MTFiYjI5Zg==\\\",\\\"curWorldState\\\":\\\"\\\",\\\"transactions\\\":[{\\\"type\\\":\\\"Run\\\",\\\"transaction\\\":{\\\"id\\\":\\\"MDMzMjcwMDk3N2Q5NDk4NGFlZTUzMjBjMDM2ZGYyZGE=\\\",\\\"caller\\\":\\\"1JUPUxGdHQ3x5XeWeMmpVqFK8x1fd8K1uV\\\",\\\"publicKeyForVerifying\\\":\\\"jmgsTT9CPXArPovmvr6wHW5gLiUKMqvLzczBPEx3PMfP\\\",\\\"owner\\\":\\\"1JUPUxGdHQ3x5XeWeMmpVqFK8x1fd8K1uV\\\",\\\"contractName\\\":\\\"dGVzdE5hbWU=\\\",\\\"contractVersion\\\":\\\"1.0.1\\\",\\\"methodAlias\\\":\\\"kvStore\\\",\\\"contractParameter\\\":[\\\"number\\\",\\\"0004444\\\"],\\\"signature\\\":\\\"MEUCIBV1ZV5JSiULKJLs5E2Enr78Ft79EjSARw3kDM2BLPyyAiEAqizHnHeobk7LE02rCBlkBNmF1OJSnk+qBWLSyCvJbiw=\\\",\\\"timestamp\\\":1544513012057}},{\\\"type\\\":\\\"Run\\\",\\\"transaction\\\":{\\\"id\\\":\\\"NDRhNjdmOTI4YTc5NDk3YTljMTNiOWQzMWE3NjU5Mzc=\\\",\\\"caller\\\":\\\"1JUPUxGdHQ3x5XeWeMmpVqFK8x1fd8K1uV\\\",\\\"publicKeyForVerifying\\\":\\\"jmgsTT9CPXArPovmvr6wHW5gLiUKMqvLzczBPEx3PMfP\\\",\\\"owner\\\":\\\"1JUPUxGdHQ3x5XeWeMmpVqFK8x1fd8K1uV\\\",\\\"contractName\\\":\\\"dGVzdE5hbWU=\\\",\\\"contractVersion\\\":\\\"1.0.1\\\",\\\"methodAlias\\\":\\\"kvStore\\\",\\\"contractParameter\\\":[\\\"number\\\",\\\"0003333\\\"],\\\"signature\\\":\\\"MEYCIQCNHvke+hb1Ws4buTama9i009badvhn+f2UtGDZ6ev0lwIhAKDYLxuoZlBex0bPf9juc1suiDgAxW0WJlS6PN80gqaG\\\",\\\"timestamp\\\":1544512995679}}],\\\"receipts\\\":[],\\\"timestamp\\\":{\\\"value\\\":1546072987334},\\\"hash\\\":\\\"HD6qfhm+s15qcvicX8zuGQRhjo98GR+/kc5WlMVUkEM=\\\"}}],\\\"accepted\\\":[]}\"\n  }\n}"
+
+  for {
+    json      <- parser.parse(statementJsonString)
+    statement <- json.as[Statement[Message]]
+  } yield {
+    statement
   }
 
 }
