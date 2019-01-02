@@ -3,6 +3,8 @@ import fssi.base.BytesValue
 import fssi.scp.interpreter.Setting
 import fssi.scp.types.{Envelope, Message, NodeID, Statement}
 
+import scala.collection.immutable.TreeSet
+
 object EnvelopeJsonCoderTest extends App {
 
   val fromJsonString =
@@ -64,4 +66,12 @@ object EnvelopeJsonCoderTest extends App {
     statement
   }
 
+  val iPool = SafeVar(TreeSet.empty[Int])
+  val pool  = SafeVar(TreeSet.empty[Int])
+  (1 to 10) foreach { i =>
+    iPool := iPool.unsafe() + i
+    pool := pool.unsafe() + i
+  }
+  println(iPool.unsafe())
+  println(pool.unsafe())
 }

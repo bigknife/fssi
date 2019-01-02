@@ -42,4 +42,20 @@ trait BizTransactionJsonCodec {
         }
       case Left(e) => Left(e)
   }
+
+  implicit val transactionSetEncoder: Encoder[TransactionSet] = (transactionSet: TransactionSet) =>
+    Json.arr(transactionSet.map(_.asJson).toSeq: _*)
+
+  implicit val transactionSetDecoder: Decoder[TransactionSet] = (h: HCursor) =>
+    h.values match {
+      case Some(jsons) =>
+        val rs = jsons.foldLeft(TransactionSet.empty) { (acc, n) =>
+          n.as[Transaction] match {
+            case Right(value) => acc + value
+            case Left(e)      => throw DecodingFailure(e.getMessage(), List(CursorOp.DownArray))
+          }
+        }
+        Right(rs)
+      case None => Left(DecodingFailure("", List(CursorOp.DownArray)))
+  }
 }

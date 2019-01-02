@@ -31,7 +31,9 @@ case class BlockValue(block: Block) extends Value {
         else {
           val thisEncoding = rawBytes.asBytesValue.base64
           val thatEncoding = that.rawBytes.asBytesValue.base64
-          val contentOrder = Ordering[String].compare(thisEncoding, thatEncoding)
+          //val contentOrder = Ordering[String].compare(thisEncoding, thatEncoding)
+          val contentOrder =
+            Ordering[Long].compare(this.block.transactions.size, that.block.transactions.size)
 
           if (contentOrder != 0) {
             val timeOrder =

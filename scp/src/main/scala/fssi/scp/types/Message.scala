@@ -1,4 +1,5 @@
 package fssi.scp.types
+import fssi.scp.interpreter.LogSupport
 
 sealed trait Message
 
@@ -69,12 +70,15 @@ object Message {
 
   def prepare(b: Ballot, p: Ballot, `p'`: Ballot): Prepare = Prepare(b, Some(p), Some(`p'`))
 
-  trait Implicits {
+  trait Implicits extends LogSupport {
     import fssi.base.implicits._
     import fssi.scp.types.implicits._
     implicit def messageToBytes(message: Message): Array[Byte] = message match {
       case Message.Nomination(voted, accepted) =>
-        voted.toArray.asBytesValue.bytes ++ accepted.toArray.asBytesValue.bytes
+        val votedArray  = voted.toArray
+        val acceptArray = accepted.toArray
+        val nominated   = votedArray.asBytesValue.bytes ++ acceptArray.asBytesValue.bytes
+        nominated
 
       case ballotMessage: BallotMessage =>
         ballotMessage match {
