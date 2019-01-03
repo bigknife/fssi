@@ -1,7 +1,10 @@
 package fssi.interpreter
+import java.util.UUID
+
 import fssi.base.BytesValue
 import fssi.scp.interpreter.Setting
 import fssi.scp.types.{Envelope, Message, NodeID, Statement}
+import fssi.types.biz.Transaction
 
 import scala.collection.immutable.TreeSet
 
@@ -74,4 +77,18 @@ object EnvelopeJsonCoderTest extends App {
   }
   println(iPool.unsafe())
   println(pool.unsafe())
+
+  val id1 = Transaction.ID(UUID.randomUUID().toString.replace("-", "").getBytes("utf-8"))
+  val id2 = Transaction.ID(UUID.randomUUID().toString.replace("-", "").getBytes("utf-8"))
+  println(id1.asBytesValue.bcBase58.compareTo(id2.asBytesValue.bcBase58))
+  println(id1.asBytesValue.bcBase58.compareTo(id2.asBytesValue.bcBase58))
+
+  println(id1.asBytesValue.bcBase58.compare(id2.asBytesValue.bcBase58))
+  println(id1.asBytesValue.bcBase58.compare(id2.asBytesValue.bcBase58))
+
+  println(Ordering[String].compare(id1.asBytesValue.bcBase58, id2.asBytesValue.bcBase58))
+  println(Ordering[String].compare(id1.asBytesValue.bcBase58, id2.asBytesValue.bcBase58))
+
+  println(Ordering[String].compare(id1.asBytesValue.base64, id2.asBytesValue.base64))
+  println(Ordering[String].compare(id1.asBytesValue.base64, id2.asBytesValue.base64))
 }

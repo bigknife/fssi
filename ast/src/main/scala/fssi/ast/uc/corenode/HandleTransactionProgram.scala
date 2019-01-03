@@ -26,7 +26,7 @@ trait HandleTransactionProgram[F[_]] extends CoreNodeProgram[F] with BaseProgram
     for {
       _ <- ifThen(canAgreeTransaction()) {
         for {
-          _            <- log.info("--- attempt to agree transaction ---")
+          _            <- log.debug("--- attempt to agree transaction ---")
           _            <- consensus.startConsensus()
           _            <- store.calculateTransactions()
           transactions <- store.transactionsToAgree()
