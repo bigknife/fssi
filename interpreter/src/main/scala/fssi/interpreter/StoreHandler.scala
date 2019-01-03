@@ -647,15 +647,13 @@ class StoreHandler extends Store.Handler[Stack] with LogSupport with UnsignedByt
   override def transactionsToAgree(): Stack[TransactionSet] = Stack { setting =>
     setting match {
       case coreNodeSetting: CoreNodeSetting =>
-        transactionPool
+        val agreeTransactions = transactionPool
           .unsafe()
           .take(coreNodeSetting.config.consensusConfig.maxTransactionSizeInBlock)
+        transactionPool := transactionPool.unsafe().dropWhile(agreeTransactions.contains)
+        agreeTransactions
       case _ => TransactionSet.empty
     }
-  }
-
-  override def clearTransactions(transactions: TransactionSet): Stack[Unit] = Stack {
-    transactionPool := transactionPool.unsafe() -- transactions
   }
 
   override def calculateTransactions(): Stack[Unit] = Stack { setting =>

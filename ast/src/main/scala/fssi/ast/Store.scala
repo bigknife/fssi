@@ -87,6 +87,4 @@ import fssi.types.exception.FSSIException
   def transactionsToAgree(): P[F, TransactionSet]
 
   def calculateTransactions(): P[F, Unit]
-
-  def clearTransactions(transactions: TransactionSet): P[F, Unit]
 }
