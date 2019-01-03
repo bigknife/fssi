@@ -655,7 +655,7 @@ class StoreHandler extends Store.Handler[Stack] with LogSupport with UnsignedByt
   }
 
   override def clearTransactions(transactions: TransactionSet): Stack[Unit] = Stack {
-    transactionPool := transactionPool.unsafe().drop(transactions.size); ()
+    transactionPool := transactionPool.unsafe() -- transactions
   }
 
   override def calculateTransactions(): Stack[Unit] = Stack { setting =>
