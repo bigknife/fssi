@@ -16,17 +16,14 @@ sealed trait Transaction extends Ordered[Transaction] {
 
   override def compare(that: Transaction): Int = {
     // first compare timestamps, if they are equal, then check signature
-//    val t: Long = this.timestamp - that.timestamp
-//    val ct      = if (t > 0) 1 else if (t == 0) 0 else -1
-//    ct
-    this.timestamp.compareTo(that.timestamp)
-//    if (ct != 0) ct
-//    else {
-//      val sThis = BigInt(1, signature.value)
-//      val sThat = BigInt(1, that.signature.value)
-//      val cs    = sThis - sThat
-//      if (cs > 0) 1 else if (cs == 0) 0 else -1
-//    }
+    val ct = this.timestamp.compareTo(that.timestamp)
+    if (ct != 0) ct
+    else {
+      val sThis = BigInt(1, signature.value)
+      val sThat = BigInt(1, that.signature.value)
+      val cs    = sThis - sThat
+      if (cs > 0) 1 else if (cs == 0) 0 else -1
+    }
   }
 }
 
