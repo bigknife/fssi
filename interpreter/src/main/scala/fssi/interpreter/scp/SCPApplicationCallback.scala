@@ -1,6 +1,5 @@
 package fssi.interpreter.scp
 import fssi.ast.uc.CoreNodeProgram
-import fssi.base.Var
 import fssi.interpreter.Setting.CoreNodeSetting
 import fssi.interpreter.{LogSupport, UnsignedBytesSupport}
 import fssi.scp.interpreter.{ApplicationCallback, FakeValue}
@@ -147,5 +146,15 @@ trait SCPApplicationCallback
   override def currentSlotIndex(): SlotIndex = {
     val blockHeight = StoreHandler.instance.currentHeight()(coreNodeSetting).unsafeRunSync()
     SlotIndex(blockHeight)
+  }
+
+  override def statementToJsonString[M <: Message](statement: Statement[M]): String = {
+    import io.circe._
+    import io.circe.syntax._
+    import io.circe.generic.auto._
+    import fssi.types.json.implicits._
+    import fssi.scp.interpreter.json.implicits._
+    import fssi.interpreter.scp.BlockValue.implicits._
+    statement.to[Message].asJson.spaces2
   }
 }

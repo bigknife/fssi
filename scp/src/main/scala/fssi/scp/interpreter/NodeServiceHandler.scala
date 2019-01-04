@@ -210,21 +210,24 @@ class NodeServiceHandler
         message = message
       )
 
-      val signature =
-        Signature(crypto.makeSignature(fixedStatementBytes(statement), setting.privateKey))
+      val source = fixedStatementBytes(statement)
 
-      Envelope(statement, signature)
+      val signature = Signature(crypto.makeSignature(source, setting.privateKey))
+
+      val envelope = Envelope(statement, signature)
+      envelope
     }
 
   /** verify the signature of the envelope
     */
   override def isSignatureVerified[M <: Message](envelope: Envelope[M]): Stack[Boolean] = Stack {
-    val signature = envelope.signature
-    val fromNode  = envelope.statement.from
-    val publicKey = crypto.rebuildECPublicKey(fromNode.value, cryptoUtil.SECP256K1)
-    val source    = fixedStatementBytes(envelope.statement)
-    val verified  = crypto.verifySignature(signature.value, source, publicKey)
-    verified
+    setting =>
+      val signature = envelope.signature
+      val fromNode  = envelope.statement.from
+      val publicKey = crypto.rebuildECPublicKey(fromNode.value, cryptoUtil.SECP256K1)
+      val source    = fixedStatementBytes(envelope.statement)
+      val verified  = crypto.verifySignature(signature.value, source, publicKey)
+      verified
   }
 
   /** check the statement to see if it is illegal
