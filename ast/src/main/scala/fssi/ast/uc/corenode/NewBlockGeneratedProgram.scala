@@ -16,6 +16,8 @@ trait NewBlockGeneratedProgram[F[_]] extends CoreNodeProgram[F] with BaseProgram
 
   def newBlockGenerated(block: Block): SP[F, Unit] = {
     for {
+      _            <- consensus.stopConsensus()
+      _            <- log.debug(s"try to externalize block, ${block.height} ----> ${block.hash}")
       hashVerify   <- crypto.verifyBlockHash(block)
       _            <- requireM(hashVerify(), new RuntimeException("block hash tampered"))
       currentBlock <- store.getLatestDeterminedBlock()
@@ -31,6 +33,9 @@ trait NewBlockGeneratedProgram[F[_]] extends CoreNodeProgram[F] with BaseProgram
       }
       blockToPersist <- store.blockToPersist(block, receipts)
       _              <- store.persistBlock(blockToPersist)
+      _              <- log.info(s"externalized: ${block.height} ----> ${block.hash}")
+      _              <- consensus.notifySubscriberWhenExternalized(block)
+      _              <- attemptToAgreeTransaction()
     } yield ()
   }
 }

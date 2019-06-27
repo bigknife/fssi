@@ -1,5 +1,4 @@
 package fssi.scp.types
-import org.slf4j.LoggerFactory
 
 case class Statement[M <: Message](
     from: NodeID,
@@ -24,7 +23,8 @@ object Statement {
       val slotIndex = statement.slotIndex.asBytesValue.any
       val quorum    = statement.quorumSet.asBytesValue.any
       val message   = statement.message.asBytesValue.any
-      (from ++ slotIndex ++ quorum ++ message).bytes
+      val bytes     = (from ++ slotIndex ++ quorum ++ message).bytes
+      bytes
     }
   }
 }

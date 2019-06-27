@@ -49,9 +49,11 @@ case class ConfigReader(configFile: File) {
           QuorumSet.slices(Slices.nest(threshold, validators, innerSets: _*))
         }
 
-        def maxTimeoutSeconds: Long = config.getLong(s"$scpPrefix.maxTimeoutSeconds")
-        def maxNominatingTimes: Int = config.getInt(s"$scpPrefix.maxNominatingTimes")
-        def broadcastTimeout: Long  = config.getInt(s"$scpPrefix.broadcastTimeout")
+        def maxTimeoutSeconds: Long        = config.getLong(s"$scpPrefix.maxTimeoutSeconds")
+        def maxNominatingTimes: Int        = config.getInt(s"$scpPrefix.maxNominatingTimes")
+        def broadcastTimeout: Long         = config.getLong(s"$scpPrefix.broadcastTimeout")
+        def maxTransactionSizeInBlock: Int = config.getInt(s"$scpPrefix.maxTransactionSizeInBlock")
+        def maxConsensusWaitTimeout: Long  = config.getLong(s"$scpPrefix.maxConsensusWaitTimeout")
 
         private def getValidators(validators: Vector[String]): Vector[NodeID] =
           validators
@@ -95,20 +97,20 @@ case class ConfigReader(configFile: File) {
   }
 
   private def getAccount(accountConfig: Config): (Account, SecretKey) = {
+    val encPriKeyOpt =
+      Base58.decode(accountConfig.getString(s"encPrivKey"))
+    require(encPriKeyOpt.nonEmpty, "account encrypt private key must encode by base58")
+    val encPriKey    = Account.PrivKey(encPriKeyOpt.get)
+    val publicKeyOpt = Base58.decode(accountConfig.getString(s"pubKey"))
+    require(publicKeyOpt.nonEmpty, "account public key must encode by base58")
+    val publicKey = Account.PubKey(publicKeyOpt.get)
+    val ivOpt     = Base58.decode(accountConfig.getString(s"iv"))
+    require(ivOpt.nonEmpty, "account iv must encode by base58")
+    val iv = Account.IV(ivOpt.get)
     val idOpt =
       Base58.decode(accountConfig.getString(s"id"))
     require(idOpt.nonEmpty, "account id must encode by base58")
     val id           = Account.ID(idOpt.get)
-    val publicKeyOpt = Base58.decode(accountConfig.getString(s"publicKey"))
-    require(publicKeyOpt.nonEmpty, "account public key must encode by base58")
-    val publicKey = Account.PubKey(publicKeyOpt.get)
-    val encPriKeyOpt =
-      Base58.decode(accountConfig.getString(s"encryptedPrivateKey"))
-    require(encPriKeyOpt.nonEmpty, "account encrypt private key must encode by base58")
-    val encPriKey = Account.PrivKey(encPriKeyOpt.get)
-    val ivOpt     = Base58.decode(accountConfig.getString(s"iv"))
-    require(ivOpt.nonEmpty, "account iv must encode by base58")
-    val iv           = Account.IV(ivOpt.get)
     val secretKeyOpt = Base58.decode(accountConfig.getString("secretKey"))
     require(secretKeyOpt.nonEmpty, "account secret key must encode by base58")
     val secretKey = SecretKey(secretKeyOpt.get)

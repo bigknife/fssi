@@ -1,6 +1,5 @@
 package fssi.interpreter.scp
 import fssi.ast.uc.CoreNodeProgram
-import fssi.base.Var
 import fssi.interpreter.Setting.CoreNodeSetting
 import fssi.interpreter.{LogSupport, UnsignedBytesSupport}
 import fssi.scp.interpreter.{ApplicationCallback, FakeValue}
@@ -118,15 +117,9 @@ trait SCPApplicationCallback
           throw new RuntimeException(
             s"can not accept block of inconsistent height, slotIndex= ${slotIndex.value} , height: ${block.height}")
         else {
-          log.debug(s"to externalize: ${slotIndex.value} --> ${block.hash}")
           runner
             .runIO(CoreNodeProgram.instance.newBlockGenerated(block), coreNodeSetting)
             .unsafeRunSync()
-
-          SCPApplicationCallback.valueExternalizedListener.foreach { listeners =>
-            listeners.foreach(_(slotIndex.value))
-          }
-          log.info(s"externalized: ${slotIndex.value} --> ${block.hash}")
         }
       case FakeValue(_) =>
     }
@@ -154,11 +147,14 @@ trait SCPApplicationCallback
     val blockHeight = StoreHandler.instance.currentHeight()(coreNodeSetting).unsafeRunSync()
     SlotIndex(blockHeight)
   }
-}
 
-object SCPApplicationCallback {
-  private val valueExternalizedListener: Var[Vector[BigInt => Unit]] = Var(Vector.empty)
-
-  def listenValueExternalized(fun: BigInt => Unit): Unit =
-    valueExternalizedListener.update(_ :+ fun)
+  override def statementToJsonString[M <: Message](statement: Statement[M]): String = {
+    import io.circe._
+    import io.circe.syntax._
+    import io.circe.generic.auto._
+    import fssi.types.json.implicits._
+    import fssi.scp.interpreter.json.implicits._
+    import fssi.interpreter.scp.BlockValue.implicits._
+    statement.to[Message].asJson.spaces2
+  }
 }

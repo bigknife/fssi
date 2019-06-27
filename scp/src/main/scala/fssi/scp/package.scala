@@ -25,9 +25,11 @@ package object scp {
     }
 
     def handleEnvelope[M <: Message](envelope: Envelope[M], previousValue: Value)(
-        implicit setting: Setting): Boolean = {
-      val program = scp.handleSCPEnvelope(envelope, previousValue)
-      fssi.scp.interpreter.runner.runIO(program, setting).unsafeRunSync()
+        implicit setting: Setting): Unit = {
+      SCPThreadPool.submit(() => {
+        val program = scp.handleSCPEnvelope(envelope, previousValue)
+        fssi.scp.interpreter.runner.runIO(program, setting).unsafeRunSync()
+      })
     }
   }
 }

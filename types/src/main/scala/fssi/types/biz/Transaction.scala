@@ -3,6 +3,7 @@ package biz
 
 import base._
 import fssi.types.implicits._
+import org.slf4j.LoggerFactory
 
 sealed trait Transaction extends Ordered[Transaction] {
   def id: Transaction.ID
@@ -11,10 +12,11 @@ sealed trait Transaction extends Ordered[Transaction] {
   def signature: Signature
   def timestamp: Long
 
+  lazy val log = LoggerFactory.getLogger(getClass)
+
   override def compare(that: Transaction): Int = {
     // first compare timestamps, if they are equal, then check signature
-    val t: Long = this.timestamp - that.timestamp
-    val ct      = if (t > 0) 1 else if (t == 0) 0 else -1
+    val ct = this.timestamp.compareTo(that.timestamp)
     if (ct != 0) ct
     else {
       val sThis = BigInt(1, signature.value)
@@ -82,9 +84,10 @@ object Transaction {
     implicit val bizTransactionOrdering: Ordering[Transaction] = new Ordering[Transaction] {
       def compare(t1: Transaction, t2: Transaction): Int = {
         val o1 = Ordering[Long].compare(t1.timestamp, t2.timestamp)
-        if (o1 != 0) {
-          Ordering[String].compare(t1.id.asBytesValue.bcBase58, t2.id.asBytesValue.bcBase58)
-        } else o1
+//        if (o1 != 0) {
+//          Ordering[String].compare(t1.id.asBytesValue.base64, t2.id.asBytesValue.base64)
+//        } else o1
+        o1
       }
     }
 

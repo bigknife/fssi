@@ -10,7 +10,7 @@ import org.slf4j.LoggerFactory
   */
 class LogHandler extends Log.Handler[Stack] {
   // all ast logs use the same name: fssi.ast
-  private val logger = LoggerFactory.getLogger("fssi.ast")
+  private val logger = LoggerFactory.getLogger("fssi.interpreter")
 
   override def debug(message: String, cause: Option[Throwable]): Stack[Unit] = Stack {
     if (cause.isDefined) logger.debug(message, cause.get)

@@ -127,78 +127,77 @@ class StoreHandler extends Store.Handler[Stack] with LogSupport with UnsignedByt
     bcsVar
       .map { bcs =>
         // get current height
-        val height  = BigInt(bcs.getPersistedMeta(MetaKey.Height).right.get.get.bytes)
+        val height = BigInt(bcs.getPersistedMeta(MetaKey.Height).right.get.get.bytes)
         if (latestDeterminedBlock.isDefined &&
-        latestDeterminedBlock.map(_.height == height).unsafe()) {
+            latestDeterminedBlock.map(_.height == height).unsafe()) {
           latestDeterminedBlock.unsafe()
         } else {
 
+          val chainId =
+            new String(bcs.getPersistedMeta(MetaKey.ChainID).right.get.get.bytes, "utf-8")
+          if (height < 0) throw new RuntimeException(s"insane block chain store. height is $height")
+          else if (height == 0) Block.genesis(chainId)
+          else {
+            // genesis block
+            val preWorldState =
+              WorldState(bcs.getPersistedBlock(BlockKey.preWorldState(height)).right.get.get.bytes)
+            val curWorldState =
+              WorldState(bcs.getPersistedBlock(BlockKey.curWorldState(height)).right.get.get.bytes)
+            val timestamp =
+              Timestamp(BigInt(
+                1,
+                bcs.getPersistedBlock(BlockKey.blockTimestamp(height)).right.get.get.bytes).toLong)
+            val hash =
+              Hash(bcs.getPersistedBlock(BlockKey.blockHash(height)).right.get.get.bytes)
 
+            val transactionIds: Array[String] = { // bcBase58
+              val s =
+                new String(
+                  bcs.getPersistedBlock(BlockKey.transactionList(height)).right.get.get.bytes)
+              s.split("\n").filter(_.length > 0)
+            }
 
-        val chainId = new String(bcs.getPersistedMeta(MetaKey.ChainID).right.get.get.bytes, "utf-8")
-        if (height < 0) throw new RuntimeException(s"insane block chain store. height is $height")
-        else if (height == 0) Block.genesis(chainId)
-        else {
-          // genesis block
-          val preWorldState =
-            WorldState(bcs.getPersistedBlock(BlockKey.preWorldState(height)).right.get.get.bytes)
-          val curWorldState =
-            WorldState(bcs.getPersistedBlock(BlockKey.curWorldState(height)).right.get.get.bytes)
-          val timestamp =
-            Timestamp(BigInt(
-              1,
-              bcs.getPersistedBlock(BlockKey.blockTimestamp(height)).right.get.get.bytes).toLong)
-          val hash =
-            Hash(bcs.getPersistedBlock(BlockKey.blockHash(height)).right.get.get.bytes)
+            val transactions: TransactionSet = TransactionSet(transactionIds.map { tid =>
+              // tid is base58 of transaction id
+              deserializeTransaction(
+                bcs.getPersistedTransaction(TransactionKey.transaction(height, tid)).right.get.get)
+            }: _*)
 
-          val transactionIds: Array[String] = { // bcBase58
-            val s =
-              new String(
-                bcs.getPersistedBlock(BlockKey.transactionList(height)).right.get.get.bytes)
-            s.split("\n").filter(_.length > 0)
-          }
+            val receipts: ReceiptSet = ReceiptSet(transactionIds.map { tid =>
+              // tid is base58 of transaction id
+              val result = 1 == BigInt(
+                1,
+                bcs.getPersistedReceipt(ReceiptKey.receiptResult(height, tid)).right.get.get.bytes)
+              val costs = BigInt(1,
+                                 bcs
+                                   .getPersistedReceipt(ReceiptKey.receiptCost(height, tid))
+                                   .right
+                                   .get
+                                   .get
+                                   .bytes).toInt
+              val logs = deserializeReceiptLogs(
+                bcs.getPersistedReceipt(ReceiptKey.receiptLogs(height, tid)).right.get.get)
+              Receipt(
+                transactionId = Transaction.ID(BytesValue.decodeBcBase58(tid).get.bytes),
+                success = result,
+                logs = logs,
+                costs = costs
+              )
+            }: _*)
 
-          val transactions: TransactionSet = TransactionSet(transactionIds.map { tid =>
-            // tid is base58 of transaction id
-            deserializeTransaction(
-              bcs.getPersistedTransaction(TransactionKey.transaction(height, tid)).right.get.get)
-          }: _*)
-
-          val receipts: ReceiptSet = ReceiptSet(transactionIds.map { tid =>
-            // tid is base58 of transaction id
-            val result = 1 == BigInt(
-              1,
-              bcs.getPersistedReceipt(ReceiptKey.receiptResult(height, tid)).right.get.get.bytes)
-            val costs = BigInt(1,
-              bcs
-                .getPersistedReceipt(ReceiptKey.receiptCost(height, tid))
-                .right
-                .get
-                .get
-                .bytes).toInt
-            val logs = deserializeReceiptLogs(
-              bcs.getPersistedReceipt(ReceiptKey.receiptLogs(height, tid)).right.get.get)
-            Receipt(
-              transactionId = Transaction.ID(BytesValue.decodeBcBase58(tid).get.bytes),
-              success = result,
-              logs = logs,
-              costs = costs
+            val b = Block(
+              height = height,
+              chainId = chainId,
+              preWorldState = preWorldState,
+              curWorldState = curWorldState,
+              transactions = transactions,
+              receipts = receipts,
+              timestamp = timestamp,
+              hash = hash
             )
-          }: _*)
-
-          val b = Block(
-            height = height,
-            chainId = chainId,
-            preWorldState = preWorldState,
-            curWorldState = curWorldState,
-            transactions = transactions,
-            receipts = receipts,
-            timestamp = timestamp,
-            hash = hash
-          )
-          latestDeterminedBlock := b
-          b
-        }
+            latestDeterminedBlock := b
+            b
+          }
 
         }
       }
@@ -519,12 +518,15 @@ class StoreHandler extends Store.Handler[Stack] with LogSupport with UnsignedByt
   override def currentHeight(): Stack[BigInt] = Stack { setting =>
     setting match {
       case _: CoreNodeSetting =>
-        require(bcsVar.isDefined)
-        bcsVar
-          .map { bcs =>
-            BigInt(bcs.getPersistedMeta(MetaKey.Height).right.get.get.bytes)
-          }
-          .getOrElse(0)
+        if (latestDeterminedBlock.isDefined) latestDeterminedBlock.unsafe().height
+        else {
+          require(bcsVar.isDefined)
+          bcsVar
+            .map { bcs =>
+              BigInt(bcs.getPersistedMeta(MetaKey.Height).right.get.get.bytes)
+            }
+            .getOrElse(0)
+        }
       case _ => -1
     }
   }
@@ -631,6 +633,48 @@ class StoreHandler extends Store.Handler[Stack] with LogSupport with UnsignedByt
         newBlock.copy(hash = Hash(crypto.hash(calculateUnsignedBlockBytes(newBlock))))
       }
       .unsafe()
+  }
+
+  private lazy val transactionPool = SafeVar(TransactionSet.empty)
+  override def acceptNewTransaction(transaction: Transaction): Stack[Unit] = Stack { setting =>
+    setting match {
+      case _: CoreNodeSetting =>
+        transactionPool := transactionPool.unsafe() + transaction
+      case _ =>
+    }
+  }
+
+  override def transactionsToAgree(): Stack[TransactionSet] = Stack { setting =>
+    setting match {
+      case coreNodeSetting: CoreNodeSetting =>
+        val agreeTransactions = transactionPool
+          .unsafe()
+          .take(coreNodeSetting.config.consensusConfig.maxTransactionSizeInBlock)
+        transactionPool := transactionPool.unsafe().dropWhile(agreeTransactions.contains)
+        agreeTransactions
+      case _ => TransactionSet.empty
+    }
+  }
+
+  override def calculateTransactions(): Stack[Unit] = Stack { setting =>
+    setting match {
+      case coreNodeSetting: CoreNodeSetting =>
+        val passed = transactionPool
+          .unsafe()
+          .size >= coreNodeSetting.config.consensusConfig.maxTransactionSizeInBlock
+        if (passed) ()
+        else {
+          log.info(s"thread sleep to calculate transactions: ${transactionPool.unsafe().size}")
+          val millis = coreNodeSetting.config.consensusConfig.maxConsensusWaitTimeout * 1000L
+          Thread.sleep(millis)
+          log.info(s"thread awake from calculate transactions: ${transactionPool.unsafe().size}")
+        }
+      case _ =>
+    }
+  }
+
+  override def hasPreparedTransactions(): Stack[Boolean] = Stack {
+    transactionPool.unsafe().nonEmpty
   }
 }
 
