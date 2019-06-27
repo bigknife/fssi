@@ -510,7 +510,7 @@ sv: 指定命令版本，目前仅支持: 1.0.0
 ### 发布智能合约
 * 运行发布智能合约命令示例如下:
 ```
-tool CreateTransaction deploy -af /tmp/account/account.json -kf /tmp/account/account_secret.json -cf /tmp/contract.json -of /tmp/deploy.json
+tool CreateTransaction deploy -af /tmp/account/account.json -kf /tmp/account/account_secret.json -cf /tmp/contract -of /tmp/deploy.json
 
 参数说明:
 af: 账户信息存储文件绝对路径,必须和项目配置文件中的owner一致
@@ -585,7 +585,7 @@ of: 发布命令执行成功结果存储文件的绝对路径
 * 发布智能合约到链上
 构造如下`POST`请求:
 ```
-curl -X POST -d /tmp/deploy.json  http://192.168.1.11:9600/jsonrpc/edge/v1
+curl -X POST -d @/tmp/deploy.json  http://192.168.1.11:9600/jsonrpc/edge/v1
 ```
 
 ### 执行智能合约
@@ -630,7 +630,7 @@ of: 执行命令成功结果存储文件的绝对路径
 * 在链上执行智能合约
 构造如下`POST`请求:
 ```
-curl -X POST -d /tmp/run.json  http://192.168.1.11:9600/jsonrpc/edge/v1
+curl -X POST -d @/tmp/run.json  http://192.168.1.11:9600/jsonrpc/edge/v1
 ```
 
 ## 补充
