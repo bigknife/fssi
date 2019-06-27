@@ -119,11 +119,13 @@ class NetworkHandler extends Network.Handler[Stack] with LogSupport {
               case scpEnvelope: SCPEnvelope =>
                 consensusOnce.foreach { cluster =>
                   SCPThreadPool.broadcast(() => {
-//                    cluster.spreadGossip(CubeMessage.fromData(scpEnvelope.asJson.noSpaces))
+                    cluster.spreadGossip(CubeMessage.fromData(scpEnvelope.asJson.noSpaces))
+                    /*
                     val msg = CubeMessage.fromData(scpEnvelope.asJson.noSpaces)
                     cluster.otherMembers().forEach { m =>
                       cluster.send(m, msg)
                     }
+                    */
                   })
 
                 }
@@ -245,9 +247,7 @@ class NetworkHandler extends Network.Handler[Stack] with LogSupport {
       cluster
         .listen()
         .subscribe { gossip =>
-          val start = System.currentTimeMillis()
           val msg   = converter(gossip)
-          val end   = System.currentTimeMillis()
           msg match {
             case _: Message.ApplicationMessage =>
               appMessageReceiver.foreach(_.receive(msg))

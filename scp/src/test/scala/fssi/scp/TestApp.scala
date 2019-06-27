@@ -328,6 +328,8 @@ class TestApp(nodeID: NodeID,
     quorumSet,
     message
   )
+
+  override def statementToJsonString[M <: Message](statement: Statement[M]): String = ???
 }
 
 object TestApp {

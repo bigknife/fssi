@@ -126,7 +126,7 @@ object CmdArgsParser extends OptionParser[CmdArgs]("fssitool") {
             .action((x, c) =>
               c.asInstanceOf[CreateTransferTransactionArgs].copy(token = Token.parse(x))),
           opt[java.io.File]("output-file")
-            .abbr("o")
+            .abbr("of")
             .text("if set, the message will output to this file")
             .action((x, c) =>
               c.asInstanceOf[CreateTransferTransactionArgs].copy(outputFile = Some(x)))
@@ -153,7 +153,7 @@ object CmdArgsParser extends OptionParser[CmdArgs]("fssitool") {
             .text("smart contract file")
             .action((x, c) => c.asInstanceOf[CreateDeployTransactionArgs].copy(contractFile = x)),
           opt[java.io.File]("output-file")
-            .abbr("o")
+            .abbr("of")
             .text("if set, the message will output to this file")
             .action(
               (x, c) => c.asInstanceOf[CreateDeployTransactionArgs].copy(outputFile = Some(x)))
@@ -201,7 +201,7 @@ object CmdArgsParser extends OptionParser[CmdArgs]("fssitool") {
             .action((x, c) => c.asInstanceOf[CreateRunTransactionArgs].copy(methodAlias = x)),
           opt[String]("parameter")
             .abbr("p")
-            .text("parameters for this invoking")
+            .text("parameters for this invoking, args must wrapped in [] and list by methods arg's index ignored first argument")
             .action(
               (x, c) =>
                 c.asInstanceOf[CreateRunTransactionArgs]
@@ -215,7 +215,7 @@ object CmdArgsParser extends OptionParser[CmdArgs]("fssitool") {
                         .right
                         .get))),
           opt[java.io.File]("output-file")
-            .abbr("o")
+            .abbr("of")
             .text("if set, the message will output to this file")
             .action((x, c) => c.asInstanceOf[CreateRunTransactionArgs].copy(outputFile = Some(x)))
         )
