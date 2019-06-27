@@ -21,7 +21,7 @@ trait StartupProgram[F[_]] extends EdgeNodeProgram[F] with BaseProgram[F] {
       applicationNode <- network.startupApplicationNode(applicationMessageHandler)
       _               <- log.info("application node start up")
       serviceNode     <- network.startupServiceNode(clientMessageHandler)
-      _               <- log.info("service node start up")
+      _               <- log.info("EdgeNode start up!")
     } yield (applicationNode, serviceNode)
   }
 }
