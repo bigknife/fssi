@@ -300,7 +300,7 @@ core-node {
       maxTransactionSizeInBlock = 2
       
       // max timeout seconds for consensus to calculate transactions
-      maxConsensusWaitTimeout = 5000
+      maxConsensusWaitTimeout = 5
     }
   }
 
